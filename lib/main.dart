@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
-part 'widgets/sidebar.dart';
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
+part 'pages/broker_screens.dart';
+part 'pages/accounts_page.dart';
+part 'pages/internal_transfer_page.dart';
+part 'pages/demo_accounts_page.dart';
 
-const _background = Color(0xFF0B1730);
-const _sidebar = Color(0xFF091323);
-const _panel = Color(0xFF111F3C);
-const _panelLight = Color(0xFF172747);
-const _border = Color(0xFF293D62);
-const _muted = Color(0xFF8A9AB8);
-const _blue = Color(0xFF3865D7);
-const _gold = Color(0xFFF0C84B);
+const _background = Color(0xFF06163B);
+const _sidebar = Color(0xFF04122F);
+const _panel = Color(0xFF0B2452);
+const _panelLight = Color(0xFF10316A);
+const _border = Color(0xFF174783);
+const _muted = Color(0xFFA9B9D5);
+const _blue = Color(0xFF0875F5);
+const _gold = Color(0xFFF4C84A);
 
 void main() {
   runApp(const MyApp());
@@ -45,77 +48,48 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   String _selectedPage = 'Dashboard';
   bool _balanceVisible = true;
-  bool _sidebarCollapsed = false;
 
   void _selectPage(String page) {
     setState(() => _selectedPage = page);
-    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-      _scaffoldKey.currentState?.closeDrawer();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final showSidebar = constraints.maxWidth >= 760;
-        return Scaffold(
-          key: _scaffoldKey,
-          drawer: showSidebar
-              ? null
-              : Drawer(
-                  width: 270,
-                  backgroundColor: _sidebar,
-                  child: _Sidebar(
-                    selectedPage: _selectedPage,
-                    onSelect: _selectPage,
-                    collapsed: false,
-                    onToggleCollapse: () {},
-                    canCollapse: false,
-                  ),
-                ),
-          appBar: _AppHeader(
-            title: _selectedPage,
-            showMenu: !showSidebar,
-            onMenu: () => _scaffoldKey.currentState?.openDrawer(),
-          ),
-          body: SafeArea(
-            top: false,
-            bottom: false,
-            child: Row(
-              children: [
-                if (showSidebar)
-                  SizedBox(
-                    width: _sidebarCollapsed ? 68 : 228,
-                    child: _Sidebar(
-                      selectedPage: _selectedPage,
-                      onSelect: _selectPage,
-                      collapsed: _sidebarCollapsed,
-                      onToggleCollapse: () => setState(
-                        () => _sidebarCollapsed = !_sidebarCollapsed,
-                      ),
-                      canCollapse: true,
+    return Scaffold(
+      appBar: _AppHeader(title: _selectedPage),
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(children: [
+          Expanded(
+            child: _selectedPage == 'Dashboard'
+                ? BrokerDashboardPage(
+                    balanceVisible: _balanceVisible,
+                    onToggleBalance: () => setState(
+                      () => _balanceVisible = !_balanceVisible,
                     ),
-                  ),
-                Expanded(
-                  child: _selectedPage == 'Dashboard'
-                      ? DashboardPage(
-                          balanceVisible: _balanceVisible,
-                          onToggleBalance: () => setState(
-                            () => _balanceVisible = !_balanceVisible,
-                          ),
-                          onSelectPage: _selectPage,
-                        )
-                      : _SectionPage(title: _selectedPage),
-                ),
-              ],
-            ),
+                    onSelectPage: _selectPage,
+                  )
+                : _selectedPage == 'Transactions'
+                    ? const BrokerTransactionsPage()
+                    : _selectedPage == 'Partnership'
+                        ? const BrokerPartnershipPage()
+                        : _selectedPage == 'Trading Accounts'
+                            ? BrokerAccountsPage(onSelectPage: _selectPage)
+                            : _selectedPage == 'Internal Transfer'
+                                ? const BrokerInternalTransferPage()
+                                : _selectedPage == 'Demo Accounts'
+                                    ? const BrokerDemoAccountsPage()
+                                    : _SectionPage(title: _selectedPage),
           ),
-        );
-      },
+          BrokerBottomNavigation(
+            selectedPage: _selectedPage,
+            onSelect: _selectPage,
+          ),
+        ]),
+      ),
     );
   }
 }

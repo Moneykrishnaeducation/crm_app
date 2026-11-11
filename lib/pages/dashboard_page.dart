@@ -1323,14 +1323,3 @@ class _Label extends StatelessWidget {
     );
   }
 }
-
-class _BrandMark extends StatelessWidget {
-  const _BrandMark({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(Icons.waves_rounded, color: _gold, size: size);
-  }
-}

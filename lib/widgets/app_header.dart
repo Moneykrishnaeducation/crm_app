@@ -3,13 +3,9 @@ part of '../main.dart';
 class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   const _AppHeader({
     required this.title,
-    required this.showMenu,
-    required this.onMenu,
   });
 
   final String title;
-  final bool showMenu;
-  final VoidCallback onMenu;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -22,15 +18,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
-      leadingWidth: showMenu ? 52 : 0,
-      leading: showMenu
-          ? IconButton(
-              onPressed: onMenu,
-              tooltip: 'Open navigation',
-              icon: const Icon(Icons.menu_rounded, color: Colors.white),
-            )
-          : null,
-      titleSpacing: showMenu ? 4 : 20,
+      titleSpacing: 20,
       title: LayoutBuilder(
         builder: (context, constraints) {
           final compact = MediaQuery.sizeOf(context).width < 480;

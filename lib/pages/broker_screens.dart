@@ -255,7 +255,10 @@ class BrokerBottomNavigation extends StatelessWidget {
                     elevation: 4,
                     child: InkWell(
                       customBorder: const CircleBorder(),
-                      onTap: () => onSelect('Trading Accounts'),
+                      onTap: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => const _OpenLiveAccountDialog(),
+                      ),
                       child: const SizedBox(
                         width: 54,
                         height: 54,

@@ -277,8 +277,8 @@ class BrokerBottomNavigation extends StatelessWidget {
               _BrokerNavItem(
                 icon: Icons.grid_view_rounded,
                 label: 'More',
-                selected: selectedPage == 'Partnership' || selectedPage == 'Demo Accounts',
-                onTap: () => onSelect('Partnership'),
+                selected: selectedPage == 'More',
+                onTap: () => onSelect('More'),
               ),
             ]),
               ),

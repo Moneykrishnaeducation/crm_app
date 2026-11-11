@@ -6,6 +6,7 @@ part 'pages/broker_screens.dart';
 part 'pages/accounts_page.dart';
 part 'pages/internal_transfer_page.dart';
 part 'pages/demo_accounts_page.dart';
+part 'pages/more_page.dart';
 
 const _background = Color(0xFF06163B);
 const _sidebar = Color(0xFF04122F);
@@ -82,6 +83,8 @@ class _AppShellState extends State<AppShell> {
                                 ? const BrokerInternalTransferPage()
                                 : _selectedPage == 'Demo Accounts'
                                     ? const BrokerDemoAccountsPage()
+                                    : _selectedPage == 'More'
+                                        ? BrokerMorePage(onSelectPage: _selectPage)
                                     : _SectionPage(title: _selectedPage),
           ),
           BrokerBottomNavigation(

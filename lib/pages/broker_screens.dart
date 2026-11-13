@@ -28,22 +28,22 @@ class BrokerDashboardPage extends StatelessWidget {
         _BrokerBalance(visible: balanceVisible, onToggle: onToggleBalance),
         const SizedBox(height: 13),
         Row(children: [
-          Expanded(child: _BrokerMetric(icon: Icons.person_outline, label: 'Live Accounts', value: '1,825', accent: const Color(0xFF23C8E8))),
+          Expanded(child: _BrokerMetric(icon: LucideIcons.userRound, label: 'Live Accounts', value: '1,825', accent: const Color(0xFF23C8E8))),
           const SizedBox(width: 10),
-          const Expanded(child: _BrokerMetric(icon: Icons.desktop_windows_outlined, label: 'Demo Accounts', value: '588', accent: _brokerBlue)),
+          const Expanded(child: _BrokerMetric(icon: LucideIcons.monitor, label: 'Demo Accounts', value: '588', accent: _brokerBlue)),
         ]),
         const SizedBox(height: 10),
         Row(children: [
-          const Expanded(child: _BrokerMetric(icon: Icons.south_west_rounded, label: 'Total Deposits', value: '\$125.8K', accent: Color(0xFF29D582))),
+          const Expanded(child: _BrokerMetric(icon: LucideIcons.arrowDownLeft, label: 'Total Deposits', value: '\$125.8K', accent: Color(0xFF29D582))),
           const SizedBox(width: 10),
-          const Expanded(child: _BrokerMetric(icon: Icons.layers_outlined, label: 'MAM / Managed Funds', value: '\$42.5K', accent: _brokerGold)),
+          const Expanded(child: _BrokerMetric(icon: LucideIcons.layers, label: 'MAM / Managed Funds', value: '\$42.5K', accent: _brokerGold)),
         ]),
         const SizedBox(height: 13),
         Row(children: [
-          _BrokerShortcut(icon: Icons.account_balance_wallet_outlined, label: 'Deposit Funds', selected: true, onTap: () => onSelectPage('Deposit')),
-          _BrokerShortcut(icon: Icons.upload_rounded, label: 'Withdraw', onTap: () => onSelectPage('Transactions')),
-          _BrokerShortcut(icon: Icons.swap_horiz_rounded, label: 'Internal Transfer', onTap: () => onSelectPage('Internal Transfer')),
-          _BrokerShortcut(icon: Icons.add_circle_outline_rounded, label: 'Open Account', onTap: () => onSelectPage('Trading Accounts')),
+          _BrokerShortcut(icon: LucideIcons.wallet, label: 'Deposit Funds', selected: true, onTap: () => onSelectPage('Deposit')),
+          _BrokerShortcut(icon: LucideIcons.upload, label: 'Withdraw', onTap: () => onSelectPage('Transactions')),
+          _BrokerShortcut(icon: LucideIcons.arrowLeftRight, label: 'Internal Transfer', onTap: () => onSelectPage('Internal Transfer')),
+          _BrokerShortcut(icon: LucideIcons.circlePlus, label: 'Open Account', onTap: () => onSelectPage('Trading Accounts')),
         ]),
         const SizedBox(height: 14),
         const _BrokerFundsPanel(),
@@ -67,7 +67,7 @@ class _BrokerBalance extends StatelessWidget {
       boxShadow: const [BoxShadow(color: Color(0x550875F5), blurRadius: 20, offset: Offset(0, 7))],
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [const Text('Total Real Balance', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)), IconButton(onPressed: onToggle, visualDensity: VisualDensity.compact, icon: Icon(visible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white, size: 19)), const Spacer(), const _LiveUsdBadge()]),
+      Row(children: [const Text('Total Real Balance', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)), IconButton(onPressed: onToggle, visualDensity: VisualDensity.compact, icon: Icon(visible ? LucideIcons.eye : LucideIcons.eyeOff, color: Colors.white, size: 19)), const Spacer(), const _LiveUsdBadge()]),
       Text(visible ? '\$125,800.00' : '••••••••', style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w800)),
       const SizedBox(height: 8),
       const Text('Real-time consolidated balance', style: TextStyle(color: Colors.white, fontSize: 11)),
@@ -78,7 +78,7 @@ class _BrokerBalance extends StatelessWidget {
 class _LiveUsdBadge extends StatelessWidget {
   const _LiveUsdBadge();
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xCC031638), borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0x553EA0FF))), child: const Row(children: [Icon(Icons.circle, color: Color(0xFF49E88E), size: 8), SizedBox(width: 5), Text('Live USD', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700))]));
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xCC031638), borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0x553EA0FF))), child: const Row(children: [Icon(LucideIcons.circle, color: Color(0xFF49E88E), size: 8), SizedBox(width: 5), Text('Live USD', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700))]));
 }
 class _BrokerMetric extends StatelessWidget {
   const _BrokerMetric({required this.icon, required this.label, required this.value, required this.accent});
@@ -97,7 +97,7 @@ class _BrokerFundsPanel extends StatelessWidget {
   const _BrokerFundsPanel();
   @override
   Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: const Color(0xFF081B40), borderRadius: BorderRadius.circular(17), border: Border.all(color: const Color(0xFF143C78))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    const Row(children: [Icon(Icons.analytics_outlined, color: Color(0xFF63D5FF), size: 19), SizedBox(width: 8), Text('Your Funds', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700))]),
+    const Row(children: [Icon(LucideIcons.chartNoAxesColumn, color: Color(0xFF63D5FF), size: 19), SizedBox(width: 8), Text('Your Funds', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700))]),
     const Padding(padding: EdgeInsets.only(left: 27, top: 2), child: Text('Portfolio allocation & capital distribution', style: TextStyle(color: _brokerMuted, fontSize: 9))),
     const SizedBox(height: 10),
     Row(children: [SizedBox(width: 112, height: 112, child: CustomPaint(painter: _FundDonutPainter(), child: const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text('TOTAL FUNDS', style: TextStyle(color: Colors.white70, fontSize: 8)), SizedBox(height: 3), Text('\$125.8K', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)), Text('ALLOCATED', style: TextStyle(color: Color(0xFF4BE6A2), fontSize: 8))])))), const SizedBox(width: 12), const Expanded(child: Column(children: [ _FundLegend(color: Color(0xFF25C7F5), label: 'Client Deposits', value: '74%'), SizedBox(height: 9), _FundLegend(color: _brokerGold, label: 'IB Earnings', value: '18%'), SizedBox(height: 9), _FundLegend(color: Color(0xFF36D77F), label: 'Other Funds', value: '8%')]))]),
@@ -130,9 +130,9 @@ class _TodayActivity extends StatelessWidget {
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(children: [const Expanded(child: Text('Recent Transactions', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700))), TextButton(onPressed: () => onSelect('Transactions'), child: const Text('View All', style: TextStyle(color: Color(0xFF58B7FF), fontSize: 10)))]),
     Container(decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFF164A91))), child: const Column(children: [
-      _ActivityTile(icon: Icons.south_west_rounded, title: 'Deposit', detail: 'Account Funding', amount: '+\$2,500.00', time: '10:30 AM', incoming: true),
+      _ActivityTile(icon: LucideIcons.arrowDownLeft, title: 'Deposit', detail: 'Account Funding', amount: '+\$2,500.00', time: '10:30 AM', incoming: true),
       Divider(height: 1, indent: 14, endIndent: 14, color: Color(0xFF1B3B68)),
-      _ActivityTile(icon: Icons.north_east_rounded, title: 'Withdrawal', detail: 'Payout Request', amount: '-\$850.00', time: '11:15 AM', incoming: false),
+      _ActivityTile(icon: LucideIcons.arrowUpRight, title: 'Withdrawal', detail: 'Payout Request', amount: '-\$850.00', time: '11:15 AM', incoming: false),
     ])),
   ]);
 }
@@ -153,16 +153,16 @@ class BrokerTransactionsPage extends StatelessWidget {
     const SizedBox(height: 20),
     const Text('Today', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)), const SizedBox(height: 12),
     const _TransactionGroup(items: [
-      _TransactionData(Icons.south_west_rounded, 'Deposit', 'Account Funding', '+\$2,500.00', '10:30 AM', true),
-      _TransactionData(Icons.north_east_rounded, 'Withdrawal', 'Payout Request', '-\$850.00', '11:15 AM', false),
+      _TransactionData(LucideIcons.arrowDownLeft, 'Deposit', 'Account Funding', '+\$2,500.00', '10:30 AM', true),
+      _TransactionData(LucideIcons.arrowUpRight, 'Withdrawal', 'Payout Request', '-\$850.00', '11:15 AM', false),
     ]),
     const SizedBox(height: 22), const Text('Yesterday', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)), const SizedBox(height: 12),
     const _TransactionGroup(items: [
-      _TransactionData(Icons.swap_horiz_rounded, 'Internal Transfer', 'Between Accounts', '+\$500.00', '06:20 PM', true),
-      _TransactionData(Icons.add_rounded, 'Account Opening', 'New Live Account', '\$0.00', '04:10 PM', null),
+      _TransactionData(LucideIcons.arrowLeftRight, 'Internal Transfer', 'Between Accounts', '+\$500.00', '06:20 PM', true),
+      _TransactionData(LucideIcons.plus, 'Account Opening', 'New Live Account', '\$0.00', '04:10 PM', null),
     ]),
     const SizedBox(height: 22), const Text('This Month', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)), const SizedBox(height: 12),
-    const _TransactionGroup(items: [_TransactionData(Icons.card_giftcard_rounded, 'IB Commission', 'Partnership Earnings', '+\$120.00', 'Yesterday', true), _TransactionData(Icons.layers_outlined, 'MAM Allocation', 'Fund Allocation', '\$0.00', 'Yesterday', null)]),
+    const _TransactionGroup(items: [_TransactionData(LucideIcons.gift, 'IB Commission', 'Partnership Earnings', '+\$120.00', 'Yesterday', true), _TransactionData(LucideIcons.layers, 'MAM Allocation', 'Fund Allocation', '\$0.00', 'Yesterday', null)]),
   ]));
 }
 class _TransactionFilter extends StatelessWidget {
@@ -190,13 +190,13 @@ class BrokerPartnershipPage extends StatelessWidget {
   const BrokerPartnershipPage({super.key});
   @override
   Widget build(BuildContext context) => Container(color: _brokerNavy, child: ListView(padding: const EdgeInsets.all(15), children: [
-    Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: const LinearGradient(colors: [Color(0xFF0F3275), Color(0xFF0759C9), Color(0xFF092452)])), child: const Row(children: [Icon(Icons.workspace_premium_rounded, color: _brokerGold, size: 40), SizedBox(width: 13), Expanded(child: Text('Your Introducing Broker Overview', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)))])),
+    Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: const LinearGradient(colors: [Color(0xFF0F3275), Color(0xFF0759C9), Color(0xFF092452)])), child: const Row(children: [Icon(LucideIcons.award, color: _brokerGold, size: 40), SizedBox(width: 13), Expanded(child: Text('Your Introducing Broker Overview', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)))])),
     const SizedBox(height: 14),
-    const Row(children: [Expanded(child: _PartnershipStat(icon: Icons.people_alt_outlined, label: 'Total Clients', value: '2,458', color: Color(0xFF22C6F4))), SizedBox(width: 10), Expanded(child: _PartnershipStat(icon: Icons.monetization_on_outlined, label: 'IB Earnings', value: '\$4,820.00', color: _brokerGold))]),
+    const Row(children: [Expanded(child: _PartnershipStat(icon: LucideIcons.usersRound, label: 'Total Clients', value: '2,458', color: Color(0xFF22C6F4))), SizedBox(width: 10), Expanded(child: _PartnershipStat(icon: LucideIcons.coins, label: 'IB Earnings', value: '\$4,820.00', color: _brokerGold))]),
     const SizedBox(height: 12),
-    Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF1455A7))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('IB Partner Code', style: TextStyle(color: _brokerMuted, fontSize: 11)), const SizedBox(height: 10), Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF061A3C), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1766C8))), child: const Row(children: [Icon(Icons.link_rounded, color: Color(0xFF5FCFFF)), SizedBox(width: 10), Expanded(child: Text('IBS3FFB03TL', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700))), Icon(Icons.copy_rounded, color: Colors.white70, size: 17)])), const SizedBox(height: 12), SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy), icon: const Icon(Icons.arrow_forward_rounded), label: const Text('View Partnership Dashboard')))])),
+    Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF1455A7))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('IB Partner Code', style: TextStyle(color: _brokerMuted, fontSize: 11)), const SizedBox(height: 10), Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF061A3C), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1766C8))), child: const Row(children: [Icon(LucideIcons.link, color: Color(0xFF5FCFFF)), SizedBox(width: 10), Expanded(child: Text('IBS3FFB03TL', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700))), Icon(LucideIcons.copy, color: Colors.white70, size: 17)])), const SizedBox(height: 12), SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy), icon: const Icon(LucideIcons.arrowRight), label: const Text('View Partnership Dashboard')))])),
     const SizedBox(height: 20), const Text('Quick Shortcuts', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)), const SizedBox(height: 10),
-    const _PartnershipShortcut(icon: Icons.people_outline_rounded, label: 'Client List'), const SizedBox(height: 8), const _PartnershipShortcut(icon: Icons.layers_outlined, label: 'Commission History'), const SizedBox(height: 8), const _PartnershipShortcut(icon: Icons.qr_code_rounded, label: 'Referral & QR Studio'), const SizedBox(height: 8), const _PartnershipShortcut(icon: Icons.account_tree_outlined, label: 'IB Tree / Org Chart'),
+    const _PartnershipShortcut(icon: LucideIcons.usersRound, label: 'Client List'), const SizedBox(height: 8), const _PartnershipShortcut(icon: LucideIcons.layers, label: 'Commission History'), const SizedBox(height: 8), const _PartnershipShortcut(icon: LucideIcons.qrCode, label: 'Referral & QR Studio'), const SizedBox(height: 8), const _PartnershipShortcut(icon: LucideIcons.network, label: 'IB Tree / Org Chart'),
   ]));
 }
 class _PartnershipStat extends StatelessWidget {
@@ -208,7 +208,7 @@ class _PartnershipStat extends StatelessWidget {
 class _PartnershipShortcut extends StatelessWidget {
   const _PartnershipShortcut({required this.icon, required this.label}); final IconData icon; final String label;
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFF1455A7))), child: Row(children: [Icon(icon, color: const Color(0xFF55D5FF)), const SizedBox(width: 12), Expanded(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600))), const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 19)]));
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFF1455A7))), child: Row(children: [Icon(icon, color: const Color(0xFF55D5FF)), const SizedBox(width: 12), Expanded(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600))), const Icon(LucideIcons.chevronRight, color: Colors.white, size: 19)]));
 }
 
 class BrokerBottomNavigation extends StatelessWidget {
@@ -236,13 +236,13 @@ class BrokerBottomNavigation extends StatelessWidget {
             ),
             child: Row(children: [
               _BrokerNavItem(
-                icon: Icons.home_outlined,
+                icon: LucideIcons.house,
                 label: 'Dashboard',
                 selected: selectedPage == 'Dashboard',
                 onTap: () => onSelect('Dashboard'),
               ),
               _BrokerNavItem(
-                icon: Icons.receipt_long_outlined,
+                icon: LucideIcons.receiptText,
                 label: 'Transactions',
                 selected: selectedPage == 'Transactions',
                 onTap: () => onSelect('Transactions'),
@@ -262,20 +262,20 @@ class BrokerBottomNavigation extends StatelessWidget {
                       child: const SizedBox(
                         width: 54,
                         height: 54,
-                        child: Icon(Icons.add_rounded, color: _brokerNavy, size: 32),
+                        child: Icon(LucideIcons.plus, color: _brokerNavy, size: 32),
                       ),
                     ),
                   ),
                 ),
               ),
               _BrokerNavItem(
-                icon: Icons.layers_outlined,
+                icon: LucideIcons.layers,
                 label: 'Accounts',
                 selected: selectedPage == 'Trading Accounts',
                 onTap: () => onSelect('Trading Accounts'),
               ),
               _BrokerNavItem(
-                icon: Icons.grid_view_rounded,
+                icon: LucideIcons.grid2x2,
                 label: 'More',
                 selected: selectedPage == 'More',
                 onTap: () => onSelect('More'),

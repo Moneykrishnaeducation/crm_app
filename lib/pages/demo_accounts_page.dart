@@ -33,27 +33,27 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
                   border: Border.all(color: const Color(0xFF2462C4)),
                 ),
                 child: Row(children: [
-                  Container(width: 36, height: 36, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF33B7FF), Color(0xFF3858F5)]), borderRadius: BorderRadius.circular(11)), child: const Icon(Icons.grid_view_rounded, color: Colors.white, size: 20)),
+                  Container(width: 36, height: 36, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF33B7FF), Color(0xFF3858F5)]), borderRadius: BorderRadius.circular(11)), child: const Icon(LucideIcons.grid2x2, color: Colors.white, size: 20)),
                   const SizedBox(width: 9),
                   const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Demo Accounts', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)), SizedBox(height: 3), Text('Manage your virtual MT5 accounts.', style: TextStyle(color: _brokerMuted, fontSize: 9))])),
-                  IconButton(onPressed: () => setState(() {}), tooltip: 'Refresh', style: IconButton.styleFrom(backgroundColor: const Color(0xFF132849), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))), icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 17)),
+                  IconButton(onPressed: () => setState(() {}), tooltip: 'Refresh', style: IconButton.styleFrom(backgroundColor: const Color(0xFF132849), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))), icon: const Icon(LucideIcons.refreshCw, color: Colors.white, size: 17)),
                   if (!compact) ...[
                     const SizedBox(width: 6),
-                    FilledButton.icon(onPressed: () => _showCreateDialog(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4059E9), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11)), icon: const Icon(Icons.add_rounded, size: 16), label: const Text('Create Demo Account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+                    FilledButton.icon(onPressed: () => _showCreateDialog(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4059E9), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11)), icon: const Icon(LucideIcons.plus, size: 16), label: const Text('Create Demo Account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
                   ],
                 ]),
               ),
               if (compact) ...[
                 const SizedBox(height: 8),
-                SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => _showCreateDialog(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4059E9), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 11)), icon: const Icon(Icons.add_rounded, size: 16), label: const Text('Create Demo Account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)))),
+                SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => _showCreateDialog(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4059E9), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 11)), icon: const Icon(LucideIcons.plus, size: 16), label: const Text('Create Demo Account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)))),
               ],
               const SizedBox(height: 13),
               Row(children: [
-                const Expanded(child: _DemoSummary(icon: Icons.account_balance_wallet_outlined, title: 'VIRTUAL PORTFOLIO', value: '\$0.00', detail: 'Combined simulated trading equity', iconColor: _brokerBlue)),
+                const Expanded(child: _DemoSummary(icon: LucideIcons.wallet, title: 'VIRTUAL PORTFOLIO', value: '\$0.00', detail: 'Combined simulated trading equity', iconColor: _brokerBlue)),
                 const SizedBox(width: 8),
-                const Expanded(child: _DemoSummary(icon: Icons.desktop_windows_outlined, title: 'ACTIVE SIMULATIONS', value: '0', detail: '0 active / 0 total demo accounts', iconColor: Color(0xFF8065E8), valueColor: Color(0xFF00D59A))),
+                const Expanded(child: _DemoSummary(icon: LucideIcons.monitor, title: 'ACTIVE SIMULATIONS', value: '0', detail: '0 active / 0 total demo accounts', iconColor: Color(0xFF8065E8), valueColor: Color(0xFF00D59A))),
                 const SizedBox(width: 8),
-                const Expanded(child: _DemoSummary(icon: Icons.auto_awesome_outlined, title: 'EXECUTION ENVIRONMENT', value: 'Risk-Free', detail: 'Real-time market feeds & MT5 spread dynamics', iconColor: _brokerGold, gold: true)),
+                const Expanded(child: _DemoSummary(icon: LucideIcons.sparkles, title: 'EXECUTION ENVIRONMENT', value: 'Risk-Free', detail: 'Real-time market feeds & MT5 spread dynamics', iconColor: _brokerGold, gold: true)),
               ]),
               const SizedBox(height: 14),
               Container(
@@ -75,7 +75,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
                   ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 280),
                     child: Center(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Container(width: 56, height: 56, decoration: const BoxDecoration(color: Color(0xFF1B225F), shape: BoxShape.circle), child: const Icon(Icons.search_rounded, color: _brokerMuted, size: 27)),
+                      Container(width: 56, height: 56, decoration: const BoxDecoration(color: Color(0xFF1B225F), shape: BoxShape.circle), child: const Icon(LucideIcons.search, color: _brokerMuted, size: 27)),
                       const SizedBox(height: 12),
                       Text(_query.isEmpty ? 'No Demo Accounts Found' : 'No matching demo accounts', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 5),
@@ -145,5 +145,5 @@ class _DemoSearch extends StatelessWidget {
   const _DemoSearch({required this.controller, required this.onChanged});
   final TextEditingController controller; final ValueChanged<String> onChanged;
   @override
-  Widget build(BuildContext context) => TextField(controller: controller, onChanged: onChanged, style: const TextStyle(color: Colors.white, fontSize: 9), decoration: InputDecoration(hintText: 'Search ID, holder, leverage...', hintStyle: const TextStyle(color: _brokerMuted, fontSize: 8), prefixIcon: const Icon(Icons.search_rounded, color: _brokerMuted, size: 14), isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 8), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF3A4AB4))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _brokerBlue))));
+  Widget build(BuildContext context) => TextField(controller: controller, onChanged: onChanged, style: const TextStyle(color: Colors.white, fontSize: 9), decoration: InputDecoration(hintText: 'Search ID, holder, leverage...', hintStyle: const TextStyle(color: _brokerMuted, fontSize: 8), prefixIcon: const Icon(LucideIcons.search, color: _brokerMuted, size: 14), isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 8), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF3A4AB4))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _brokerBlue))));
 }

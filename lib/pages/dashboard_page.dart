@@ -97,7 +97,7 @@ class _PortfolioPanel extends StatelessWidget {
                 children: [
                   const _Tag(
                     label: 'PORTFOLIO SUMMARY',
-                    icon: Icons.donut_small_rounded,
+                    icon: LucideIcons.chartPie,
                   ),
                   if (!compact) ...[
                     const SizedBox(width: 8),
@@ -110,8 +110,8 @@ class _PortfolioPanel extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     icon: Icon(
                       balanceVisible
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                          ? LucideIcons.eye
+                          : LucideIcons.eyeOff,
                       color: _muted,
                       size: 18,
                     ),
@@ -127,7 +127,7 @@ class _PortfolioPanel extends StatelessWidget {
                       },
                       tooltip: 'Refresh',
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.refresh, color: _muted, size: 18),
+                      icon: const Icon(LucideIcons.refreshCw, color: _muted, size: 18),
                     ),
                 ],
               );
@@ -193,12 +193,12 @@ class _BalanceCardContent extends StatelessWidget {
         children: [
           Row(
             children: [
-              const _IconTile(icon: Icons.account_balance_wallet_outlined),
+              const _IconTile(icon: LucideIcons.wallet),
               const SizedBox(width: 9),
               const Expanded(child: _Label('TOTAL REAL BALANCE')),
               const _Tag(
                 label: 'LIVE USD',
-                icon: Icons.circle,
+                icon: LucideIcons.circle,
                 color: Color(0xFF13C7A1),
               ),
             ],
@@ -253,7 +253,7 @@ class _PortfolioMetrics extends StatelessWidget {
                 title: 'LIVE ACCOUNTS',
                 value: '4',
                 subtitle: 'Real trading accounts',
-                icon: Icons.person_add_alt_1_outlined,
+                icon: LucideIcons.userRoundPlus,
                 accent: Color(0xFF27C7E9),
               ),
             ),
@@ -263,7 +263,7 @@ class _PortfolioMetrics extends StatelessWidget {
                 title: 'DEMO ACCOUNTS',
                 value: '0',
                 subtitle: 'Practice terminal',
-                icon: Icons.credit_card_outlined,
+                icon: LucideIcons.creditCard,
                 accent: _gold,
               ),
             ),
@@ -277,7 +277,7 @@ class _PortfolioMetrics extends StatelessWidget {
                 title: 'TOTAL DEPOSITS',
                 value: '\$0',
                 subtitle: 'Cumulative capital',
-                icon: Icons.savings_outlined,
+                icon: LucideIcons.piggyBank,
                 accent: Color(0xFF16C9A6),
               ),
             ),
@@ -287,7 +287,7 @@ class _PortfolioMetrics extends StatelessWidget {
                 title: 'MAM / MANAGED FUNDS',
                 value: '\$0',
                 subtitle: 'PAMM & Social pool',
-                icon: Icons.groups_2_outlined,
+                icon: LucideIcons.usersRound,
                 accent: Color(0xFFC56BFF),
               ),
             ),
@@ -345,7 +345,7 @@ class _MetricCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: Color(0xFF617595), size: 15),
+          const Icon(LucideIcons.chevronRight, color: Color(0xFF617595), size: 15),
         ],
       ),
     );
@@ -363,28 +363,28 @@ class _ActionButtons extends StatelessWidget {
     final actions = [
       _ActionData(
         'DEPOSIT FUNDS',
-        Icons.account_balance_wallet_outlined,
+        LucideIcons.wallet,
         _gold,
         _sidebar,
         'Deposit',
       ),
       _ActionData(
         'WITHDRAWAL',
-        Icons.add_circle_outline,
+        LucideIcons.circlePlus,
         const Color(0xFF16C9A6),
         const Color(0xFF0D3040),
         'Transactions',
       ),
       _ActionData(
         'INTERNAL TRANSFER',
-        Icons.send_outlined,
+        LucideIcons.send,
         const Color(0xFFAA8CFF),
         const Color(0xFF25265C),
         'Internal Transfer',
       ),
       _ActionData(
         'OPEN ACCOUNT',
-        Icons.person_add_alt_1_outlined,
+        LucideIcons.userRoundPlus,
         const Color(0xFF35A8FF),
         const Color(0xFF0C365F),
         'Trading Accounts',
@@ -464,7 +464,7 @@ class _ActionButton extends StatelessWidget {
               ),
               if (action.background == _gold) ...[
                 const SizedBox(width: 4),
-                const Icon(Icons.arrow_forward, color: _sidebar, size: 11),
+                const Icon(LucideIcons.arrowRight, color: _sidebar, size: 11),
               ],
             ],
           ),
@@ -508,21 +508,21 @@ class _QuickLinks extends StatelessWidget {
                 children: [
                   _QuickLink(
                     title: 'Transactions',
-                    icon: Icons.receipt_long_outlined,
+                    icon: LucideIcons.receiptText,
                     compact: compact,
                     onTap: () => onSelectPage('Transactions'),
                   ),
                   const SizedBox(width: 6),
                   _QuickLink(
                     title: 'Pattern AI',
-                    icon: Icons.auto_awesome,
+                    icon: LucideIcons.sparkles,
                     compact: compact,
                     onTap: () => onSelectPage('Trade Pattern Analysis'),
                   ),
                   const SizedBox(width: 6),
                   _QuickLink(
                     title: 'Get MT5',
-                    icon: Icons.open_in_new,
+                    icon: LucideIcons.externalLink,
                     compact: compact,
                     onTap: () => onSelectPage('Platform'),
                   ),
@@ -694,7 +694,7 @@ class _FundGrid extends StatelessWidget {
         'Trading account balance',
         '0.0%',
         '\$0',
-        Icons.attach_money,
+        LucideIcons.dollarSign,
         _gold,
       ),
       _FundData(
@@ -702,7 +702,7 @@ class _FundGrid extends StatelessWidget {
         'Capital under management',
         '0.0%',
         '\$0',
-        Icons.bar_chart,
+        LucideIcons.chartColumn,
         _blue,
       ),
       _FundData(
@@ -710,7 +710,7 @@ class _FundGrid extends StatelessWidget {
         'Allocated to managed pools',
         '0.0%',
         '\$0',
-        Icons.account_balance_wallet_outlined,
+        LucideIcons.wallet,
         Color(0xFF16C9A6),
       ),
       _FundData(
@@ -718,7 +718,7 @@ class _FundGrid extends StatelessWidget {
         'Withdrawable commission',
         '0.0%',
         '\$0',
-        Icons.insert_chart_outlined,
+        LucideIcons.chartNoAxesColumn,
         Color(0xFFC56BFF),
       ),
     ];
@@ -809,7 +809,7 @@ class _FundCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.chevron_right, color: _muted, size: 13),
+              const Icon(LucideIcons.chevronRight, color: _muted, size: 13),
             ],
           ),
         ],
@@ -830,7 +830,7 @@ class _PartnershipPanel extends StatelessWidget {
         children: [
           const Row(
             children: [
-              _IconTile(icon: Icons.people_alt_outlined),
+              _IconTile(icon: LucideIcons.usersRound),
               SizedBox(width: 9),
               Expanded(
                 child: Column(
@@ -852,7 +852,7 @@ class _PartnershipPanel extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.share_outlined, size: 13, color: _muted),
+              Icon(LucideIcons.share2, size: 13, color: _muted),
             ],
           ),
           const SizedBox(height: 14),
@@ -890,7 +890,7 @@ class _PartnershipPanel extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Icon(Icons.keyboard_arrow_down, color: _muted, size: 16),
+                    Icon(LucideIcons.chevronDown, color: _muted, size: 16),
                   ],
                 ),
               ],
@@ -900,7 +900,7 @@ class _PartnershipPanel extends StatelessWidget {
           FilledButton.icon(
             onPressed: () {},
             iconAlignment: IconAlignment.end,
-            icon: const Icon(Icons.arrow_forward, size: 12),
+            icon: const Icon(LucideIcons.arrowRight, size: 12),
             label: const Text('View partnership dashboard'),
             style: FilledButton.styleFrom(
               backgroundColor: _blue,
@@ -962,7 +962,7 @@ class _TransactionsPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              const _IconTile(icon: Icons.receipt_long_outlined),
+              const _IconTile(icon: LucideIcons.receiptText),
               const SizedBox(width: 9),
               const Expanded(
                 child: Column(
@@ -1023,7 +1023,7 @@ class _TransactionsPanel extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
-                    Icons.receipt_long_outlined,
+                    LucideIcons.receiptText,
                     size: 16,
                     color: _muted,
                   ),
@@ -1087,7 +1087,7 @@ class _SectionPage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.construction_outlined, color: _gold, size: 30),
+            const Icon(LucideIcons.construction, color: _gold, size: 30),
             const SizedBox(height: 12),
             Text(
               title,
@@ -1260,7 +1260,7 @@ class _LiveBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Tag(
       label: 'Server: VTIndex-MT5',
-      icon: Icons.circle,
+      icon: LucideIcons.circle,
       color: Color(0xFF18C7A0),
     );
   }
@@ -1281,7 +1281,7 @@ class _HintBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: _muted, size: 11),
+          const Icon(LucideIcons.info, color: _muted, size: 11),
           const SizedBox(width: 6),
           Expanded(
             child: Text(

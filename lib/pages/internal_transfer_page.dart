@@ -40,10 +40,10 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
       final amount = double.tryParse(_amountController.text) ?? 0;
       return ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 28), children: [
         Row(children: [
-          Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFF0B2452), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF174783))), child: const Icon(Icons.swap_horiz_rounded, color: _brokerBlue, size: 23)),
+          Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFF0B2452), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF174783))), child: const Icon(LucideIcons.arrowLeftRight, color: _brokerBlue, size: 23)),
           const SizedBox(width: 10),
           const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Internal Transfer', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w700)), SizedBox(height: 3), Text('Move funds between your verified MT5 live trading accounts.', style: TextStyle(color: _brokerMuted, fontSize: 9))])),
-          IconButton(onPressed: () => _showGuidelines(context), tooltip: 'Transfer guidelines', icon: const Icon(Icons.info_outline_rounded, color: _brokerMuted)),
+          IconButton(onPressed: () => _showGuidelines(context), tooltip: 'Transfer guidelines', icon: const Icon(LucideIcons.info, color: _brokerMuted)),
         ]),
         const SizedBox(height: 18),
         Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 920), child: Container(
@@ -53,12 +53,12 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
             if (wide)
               Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Expanded(child: _TransferAccountPicker(label: 'TRANSFER FROM (SOURCE)', value: _source, accountIds: _accountIds, onChanged: (value) => setState(() => _source = value))),
-                Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: IconButton(onPressed: _swapAccounts, style: IconButton.styleFrom(backgroundColor: const Color(0xFF0B1F4B), side: const BorderSide(color: Color(0xFF273B91))), icon: const Icon(Icons.swap_horiz_rounded, color: _brokerBlue))),
+                Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: IconButton(onPressed: _swapAccounts, style: IconButton.styleFrom(backgroundColor: const Color(0xFF0B1F4B), side: const BorderSide(color: Color(0xFF273B91))), icon: const Icon(LucideIcons.arrowLeftRight, color: _brokerBlue))),
                 Expanded(child: _TransferAccountPicker(label: 'TRANSFER TO (DESTINATION)', value: _destination, accountIds: _accountIds, onChanged: (value) => setState(() => _destination = value))),
               ])
             else ...[
               _TransferAccountPicker(label: 'TRANSFER FROM (SOURCE)', value: _source, accountIds: _accountIds, onChanged: (value) => setState(() => _source = value)),
-              Align(alignment: Alignment.center, child: IconButton(onPressed: _swapAccounts, style: IconButton.styleFrom(backgroundColor: const Color(0xFF0B1F4B), side: const BorderSide(color: Color(0xFF273B91))), icon: const Icon(Icons.swap_vert_rounded, color: _brokerBlue))),
+              Align(alignment: Alignment.center, child: IconButton(onPressed: _swapAccounts, style: IconButton.styleFrom(backgroundColor: const Color(0xFF0B1F4B), side: const BorderSide(color: Color(0xFF273B91))), icon: const Icon(LucideIcons.arrowUpDown, color: _brokerBlue))),
               _TransferAccountPicker(label: 'TRANSFER TO (DESTINATION)', value: _destination, accountIds: _accountIds, onChanged: (value) => setState(() => _destination = value)),
             ],
             const SizedBox(height: 18),
@@ -76,11 +76,11 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
             const SizedBox(height: 18),
             const Text('TRANSFER NOTE / REFERENCE (OPTIONAL)', style: TextStyle(color: _brokerMuted, fontSize: 9, fontWeight: FontWeight.w700)),
             const SizedBox(height: 7),
-            TextField(controller: _noteController, style: const TextStyle(color: Colors.white, fontSize: 11), decoration: InputDecoration(prefixIcon: const Icon(Icons.chat_bubble_outline_rounded, size: 15, color: _brokerMuted), hintText: 'e.g. Funding, rebalance portfolio', hintStyle: const TextStyle(color: Color(0xFF7B88AD), fontSize: 10), isDense: true, filled: true, fillColor: const Color(0xFF0C1645), contentPadding: const EdgeInsets.symmetric(vertical: 12), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: Color(0xFF273B91))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: _brokerBlue)))),
+            TextField(controller: _noteController, style: const TextStyle(color: Colors.white, fontSize: 11), decoration: InputDecoration(prefixIcon: const Icon(LucideIcons.messageCircle, size: 15, color: _brokerMuted), hintText: 'e.g. Funding, rebalance portfolio', hintStyle: const TextStyle(color: Color(0xFF7B88AD), fontSize: 10), isDense: true, filled: true, fillColor: const Color(0xFF0C1645), contentPadding: const EdgeInsets.symmetric(vertical: 12), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: Color(0xFF273B91))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: _brokerBlue)))),
             const SizedBox(height: 18),
             Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, runSpacing: 12, children: [
-              const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.verified_user_outlined, color: Color(0xFF10D6B2), size: 14), SizedBox(width: 6), Text('Encrypted transfer protocol', style: TextStyle(color: _brokerMuted, fontSize: 9))]),
-              FilledButton.icon(onPressed: _submitTransfer, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), icon: const Icon(Icons.arrow_forward_rounded, size: 16), label: const Text('TRANSFER FUNDS NOW', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800))),
+              const Row(mainAxisSize: MainAxisSize.min, children: [Icon(LucideIcons.shieldCheck, color: Color(0xFF10D6B2), size: 14), SizedBox(width: 6), Text('Encrypted transfer protocol', style: TextStyle(color: _brokerMuted, fontSize: 9))]),
+              FilledButton.icon(onPressed: _submitTransfer, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), icon: const Icon(LucideIcons.arrowRight, size: 16), label: const Text('TRANSFER FUNDS NOW', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800))),
             ]),
           ]),
         ))),
@@ -118,7 +118,7 @@ class _TransferAccountPicker extends StatelessWidget {
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
     Row(children: [Expanded(child: Text(label, style: const TextStyle(color: _brokerMuted, fontSize: 9, fontWeight: FontWeight.w700))), Text('Bal: \$0.00', style: const TextStyle(color: _brokerGold, fontSize: 9, fontWeight: FontWeight.w700))]),
     const SizedBox(height: 7),
-    Container(padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: const Color(0xFF0C1645), borderRadius: BorderRadius.circular(13), border: Border.all(color: const Color(0xFF273B91))), child: Row(children: [const Icon(Icons.account_balance_wallet_outlined, color: _brokerBlue, size: 17), const SizedBox(width: 8), Expanded(child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: value, isExpanded: true, dropdownColor: _brokerPanel, iconEnabledColor: _brokerMuted, style: const TextStyle(color: Colors.white, fontSize: 11), items: accountIds.map((id) => DropdownMenuItem(value: id, child: Text('$id   KRSNA-USD-B'))).toList(), onChanged: (next) { if (next != null) onChanged(next); }))),])),
+    Container(padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: const Color(0xFF0C1645), borderRadius: BorderRadius.circular(13), border: Border.all(color: const Color(0xFF273B91))), child: Row(children: [const Icon(LucideIcons.wallet, color: _brokerBlue, size: 17), const SizedBox(width: 8), Expanded(child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: value, isExpanded: true, dropdownColor: _brokerPanel, iconEnabledColor: _brokerMuted, style: const TextStyle(color: Colors.white, fontSize: 11), items: accountIds.map((id) => DropdownMenuItem(value: id, child: Text('$id   KRSNA-USD-B'))).toList(), onChanged: (next) { if (next != null) onChanged(next); }))),])),
   ]);
 }
 

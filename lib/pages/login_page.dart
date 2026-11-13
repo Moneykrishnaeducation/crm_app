@@ -163,7 +163,7 @@ class _LoginPageState extends State<LoginPage> {
             _buildTextField(
               controller: _emailController,
               hint: 'Email or Login ID',
-              icon: Icons.person_outline_rounded,
+              icon: LucideIcons.userRound,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
             ),
@@ -171,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
             _buildTextField(
               controller: _passwordController,
               hint: 'Password',
-              icon: Icons.lock_outline_rounded,
+              icon: LucideIcons.lockKeyhole,
               obscureText: !_passwordVisible,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(),
@@ -179,7 +179,7 @@ class _LoginPageState extends State<LoginPage> {
                 tooltip: _passwordVisible ? 'Hide password' : 'Show password',
                 onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                 icon: Icon(
-                  _passwordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
                   color: const Color(0xFFE0E9FF),
                   size: compact ? 24 : 30,
                 ),
@@ -279,7 +279,7 @@ class _LoginPageState extends State<LoginPage> {
             _buildTextField(
               controller: _nameController,
               hint: 'Full Name',
-              icon: Icons.person_outline_rounded,
+              icon: LucideIcons.userRound,
               textInputAction: TextInputAction.next,
               validator: (value) => _required(value, 'your full name'),
             ),
@@ -287,7 +287,7 @@ class _LoginPageState extends State<LoginPage> {
             _buildTextField(
               controller: _emailController,
               hint: 'Email Address',
-              icon: Icons.mail_outline_rounded,
+              icon: LucideIcons.mail,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               validator: (value) {
@@ -333,7 +333,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.mail_outline_rounded, color: Color(0xFFE7E9F2), size: 20),
+                    const Icon(LucideIcons.mail, color: Color(0xFFE7E9F2), size: 20),
                   ],
                 ),
               ),
@@ -342,7 +342,7 @@ class _LoginPageState extends State<LoginPage> {
             _buildTextField(
               controller: _referralController,
               hint: 'IB Referral Code (Optional)',
-              icon: Icons.sell_outlined,
+              icon: LucideIcons.tag,
               textInputAction: TextInputAction.next,
             ),
             if (_emailVerified) ...[
@@ -350,7 +350,7 @@ class _LoginPageState extends State<LoginPage> {
               _buildTextField(
                 controller: _passwordController,
                 hint: 'Password',
-                icon: Icons.lock_outline_rounded,
+                icon: LucideIcons.lockKeyhole,
                 obscureText: !_passwordVisible,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submitSignUp(),
@@ -362,7 +362,7 @@ class _LoginPageState extends State<LoginPage> {
                 suffix: IconButton(
                   tooltip: _passwordVisible ? 'Hide password' : 'Show password',
                   onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
-                  icon: Icon(_passwordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white),
+                  icon: Icon(_passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff, color: Colors.white),
                 ),
               ),
             ],

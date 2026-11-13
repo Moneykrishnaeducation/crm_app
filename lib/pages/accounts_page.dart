@@ -48,12 +48,12 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 SizedBox(height: 3),
                 Text('Manage your live, demo and investment accounts', style: TextStyle(color: _brokerMuted, fontSize: 9)),
               ])),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, color: Colors.white)),
+              IconButton(onPressed: () {}, icon: const Icon(LucideIcons.bell, color: Colors.white)),
             ]),
             const SizedBox(height: 11),
             Row(children: [
               _AccountAction(
-                icon: Icons.add_circle,
+                icon: LucideIcons.circlePlus,
                 label: 'Open Account',
                 highlighted: true,
                 onTap: () => showDialog<void>(
@@ -62,17 +62,17 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 ),
               ),
               const SizedBox(width: 7),
-              _AccountAction(icon: Icons.swap_horiz_rounded, label: 'Internal Transfer', onTap: () => widget.onSelectPage('Internal Transfer')),
+              _AccountAction(icon: LucideIcons.arrowLeftRight, label: 'Internal Transfer', onTap: () => widget.onSelectPage('Internal Transfer')),
               const SizedBox(width: 7),
-              _AccountAction(icon: Icons.desktop_windows_outlined, label: 'Demo Account', onTap: () => widget.onSelectPage('Demo Accounts')),
+              _AccountAction(icon: LucideIcons.monitor, label: 'Demo Account', onTap: () => widget.onSelectPage('Demo Accounts')),
             ]),
             const SizedBox(height: 12),
             Row(children: [
-              const Expanded(child: _AccountSummary(icon: Icons.account_balance_wallet_outlined, title: 'Total Balance', value: '\$0.00', detail: 'Combined real account balance', accent: Color(0xFF24C6F4))),
+              const Expanded(child: _AccountSummary(icon: LucideIcons.wallet, title: 'Total Balance', value: '\$0.00', detail: 'Combined real account balance', accent: Color(0xFF24C6F4))),
               const SizedBox(width: 8),
-              const Expanded(child: _AccountSummary(icon: Icons.layers_outlined, title: 'Total Equity', value: '\$0.00', detail: 'Net asset value', accent: Color(0xFF9A75F7))),
+              const Expanded(child: _AccountSummary(icon: LucideIcons.layers, title: 'Total Equity', value: '\$0.00', detail: 'Net asset value', accent: Color(0xFF9A75F7))),
               const SizedBox(width: 8),
-              const Expanded(child: _AccountSummary(icon: Icons.groups_2_outlined, title: 'Active Accounts', value: '4 Live', detail: 'All activated MT5 accounts', accent: _brokerGold)),
+              const Expanded(child: _AccountSummary(icon: LucideIcons.usersRound, title: 'Active Accounts', value: '4 Live', detail: 'All activated MT5 accounts', accent: _brokerGold)),
             ]),
             const SizedBox(height: 14),
             SingleChildScrollView(
@@ -94,7 +94,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 decoration: InputDecoration(
                   hintText: 'Search account, login ID...',
                   hintStyle: const TextStyle(color: _brokerMuted, fontSize: 10),
-                  prefixIcon: const Icon(Icons.search, color: _brokerMuted, size: 17),
+                  prefixIcon: const Icon(LucideIcons.search, color: _brokerMuted, size: 17),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 9),
                   filled: true,
@@ -104,7 +104,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 ),
               )),
               const SizedBox(width: 7),
-              IconButton(onPressed: () {}, style: IconButton.styleFrom(backgroundColor: const Color(0xFF0B2452), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: const Icon(Icons.filter_alt_outlined, color: Colors.white, size: 18)),
+              IconButton(onPressed: () {}, style: IconButton.styleFrom(backgroundColor: const Color(0xFF0B2452), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: const Icon(LucideIcons.listFilter, color: Colors.white, size: 18)),
             ]),
             const SizedBox(height: 10),
             if (compact)
@@ -165,7 +165,7 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
             Expanded(child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 10), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               _sectionLabel('ACCOUNT NAME', required: true),
               const SizedBox(height: 5),
-              _textInput(_nameController, hint: 'Enter account name', prefix: Icons.person_outline_rounded),
+              _textInput(_nameController, hint: 'Enter account name', prefix: LucideIcons.userRound),
               const SizedBox(height: 12),
               Row(children: [Expanded(child: _sectionLabel('TRADING GROUP', required: true)), const Text('VIP', style: TextStyle(color: Color(0xFF5DB5FF), fontSize: 9, fontWeight: FontWeight.w700))]),
               const SizedBox(height: 5),
@@ -177,7 +177,7 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
               const SizedBox(height: 6),
               Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), decoration: BoxDecoration(color: const Color(0xFF0C1A3B), borderRadius: BorderRadius.circular(9), border: Border.all(color: const Color(0xFF1B376B))), child: Row(children: [const Expanded(child: Text('Custom Leverage: 1:500', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600))), Text('Selected:  $_leverage', style: const TextStyle(color: _brokerGold, fontSize: 9, fontWeight: FontWeight.w700))])),
               const SizedBox(height: 8),
-              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF0C2145), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF234A84))), child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.info_outline_rounded, color: Color(0xFF64B9FF), size: 15), SizedBox(width: 7), Expanded(child: Text('SECURITY NOTICE: Master password executes trades; Investor password provides read-only monitoring.', style: TextStyle(color: _brokerMuted, fontSize: 9, height: 1.35)))])),
+              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF0C2145), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF234A84))), child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(LucideIcons.info, color: Color(0xFF64B9FF), size: 15), SizedBox(width: 7), Expanded(child: Text('SECURITY NOTICE: Master password executes trades; Investor password provides read-only monitoring.', style: TextStyle(color: _brokerMuted, fontSize: 9, height: 1.35)))])),
               const SizedBox(height: 12),
               _sectionLabel('MASTER PASSWORD', required: true, trailing: 'FULL TRADING CONTROL'),
               const SizedBox(height: 5),
@@ -187,15 +187,15 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
               const SizedBox(height: 5),
               _PasswordInput(controller: _investorPassword),
             ]))),
-            Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 10), child: SizedBox(width: double.infinity, height: 42, child: FilledButton.icon(onPressed: _createAccount, style: FilledButton.styleFrom(backgroundColor: const Color(0xFF3F61F3), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), icon: const Icon(Icons.arrow_forward_rounded, size: 16), label: const Text('CREATE LIVE ACCOUNT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .5))))),
-            Container(height: 38, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: const BoxDecoration(color: Color(0xFF06132C), borderRadius: BorderRadius.vertical(bottom: Radius.circular(17))), child: const Row(children: [Icon(Icons.verified_user_outlined, color: Color(0xFF10D6B2), size: 14), SizedBox(width: 6), Text('SECURE MT5', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(Icons.bolt_rounded, color: Color(0xFF45A8FF), size: 15), SizedBox(width: 5), Text('INSTANT SETUP', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(Icons.lock_outline_rounded, color: Color(0xFF45A8FF), size: 14), SizedBox(width: 5), Text('REGULATED', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700))])),
+            Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 10), child: SizedBox(width: double.infinity, height: 42, child: FilledButton.icon(onPressed: _createAccount, style: FilledButton.styleFrom(backgroundColor: const Color(0xFF3F61F3), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), icon: const Icon(LucideIcons.arrowRight, size: 16), label: const Text('CREATE LIVE ACCOUNT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .5))))),
+            Container(height: 38, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: const BoxDecoration(color: Color(0xFF06132C), borderRadius: BorderRadius.vertical(bottom: Radius.circular(17))), child: const Row(children: [Icon(LucideIcons.shieldCheck, color: Color(0xFF10D6B2), size: 14), SizedBox(width: 6), Text('SECURE MT5', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(LucideIcons.zap, color: Color(0xFF45A8FF), size: 15), SizedBox(width: 5), Text('INSTANT SETUP', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(LucideIcons.lockKeyhole, color: Color(0xFF45A8FF), size: 14), SizedBox(width: 5), Text('REGULATED', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700))])),
           ]),
         ),
       ),
     );
   }
 
-  Widget _dialogHeader() => Container(padding: const EdgeInsets.fromLTRB(16, 12, 10, 10), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFF1A2D55)))), child: Row(children: [Container(width: 36, height: 36, decoration: BoxDecoration(border: Border.all(color: const Color(0xFF3478FF)), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF5EA3FF), size: 19)), const SizedBox(width: 10), const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Open Live Account', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), SizedBox(height: 3), Row(children: [Icon(Icons.circle, color: Color(0xFF00D98A), size: 7), SizedBox(width: 5), Text('Live MT5 Engine', style: TextStyle(color: Color(0xFF00D98A), fontSize: 8, fontWeight: FontWeight.w700)), SizedBox(width: 8), Text('•  Direct STP Execution', style: TextStyle(color: _brokerMuted, fontSize: 8))])])), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 18), visualDensity: VisualDensity.compact)]));
+  Widget _dialogHeader() => Container(padding: const EdgeInsets.fromLTRB(16, 12, 10, 10), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFF1A2D55)))), child: Row(children: [Container(width: 36, height: 36, decoration: BoxDecoration(border: Border.all(color: const Color(0xFF3478FF)), borderRadius: BorderRadius.circular(10)), child: const Icon(LucideIcons.wallet, color: Color(0xFF5EA3FF), size: 19)), const SizedBox(width: 10), const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Open Live Account', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), SizedBox(height: 3), Row(children: [Icon(LucideIcons.circle, color: Color(0xFF00D98A), size: 7), SizedBox(width: 5), Text('Live MT5 Engine', style: TextStyle(color: Color(0xFF00D98A), fontSize: 8, fontWeight: FontWeight.w700)), SizedBox(width: 8), Text('•  Direct STP Execution', style: TextStyle(color: _brokerMuted, fontSize: 8))])])), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.x, color: Colors.white70, size: 18), visualDensity: VisualDensity.compact)]));
 
   Widget _sectionLabel(String label, {bool required = false, String? trailing}) => Row(children: [Text(label, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .2)), if (required) const Padding(padding: EdgeInsets.only(left: 5), child: Text('*', style: TextStyle(color: Color(0xFFFF5867), fontSize: 10, fontWeight: FontWeight.w800))), const Spacer(), if (trailing != null) Text(trailing, style: const TextStyle(color: Color(0xFF59AFFF), fontSize: 8, fontWeight: FontWeight.w700))]);
 
@@ -261,7 +261,7 @@ class _PasswordInput extends StatefulWidget {
 class _PasswordInputState extends State<_PasswordInput> {
   bool _visible = false;
   @override
-  Widget build(BuildContext context) => TextField(controller: widget.controller, obscureText: !_visible, style: const TextStyle(color: Colors.white, fontSize: 11), decoration: InputDecoration(prefixIcon: const Icon(Icons.lock_outline_rounded, size: 15, color: Color(0xFF5E8BD5)), suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(onPressed: () {}, icon: const Icon(Icons.copy_rounded, size: 14, color: _brokerMuted), visualDensity: VisualDensity.compact), IconButton(onPressed: () {}, icon: const Icon(Icons.refresh_rounded, size: 14, color: _brokerMuted), visualDensity: VisualDensity.compact), IconButton(onPressed: () => setState(() => _visible = !_visible), icon: Icon(_visible ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 14, color: _brokerMuted), visualDensity: VisualDensity.compact)]), isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), filled: true, fillColor: const Color(0xFF07132E), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF1A376C))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF3478FF)))));
+  Widget build(BuildContext context) => TextField(controller: widget.controller, obscureText: !_visible, style: const TextStyle(color: Colors.white, fontSize: 11), decoration: InputDecoration(prefixIcon: const Icon(LucideIcons.lockKeyhole, size: 15, color: Color(0xFF5E8BD5)), suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(onPressed: () {}, icon: const Icon(LucideIcons.copy, size: 14, color: _brokerMuted), visualDensity: VisualDensity.compact), IconButton(onPressed: () {}, icon: const Icon(LucideIcons.refreshCw, size: 14, color: _brokerMuted), visualDensity: VisualDensity.compact), IconButton(onPressed: () => setState(() => _visible = !_visible), icon: Icon(_visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 14, color: _brokerMuted), visualDensity: VisualDensity.compact)]), isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), filled: true, fillColor: const Color(0xFF07132E), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF1A376C))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF3478FF)))));
 }
 
 class _AccountAction extends StatelessWidget {

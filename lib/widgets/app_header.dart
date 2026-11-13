@@ -57,7 +57,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
               );
             },
             tooltip: 'Notifications',
-            icon: const Icon(Icons.notifications_none, color: _muted, size: 21),
+            icon: const Icon(LucideIcons.bell, color: _muted, size: 21),
           ),
         ],
         const Padding(
@@ -65,7 +65,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
           child: CircleAvatar(
             radius: 16,
             backgroundColor: _panelLight,
-            child: Icon(Icons.person_outline, size: 18, color: _gold),
+            child: Icon(LucideIcons.userRound, size: 18, color: _gold),
           ),
         ),
       ],

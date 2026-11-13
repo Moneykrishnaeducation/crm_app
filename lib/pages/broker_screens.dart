@@ -186,110 +186,274 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) { final color = data.incoming == null ? Colors.white : data.incoming! ? const Color(0xFF4BEA78) : const Color(0xFFFF5C53); return ListTile(leading: Icon(data.icon, color: data.incoming == false ? const Color(0xFFFF746B) : const Color(0xFF59C9FF)), title: Text(data.title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)), subtitle: Text(data.detail, style: const TextStyle(color: _brokerMuted, fontSize: 10)), trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text(data.amount, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)), const SizedBox(height: 4), Text(data.time, style: const TextStyle(color: Colors.white, fontSize: 10))])); }
 }
 
-class BrokerPartnershipPage extends StatelessWidget {
-  const BrokerPartnershipPage({super.key});
-  @override
-  Widget build(BuildContext context) => Container(color: _brokerNavy, child: ListView(padding: const EdgeInsets.all(15), children: [
-    Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: const LinearGradient(colors: [Color(0xFF0F3275), Color(0xFF0759C9), Color(0xFF092452)])), child: const Row(children: [Icon(LucideIcons.award, color: _brokerGold, size: 40), SizedBox(width: 13), Expanded(child: Text('Your Introducing Broker Overview', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)))])),
-    const SizedBox(height: 14),
-    const Row(children: [Expanded(child: _PartnershipStat(icon: LucideIcons.usersRound, label: 'Total Clients', value: '2,458', color: Color(0xFF22C6F4))), SizedBox(width: 10), Expanded(child: _PartnershipStat(icon: LucideIcons.coins, label: 'IB Earnings', value: '\$4,820.00', color: _brokerGold))]),
-    const SizedBox(height: 12),
-    Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF1455A7))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('IB Partner Code', style: TextStyle(color: _brokerMuted, fontSize: 11)), const SizedBox(height: 10), Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF061A3C), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1766C8))), child: const Row(children: [Icon(LucideIcons.link, color: Color(0xFF5FCFFF)), SizedBox(width: 10), Expanded(child: Text('IBS3FFB03TL', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700))), Icon(LucideIcons.copy, color: Colors.white70, size: 17)])), const SizedBox(height: 12), SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy), icon: const Icon(LucideIcons.arrowRight), label: const Text('View Partnership Dashboard')))])),
-    const SizedBox(height: 20), const Text('Quick Shortcuts', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)), const SizedBox(height: 10),
-    const _PartnershipShortcut(icon: LucideIcons.usersRound, label: 'Client List'), const SizedBox(height: 8), const _PartnershipShortcut(icon: LucideIcons.layers, label: 'Commission History'), const SizedBox(height: 8), const _PartnershipShortcut(icon: LucideIcons.qrCode, label: 'Referral & QR Studio'), const SizedBox(height: 8), const _PartnershipShortcut(icon: LucideIcons.network, label: 'IB Tree / Org Chart'),
-  ]));
-}
-class _PartnershipStat extends StatelessWidget {
-  const _PartnershipStat({required this.icon, required this.label, required this.value, required this.color});
-  final IconData icon; final String label, value; final Color color;
-  @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFF1455A7))), child: Row(children: [Icon(icon, color: color, size: 23), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Colors.white, fontSize: 9)), const SizedBox(height: 5), Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700))]))]));
-}
-class _PartnershipShortcut extends StatelessWidget {
-  const _PartnershipShortcut({required this.icon, required this.label}); final IconData icon; final String label;
-  @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFF1455A7))), child: Row(children: [Icon(icon, color: const Color(0xFF55D5FF)), const SizedBox(width: 12), Expanded(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600))), const Icon(LucideIcons.chevronRight, color: Colors.white, size: 19)]));
-}
-
 class BrokerBottomNavigation extends StatelessWidget {
   const BrokerBottomNavigation({super.key, required this.selectedPage, required this.onSelect});
   final String selectedPage; final ValueChanged<String> onSelect;
+
+  void _showQuickActions(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+          decoration: BoxDecoration(
+            color: _brokerPanel,
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: const Color(0xFF174783)),
+            boxShadow: const [BoxShadow(color: Color(0xAA000817), blurRadius: 24, offset: Offset(0, 8))],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: _brokerMuted.withValues(alpha: .45), borderRadius: BorderRadius.circular(4)))),
+              const SizedBox(height: 18),
+              const Text('Quick actions', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              _QuickActionRow(icon: LucideIcons.userRoundPlus, title: 'Open live account', onTap: () {
+                Navigator.pop(sheetContext);
+                showDialog<void>(context: context, builder: (_) => const _OpenLiveAccountDialog());
+              }),
+              _QuickActionRow(icon: LucideIcons.arrowLeftRight, title: 'Internal transfer', onTap: () {
+                Navigator.pop(sheetContext);
+                onSelect('Internal Transfer');
+              }),
+              _QuickActionRow(icon: LucideIcons.monitor, title: 'Create demo account', onTap: () {
+                Navigator.pop(sheetContext);
+                onSelect('Demo Accounts');
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Container(
-        color: _brokerNavy,
-        child: SafeArea(
-          top: false,
-          minimum: const EdgeInsets.only(bottom: 8),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 540),
-              child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-            decoration: BoxDecoration(
-              color: const Color(0xFF071B42),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFF174783)),
-              boxShadow: const [
-                BoxShadow(color: Color(0xAA000817), blurRadius: 18, offset: Offset(0, 6)),
-              ],
-            ),
-            child: Row(children: [
-              _BrokerNavItem(
-                icon: LucideIcons.house,
-                label: 'Dashboard',
-                selected: selectedPage == 'Dashboard',
-                onTap: () => onSelect('Dashboard'),
-              ),
-              _BrokerNavItem(
-                icon: LucideIcons.receiptText,
-                label: 'Transactions',
-                selected: selectedPage == 'Transactions',
-                onTap: () => onSelect('Transactions'),
-              ),
-              Expanded(
-                child: Center(
-                  child: Material(
-                    color: _brokerGold,
-                    shape: const CircleBorder(),
-                    elevation: 4,
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () => showDialog<void>(
-                        context: context,
-                        builder: (_) => const _OpenLiveAccountDialog(),
+  Widget build(BuildContext context) => SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 8),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 540),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(14, 18, 14, 4),
+              child: CustomPaint(
+                painter: _BrokerNavBarPainter(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Row(
+                    children: [
+                      _BrokerNavItem(icon: LucideIcons.house, label: 'Dashboard', selected: selectedPage == 'Dashboard', onTap: () => onSelect('Dashboard')),
+                      _BrokerNavItem(icon: LucideIcons.receiptText, label: 'Transactions', selected: selectedPage == 'Transactions', onTap: () => onSelect('Transactions')),
+                      SizedBox(
+                        width: 76,
+                        height: 60,
+                        child: Center(
+                          child: Transform.translate(
+                            offset: const Offset(0, -25),
+                            child: Material(
+                              color: _brokerBlue,
+                              shape: const CircleBorder(),
+                              elevation: 8,
+                              shadowColor: _brokerBlue.withValues(alpha: .5),
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: () => _showQuickActions(context),
+                                child: const SizedBox(
+                                  width: 58,
+                                  height: 58,
+                                  child: Icon(LucideIcons.plus, color: Colors.white, size: 28),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                      child: const SizedBox(
-                        width: 54,
-                        height: 54,
-                        child: Icon(LucideIcons.plus, color: _brokerNavy, size: 32),
-                      ),
-                    ),
+                      _BrokerNavItem(icon: LucideIcons.layers, label: 'Accounts', selected: selectedPage == 'Trading Accounts', onTap: () => onSelect('Trading Accounts')),
+                      _BrokerNavItem(icon: LucideIcons.grid2x2, label: 'More', selected: selectedPage == 'More', onTap: () => onSelect('More')),
+                    ],
                   ),
                 ),
-              ),
-              _BrokerNavItem(
-                icon: LucideIcons.layers,
-                label: 'Accounts',
-                selected: selectedPage == 'Trading Accounts',
-                onTap: () => onSelect('Trading Accounts'),
-              ),
-              _BrokerNavItem(
-                icon: LucideIcons.grid2x2,
-                label: 'More',
-                selected: selectedPage == 'More',
-                onTap: () => onSelect('More'),
-              ),
-            ]),
               ),
             ),
           ),
         ),
       );
 }
+
+class _BrokerNavBarPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const cornerRadius = 24.0;
+    const r1 = 22.0; // shoulder fillet radius
+    const r2 = 36.5; // notch cutout radius
+    const cy = 13.0; // vertical center of button/cradle
+
+    final centerX = size.width / 2;
+    const d = r1 + r2;
+    final dy = (cy - r1).abs();
+    final dx = math.sqrt(d * d - dy * dy);
+
+    final c1x = -dx;
+    final c1y = r1;
+
+    final tx = c1x + r1 * (0 - c1x) / d;
+    final ty = c1y + r1 * (cy - c1y) / d;
+
+    final path = Path()
+      ..moveTo(cornerRadius, 0)
+      ..lineTo(centerX + c1x, 0)
+      // Left shoulder curve flowing down into notch
+      ..arcToPoint(
+        Offset(centerX + tx, ty),
+        radius: const Radius.circular(r1),
+        clockwise: true,
+      )
+      // Smooth concave cradle dipping under the + button
+      ..arcToPoint(
+        Offset(centerX - tx, ty),
+        radius: const Radius.circular(r2),
+        clockwise: false,
+      )
+      // Right shoulder curve flowing up into horizontal top edge
+      ..arcToPoint(
+        Offset(centerX - c1x, 0),
+        radius: const Radius.circular(r1),
+        clockwise: true,
+      )
+      // Top-right corner
+      ..lineTo(size.width - cornerRadius, 0)
+      ..arcToPoint(
+        Offset(size.width, cornerRadius),
+        radius: const Radius.circular(cornerRadius),
+      )
+      // Right edge
+      ..lineTo(size.width, size.height - cornerRadius)
+      // Bottom-right corner
+      ..arcToPoint(
+        Offset(size.width - cornerRadius, size.height),
+        radius: const Radius.circular(cornerRadius),
+      )
+      // Bottom edge
+      ..lineTo(cornerRadius, size.height)
+      // Bottom-left corner
+      ..arcToPoint(
+        Offset(0, size.height - cornerRadius),
+        radius: const Radius.circular(cornerRadius),
+      )
+      // Left edge
+      ..lineTo(0, cornerRadius)
+      // Top-left corner
+      ..arcToPoint(
+        const Offset(cornerRadius, 0),
+        radius: const Radius.circular(cornerRadius),
+      )
+      ..close();
+
+    // Subtle drop shadow matching the dark theme
+    canvas.drawShadow(path, const Color(0x99000817), 16, true);
+
+    // Navbar body fill
+    final paint = Paint()
+      ..color = const Color(0xFF071B42)
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.drawPath(path, paint);
+
+    // Outer border stroke
+    final borderPaint = Paint()
+      ..color = const Color(0xFF1B498C)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..isAntiAlias = true;
+    canvas.drawPath(path, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _QuickActionRow extends StatelessWidget {
+  const _QuickActionRow({required this.icon, required this.title, required this.onTap});
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 7),
+        child: Material(
+          color: const Color(0xFF071B42),
+          borderRadius: BorderRadius.circular(15),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(15),
+            onTap: onTap,
+            child: SizedBox(
+              height: 54,
+              child: Row(
+                children: [
+                  const SizedBox(width: 14),
+                  Icon(icon, color: _brokerBlue, size: 20),
+                  const SizedBox(width: 12),
+                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                  const Spacer(),
+                  const Icon(LucideIcons.chevronRight, color: _brokerMuted, size: 17),
+                  const SizedBox(width: 12),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
 class _BrokerNavItem extends StatelessWidget {
   const _BrokerNavItem({required this.icon, required this.label, required this.selected, required this.onTap});
   final IconData icon; final String label; final bool selected; final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Expanded(child: InkWell(onTap: onTap, child: Container(height: 56, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(color: selected ? const Color(0xFF102957) : Colors.transparent, borderRadius: BorderRadius.circular(22)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: selected ? _brokerGold : Colors.white, size: 20), const SizedBox(height: 3), Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: selected ? _brokerGold : Colors.white, fontSize: 8, fontWeight: FontWeight.w600))]))));
+  Widget build(BuildContext context) => Expanded(
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label: label,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              height: 58,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: selected ? _brokerGold.withValues(alpha: .16) : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.08 : 1,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    child: Icon(icon, color: selected ? _brokerGold : _brokerMuted, size: 20),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: selected ? _brokerGold : _brokerMuted, fontSize: 8.5, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 }

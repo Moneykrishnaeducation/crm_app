@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
@@ -7,6 +9,7 @@ part 'pages/accounts_page.dart';
 part 'pages/internal_transfer_page.dart';
 part 'pages/demo_accounts_page.dart';
 part 'pages/more_page.dart';
+part 'pages/login_page.dart';
 
 const _background = Color(0xFF06163B);
 const _sidebar = Color(0xFF04122F);
@@ -33,10 +36,10 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: _background,
         colorScheme: const ColorScheme.dark(primary: _blue, surface: _panel),
-        fontFamily: 'Roboto',
+        fontFamily: GoogleFonts.poppins().fontFamily,
         useMaterial3: true,
       ),
-      home: const AppShell(),
+      home: const _AppEntry(),
     );
   }
 }
@@ -46,6 +49,25 @@ class AppShell extends StatefulWidget {
 
   @override
   State<AppShell> createState() => _AppShellState();
+}
+
+class _AppEntry extends StatefulWidget {
+  const _AppEntry();
+
+  @override
+  State<_AppEntry> createState() => _AppEntryState();
+}
+
+class _AppEntryState extends State<_AppEntry> {
+  @override
+  Widget build(BuildContext context) => LoginPage(onLogin: _openDashboard);
+
+  void _openDashboard() {
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const AppShell()),
+    );
+  }
 }
 
 class _AppShellState extends State<AppShell> {

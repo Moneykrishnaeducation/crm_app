@@ -8,6 +8,7 @@ import 'pages/partnership_page.dart';
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
 part 'pages/broker_screens.dart';
+part 'pages/funds_action_dialog.dart';
 part 'pages/accounts_page.dart';
 part 'pages/internal_transfer_page.dart';
 part 'pages/demo_accounts_page.dart';
@@ -76,8 +77,31 @@ class _AppEntryState extends State<_AppEntry> {
 class _AppShellState extends State<AppShell> {
   String _selectedPage = 'Dashboard';
   bool _balanceVisible = true;
+  final List<_BrokerAccount> _accounts = [
+    _BrokerAccount('XRSIM-USD-1', '3315', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+    _BrokerAccount('XRSIM-USD-2', '3311', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+    _BrokerAccount('XRSIM-USD-3', '3312', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+    _BrokerAccount('XRSIM-USD-4', '3327', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+  ];
+
+  void _addAccount(_BrokerAccount account) => setState(() => _accounts.insert(0, account));
 
   void _selectPage(String page) {
+    if (page == 'Open Account') {
+      showDialog<void>(
+        context: context,
+        builder: (_) => _OpenLiveAccountDialog(onCreated: _addAccount),
+      );
+      return;
+    }
+    if (page == 'Deposit' || page == 'Withdraw') {
+      showDialog<void>(
+        context: context,
+        barrierColor: const Color(0xCC020817),
+        builder: (_) => FundsActionDialog(withdrawal: page == 'Withdraw'),
+      );
+      return;
+    }
     setState(() => _selectedPage = page);
   }
 
@@ -103,7 +127,7 @@ class _AppShellState extends State<AppShell> {
                     : _selectedPage == 'Partnership'
                         ? const BrokerPartnershipPage()
                         : _selectedPage == 'Trading Accounts'
-                            ? BrokerAccountsPage(onSelectPage: _selectPage)
+                            ? BrokerAccountsPage(onSelectPage: _selectPage, accounts: _accounts, onAccountCreated: _addAccount)
                             : _selectedPage == 'Internal Transfer'
                                 ? const BrokerInternalTransferPage()
                                 : _selectedPage == 'Demo Accounts'

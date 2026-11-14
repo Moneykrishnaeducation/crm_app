@@ -1,8 +1,10 @@
 part of '../main.dart';
 
 class BrokerAccountsPage extends StatefulWidget {
-  const BrokerAccountsPage({super.key, required this.onSelectPage});
+  const BrokerAccountsPage({super.key, required this.onSelectPage, required this.accounts, required this.onAccountCreated});
   final ValueChanged<String> onSelectPage;
+  final List<_BrokerAccount> accounts;
+  final ValueChanged<_BrokerAccount> onAccountCreated;
   @override
   State<BrokerAccountsPage> createState() => _BrokerAccountsPageState();
 }
@@ -12,13 +14,6 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   String _filter = 'All Accounts';
   String _query = '';
 
-  static const _accounts = [
-    _BrokerAccount('XRSIM-USD-1', '3315', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
-    _BrokerAccount('XRSIM-USD-2', '3311', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
-    _BrokerAccount('XRSIM-USD-3', '3312', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
-    _BrokerAccount('XRSIM-USD-4', '3327', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
-  ];
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -27,13 +22,14 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final accounts = _accounts.where((account) {
+    final accounts = widget.accounts.where((account) {
       final matchesQuery = account.login.toLowerCase().contains(_query.toLowerCase()) ||
           account.name.toLowerCase().contains(_query.toLowerCase());
       final matchesFilter = _filter == 'All Accounts' ||
           (_filter == 'Standard' && account.type == 'Live MT5');
       return matchesQuery && matchesFilter;
     }).toList();
+    final liveAccountCount = widget.accounts.where((account) => account.type == 'Live MT5').length;
 
     return Container(
       color: _brokerNavy,
@@ -58,7 +54,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 highlighted: true,
                 onTap: () => showDialog<void>(
                   context: context,
-                  builder: (_) => const _OpenLiveAccountDialog(),
+                  builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated),
                 ),
               ),
               const SizedBox(width: 7),
@@ -72,15 +68,15 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
               const SizedBox(width: 8),
               const Expanded(child: _AccountSummary(icon: LucideIcons.layers, title: 'Total Equity', value: '\$0.00', detail: 'Net asset value', accent: Color(0xFF9A75F7))),
               const SizedBox(width: 8),
-              const Expanded(child: _AccountSummary(icon: LucideIcons.usersRound, title: 'Active Accounts', value: '4 Live', detail: 'All activated MT5 accounts', accent: _brokerGold)),
+              Expanded(child: _AccountSummary(icon: LucideIcons.usersRound, title: 'Active Accounts', value: '${widget.accounts.length} Live', detail: 'All activated MT5 accounts', accent: _brokerGold)),
             ]),
             const SizedBox(height: 14),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(children: [
-                _AccountFilter(label: 'All Accounts', count: '4', selected: _filter == 'All Accounts', onTap: () => setState(() => _filter = 'All Accounts')),
+                _AccountFilter(label: 'All Accounts', count: '${widget.accounts.length}', selected: _filter == 'All Accounts', onTap: () => setState(() => _filter = 'All Accounts')),
                 const SizedBox(width: 7),
-                _AccountFilter(label: 'Standard', count: '4', selected: _filter == 'Standard', onTap: () => setState(() => _filter = 'Standard')),
+                _AccountFilter(label: 'Standard', count: '$liveAccountCount', selected: _filter == 'Standard', onTap: () => setState(() => _filter = 'Standard')),
                 const SizedBox(width: 7),
                 _AccountFilter(label: 'VIP / ECN', count: '0', selected: _filter == 'VIP / ECN', onTap: () => setState(() => _filter = 'VIP / ECN')),
               ]),
@@ -124,7 +120,8 @@ class _BrokerAccount {
 }
 
 class _OpenLiveAccountDialog extends StatefulWidget {
-  const _OpenLiveAccountDialog();
+  const _OpenLiveAccountDialog({required this.onCreated});
+  final ValueChanged<_BrokerAccount> onCreated;
   @override
   State<_OpenLiveAccountDialog> createState() => _OpenLiveAccountDialogState();
 }
@@ -246,9 +243,16 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
   }
 
   void _createAccount() {
+    final accountName = _nameController.text.trim();
+    if (accountName.isEmpty || _masterPassword.text.isEmpty || _investorPassword.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name and both passwords to continue.')));
+      return;
+    }
+    final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+    widget.onCreated(_BrokerAccount('XRSIM-USD-$login', login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
     final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    messenger.showSnackBar(const SnackBar(content: Text('Live account request submitted.')));
+    messenger.showSnackBar(SnackBar(content: Text('Live account $login created.')));
   }
 }
 

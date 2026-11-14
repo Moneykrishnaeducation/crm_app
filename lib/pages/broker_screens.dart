@@ -41,9 +41,9 @@ class BrokerDashboardPage extends StatelessWidget {
         const SizedBox(height: 13),
         Row(children: [
           _BrokerShortcut(icon: LucideIcons.wallet, label: 'Deposit Funds', selected: true, onTap: () => onSelectPage('Deposit')),
-          _BrokerShortcut(icon: LucideIcons.upload, label: 'Withdraw', onTap: () => onSelectPage('Transactions')),
+          _BrokerShortcut(icon: LucideIcons.upload, label: 'Withdraw', onTap: () => onSelectPage('Withdraw')),
           _BrokerShortcut(icon: LucideIcons.arrowLeftRight, label: 'Internal Transfer', onTap: () => onSelectPage('Internal Transfer')),
-          _BrokerShortcut(icon: LucideIcons.circlePlus, label: 'Open Account', onTap: () => onSelectPage('Trading Accounts')),
+          _BrokerShortcut(icon: LucideIcons.circlePlus, label: 'Open Account', onTap: () => onSelectPage('Open Account')),
         ]),
         const SizedBox(height: 14),
         const _BrokerFundsPanel(),
@@ -214,9 +214,17 @@ class BrokerBottomNavigation extends StatelessWidget {
               const SizedBox(height: 18),
               const Text('Quick actions', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
+              _QuickActionRow(icon: LucideIcons.wallet, title: 'Deposit funds', onTap: () {
+                Navigator.pop(sheetContext);
+                onSelect('Deposit');
+              }),
+              _QuickActionRow(icon: LucideIcons.arrowUpRight, title: 'Withdraw funds', onTap: () {
+                Navigator.pop(sheetContext);
+                onSelect('Withdraw');
+              }),
               _QuickActionRow(icon: LucideIcons.userRoundPlus, title: 'Open live account', onTap: () {
                 Navigator.pop(sheetContext);
-                showDialog<void>(context: context, builder: (_) => const _OpenLiveAccountDialog());
+                onSelect('Open Account');
               }),
               _QuickActionRow(icon: LucideIcons.arrowLeftRight, title: 'Internal transfer', onTap: () {
                 Navigator.pop(sheetContext);

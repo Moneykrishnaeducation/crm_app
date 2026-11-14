@@ -373,7 +373,7 @@ class _ActionButtons extends StatelessWidget {
         LucideIcons.circlePlus,
         const Color(0xFF16C9A6),
         const Color(0xFF0D3040),
-        'Transactions',
+        'Withdraw',
       ),
       _ActionData(
         'INTERNAL TRANSFER',

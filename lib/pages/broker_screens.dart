@@ -24,7 +24,7 @@ class BrokerDashboardPage extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

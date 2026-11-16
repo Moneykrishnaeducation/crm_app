@@ -24,26 +24,37 @@ class BrokerDashboardPage extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Good morning,',
-            style: TextStyle(color: Color(0xFF71809A), fontSize: 13),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('WELCOME BACK', style: TextStyle(color: Color(0xFF8290A6), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
+                    SizedBox(height: 3),
+                    Text('Dashboard', style: TextStyle(color: Color(0xFF10264B), fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    SizedBox(height: 4),
+                    Text('Your trading portfolio at a glance', style: TextStyle(color: Color(0xFF71809A), fontSize: 11)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F1))),
+                child: const Row(children: [Icon(LucideIcons.activity, color: Color(0xFF20A879), size: 13), SizedBox(width: 5), Text('SYSTEM ONLINE', style: TextStyle(color: Color(0xFF287B62), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4))]),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          const Text(
-            'Admin',
-            style: TextStyle(
-              color: Color(0xFF10264B),
-              fontSize: 25,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           _BrokerBalance(visible: balanceVisible, onToggle: onToggleBalance),
-          const SizedBox(height: 13),
+          const SizedBox(height: 18),
+          const _DashboardSectionHeading(title: 'Account overview', subtitle: 'A summary of your live and demo activity'),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -87,7 +98,9 @@ class BrokerDashboardPage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: 18),
+          const _DashboardSectionHeading(title: 'Quick actions', subtitle: 'Move funds and manage your accounts'),
+          const SizedBox(height: 10),
           Row(
             children: [
               _BrokerShortcut(
@@ -113,13 +126,30 @@ class BrokerDashboardPage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           const _BrokerFundsPanel(),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           _TodayActivity(onSelect: onSelectPage),
         ],
       ),
     ),
+  );
+}
+
+
+class _DashboardSectionHeading extends StatelessWidget {
+  const _DashboardSectionHeading({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(title, style: const TextStyle(color: Color(0xFF10264B), fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+      const SizedBox(height: 3),
+      Text(subtitle, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+    ],
   );
 }
 
@@ -152,7 +182,7 @@ class _BrokerBalance extends StatelessWidget {
         Row(
           children: [
             const Text(
-              'Total Real Balance',
+              'Total portfolio balance',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -182,11 +212,11 @@ class _BrokerBalance extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Real-time consolidated balance',
+          'CONSOLIDATED PORTFOLIO VALUE',
           style: TextStyle(color: Colors.white, fontSize: 11),
         ),
         const Text(
-          'with instant cross-asset margin allocation.',
+          'Across your connected trading accounts',
           style: TextStyle(color: Colors.white, fontSize: 11),
         ),
       ],
@@ -308,7 +338,7 @@ class _BrokerShortcut extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(15),
         child: Container(
-          height: 76,
+          height: 84,
           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 9),
           decoration: BoxDecoration(
             color: selected ? const Color(0xFFFFF7DF) : Colors.white,
@@ -334,8 +364,8 @@ class _BrokerShortcut extends StatelessWidget {
                 maxLines: 2,
                 style: const TextStyle(
                   color: Color(0xFF10264B),
-                  fontSize: 8,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -350,7 +380,7 @@ class _BrokerFundsPanel extends StatelessWidget {
   const _BrokerFundsPanel();
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(15),
+    padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
@@ -375,7 +405,7 @@ class _BrokerFundsPanel extends StatelessWidget {
             ),
             SizedBox(width: 8),
             Text(
-              'Your Funds',
+              'Portfolio allocation',
               style: TextStyle(
                 color: Color(0xFF10264B),
                 fontSize: 14,
@@ -387,7 +417,7 @@ class _BrokerFundsPanel extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.only(left: 27, top: 2),
           child: Text(
-            'Portfolio allocation & capital distribution',
+            'Understand how your capital is distributed',
             style: TextStyle(color: _brokerMuted, fontSize: 9),
           ),
         ),
@@ -526,7 +556,7 @@ class _TodayActivity extends StatelessWidget {
         children: [
           const Expanded(
             child: Text(
-              'Recent Transactions',
+              'Recent activity',
               style: TextStyle(
                 color: Color(0xFF10264B),
                 fontSize: 14,

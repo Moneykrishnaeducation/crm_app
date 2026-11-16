@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -231,11 +232,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     if (page == 'Deposit' || page == 'Withdraw') {
-      showDialog<void>(
-        context: context,
-        barrierColor: const Color(0xCC020817),
-        builder: (_) => FundsActionDialog(withdrawal: page == 'Withdraw'),
-      );
+      setState(() => _selectedPage = page);
       return;
     }
     if (page == 'Logout') {
@@ -275,6 +272,16 @@ class _AppShellState extends State<AppShell> {
     return KeyedSubtree(
       key: ValueKey(page),
       child: switch (page) {
+        'Deposit' => BrokerFundsPage(
+            withdrawal: false,
+            onBack: () => setState(() => _selectedPage = 'Dashboard'),
+            onSelectPage: _selectPage,
+          ),
+        'Withdraw' => BrokerFundsPage(
+            withdrawal: true,
+            onBack: () => setState(() => _selectedPage = 'Dashboard'),
+            onSelectPage: _selectPage,
+          ),
         'Partnership' => const BrokerPartnershipPage(),
         'Internal Transfer' => const BrokerInternalTransferPage(),
         'Demo Accounts' => const BrokerDemoAccountsPage(),
@@ -301,11 +308,13 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       appBar: _AppHeader(
         title: _selectedPage,
-        onBack:
-            (_selectedPage == 'Profile' || _selectedPage == 'Security Center')
-            ? () => setState(() => _selectedPage = 'More')
-            : null,
+        onBack: switch (_selectedPage) {
+          'Profile' || 'Security Center' => () => setState(() => _selectedPage = 'More'),
+          'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
+          _ => null,
+        },
         onAvatarTap: () => _selectPage('Profile'),
+        onSelectPage: _selectPage,
       ),
       body: SafeArea(
         top: false,

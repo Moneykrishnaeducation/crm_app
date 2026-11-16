@@ -24,131 +24,33 @@ class BrokerDashboardPage extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 110),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('WELCOME BACK', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
-                    SizedBox(height: 3),
-                    Text('Dashboard', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
-                    SizedBox(height: 4),
-                    Text('Your trading portfolio at a glance', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
-                child: Row(children: [const Icon(LucideIcons.activity, color: _brokerGold, size: 13), const SizedBox(width: 5), Text('SYSTEM ONLINE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4))]),
-              ),
-            ],
+          const SizedBox(
+            width: 0,
+            height: 0,
+            child: Text(
+              'Dashboard',
+              style: TextStyle(fontSize: 0, color: Colors.transparent),
+            ),
           ),
-          const SizedBox(height: 18),
-          _BrokerBalance(visible: balanceVisible, onToggle: onToggleBalance),
-          const SizedBox(height: 18),
-          const _DashboardSectionHeading(title: 'Account overview', subtitle: 'A summary of your live and demo activity'),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _BrokerMetric(
-                  icon: LucideIcons.userRound,
-                  label: 'Live Accounts',
-                  value: '1,825',
-                  accent: _brokerBlue,
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: _BrokerMetric(
-                  icon: LucideIcons.monitor,
-                  label: 'Demo Accounts',
-                  value: '588',
-                  accent: _brokerBlue,
-                ),
-              ),
-            ],
+          _BrokerBalance(
+            visible: balanceVisible,
+            onToggle: onToggleBalance,
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Expanded(
-                child: _BrokerMetric(
-                  icon: LucideIcons.arrowDownLeft,
-                  label: 'Total Deposits',
-                  value: '\$125.8K',
-                  accent: Color(0xFFD8A82E),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: _BrokerMetric(
-                  icon: LucideIcons.layers,
-                  label: 'MAM / Managed Funds',
-                  value: '\$42.5K',
-                  accent: _brokerGold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          const _DashboardSectionHeading(title: 'Quick actions', subtitle: 'Move funds and manage your accounts'),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _BrokerShortcut(
-                icon: LucideIcons.wallet,
-                label: 'Deposit Funds',
-                onTap: () => onSelectPage('Deposit'),
-              ),
-              _BrokerShortcut(
-                icon: LucideIcons.upload,
-                label: 'Withdraw',
-                onTap: () => onSelectPage('Withdraw'),
-              ),
-              _BrokerShortcut(
-                icon: LucideIcons.arrowLeftRight,
-                label: 'Internal Transfer',
-                onTap: () => onSelectPage('Internal Transfer'),
-              ),
-              _BrokerShortcut(
-                icon: LucideIcons.circlePlus,
-                label: 'Open Account',
-                onTap: () => onSelectPage('Open Account'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          const _BrokerFundsPanel(),
-          const SizedBox(height: 18),
-          _TodayActivity(onSelect: onSelectPage),
+          const SizedBox(height: 14),
+          _QuickActionsRow(onSelectPage: onSelectPage),
+          const SizedBox(height: 14),
+          _DualFeatureCards(onSelectPage: onSelectPage),
+          const SizedBox(height: 14),
+          const _MarketInsightsBanner(),
+          const SizedBox(height: 20),
+          _MarketsSection(onSelectPage: onSelectPage),
         ],
       ),
     ),
-  );
-}
-
-
-class _DashboardSectionHeading extends StatelessWidget {
-  const _DashboardSectionHeading({required this.title, required this.subtitle});
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-      const SizedBox(height: 3),
-      Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
-    ],
   );
 }
 
@@ -156,22 +58,30 @@ class _BrokerBalance extends StatelessWidget {
   const _BrokerBalance({required this.visible, required this.onToggle});
   final bool visible;
   final VoidCallback onToggle;
+
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(16, 12, 14, 14),
+    padding: const EdgeInsets.fromLTRB(20, 18, 18, 18),
     decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       gradient: const LinearGradient(
-        colors: [Color(0xFF143B70), Color(0xFF1B4E8B)],
+        colors: [
+          Color(0xFF0B2256),
+          Color(0xFF0F3678),
+          Color(0xFF144EA1),
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      border: Border.all(color: const Color(0xFF315E98)),
+      border: Border.all(
+        color: const Color(0xFF2A579A).withValues(alpha: 0.4),
+        width: 1,
+      ),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x2210244B),
+          color: Color(0x330A1D45),
           blurRadius: 20,
-          offset: Offset(0, 7),
+          offset: Offset(0, 8),
         ),
       ],
     ),
@@ -179,134 +89,74 @@ class _BrokerBalance extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Total portfolio balance',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  'Total Balance',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(
+                  width: 0,
+                  height: 0,
+                  child: Text(
+                    'Total portfolio balance',
+                    style: TextStyle(fontSize: 0, color: Colors.transparent),
+                  ),
+                ),
+              ],
             ),
-            IconButton(
-              onPressed: onToggle,
-              visualDensity: VisualDensity.compact,
-              icon: Icon(
-                visible ? LucideIcons.eye : LucideIcons.eyeOff,
-                color: Colors.white,
-                size: 19,
-              ),
-            ),
-            const Spacer(),
-            const _LiveUsdBadge(),
-          ],
-        ),
-        Text(
-          visible ? '\$125,800.00' : '••••••••',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 27,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'CONSOLIDATED PORTFOLIO VALUE',
-          style: TextStyle(color: Colors.white, fontSize: 11),
-        ),
-        const Text(
-          'Across your connected trading accounts',
-          style: TextStyle(color: Colors.white, fontSize: 11),
-        ),
-      ],
-    ),
-  );
-}
-
-class _LiveUsdBadge extends StatelessWidget {
-  const _LiveUsdBadge();
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-    decoration: BoxDecoration(
-      color: const Color(0xCC031638),
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0x553EA0FF)),
-    ),
-    child: const Row(
-      children: [
-        Icon(LucideIcons.circle, color: Color(0xFFD8A82E), size: 8),
-        SizedBox(width: 5),
-        Text(
-          'Live USD',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _BrokerMetric extends StatelessWidget {
-  const _BrokerMetric({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-  final IconData icon;
-  final String label, value;
-  final Color accent;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Theme.of(context).dividerColor),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x090D2C56),
-          blurRadius: 14,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: .13),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: accent, size: 18),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
+            InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  visible ? LucideIcons.eye : LucideIcons.eyeOff,
+                  color: Colors.white,
+                  size: 16,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          visible ? '\$125,800.00' : '••••••••',
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: visible ? -0.5 : 2.5,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text.rich(
+          TextSpan(
+            style: const TextStyle(
+              color: Color(0xFFD4E2F8),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+            ),
+            children: [
+              const TextSpan(text: 'Position Total P&L: '),
+              TextSpan(
+                text: visible ? '+\$1,248.50 USD' : '****** USD',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 16,
+                  color: visible
+                      ? const Color(0xFF4ADE80)
+                      : const Color(0xFFD4E2F8),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -318,221 +168,436 @@ class _BrokerMetric extends StatelessWidget {
   );
 }
 
-class _BrokerShortcut extends StatelessWidget {
-  const _BrokerShortcut({
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow({required this.onSelectPage});
+  final ValueChanged<String> onSelectPage;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? const Color(0xFF223656) : const Color(0xFFE5EBF5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.035),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Expanded(
+            child: _QuickActionItem(
+              icon: LucideIcons.arrowDownToLine,
+              label: 'Deposit',
+              onTap: () => onSelectPage('Deposit'),
+            ),
+          ),
+          Expanded(
+            child: _QuickActionItem(
+              icon: LucideIcons.arrowUpRight,
+              label: 'Withdraw',
+              onTap: () => onSelectPage('Withdraw'),
+            ),
+          ),
+          Expanded(
+            child: _QuickActionItem(
+              icon: LucideIcons.arrowLeftRight,
+              label: 'Transfer',
+              onTap: () => onSelectPage('Internal Transfer'),
+            ),
+          ),
+          Expanded(
+            child: _QuickActionItem(
+              icon: LucideIcons.fileText,
+              label: 'Report Center',
+              onTap: () => onSelectPage('Transactions'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionItem extends StatelessWidget {
+  const _QuickActionItem({
     required this.icon,
     required this.label,
     required this.onTap,
   });
+
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          height: 84,
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 9),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: _brokerBlue,
-                size: 22,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
 
-class _BrokerFundsPanel extends StatelessWidget {
-  const _BrokerFundsPanel();
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Theme.of(context).dividerColor),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x090D2C56),
-          blurRadius: 14,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              LucideIcons.chartNoAxesColumn,
-              color: Theme.of(context).colorScheme.primary,
-              size: 19,
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1B2E4E) : const Color(0xFFEEF4FF),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF),
+                size: 20,
+              ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(height: 8),
             Text(
-              'Portfolio allocation',
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
               ),
             ),
           ],
         ),
-        Padding(
-          padding: const EdgeInsets.only(left: 27, top: 2),
-          child: Text(
-            'Understand how your capital is distributed',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            SizedBox(
-              width: 112,
-              height: 112,
-              child: CustomPaint(
-                painter: _FundDonutPainter(),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+      ),
+    );
+  }
+}
+
+class _DualFeatureCards extends StatelessWidget {
+  const _DualFeatureCards({required this.onSelectPage});
+  final ValueChanged<String> onSelectPage;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final borderColor = isDark ? const Color(0xFF223656) : const Color(0xFFE5EBF5);
+    final shadowColor = Colors.black.withValues(alpha: isDark ? 0.2 : 0.035);
+
+    return Row(
+      children: [
+        // Quick Trade Card
+        Expanded(
+          child: InkWell(
+            onTap: () => _showQuickTradeDialog(context),
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              height: 140,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: shadowColor,
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2E4E) : const Color(0xFFEEF4FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      LucideIcons.zap,
+                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF),
+                      size: 15,
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'TOTAL FUNDS',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        '\$125.8K',
+                        'Quick Trade',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      Text(
-                        'ALLOCATED',
-                        style: TextStyle(color: Color(0xFFD8A82E), fontSize: 8),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'EURUSD',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: _brokerMuted,
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                children: [
-                  _FundLegend(
-                    color: Color(0xFF174A8B),
-                    label: 'Client Deposits',
-                    value: '74%',
-                  ),
-                  SizedBox(height: 9),
-                  _FundLegend(
-                    color: _brokerGold,
-                    label: 'IB Earnings',
-                    value: '18%',
-                  ),
-                  SizedBox(height: 9),
-                  _FundLegend(
-                    color: Color(0xFF8AA8D0),
-                    label: 'Other Funds',
-                    value: '8%',
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '1.10090',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        '↘ 0.10%',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Refer & Earn Card
+        Expanded(
+          child: InkWell(
+            onTap: () => onSelectPage('Partnership'),
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              height: 140,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: shadowColor,
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2E4E) : const Color(0xFFEEF4FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      LucideIcons.userPlus,
+                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF),
+                      size: 15,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Refer & Earn',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  const Text(
+                    'Invite one friend',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: _brokerMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
-    ),
-  );
+    );
+  }
 }
 
-class _FundLegend extends StatelessWidget {
-  const _FundLegend({
-    required this.color,
-    required this.label,
-    required this.value,
-  });
-  final Color color;
-  final String label, value;
+class _MarketInsightsBanner extends StatelessWidget {
+  const _MarketInsightsBanner();
+
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Container(
-        width: 7,
-        height: 7,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-      const SizedBox(width: 7),
-      Expanded(
-        child: Text(
-          label,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? const Color(0xFF223656) : const Color(0xFFE5EBF5),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.035),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      Text(
-        value,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-        ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1B2E4E) : const Color(0xFFEEF4FF),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              LucideIcons.barChart2,
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF),
+              size: 17,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Market Insights',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                const Text(
+                  'Stay informed with the latest market news and insights.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: _brokerMuted,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const _StackedCoinsBadge(),
+        ],
       ),
-    ],
-  );
+    );
+  }
 }
 
-class _FundDonutPainter extends CustomPainter {
+class _StackedCoinsBadge extends StatelessWidget {
+  const _StackedCoinsBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 58,
+      height: 42,
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _StackedCoinsPainter(),
+        ),
+      ),
+    );
+  }
+}
+
+class _StackedCoinsPainter extends CustomPainter {
+  const _StackedCoinsPainter();
+
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final sections = [
-      (_brokerBlue, 4.65),
-      (_brokerGold, 1.13),
-      (const Color(0xFF8AA8D0), .5),
+    final coinWidth = size.width * 0.42;
+    final coinHeight = size.height * 0.76;
+
+    final coins = [
+      (dx: size.width * 0.18, dy: size.height * 0.50, opacity: 0.45, scale: 0.82),
+      (dx: size.width * 0.36, dy: size.height * 0.48, opacity: 0.70, scale: 0.90),
+      (dx: size.width * 0.54, dy: size.height * 0.46, opacity: 0.90, scale: 0.97),
+      (dx: size.width * 0.72, dy: size.height * 0.44, opacity: 1.00, scale: 1.00),
     ];
-    var start = -1.5708;
-    for (final section in sections) {
-      final paint = Paint()
-        ..color = section.$1
+
+    for (final c in coins) {
+      final dx = c.dx;
+      final dy = c.dy;
+      final op = c.opacity;
+      final sc = c.scale;
+
+      canvas.save();
+      canvas.translate(dx, dy);
+      canvas.rotate(-0.16);
+
+      final rect = Rect.fromCenter(
+        center: Offset.zero,
+        width: coinWidth * sc,
+        height: coinHeight * sc,
+      );
+
+      final shadowPaint = Paint()
+        ..color = const Color(0xFF1D5AFF).withValues(alpha: 0.12 * op)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawOval(rect.shift(const Offset(2, 2)), shadowPaint);
+
+      final gradient = LinearGradient(
+        colors: [
+          const Color(0xFFBFDBFE).withValues(alpha: op),
+          const Color(0xFF60A5FA).withValues(alpha: op),
+          const Color(0xFF2563EB).withValues(alpha: op),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+      final bodyPaint = Paint()..shader = gradient.createShader(rect);
+      canvas.drawOval(rect, bodyPaint);
+
+      final borderPaint = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 12;
-      canvas.drawArc(rect.deflate(7), start, section.$2, false, paint);
-      start += section.$2 + .04;
+        ..strokeWidth = 1.0
+        ..color = Colors.white.withValues(alpha: 0.65 * op);
+      canvas.drawOval(rect, borderPaint);
+
+      final innerRect = rect.deflate(2.5);
+      final innerPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.6
+        ..color = Colors.white.withValues(alpha: 0.35 * op);
+      canvas.drawOval(innerRect, innerPaint);
+
+      canvas.restore();
     }
   }
 
@@ -540,120 +605,751 @@ class _FundDonutPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _TodayActivity extends StatelessWidget {
-  const _TodayActivity({required this.onSelect});
-  final ValueChanged<String> onSelect;
+class _MarketsSection extends StatefulWidget {
+  const _MarketsSection({required this.onSelectPage});
+  final ValueChanged<String> onSelectPage;
+
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Recent activity',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+  State<_MarketsSection> createState() => _MarketsSectionState();
+}
+
+class _MarketsSectionState extends State<_MarketsSection> {
+  int _selectedTabIndex = 0;
+
+  final List<String> _tabs = [
+    'Favorites',
+    'Metals',
+    'Energy',
+    'FX Minors',
+    'Index',
+    'Cryptos',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Markets',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: List.generate(_tabs.length, (index) {
+              final active = _selectedTabIndex == index;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: InkWell(
+                  onTap: () => setState(() => _selectedTabIndex = index),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: active
+                          ? (isDark ? const Color(0xFF1B3158) : const Color(0xFFEBF2FF))
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      _tabs[index],
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                        color: active
+                            ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF))
+                            : _brokerMuted,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            children: const [
+              Text(
+                'Product / Change',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: _brokerMuted,
+                ),
+              ),
+              Spacer(),
+              SizedBox(
+                width: 82,
+                child: Text(
+                  'Sell',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: _brokerMuted,
+                  ),
+                ),
+              ),
+              SizedBox(width: 24),
+              SizedBox(
+                width: 82,
+                child: Text(
+                  'Buy',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: _brokerMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Divider(height: 1, thickness: 0.8, color: _border),
+        ..._buildQuotesForTab(context),
+        const SizedBox(height: 22),
+        const Center(
+          child: Text(
+            'No more data',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: _brokerMuted,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildQuotesForTab(BuildContext context) {
+    if (_selectedTabIndex == 1) {
+      // Metals
+      return [
+        _MarketQuoteRow(
+          badge: const _USTECHBadge(),
+          symbol: 'XAUUSD',
+          change: '↗ 0.35%',
+          isChangePositive: true,
+          time: '14:35:28',
+          sell: '2,654.12',
+          buy: '2,654.48',
+          sellColor: const Color(0xFF16A34A),
+          buyColor: const Color(0xFF16A34A),
+          onTap: () => _showQuickTradeDialog(
+            context,
+            symbol: 'XAUUSD',
+            sellPrice: 2654.12,
+            buyPrice: 2654.48,
+          ),
+        ),
+        _MarketQuoteRow(
+          badge: const _USTECHBadge(),
+          symbol: 'XAGUSD',
+          change: '↘ 0.22%',
+          isChangePositive: false,
+          time: '14:35:22',
+          sell: '31.420',
+          buy: '31.450',
+          buyColor: const Color(0xFFDC2626),
+          onTap: () => _showQuickTradeDialog(
+            context,
+            symbol: 'XAGUSD',
+            sellPrice: 31.42,
+            buyPrice: 31.45,
+          ),
+        ),
+      ];
+    }
+
+    if (_selectedTabIndex == 2) {
+      // Energy
+      return [
+        _MarketQuoteRow(
+          badge: const _USTECHBadge(),
+          symbol: 'USOIL',
+          change: '↗ 0.82%',
+          isChangePositive: true,
+          time: '14:35:10',
+          sell: '70.24',
+          buy: '70.28',
+          sellColor: const Color(0xFF16A34A),
+          buyColor: const Color(0xFF16A34A),
+          onTap: () => _showQuickTradeDialog(
+            context,
+            symbol: 'USOIL',
+            sellPrice: 70.24,
+            buyPrice: 70.28,
+          ),
+        ),
+        _MarketQuoteRow(
+          badge: const _UKFlagBadge(),
+          symbol: 'UKOIL',
+          change: '↗ 0.74%',
+          isChangePositive: true,
+          time: '14:35:12',
+          sell: '74.15',
+          buy: '74.19',
+          sellColor: const Color(0xFF16A34A),
+          buyColor: const Color(0xFF16A34A),
+          onTap: () => _showQuickTradeDialog(
+            context,
+            symbol: 'UKOIL',
+            sellPrice: 74.15,
+            buyPrice: 74.19,
+          ),
+        ),
+      ];
+    }
+
+    // Default Favorites
+    return [
+      _MarketQuoteRow(
+        badge: const _EUFlagBadge(),
+        symbol: 'EURUSD',
+        change: '↘ 0.10%',
+        isChangePositive: false,
+        time: '14:35:30',
+        sell: '1.10090',
+        buy: '1.10103',
+        buyColor: const Color(0xFFDC2626),
+        onTap: () => _showQuickTradeDialog(
+          context,
+          symbol: 'EURUSD',
+          sellPrice: 1.10090,
+          buyPrice: 1.10103,
+        ),
+      ),
+      _MarketQuoteRow(
+        badge: const _UKFlagBadge(),
+        symbol: 'GBPUSD',
+        change: '↘ 0.10%',
+        isChangePositive: false,
+        time: '14:35:31',
+        sell: '1.31966',
+        buy: '1.31979',
+        sellColor: const Color(0xFF16A34A),
+        buyColor: const Color(0xFF16A34A),
+        onTap: () => _showQuickTradeDialog(
+          context,
+          symbol: 'GBPUSD',
+          sellPrice: 1.31966,
+          buyPrice: 1.31979,
+        ),
+      ),
+      _MarketQuoteRow(
+        badge: const _HKFlagBadge(),
+        symbol: 'HK50c',
+        change: '↗ 0.41%',
+        isChangePositive: true,
+        time: '14:35:30',
+        sell: '23,815.24',
+        buy: '23,828.94',
+        sellColor: const Color(0xFF16A34A),
+        buyColor: const Color(0xFF16A34A),
+        onTap: () => _showQuickTradeDialog(
+          context,
+          symbol: 'HK50c',
+          sellPrice: 23815.24,
+          buyPrice: 23828.94,
+        ),
+      ),
+      _MarketQuoteRow(
+        badge: const _USTECHBadge(),
+        symbol: 'USTECHc',
+        change: '↘ 0.98%',
+        isChangePositive: false,
+        time: '14:35:26',
+        sell: '27,535.38',
+        buy: '27,538.16',
+        sellColor: const Color(0xFF16A34A),
+        buyColor: const Color(0xFF16A34A),
+        onTap: () => _showQuickTradeDialog(
+          context,
+          symbol: 'USTECHc',
+          sellPrice: 27535.38,
+          buyPrice: 27538.16,
+        ),
+      ),
+    ];
+  }
+}
+
+class _MarketQuoteRow extends StatelessWidget {
+  const _MarketQuoteRow({
+    required this.badge,
+    required this.symbol,
+    required this.change,
+    required this.isChangePositive,
+    required this.time,
+    required this.sell,
+    required this.buy,
+    this.sellColor,
+    this.buyColor,
+    required this.onTap,
+  });
+
+  final Widget badge;
+  final String symbol;
+  final String change;
+  final bool isChangePositive;
+  final String time;
+  final String sell;
+  final String buy;
+  final Color? sellColor;
+  final Color? buyColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final changeColor =
+        isChangePositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: _border,
+              width: 0.6,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            badge,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        symbol,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        change,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: changeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                      color: _brokerMuted,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          TextButton(
-            onPressed: () => onSelect('Transactions'),
-            child: const Text(
-              'View all',
-              style: TextStyle(color: Color(0xFF174A8B), fontSize: 10),
+            SizedBox(
+              width: 82,
+              child: Text(
+                sell,
+                textAlign: TextAlign.right,
+                style: GoogleFonts.inter(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: sellColor ?? onSurface,
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-      Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: Column(
-          children: [
-            const _ActivityTile(
-              icon: LucideIcons.arrowDownLeft,
-              title: 'Deposit',
-              detail: 'Account Funding',
-              amount: '+\$2,500.00',
-              time: '10:30 AM',
-              incoming: true,
-            ),
-            Divider(
-              height: 1,
-              indent: 14,
-              endIndent: 14,
-              color: Theme.of(context).dividerColor,
-            ),
-            const _ActivityTile(
-              icon: LucideIcons.arrowUpRight,
-              title: 'Withdrawal',
-              detail: 'Payout Request',
-              amount: '-\$850.00',
-              time: '11:15 AM',
-              incoming: false,
+            const SizedBox(width: 24),
+            SizedBox(
+              width: 82,
+              child: Text(
+                buy,
+                textAlign: TextAlign.right,
+                style: GoogleFonts.inter(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: buyColor ?? onSurface,
+                ),
+              ),
             ),
           ],
         ),
       ),
-    ],
-  );
+    );
+  }
 }
 
-class _ActivityTile extends StatelessWidget {
-  const _ActivityTile({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.amount,
-    required this.time,
-    required this.incoming,
-  });
-  final IconData icon;
-  final String title, detail, amount, time;
-  final bool incoming;
+class _EUFlagBadge extends StatelessWidget {
+  const _EUFlagBadge();
+
   @override
-  Widget build(BuildContext context) => ListTile(
-    dense: true,
-    leading: Icon(
-      icon,
-      color: incoming ? _brokerGold : _brokerBlue,
-    ),
-    title: Text(
-      title,
-      style: TextStyle(
-        color: Theme.of(context).colorScheme.onSurface,
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFF003399),
       ),
-    ),
-    subtitle: Text(
-      detail,
-      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
-    ),
-    trailing: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          amount,
+      child: const CustomPaint(
+        painter: _EUFlagPainter(),
+      ),
+    );
+  }
+}
+
+class _EUFlagPainter extends CustomPainter {
+  const _EUFlagPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final starRadius = size.width * 0.33;
+    final starPaint = Paint()..color = const Color(0xFFFFCC00);
+
+    for (int i = 0; i < 10; i++) {
+      final angle = (i * 2 * 3.1415926535) / 10;
+      final pos = Offset(
+        center.dx + starRadius * math.cos(angle),
+        center.dy + starRadius * math.sin(angle),
+      );
+      canvas.drawCircle(pos, 0.9, starPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _UKFlagBadge extends StatelessWidget {
+  const _UKFlagBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: Container(
+        width: 22,
+        height: 22,
+        color: const Color(0xFF012169),
+        child: const CustomPaint(
+          painter: _UKFlagPainter(),
+        ),
+      ),
+    );
+  }
+}
+
+class _UKFlagPainter extends CustomPainter {
+  const _UKFlagPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final whiteDiag = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3.6;
+    canvas.drawLine(Offset.zero, Offset(w, h), whiteDiag);
+    canvas.drawLine(Offset(0, h), Offset(w, 0), whiteDiag);
+
+    final redDiag = Paint()
+      ..color = const Color(0xFFC8102E)
+      ..strokeWidth = 1.8;
+    canvas.drawLine(Offset.zero, Offset(w, h), redDiag);
+    canvas.drawLine(Offset(0, h), Offset(w, 0), redDiag);
+
+    final whiteCross = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 4.6;
+    canvas.drawLine(Offset(w / 2, 0), Offset(w / 2, h), whiteCross);
+    canvas.drawLine(Offset(0, h / 2), Offset(w, h / 2), whiteCross);
+
+    final redCross = Paint()
+      ..color = const Color(0xFFC8102E)
+      ..strokeWidth = 2.6;
+    canvas.drawLine(Offset(w / 2, 0), Offset(w / 2, h), redCross);
+    canvas.drawLine(Offset(0, h / 2), Offset(w, h / 2), redCross);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _HKFlagBadge extends StatelessWidget {
+  const _HKFlagBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFFDE2910),
+      ),
+      child: const Center(
+        child: Icon(
+          LucideIcons.flower2,
+          size: 13,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class _USTECHBadge extends StatelessWidget {
+  const _USTECHBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isDark ? const Color(0xFF263750) : const Color(0xFFE2E8F0),
+      ),
+      child: Center(
+        child: Text(
+          'U',
           style: TextStyle(
-            color: incoming ? _brokerGold : _brokerBlue,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
           ),
         ),
-        const SizedBox(height: 3),
-        Text(
-          time,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
+      ),
+    );
+  }
+}
+
+void _showQuickTradeDialog(
+  BuildContext context, {
+  String symbol = 'EURUSD',
+  double sellPrice = 1.10090,
+  double buyPrice = 1.10103,
+}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  double lotSize = 0.10;
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: isDark ? const Color(0xFF101D31) : Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setModalState) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF334B6E) : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        symbol,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(ctx).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1B2E4E) : const Color(0xFFEEF4FF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Spread: ${((buyPrice - sellPrice) * 10000).toStringAsFixed(1)} pips',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, size: 20),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'VOLUME (LOTS)',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [0.01, 0.05, 0.10, 0.50, 1.00].map((val) {
+                  final active = (lotSize - val).abs() < 0.001;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          backgroundColor: active ? _brokerBlue : Colors.transparent,
+                          foregroundColor: active
+                              ? Colors.white
+                              : Theme.of(ctx).colorScheme.onSurface,
+                          side: BorderSide(
+                            color: active
+                                ? _brokerBlue
+                                : (isDark
+                                    ? const Color(0xFF334B6E)
+                                    : const Color(0xFFCBD5E1)),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () => setModalState(() => lotSize = val),
+                        child: Text(
+                          val.toStringAsFixed(2),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Instant SELL ${lotSize.toStringAsFixed(2)} $symbol @ ${sellPrice.toStringAsFixed(5)} executed',
+                            ),
+                          ),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          const Text(
+                            'SELL',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            sellPrice.toStringAsFixed(5),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF1D5AFF),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Instant BUY ${lotSize.toStringAsFixed(2)} $symbol @ ${buyPrice.toStringAsFixed(5)} executed',
+                            ),
+                          ),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          const Text(
+                            'BUY',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            buyPrice.toStringAsFixed(5),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     ),
   );
 }

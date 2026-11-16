@@ -4,7 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 const _securityNavy = Color(0xFF10264A);
 const _securityPanel = Color(0xFFFFFFFF);
 const _securityBorder = Color(0xFFDCE5F1);
-const _bgLight = Color(0xFFF4F7FC);
+const _bgLight = Color(0xFFF8FAFC);
 const _blueDark = Color(0xFF10264A);
 const _blueLight = Color(0xFFEAF2FC);
 const _bluePrimary = Color(0xFF174A8B);

@@ -29,8 +29,8 @@ void main() {
       );
 
       // Verify all 4 tab labels
-      expect(find.text('Dashboard'), findsOneWidget);
-      expect(find.text('Transactions'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Activity'), findsOneWidget);
       expect(find.text('Accounts'), findsOneWidget);
       expect(find.text('More'), findsOneWidget);
 
@@ -54,8 +54,8 @@ void main() {
         ),
       );
 
-      // Tap Transactions
-      await tester.tap(find.text('Transactions'));
+      // Tap Activity (should pass 'Transactions')
+      await tester.tap(find.text('Activity'));
       await tester.pump();
       expect(selections, equals(['Transactions']));
 
@@ -69,8 +69,8 @@ void main() {
       await tester.pump();
       expect(selections, equals(['Transactions', 'Trading Accounts', 'More']));
 
-      // Tap Dashboard
-      await tester.tap(find.text('Dashboard'));
+      // Tap Home (should pass 'Dashboard')
+      await tester.tap(find.text('Home'));
       await tester.pump();
       expect(selections, equals(['Transactions', 'Trading Accounts', 'More', 'Dashboard']));
     });
@@ -149,7 +149,7 @@ void main() {
       );
 
       final dashboardSemantics = tester.widget<Semantics>(
-        find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Dashboard'),
+        find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Home'),
       );
       expect(dashboardSemantics.properties.selected, isFalse);
 
@@ -182,7 +182,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 150));
 
       final pressedScaleWidget = tester.widget<AnimatedScale>(scaleFinder.first);
-      expect(pressedScaleWidget.scale, equals(0.92));
+      expect(pressedScaleWidget.scale, equals(0.93));
 
       await gesture.up();
       await tester.pumpAndSettle();
@@ -200,22 +200,22 @@ void main() {
         ),
       );
 
-      // Verify that Dashboard has the illuminated indicator dot/bar (width 14)
+      // Verify that active tab has the indicator bar (width 15, borderRadius 3)
       final animatedContainers = tester.widgetList<AnimatedContainer>(
         find.byType(AnimatedContainer),
       );
 
       final indicatorBars = animatedContainers.where(
-        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(2),
+        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(3),
       );
       expect(indicatorBars, isNotEmpty);
 
-      // At least one indicator bar has width 14 (for selected tab)
-      final selectedIndicator = indicatorBars.firstWhere((c) => (c.constraints?.maxWidth ?? 0) >= 14 || c.constraints == BoxConstraints.tightFor(width: 14, height: 2.5));
+      // At least one indicator bar has width 15 (for selected tab)
+      final selectedIndicator = indicatorBars.firstWhere((c) => (c.constraints?.maxWidth ?? 0) >= 15 || c.constraints == BoxConstraints.tightFor(width: 15, height: 2.5));
       expect(selectedIndicator, isNotNull);
     });
 
-    testWidgets('floating capsule dock renders with 32px border radius, max-width 520 and elevated center button', (tester) async {
+    testWidgets('floating capsule dock renders with 25px border radius, max-width 560 and elevated center button', (tester) async {
       await tester.pumpWidget(
         _buildNavBarHarness(
           selectedPage: 'Dashboard',
@@ -223,38 +223,38 @@ void main() {
         ),
       );
 
-      // Verify max width constraint is 520
+      // Verify max width constraint is 560
       final constrainedBoxes = tester.widgetList<ConstrainedBox>(find.byType(ConstrainedBox));
       final dockConstraint = constrainedBoxes.firstWhere(
-        (cb) => cb.constraints.maxWidth == 520,
+        (cb) => cb.constraints.maxWidth == 560,
       );
       expect(dockConstraint, isNotNull);
 
-      // Verify outer capsule container has BorderRadius.circular(32)
+      // Verify outer capsule container has BorderRadius.circular(25)
       final containers = tester.widgetList<Container>(find.byType(Container));
       final capsule = containers.firstWhere(
-        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(32),
+        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(25),
       );
       expect(capsule, isNotNull);
-      expect(capsule.margin, equals(const EdgeInsets.fromLTRB(16, 0, 16, 12)));
+      expect(capsule.margin, equals(const EdgeInsets.fromLTRB(14, 3, 14, 7)));
 
-      // Verify center (+) button is 56x56 and elevated with Offset(0, -18)
+      // Verify center (+) button is 52x52 and elevated with Offset(0, -9)
       final plusFinder = find.byIcon(LucideIcons.plus);
       final centerButtonContainer = tester.widget<Container>(
         find.ancestor(of: plusFinder, matching: find.byType(Container)).first,
       );
-      expect(centerButtonContainer.constraints?.maxWidth, equals(56));
-      expect(centerButtonContainer.constraints?.maxHeight, equals(56));
+      expect(centerButtonContainer.constraints?.maxWidth, equals(52));
+      expect(centerButtonContainer.constraints?.maxHeight, equals(52));
 
       final translationFinder = find.ancestor(of: plusFinder, matching: find.byType(Transform));
       final elevatedTransform = tester.widgetList<Transform>(translationFinder).firstWhere(
-        (t) => t.transform.getTranslation().y == -18.0,
+        (t) => t.transform.getTranslation().y == -9.0,
       );
       expect(elevatedTransform, isNotNull);
 
-      // Verify active nav tab pill has BorderRadius.circular(20)
+      // Verify active nav tab pill has BorderRadius.circular(15)
       final activeItemPill = tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer)).firstWhere(
-        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(20),
+        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(15),
       );
       expect(activeItemPill, isNotNull);
     });

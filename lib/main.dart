@@ -82,42 +82,54 @@ class _MyAppState extends State<MyApp> {
       theme: _buildTheme(Brightness.light),
       darkTheme: _buildTheme(Brightness.dark),
       themeMode: _themeMode,
-      home: _AppEntry(onOpenDashboard: () => _openDashboard(context)),
-    );
-  }
-
-  void _openDashboard(BuildContext context) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => AppShell(
-          themeMode: _themeMode,
-          onThemeModeChanged: _setThemeMode,
-        ),
+      home: _AppEntry(
+        themeMode: _themeMode,
+        onThemeModeChanged: _setThemeMode,
       ),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.themeMode, required this.onThemeModeChanged});
+  const AppShell({
+    super.key,
+    this.themeMode = ThemeMode.system,
+    this.onThemeModeChanged,
+  });
   final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onThemeModeChanged;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppEntry extends StatefulWidget {
-  const _AppEntry({required this.onOpenDashboard});
-  final VoidCallback onOpenDashboard;
+  const _AppEntry({
+    this.themeMode = ThemeMode.system,
+    this.onThemeModeChanged,
+  });
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
 
   @override
   State<_AppEntry> createState() => _AppEntryState();
 }
 
 class _AppEntryState extends State<_AppEntry> {
+  void _openDashboard() {
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => AppShell(
+          themeMode: widget.themeMode,
+          onThemeModeChanged: widget.onThemeModeChanged,
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => LoginPage(onLogin: widget.onOpenDashboard);
+  Widget build(BuildContext context) => LoginPage(onLogin: _openDashboard);
 }
 
 class _AppShellState extends State<AppShell> {
@@ -179,16 +191,12 @@ class _AppShellState extends State<AppShell> {
     }
     if (page == 'Logout') {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => _AppEntry(onOpenDashboard: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(
-              builder: (_) => AppShell(
-                themeMode: widget.themeMode,
-                onThemeModeChanged: widget.onThemeModeChanged,
-              ),
-            ),
-          );
-        })),
+        MaterialPageRoute<void>(
+          builder: (_) => _AppEntry(
+            themeMode: widget.themeMode,
+            onThemeModeChanged: widget.onThemeModeChanged,
+          ),
+        ),
         (route) => false,
       );
       return;

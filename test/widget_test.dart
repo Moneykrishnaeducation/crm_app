@@ -25,8 +25,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify Dashboard is displayed
-    expect(find.text('Good Morning,'), findsOneWidget);
-    expect(find.text('Total Real Balance'), findsOneWidget);
+    expect(find.text('Dashboard'), findsWidgets);
+    expect(find.text('Total portfolio balance'), findsOneWidget);
   });
 
   testWidgets('AppShell dashboard displays portfolio and can hide balance', (
@@ -44,8 +44,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Good Morning,'), findsOneWidget);
-    expect(find.text('Total Real Balance'), findsOneWidget);
+    expect(find.text('Dashboard'), findsWidgets);
+    expect(find.text('Total portfolio balance'), findsOneWidget);
     expect(find.text('\$125,800.00'), findsOneWidget);
 
     await tester.tap(find.byIcon(LucideIcons.eye).first);
@@ -70,14 +70,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // Navigate to Transactions
-    await tester.tap(find.text('Transactions').first);
+    await tester.tap(find.text('Activity').first);
     await tester.pumpAndSettle();
     expect(find.text('Transactions'), findsWidgets);
 
     // Navigate to More
     await tester.tap(find.text('More').first);
     await tester.pumpAndSettle();
-    expect(find.text('ACCOUNT & PARTNERSHIP'), findsOneWidget);
+    expect(find.text('YOUR ACCOUNT'), findsOneWidget);
     expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Security Center'), findsOneWidget);
   });

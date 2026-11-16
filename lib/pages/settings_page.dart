@@ -3,12 +3,12 @@ part of '../main.dart';
 class BrokerSettingsPage extends StatelessWidget {
   const BrokerSettingsPage({
     super.key,
-    required this.themeMode,
-    required this.onThemeModeChanged,
+    this.themeMode = ThemeMode.system,
+    this.onThemeModeChanged,
   });
 
   final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onThemeModeChanged;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +89,7 @@ class BrokerSettingsPage extends StatelessWidget {
                 subtitle: 'Follow your device appearance setting',
                 icon: LucideIcons.smartphone,
                 selected: themeMode == ThemeMode.system,
-                onTap: () => onThemeModeChanged(ThemeMode.system),
+                onTap: () => onThemeModeChanged?.call(ThemeMode.system),
               ),
               const SizedBox(height: 8),
               _ThemeModeOption(
@@ -97,7 +97,7 @@ class BrokerSettingsPage extends StatelessWidget {
                 subtitle: 'Bright surfaces and dark text',
                 icon: LucideIcons.sun,
                 selected: themeMode == ThemeMode.light,
-                onTap: () => onThemeModeChanged(ThemeMode.light),
+                onTap: () => onThemeModeChanged?.call(ThemeMode.light),
               ),
               const SizedBox(height: 8),
               _ThemeModeOption(
@@ -105,7 +105,7 @@ class BrokerSettingsPage extends StatelessWidget {
                 subtitle: 'Dark surfaces for low-light environments',
                 icon: LucideIcons.moon,
                 selected: themeMode == ThemeMode.dark,
-                onTap: () => onThemeModeChanged(ThemeMode.dark),
+                onTap: () => onThemeModeChanged?.call(ThemeMode.dark),
               ),
             ],
           ),

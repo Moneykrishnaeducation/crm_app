@@ -16,6 +16,7 @@ part 'pages/accounts_page.dart';
 part 'pages/internal_transfer_page.dart';
 part 'pages/demo_accounts_page.dart';
 part 'pages/more_page.dart';
+part 'pages/settings_page.dart';
 part 'pages/login_page.dart';
 
 const _background = Color(0xFFF5F7FB);
@@ -31,36 +32,84 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void _setThemeMode(ThemeMode mode) => setState(() => _themeMode = mode);
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    final scheme = ColorScheme.fromSeed(
+      seedColor: _blue,
+      brightness: brightness,
+      primary: _blue,
+      secondary: _gold,
+      surface: dark ? const Color(0xFF17243A) : Colors.white,
+    );
+    return ThemeData(
+      brightness: brightness,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: dark ? const Color(0xFF0B1424) : _background,
+      cardColor: dark ? const Color(0xFF17243A) : Colors.white,
+      dividerColor: dark ? const Color(0xFF2A3A53) : _border,
+      fontFamily: GoogleFonts.poppins().fontFamily,
+      appBarTheme: AppBarTheme(
+        backgroundColor: dark ? const Color(0xFF101D31) : Colors.white,
+        foregroundColor: dark ? const Color(0xFFF2F5FA) : _sidebar,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: dark ? const Color(0xFF263750) : _sidebar,
+        contentTextStyle: const TextStyle(color: Colors.white),
+      ),
+      useMaterial3: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'VT Index',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: _background,
-        colorScheme: const ColorScheme.light(primary: _blue, surface: _panel),
-        fontFamily: GoogleFonts.poppins().fontFamily,
-        appBarTheme: const AppBarTheme(foregroundColor: Color(0xFF10264B)),
-        useMaterial3: true,
+      theme: _buildTheme(Brightness.light),
+      darkTheme: _buildTheme(Brightness.dark),
+      themeMode: _themeMode,
+      home: _AppEntry(onOpenDashboard: () => _openDashboard(context)),
+    );
+  }
+
+  void _openDashboard(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => AppShell(
+          themeMode: _themeMode,
+          onThemeModeChanged: _setThemeMode,
+        ),
       ),
-      home: const _AppEntry(),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({super.key, required this.themeMode, required this.onThemeModeChanged});
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppEntry extends StatefulWidget {
-  const _AppEntry();
+  const _AppEntry({required this.onOpenDashboard});
+  final VoidCallback onOpenDashboard;
 
   @override
   State<_AppEntry> createState() => _AppEntryState();
@@ -68,14 +117,7 @@ class _AppEntry extends StatefulWidget {
 
 class _AppEntryState extends State<_AppEntry> {
   @override
-  Widget build(BuildContext context) => LoginPage(onLogin: _openDashboard);
-
-  void _openDashboard() {
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const AppShell()),
-    );
-  }
+  Widget build(BuildContext context) => LoginPage(onLogin: widget.onOpenDashboard);
 }
 
 class _AppShellState extends State<AppShell> {
@@ -137,7 +179,7 @@ class _AppShellState extends State<AppShell> {
     }
     if (page == 'Logout') {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const _AppEntry()),
+        MaterialPageRoute<void>(builder: (_) => _AppEntry(onOpenDashboard: () {})),
         (route) => false,
       );
       return;
@@ -206,6 +248,8 @@ class _AppShellState extends State<AppShell> {
                                 setState(() => _selectedPage = 'More'),
                             onSelectPage: _selectPage,
                           )
+                         : _selectedPage == 'Settings'
+                        ? BrokerSettingsPage(themeMode: widget.themeMode, onThemeModeChanged: widget.onThemeModeChanged)
                         : _selectedPage == 'Security Center'
                         ? SecurityCenterPage(
                             onBack: () =>

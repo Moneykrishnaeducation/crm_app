@@ -12,15 +12,20 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onAvatarTap;
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(56);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      toolbarHeight: 64,
+      toolbarHeight: 56,
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.white,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
       automaticallyImplyLeading: false,
       leading: onBack != null
           ? IconButton(

@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
-const _securityNavy = Color(0xFFF4F7FC);
+const _securityNavy = Color(0xFF10264A);
 const _securityPanel = Color(0xFFFFFFFF);
 const _securityBorder = Color(0xFFDCE5F1);
+const _bgLight = Color(0xFFF4F7FC);
+const _blueDark = Color(0xFF10264A);
+const _blueLight = Color(0xFFEAF2FC);
+const _bluePrimary = Color(0xFF174A8B);
+const _borderColor = _securityBorder;
+const _cardBg = _securityPanel;
+const _goldAccent = Color(0xFFB18418);
+const _goldBorder = Color(0xFFF0DFAF);
+const _goldLight = Color(0xFFFFF7E3);
+const _greenAccent = Color(0xFF16845B);
+const _greenLight = Color(0xFFEAF7EF);
+const _redAccent = Color(0xFFB94C4C);
+const _textPrimary = _securityNavy;
+const _textSecondary = Color(0xFF62738E);
 
 Future<bool?> showSecurityPasswordModal(
   BuildContext context, {
@@ -39,6 +53,19 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   bool _loginCaptchaEnabled = true;
   bool _email2faEnabled = true;
   bool _isDeviceRevoked = false;
+
+  BoxDecoration _mobileCardDecoration() => BoxDecoration(
+    color: _cardBg,
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: _borderColor),
+    boxShadow: const [
+      BoxShadow(
+        color: Color(0x0D10264A),
+        blurRadius: 16,
+        offset: Offset(0, 5),
+      ),
+    ],
+  );
 
   void _showSnack(String message) {
     if (!mounted) return;

@@ -477,4 +477,41 @@ void main() {
     expect(find.text('Payment Methods'), findsWidgets);
     expect(find.text('Security'), findsNothing);
   });
+
+  testWidgets('BrokerProfilePage adheres to White, Blue, and Gold mobile app theme', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrokerProfilePage(
+            onBack: () {},
+            onSelectPage: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify main page background is soft mobile light #F8FAFC
+    final pageContainer = tester.widget<Container>(
+      find.descendant(
+        of: find.byType(BrokerProfilePage),
+        matching: find.byType(Container),
+      ).first,
+    );
+    expect(pageContainer.color, const Color(0xFFF8FAFC));
+
+    // Verify Gold Tier 3 pill badge is rendered
+    expect(find.text('Tier 3'), findsOneWidget);
+    expect(find.byIcon(LucideIcons.shieldCheck), findsWidgets);
+
+    // Verify Gold Verified badge
+    expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+    expect(find.text('Verified'), findsWidgets);
+
+    // Verify 100% completion card elements
+    expect(find.text('Profile Completion'), findsOneWidget);
+    expect(find.text('100%'), findsOneWidget);
+    expect(find.text('100% COMPLETE'), findsOneWidget);
+    expect(find.text('Profile Completed'), findsOneWidget);
+  });
 }

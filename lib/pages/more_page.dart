@@ -91,9 +91,10 @@ class BrokerMorePage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(13),
-                gradient: const LinearGradient(colors: [Color(0xFF2413B5), Color(0xFF075EE8), Color(0xFF0C2B70)], begin: Alignment.centerLeft, end: Alignment.centerRight),
-                border: Border.all(color: const Color(0xFF2876E8)),
+                borderRadius: BorderRadius.circular(18),
+                gradient: const LinearGradient(colors: [Color(0xDD302D75), Color(0xDD145A9B), Color(0xEE14294B)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                border: Border.all(color: const Color(0x667EA9E8)),
+                boxShadow: const [BoxShadow(color: Color(0x33056DCE), blurRadius: 20, offset: Offset(0, 8))],
               ),
               child: const Row(children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -177,10 +178,27 @@ class _MoreMenuRow extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(10),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            child: Row(children: [
-              Icon(icon, color: accent, size: 17),
-              const SizedBox(width: 10),
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 54),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: const Color(0x66182D50),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0x332F5D91)),
+              ),
+              child: Row(children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: .12),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: accent.withValues(alpha: .24)),
+                ),
+                child: Center(child: Icon(icon, color: accent, size: 16)),
+              ),
+              const SizedBox(width: 11),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(title, style: const TextStyle(color: Color(0xFF10264B), fontSize: 10, fontWeight: FontWeight.w500)),
                 if (subtitle != null) ...[const SizedBox(height: 3), Text(subtitle!, style: const TextStyle(color: _brokerMuted, fontSize: 8))],
@@ -189,6 +207,7 @@ class _MoreMenuRow extends StatelessWidget {
               const SizedBox(width: 4),
               const Icon(LucideIcons.chevronRight, color: Color(0xFF7284A3), size: 17),
             ]),
+            ),
           ),
         ),
       );
@@ -206,7 +225,7 @@ class LogoutBottomSheet extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           decoration: BoxDecoration(
-            color: _brokerPanel,
+            color: const Color(0xF0162B4D),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: const Color(0xFFE2E8F1)),
             boxShadow: const [

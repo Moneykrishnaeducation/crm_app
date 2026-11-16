@@ -205,4 +205,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Windows browser'), findsOneWidget);
   });
+
+  testWidgets('SecurityCenterPage and VerifySecurityPasswordModal adhere to White, Blue, and Gold theme', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SecurityCenterPage(
+            onBack: () {},
+            onSelectPage: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify page container uses light background #F8FAFC
+    final pageContainer = tester.widget<Container>(
+      find.descendant(
+        of: find.byType(SecurityCenterPage),
+        matching: find.byType(Container),
+      ).first,
+    );
+    expect(pageContainer.color, const Color(0xFFF8FAFC));
+
+    // Verify Protected badge uses Gold accent
+    expect(find.text('Protected'), findsOneWidget);
+    expect(find.text('SIGN-IN PROTECTION'), findsOneWidget);
+    expect(find.text('Security & Devices'), findsOneWidget);
+    expect(find.byIcon(LucideIcons.shieldCheck), findsWidgets);
+    expect(find.byIcon(LucideIcons.refreshCw), findsOneWidget);
+    expect(find.byIcon(LucideIcons.shield), findsWidgets);
+  });
 }

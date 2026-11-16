@@ -1391,12 +1391,9 @@ class _BrokerNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = isDark ? const Color(0xFFFFD166) : _brokerBlue;
-    final activeBackground = isDark
-        ? const Color(0xFF3A321D)
-        : _brokerBlue.withValues(alpha: .07);
-    final activeBorder = isDark
-        ? const Color(0xFF806323)
-        : _brokerBlue.withValues(alpha: .12);
+    // Keep the selected item visually clear without a filled background.
+    const activeBackground = Colors.transparent;
+    const activeBorder = Colors.transparent;
     final inactiveColor = isDark
         ? const Color(0xFFB7C4D8)
         : Theme.of(context).colorScheme.onSurfaceVariant;

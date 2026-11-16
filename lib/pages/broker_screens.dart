@@ -106,7 +106,6 @@ class BrokerDashboardPage extends StatelessWidget {
               _BrokerShortcut(
                 icon: LucideIcons.wallet,
                 label: 'Deposit Funds',
-                selected: true,
                 onTap: () => onSelectPage('Deposit'),
               ),
               _BrokerShortcut(

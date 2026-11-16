@@ -145,9 +145,9 @@ class _DashboardSectionHeading extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(title, style: const TextStyle(color: Color(0xFF10264B), fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+      Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -.2)),
       const SizedBox(height: 3),
-      Text(subtitle, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+      Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
     ],
   );
 }
@@ -638,7 +638,7 @@ class _ActivityTile extends StatelessWidget {
     ),
     subtitle: Text(
       detail,
-      style: const TextStyle(color: _brokerMuted, fontSize: 9),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
     ),
     trailing: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -655,7 +655,7 @@ class _ActivityTile extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           time,
-          style: const TextStyle(color: Color(0xFF71809A), fontSize: 9),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
         ),
       ],
     ),

@@ -50,7 +50,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                       children: [
                         Text('ACCOUNTS', style: TextStyle(color: Color(0xFF8290A6), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
                         SizedBox(height: 3),
-                        Text('Trading accounts', style: TextStyle(color: _brokerNavy, fontSize: 24, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.5)),
+                        Text('Trading accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.5)),
                         SizedBox(height: 5),
                         Text('View balances, equity and account details', style: TextStyle(color: _brokerMuted, fontSize: 10)),
                       ],
@@ -84,7 +84,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 _AccountAction(icon: LucideIcons.monitor, label: 'Demo', onTap: () => widget.onSelectPage('Demo Accounts')),
               ]),
               const SizedBox(height: 18),
-              const Text('Account overview', style: TextStyle(color: _brokerNavy, fontSize: 14, fontWeight: FontWeight.w800)),
+              const Text('Account overview', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
               const SizedBox(height: 9),
               SizedBox(
                 height: 96,
@@ -102,7 +102,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  const Expanded(child: Text('Your accounts', style: TextStyle(color: _brokerNavy, fontSize: 14, fontWeight: FontWeight.w800))),
+                  const Expanded(child: Text('Your accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800))),
                   Text('${accounts.length} shown', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600)),
                 ],
               ),
@@ -218,7 +218,7 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
         height: (screen.height * .84).clamp(400.0, 700.0).toDouble(),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFFFF),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0xFF1766C8)),
             boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 26, offset: Offset(0, 12))],
@@ -238,9 +238,9 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
               const SizedBox(height: 6),
               _leverageSelector(),
               const SizedBox(height: 6),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(9), border: Border.all(color: const Color(0xFFE2E8F1))), child: Row(children: [Expanded(child: Text('Custom Leverage: 1:500', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 9, fontWeight: FontWeight.w600))), Text('Selected:  $_leverage', style: TextStyle(color: _brokerGold, fontSize: 9, fontWeight: FontWeight.w700))])),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(9), border: Border.all(color: Theme.of(context).dividerColor)), child: Row(children: [Expanded(child: Text('Custom Leverage: 1:500', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 9, fontWeight: FontWeight.w600))), Text('Selected:  $_leverage', style: TextStyle(color: _brokerGold, fontSize: 9, fontWeight: FontWeight.w700))])),
               const SizedBox(height: 8),
-              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F1))), child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(LucideIcons.info, color: Color(0xFF64B9FF), size: 15), SizedBox(width: 7), Expanded(child: Text('SECURITY NOTICE: Master password executes trades; Investor password provides read-only monitoring.', style: TextStyle(color: _brokerMuted, fontSize: 9, height: 1.35)))])),
+              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: Theme.of(context).dividerColor)), child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(LucideIcons.info, color: Color(0xFF64B9FF), size: 15), SizedBox(width: 7), Expanded(child: Text('SECURITY NOTICE: Master password executes trades; Investor password provides read-only monitoring.', style: TextStyle(color: _brokerMuted, fontSize: 9, height: 1.35)))])),
               const SizedBox(height: 12),
               _sectionLabel('MASTER PASSWORD', required: true, trailing: 'FULL TRADING CONTROL'),
               const SizedBox(height: 5),
@@ -251,30 +251,30 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
               _PasswordInput(controller: _investorPassword),
             ]))),
             Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 10), child: SizedBox(width: double.infinity, height: 42, child: FilledButton.icon(onPressed: _createAccount, style: FilledButton.styleFrom(backgroundColor: const Color(0xFF174A8B), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), icon: const Icon(LucideIcons.arrowRight, size: 16), label: const Text('CREATE LIVE ACCOUNT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .5))))),
-            Container(height: 38, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: const BoxDecoration(color: Color(0xFF06132C), borderRadius: BorderRadius.vertical(bottom: Radius.circular(17))), child: const Row(children: [Icon(LucideIcons.shieldCheck, color: Color(0xFF10D6B2), size: 14), SizedBox(width: 6), Text('SECURE MT5', style: TextStyle(color: _brokerNavy, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(LucideIcons.zap, color: Color(0xFF45A8FF), size: 15), SizedBox(width: 5), Text('INSTANT SETUP', style: TextStyle(color: _brokerNavy, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(LucideIcons.lockKeyhole, color: Color(0xFF45A8FF), size: 14), SizedBox(width: 5), Text('REGULATED', style: TextStyle(color: _brokerNavy, fontSize: 8, fontWeight: FontWeight.w700))])),
+            Container(height: 38, padding: const EdgeInsets.symmetric(horizontal: 16), decoration: const BoxDecoration(color: Color(0xFF06132C), borderRadius: BorderRadius.vertical(bottom: Radius.circular(17))), child: const Row(children: [Icon(LucideIcons.shieldCheck, color: Color(0xFF10D6B2), size: 14), SizedBox(width: 6), Text('SECURE MT5', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(LucideIcons.zap, color: Color(0xFF45A8FF), size: 15), SizedBox(width: 5), Text('INSTANT SETUP', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w700)), Spacer(), Icon(LucideIcons.lockKeyhole, color: Color(0xFF45A8FF), size: 14), SizedBox(width: 5), Text('REGULATED', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w700))])),
           ]),
         ),
       ),
     );
   }
 
-  Widget _dialogHeader() => Container(padding: const EdgeInsets.fromLTRB(16, 12, 10, 10), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFF1A2D55)))), child: Row(children: [Container(width: 36, height: 36, decoration: BoxDecoration(border: Border.all(color: const Color(0xFF3478FF)), borderRadius: BorderRadius.circular(10)), child: const Icon(LucideIcons.wallet, color: Color(0xFF5EA3FF), size: 19)), const SizedBox(width: 10), const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Open Live Account', style: TextStyle(color: _brokerNavy, fontSize: 15, fontWeight: FontWeight.w800)), SizedBox(height: 3), Row(children: [Icon(LucideIcons.circle, color: Color(0xFF00D98A), size: 7), SizedBox(width: 5), Text('Live MT5 Engine', style: TextStyle(color: Color(0xFF00D98A), fontSize: 8, fontWeight: FontWeight.w700)), SizedBox(width: 8), Text('•  Direct STP Execution', style: TextStyle(color: _brokerMuted, fontSize: 8))])])), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.x, color: _brokerMuted, size: 18), visualDensity: VisualDensity.compact)]));
+  Widget _dialogHeader() => Container(padding: const EdgeInsets.fromLTRB(16, 12, 10, 10), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFF1A2D55)))), child: Row(children: [Container(width: 36, height: 36, decoration: BoxDecoration(border: Border.all(color: const Color(0xFF3478FF)), borderRadius: BorderRadius.circular(10)), child: const Icon(LucideIcons.wallet, color: Color(0xFF5EA3FF), size: 19)), const SizedBox(width: 10), const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Open Live Account', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800)), SizedBox(height: 3), Row(children: [Icon(LucideIcons.circle, color: Color(0xFF00D98A), size: 7), SizedBox(width: 5), Text('Live MT5 Engine', style: TextStyle(color: Color(0xFF00D98A), fontSize: 8, fontWeight: FontWeight.w700)), SizedBox(width: 8), Text('•  Direct STP Execution', style: TextStyle(color: _brokerMuted, fontSize: 8))])])), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.x, color: _brokerMuted, size: 18), visualDensity: VisualDensity.compact)]));
 
   Widget _sectionLabel(String label, {bool required = false, String? trailing}) => Row(children: [Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .2)), if (required) const Padding(padding: EdgeInsets.only(left: 5), child: Text('*', style: TextStyle(color: Color(0xFFFF5867), fontSize: 10, fontWeight: FontWeight.w800))), const Spacer(), if (trailing != null) Text(trailing, style: const TextStyle(color: Color(0xFF59AFFF), fontSize: 8, fontWeight: FontWeight.w700))]);
 
   Widget _textInput(TextEditingController controller, {required String hint, required IconData prefix}) => TextField(controller: controller, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11, fontWeight: FontWeight.w600), decoration: _inputDecoration(hint, prefix));
 
-  InputDecoration _inputDecoration(String hint, IconData prefix) => InputDecoration(prefixIcon: Icon(prefix, size: 16, color: const Color(0xFF5E8BD5)), hintText: hint, hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10), isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), filled: true, fillColor: const Color(0xFFFFFFFF), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F1))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF3478FF))));
+  InputDecoration _inputDecoration(String hint, IconData prefix) => InputDecoration(prefixIcon: Icon(prefix, size: 16, color: const Color(0xFF5E8BD5)), hintText: hint, hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10), isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), filled: true, fillColor: const Color(0xFFFFFFFF), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Theme.of(context).dividerColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF3478FF))));
 
-  Widget _groupPicker() => Container(padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F1))), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: _group, isExpanded: true, dropdownColor: _brokerPanel, iconEnabledColor: _brokerMuted, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w600), items: const [DropdownMenuItem(value: 'VIP - Recommended (Default)', child: Text('VIP - Recommended (Default)')), DropdownMenuItem(value: 'Standard', child: Text('Standard')), DropdownMenuItem(value: 'ECN', child: Text('ECN'))], onChanged: (value) { if (value != null) setState(() => _group = value); })));
+  Widget _groupPicker() => Container(padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: Theme.of(context).dividerColor)), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: _group, isExpanded: true, dropdownColor: _brokerPanel, iconEnabledColor: _brokerMuted, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w600), items: const [DropdownMenuItem(value: 'VIP - Recommended (Default)', child: Text('VIP - Recommended (Default)')), DropdownMenuItem(value: 'Standard', child: Text('Standard')), DropdownMenuItem(value: 'ECN', child: Text('ECN'))], onChanged: (value) { if (value != null) setState(() => _group = value); })));
 
   Widget _leverageSelector() {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F1)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
@@ -331,7 +331,7 @@ class _PasswordInput extends StatefulWidget {
 class _PasswordInputState extends State<_PasswordInput> {
   bool _visible = false;
   @override
-  Widget build(BuildContext context) => TextField(controller: widget.controller, obscureText: !_visible, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11), decoration: InputDecoration(prefixIcon: const Icon(LucideIcons.lockKeyhole, size: 15, color: Color(0xFF5E8BD5)), suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(onPressed: () {}, icon: Icon(LucideIcons.copy, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant), visualDensity: VisualDensity.compact), IconButton(onPressed: () {}, icon: Icon(LucideIcons.refreshCw, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant), visualDensity: VisualDensity.compact), IconButton(onPressed: () => setState(() => _visible = !_visible), icon: Icon(_visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant), visualDensity: VisualDensity.compact)]), isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), filled: true, fillColor: const Color(0xFFFFFFFF), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F1))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF3478FF)))));
+  Widget build(BuildContext context) => TextField(controller: widget.controller, obscureText: !_visible, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11), decoration: InputDecoration(prefixIcon: const Icon(LucideIcons.lockKeyhole, size: 15, color: Color(0xFF5E8BD5)), suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(onPressed: () {}, icon: Icon(LucideIcons.copy, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant), visualDensity: VisualDensity.compact), IconButton(onPressed: () {}, icon: Icon(LucideIcons.refreshCw, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant), visualDensity: VisualDensity.compact), IconButton(onPressed: () => setState(() => _visible = !_visible), icon: Icon(_visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant), visualDensity: VisualDensity.compact)]), isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), filled: true, fillColor: const Color(0xFFFFFFFF), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Theme.of(context).dividerColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF3478FF)))));
 }
 
 class _AccountAction extends StatelessWidget {
@@ -395,7 +395,7 @@ class _AccountFilter extends StatelessWidget {
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account}); final BrokerAccount account;
   @override
-  Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(13), border: Border.all(color: const Color(0xFFE2E8F1))), child: Column(children: [
+  Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(13), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
     Row(children: [const CircleAvatar(radius: 15, backgroundColor: Color(0xFFEAF2FC), child: Text('MT5', style: TextStyle(color: _brokerBlue, fontSize: 7, fontWeight: FontWeight.w800))), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w700)), const SizedBox(height: 3), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF258564), fontSize: 8, fontWeight: FontWeight.w600))])), Text('Login ${account.login}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8))]),
     const Divider(height: 16, color: Color(0xFF1B3B68)),
     Row(children: [Expanded(child: _AccountValue(label: 'LEVERAGE', value: account.leverage)), Expanded(child: _AccountValue(label: 'BALANCE (USD)', value: account.balance)), Expanded(child: _AccountValue(label: 'EQUITY (USD)', value: account.equity, green: true)), FilledButton(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(0, 29)), child: const Text('Deposit', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700)))]),
@@ -419,7 +419,7 @@ class _AccountTable extends StatelessWidget {
 class _AccountTableRow extends StatelessWidget {
   const _AccountTableRow({required this.account}); final BrokerAccount account;
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9), decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE2E8F1)))), child: Row(children: [
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9), decoration: const BoxDecoration(border: Border(top: BorderSide(color: Theme.of(context).dividerColor))), child: Row(children: [
     Expanded(flex: 3, child: Row(children: [const CircleAvatar(radius: 13, backgroundColor: Color(0xFFEAF2FC), child: Text('MT5', style: TextStyle(color: _brokerBlue, fontSize: 6, fontWeight: FontWeight.w800))), const SizedBox(width: 6), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w700)), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF258564), fontSize: 7, fontWeight: FontWeight.w600))]))])),
     Expanded(child: Text('${account.login}  ${account.leverage}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8))),
     Expanded(child: Text(account.balance, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w700))),

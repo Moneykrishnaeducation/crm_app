@@ -368,14 +368,35 @@ class _AccountFilter extends StatelessWidget {
   const _AccountFilter({required this.label, required this.count, required this.selected, required this.onTap});
   final String label, count; final bool selected; final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(18), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: selected ? const Color(0xFF174DBA) : const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: selected ? const Color(0xFF398CFF) : const Color(0xFFE2E8F1))), child: Row(children: [Text(label, style: const TextStyle(color: _brokerNavy, fontSize: 9, fontWeight: FontWeight.w600)), const SizedBox(width: 5), Container(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2), decoration: BoxDecoration(color: _brokerNavy.withValues(alpha: .15), shape: BoxShape.circle), child: Text(count, style: const TextStyle(color: _brokerNavy, fontSize: 8)))])));
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(18),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+      decoration: BoxDecoration(
+        color: selected ? _brokerNavy : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: selected ? _brokerNavy : const Color(0xFFE2E8F1)),
+      ),
+      child: Row(children: [
+        Text(label, style: TextStyle(color: selected ? Colors.white : _brokerNavy, fontSize: 10, fontWeight: FontWeight.w700)),
+        const SizedBox(width: 7),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: selected ? Colors.white.withValues(alpha: .16) : const Color(0xFFF0F4F9), borderRadius: BorderRadius.circular(10)),
+          child: Text(count, style: TextStyle(color: selected ? Colors.white : _brokerMuted, fontSize: 9, fontWeight: FontWeight.w700)),
+        ),
+      ]),
+    ),
+  );
 }
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account}); final BrokerAccount account;
   @override
   Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(13), border: Border.all(color: const Color(0xFFE2E8F1))), child: Column(children: [
-    Row(children: [const CircleAvatar(radius: 14, backgroundColor: Color(0xFF173B73), child: Text('STD', style: TextStyle(color: _brokerNavy, fontSize: 7, fontWeight: FontWeight.w700))), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: const TextStyle(color: _brokerNavy, fontSize: 10, fontWeight: FontWeight.w700)), const SizedBox(height: 3), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF32E789), fontSize: 8))])), Text('Login ${account.login}', style: const TextStyle(color: _brokerMuted, fontSize: 8))]),
+    Row(children: [const CircleAvatar(radius: 15, backgroundColor: Color(0xFFEAF2FC), child: Text('MT5', style: TextStyle(color: _brokerBlue, fontSize: 7, fontWeight: FontWeight.w800))), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: const TextStyle(color: _brokerNavy, fontSize: 10, fontWeight: FontWeight.w700)), const SizedBox(height: 3), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF258564), fontSize: 8, fontWeight: FontWeight.w600))])), Text('Login ${account.login}', style: const TextStyle(color: _brokerMuted, fontSize: 8))]),
     const Divider(height: 16, color: Color(0xFF1B3B68)),
     Row(children: [Expanded(child: _AccountValue(label: 'LEVERAGE', value: account.leverage)), Expanded(child: _AccountValue(label: 'BALANCE (USD)', value: account.balance)), Expanded(child: _AccountValue(label: 'EQUITY (USD)', value: account.equity, green: true)), FilledButton(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(0, 29)), child: const Text('Deposit', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700)))]),
   ]));
@@ -399,7 +420,7 @@ class _AccountTableRow extends StatelessWidget {
   const _AccountTableRow({required this.account}); final BrokerAccount account;
   @override
   Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9), decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE2E8F1)))), child: Row(children: [
-    Expanded(flex: 3, child: Row(children: [const CircleAvatar(radius: 12, backgroundColor: Color(0xFF173B73), child: Text('STD', style: TextStyle(color: _brokerNavy, fontSize: 6))), const SizedBox(width: 6), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: const TextStyle(color: _brokerNavy, fontSize: 8, fontWeight: FontWeight.w700)), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF32E789), fontSize: 7))]))])),
+    Expanded(flex: 3, child: Row(children: [const CircleAvatar(radius: 13, backgroundColor: Color(0xFFEAF2FC), child: Text('MT5', style: TextStyle(color: _brokerBlue, fontSize: 6, fontWeight: FontWeight.w800))), const SizedBox(width: 6), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: const TextStyle(color: _brokerNavy, fontSize: 8, fontWeight: FontWeight.w700)), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF258564), fontSize: 7, fontWeight: FontWeight.w600))]))])),
     Expanded(child: Text('${account.login}  ${account.leverage}', style: const TextStyle(color: _brokerNavy, fontSize: 8))),
     Expanded(child: Text(account.balance, style: const TextStyle(color: _brokerNavy, fontSize: 8, fontWeight: FontWeight.w700))),
     Expanded(child: Text(account.equity, style: const TextStyle(color: Color(0xFF00E78A), fontSize: 8, fontWeight: FontWeight.w700))),

@@ -18,20 +18,26 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       toolbarHeight: 56,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
-        statusBarColor: Colors.white,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
+      systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+          ? SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: const Color(0xFF101D31),
+              statusBarIconBrightness: Brightness.light,
+              statusBarBrightness: Brightness.dark,
+            )
+          : SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.white,
+              statusBarIconBrightness: Brightness.dark,
+              statusBarBrightness: Brightness.light,
+            ),
       automaticallyImplyLeading: false,
       leading: onBack != null
           ? IconButton(
               onPressed: onBack,
               tooltip: 'Back',
-              icon: const Icon(LucideIcons.arrowLeft, color: _sidebar, size: 20),
+              icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface, size: 20),
             )
           : null,
       titleSpacing: onBack != null ? 0 : 20,
@@ -55,8 +61,8 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _sidebar,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -81,10 +87,12 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
           child: InkWell(
             onTap: onAvatarTap,
             borderRadius: BorderRadius.circular(16),
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 16,
-              backgroundColor: Color(0xFFEAF0F8),
-              child: Icon(LucideIcons.userRound, size: 18, color: _blue),
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF263750)
+                  : const Color(0xFFEAF0F8),
+              child: const Icon(LucideIcons.userRound, size: 18, color: _blue),
             ),
           ),
         ),

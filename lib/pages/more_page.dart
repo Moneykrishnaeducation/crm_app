@@ -107,7 +107,7 @@ class BrokerMorePage extends StatelessWidget {
             const SizedBox(height: 16),
             const _MoreSectionLabel('ACCOUNT & PARTNERSHIP'),
             _MoreMenuRow(icon: LucideIcons.userRound, title: 'Profile', onTap: () => onSelectPage('Profile')),
-            _MoreMenuRow(icon: LucideIcons.shield, title: 'Security Center', onTap: () => onSelectPage('Support')),
+            _MoreMenuRow(icon: LucideIcons.shieldCheck, title: 'Security Center', onTap: () => onSelectPage('Security Center')),
             _MoreMenuRow(icon: LucideIcons.network, title: 'Partnership', subtitle: 'IB overview, referrals and commissions', accent: _brokerGold, onTap: () => onSelectPage('Partnership')),
             _MoreMenuRow(icon: LucideIcons.layers, title: 'PAMM', onTap: () => onSelectPage('PAMM Account')),
             _MoreMenuRow(icon: LucideIcons.briefcaseBusiness, title: 'Work Order Center', onTap: () => onSelectPage('Transactions')),

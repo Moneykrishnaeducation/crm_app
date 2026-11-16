@@ -25,7 +25,7 @@ class BrokerProfilePage extends StatefulWidget {
 }
 
 class _BrokerProfilePageState extends State<BrokerProfilePage> {
-  int _selectedTabIndex = 0; // 0: Overview, 1: Personal Details, 2: Verification
+  int _selectedTabIndex = 0; // Overview, Personal Details, Verification, Payment Methods
 
   // Mutable user profile details
   String _name = 'INR-DEVOP B';
@@ -39,6 +39,19 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _occupation = 'Software Engineer';
   Color _avatarBg = const Color(0xFF5E9422); // Olive-green
   String _bannerTheme = 'Cosmic Landscape';
+
+  // Mutable Payment Methods details
+  String _bankName = 'NONE BANK';
+  String _bankAccountNumber = '789456123456';
+  String _bankIfscCode = 'IDIB000R101D';
+  String _bankBranch = 'Kallakurichi';
+  final String _bankHolder = 'INR-DEVOP B';
+  final String _bankStatus = 'Connected';
+
+  String _cryptoWalletAddress = '123456789asdfghjklrgq094i50i3i45kjdfjweir099iwe9f';
+  String _cryptoCurrency = 'UNANG';
+  final String _cryptoNetwork = 'TRON (TRC20)';
+  final String _cryptoStatus = 'Connected';
 
   void _showChangeBannerSheet() {
     showModalBottomSheet<void>(
@@ -432,6 +445,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -469,8 +483,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               _buildOverviewTab()
             else if (_selectedTabIndex == 1)
               _buildPersonalDetailsTab()
-            else
-              _buildVerificationTab(),
+            else if (_selectedTabIndex == 2)
+              _buildVerificationTab()
+            else if (_selectedTabIndex == 3)
+              _buildPaymentMethodsTab()
           ],
         ),
       ),
@@ -520,9 +536,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              SizedBox(height: 2),
               Text(
                 'Account settings, verification & preferences',
-                style: TextStyle(color: _profileMuted, fontSize: 10),
+                style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 11),
               ),
             ],
           ),
@@ -530,19 +547,19 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0x28F4C84A),
+            color: const Color(0x28D4A838),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0x66F4C84A)),
+            border: Border.all(color: const Color(0xFFD4A838), width: 1.2),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.shieldCheck, color: _profileGold, size: 14),
+              Icon(LucideIcons.shieldCheck, color: Color(0xFFD4A838), size: 14),
               SizedBox(width: 4),
               Text(
                 'Tier 3',
                 style: TextStyle(
-                  color: _profileGold,
+                  color: Color(0xFFD4A838),
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
@@ -843,32 +860,58 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF143B73)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _tabButton(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const tabWidth = 132.0;
+          const tabGap = 4.0;
+          final tabs = [
+            _tabButton(
               index: 0,
               icon: LucideIcons.layoutGrid,
               label: 'Overview',
             ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _tabButton(
+            _tabButton(
               index: 1,
               icon: LucideIcons.userRound,
               label: 'Personal Details',
             ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _tabButton(
+            _tabButton(
               index: 2,
               icon: LucideIcons.shieldCheck,
               label: 'Verification',
             ),
-          ),
-        ],
+            _tabButton(
+              index: 3,
+              icon: LucideIcons.creditCard,
+              label: 'Payment Methods',
+            ),
+          ];
+
+          final requiredWidth =
+              tabs.length * tabWidth + (tabs.length - 1) * tabGap;
+          if (constraints.maxWidth >= requiredWidth) {
+            return Row(
+              children: [
+                for (var i = 0; i < tabs.length; i++) ...[
+                  if (i > 0) const SizedBox(width: tabGap),
+                  Expanded(child: tabs[i]),
+                ],
+              ],
+            );
+          }
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var i = 0; i < tabs.length; i++) ...[
+                  if (i > 0) const SizedBox(width: tabGap),
+                  SizedBox(width: tabWidth, child: tabs[i]),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -884,7 +927,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 9),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: active ? const Color(0xFF0E2E66) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -892,25 +935,39 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ? Border.all(color: _profileGold, width: 1.2)
               : Border.all(color: Colors.transparent),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 15,
-              color: active ? _profileGold : _profileMuted,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: active ? _profileGold : _profileMuted,
-                  fontSize: 11,
-                  fontWeight: active ? FontWeight.bold : FontWeight.w500,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 15,
+                  color: active ? Colors.white : _profileMuted,
                 ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: active ? Colors.white : _profileMuted,
+                      fontSize: 11,
+                      fontWeight: active ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 3),
+            Container(
+              width: 22,
+              height: 2,
+              decoration: BoxDecoration(
+                color: active ? _profileGold : Colors.transparent,
+                borderRadius: BorderRadius.circular(1),
               ),
             ),
           ],
@@ -918,6 +975,20 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       ),
     );
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // ==========================================
   // TAB 1: OVERVIEW TAB
@@ -1887,6 +1958,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             _infoRow('Account Number', '****3456', copyable: true),
             _infoRow('Account Holder', _name),
             _infoRow('IFSC / Routing Code', 'SBIN0001234', copyable: true),
+            _infoRow('Branch Name', _bankBranch),
             _infoRow('Currency', 'INR (₹)'),
             const SizedBox(height: 18),
             SizedBox(
@@ -2192,24 +2264,27 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Personal Information',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Personal Information',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Identity data verified against official documents',
-                    style: TextStyle(color: _profileMuted, fontSize: 11),
-                  ),
-                ],
+                    SizedBox(height: 2),
+                    Text(
+                      'Identity data verified against official documents',
+                      style: TextStyle(color: _profileMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF113876),
@@ -2321,176 +2396,375 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   // TAB 3: VERIFICATION TAB
   // ==========================================
   Widget _buildVerificationTab() {
+    return _VerificationTabView(
+      onViewDocument: (docType) => _showDocumentViewerSheet(context, docType),
+    );
+  }
+
+  void _showDocumentViewerSheet(BuildContext context, String documentType) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _DocumentViewerModal(documentType: documentType),
+    );
+  }
+
+  // ==========================================
+  // TAB 4: PAYMENT METHODS TAB
+  // ==========================================
+  Widget _buildPaymentMethodsTab() {
+    return _PaymentMethodsTabView(
+      bankName: _bankName,
+      bankAccountNumber: _bankAccountNumber,
+      bankIfscCode: _bankIfscCode,
+      bankBranch: _bankBranch,
+      bankHolder: _bankHolder,
+      bankStatus: _bankStatus,
+      cryptoWalletAddress: _cryptoWalletAddress,
+      cryptoCurrency: _cryptoCurrency,
+      cryptoNetwork: _cryptoNetwork,
+      cryptoStatus: _cryptoStatus,
+      onViewBankDetails: () => _showBankDetailsViewModal(context),
+      onEditBankDetails: () => _showEditBankModal(context),
+      onBankMenuAction: (action) => _handleDestinationAction('Bank Account', action),
+      onViewCryptoDetails: () => _showCryptoDetailsViewModal(context),
+      onEditCryptoDetails: () => _showEditCryptoModal(context),
+      onCryptoMenuAction: (action) => _handleDestinationAction('Crypto Wallet', action),
+    );
+  }
+
+  void _handleDestinationAction(String destination, String action) {
+    if (action == 'primary') {
+      _showSnack('$destination set as primary payout destination');
+    } else if (action == 'refresh') {
+      _showSnack('$destination connection status refreshed: Connected');
+    } else if (action == 'copy') {
+      _showSnack('$destination details copied to clipboard');
+    }
+  }
+
+  void _showBankDetailsViewModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _PaymentDestinationDetailsModal(
+        title: 'Bank Account Details',
+        subtitle: 'Linked settlement account for bank withdrawals and fiat payouts.',
+        icon: LucideIcons.landmark,
+        iconColor: const Color(0xFF081D44),
+        iconBgColor: Colors.white,
+        status: _bankStatus,
+        details: [
+          _PaymentDetailItem(label: 'Beneficiary Name', value: _bankHolder),
+          _PaymentDetailItem(label: 'Bank Name', value: _bankName),
+          _PaymentDetailItem(label: 'Account Number', value: _bankAccountNumber, copyable: true),
+          _PaymentDetailItem(label: 'IFSC Code', value: _bankIfscCode, copyable: true),
+          _PaymentDetailItem(label: 'Branch Name', value: _bankBranch),
+          const _PaymentDetailItem(label: 'Settlement Status', value: 'Active / Authorized'),
+          const _PaymentDetailItem(label: 'Routing Channel', value: 'IMPS / NEFT Direct'),
+          const _PaymentDetailItem(label: 'Primary Destination', value: 'Yes (Default)'),
+        ],
+        onEdit: () {
+          Navigator.pop(ctx);
+          _showEditBankModal(context);
+        },
+      ),
+    );
+  }
+
+  void _showCryptoDetailsViewModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _PaymentDestinationDetailsModal(
+        title: 'Crypto Wallet Details',
+        subtitle: 'Authorized digital asset address for cryptocurrency settlements.',
+        icon: LucideIcons.wallet,
+        iconColor: const Color(0xFF6366F1),
+        iconBgColor: Colors.white,
+        status: _cryptoStatus,
+        details: [
+          _PaymentDetailItem(label: 'Wallet Address', value: _cryptoWalletAddress, copyable: true),
+          _PaymentDetailItem(label: 'Currency', value: _cryptoCurrency),
+          _PaymentDetailItem(label: 'Network', value: _cryptoNetwork),
+          const _PaymentDetailItem(label: 'Whitelist Status', value: 'Whitelisted & Active'),
+          const _PaymentDetailItem(label: 'Settlement Speed', value: 'Instant (~2 minutes)'),
+          const _PaymentDetailItem(label: 'Primary Destination', value: 'Yes'),
+        ],
+        onEdit: () {
+          Navigator.pop(ctx);
+          _showEditCryptoModal(context);
+        },
+      ),
+    );
+  }
+
+  void _showEditBankModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _EditBankDestinationModal(
+        currentBankName: _bankName,
+        currentAccountNumber: _bankAccountNumber,
+        currentIfscCode: _bankIfscCode,
+        currentBranchName: _bankBranch,
+        onSave: (name, accNum, ifsc, branch) {
+          setState(() {
+            _bankName = name;
+            _bankAccountNumber = accNum;
+            _bankIfscCode = ifsc;
+            _bankBranch = branch;
+          });
+          _showSnack('Bank details updated successfully');
+        },
+      ),
+    );
+  }
+
+  void _showEditCryptoModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _EditCryptoDestinationModal(
+        currentWalletAddress: _cryptoWalletAddress,
+        currentCurrency: _cryptoCurrency,
+        onSave: (address, currency) {
+          setState(() {
+            _cryptoWalletAddress = address;
+            _cryptoCurrency = currency;
+          });
+          _showSnack('Crypto wallet updated successfully');
+        },
+      ),
+    );
+  }
+}
+
+// ==========================================
+// VERIFICATION TAB VIEW COMPONENT
+// ==========================================
+class _VerificationTabView extends StatelessWidget {
+  const _VerificationTabView({
+    required this.onViewDocument,
+  });
+
+  final ValueChanged<String> onViewDocument;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // KYC Level Banner
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0F3A7D), Color(0xFF0B2556)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: const Color(0xFF2764BC)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _profileGold.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+        // 1. Header Section
+        Center(
+          child: Column(
+            children: const [
+              Text(
+                'Verification Documents',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.2,
                 ),
-                child: const Icon(LucideIcons.shieldCheck, color: _profileGold, size: 24),
               ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'KYC Level 3: Verified',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Unlimited crypto, wire deposits and priority withdrawals active.',
-                      style: TextStyle(color: Color(0xFFD4E5FF), fontSize: 11),
-                    ),
-                  ],
+              SizedBox(height: 10),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  'View, upload or update your identity and address documents. Identity compares your name and date of birth; address proof compares your name and complete profile address. When fields can be compared, scores below 30% are rejected, 30%*80% require manual review, and above 80% are auto-approved. Unreadable fields or incomplete profile data go to manual review.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF8EA5C8),
+                    fontSize: 12.5,
+                    height: 1.45,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 22),
 
-        // Verification Card 1: Identity Document
-        _kycDocCard(
+        // 2. Card 1: Identity Verification (IDENTITY PROOF)
+        _VerificationDocCard(
+          title: 'Identity Verification',
+          badgeLabel: 'IDENTITY PROOF',
+          subtitle: 'Aadhaar, PAN, passport or driving licence',
           icon: LucideIcons.idCard,
-          title: 'Identity Document',
-          docType: 'National ID Card (Aadhaar / Passport)',
-          docNumber: 'IND-****7842',
-          issuedDate: '15 Jan 2024',
-          expiryDate: '14 Jan 2034',
-          status: 'Verified',
-          statusColor: _profileGreen,
-          onAction: () => _showSnack('Identity Document preview loaded'),
-        ),
-        const SizedBox(height: 12),
-
-        // Verification Card 2: Proof of Residence
-        _kycDocCard(
-          icon: LucideIcons.fileCheck2,
-          title: 'Proof of Residence',
-          docType: 'Official Bank Statement / Utility Bill',
-          docNumber: 'REF-ADDR-2024-819',
-          issuedDate: '02 Feb 2024',
-          expiryDate: 'Active',
-          status: 'Verified',
-          statusColor: _profileGreen,
-          onAction: () => _showSnack('Residence Proof document preview loaded'),
-        ),
-        const SizedBox(height: 12),
-
-        // Verification Card 3: Bank Account
-        _kycDocCard(
-          icon: LucideIcons.landmark,
-          title: 'Bank Account & Settlement',
-          docType: 'State Bank of India (SBI)',
-          docNumber: 'A/C: *******5621 • IFSC: SBIN0001234',
-          issuedDate: 'Linked 18 Jan 2024',
-          expiryDate: 'Primary Method',
-          status: 'Verified',
-          statusColor: _profileGreen,
-          onAction: () => _showSnack('Bank account details loaded'),
+          iconBgColor: const Color(0xFF0C2B60),
+          iconColor: const Color(0xFF4988E8),
+          badgeTagColor: const Color(0xFF4988E8),
+          isIdentity: true,
+          onViewDocument: () => onViewDocument('Identity Verification'),
         ),
         const SizedBox(height: 16),
 
-        // Upload Additional Document Banner
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF071B42),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFF1B4E94),
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: Column(
-            children: [
-              const Icon(LucideIcons.cloudUpload, color: _profileBlue, size: 28),
-              const SizedBox(height: 8),
-              const Text(
-                'Upload Additional Documents',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Submit corporate authority, PEP declaration, or tax certificates if requested.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _profileMuted, fontSize: 11),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: _profileBlue),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                ),
-                onPressed: () => _showSnack('Document upload window opened'),
-                icon: const Icon(LucideIcons.plus, size: 15, color: _profileBlue),
-                label: const Text('Add Document', style: TextStyle(color: Colors.white, fontSize: 12)),
-              ),
-            ],
-          ),
+        // 3. Card 2: Address Verification (ADDRESS PROOF)
+        _VerificationDocCard(
+          title: 'Address Verification',
+          badgeLabel: 'ADDRESS PROOF',
+          subtitle: 'Bank statement or utility bill',
+          icon: LucideIcons.house,
+          iconBgColor: const Color(0xFF221752),
+          iconColor: const Color(0xFF9E86F8),
+          badgeTagColor: const Color(0xFF4988E8),
+          isIdentity: false,
+          onViewDocument: () => onViewDocument('Address Verification'),
         ),
+        const SizedBox(height: 16),
+
+        // 4. Security / Privacy Footer Card
+        _buildSecurityPrivacyFooter(),
       ],
     );
   }
 
-  Widget _kycDocCard({
-    required IconData icon,
-    required String title,
-    required String docType,
-    required String docNumber,
-    required String issuedDate,
-    required String expiryDate,
-    required String status,
-    required Color statusColor,
-    required VoidCallback onAction,
-  }) {
+  Widget _buildSecurityPrivacyFooter() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _profilePanel,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _profileBorder),
+        color: const Color(0xFF06183B),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF112E5E), width: 1.2),
       ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 450;
+          final badge = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF09224E),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF153F78)),
+            ),
+            child: const Text(
+              'Secure document access',
+              style: TextStyle(
+                color: Color(0xFF6A88B8),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0C2B60),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(LucideIcons.lock, color: Color(0xFF4988E8), size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Your documents stay protected.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'You must verify your CRM password before viewing a document.',
+                          style: TextStyle(
+                            color: Color(0xFF8EA5C8),
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isCompact) ...[
+                    const SizedBox(width: 12),
+                    badge,
+                  ],
+                ],
+              ),
+              if (isCompact) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: badge,
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ==========================================
+// VERIFICATION DOCUMENT CARD WIDGET
+// ==========================================
+class _VerificationDocCard extends StatelessWidget {
+  const _VerificationDocCard({
+    required this.title,
+    required this.badgeLabel,
+    required this.subtitle,
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.badgeTagColor,
+    required this.isIdentity,
+    required this.onViewDocument,
+  });
+
+  final String title;
+  final String badgeLabel;
+  final String subtitle;
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final Color badgeTagColor;
+  final bool isIdentity;
+  final VoidCallback onViewDocument;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF081D44),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF13376E), width: 1.2),
+      ),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top Header Row
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: _profileBlue.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF67A6FF), size: 20),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2501,38 +2775,50 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                       title,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      docType,
-                      style: const TextStyle(
-                        color: _profileMuted,
+                      badgeLabel,
+                      style: TextStyle(
+                        color: badgeTagColor,
                         fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              // [green dot] Approved green pill badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                  color: const Color(0xFF0C3925),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF1B6A41)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LucideIcons.check, color: statusColor, size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      status,
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    const Text(
+                      'Approved',
                       style: TextStyle(
-                        color: statusColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF22C55E),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -2541,66 +2827,707 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             ],
           ),
           const SizedBox(height: 12),
+
+          // Subtitle & Right-side graphic element
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF8EA5C8),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _buildGraphicPreview(),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Document file box
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF07193C),
+              color: const Color(0xFF051433),
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF0F2B5B)),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
+                const Icon(LucideIcons.fileText, size: 16, color: Color(0xFF4988E8)),
+                const SizedBox(width: 10),
+                const Expanded(
                   child: Text(
-                    docNumber,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFD4E5FF),
-                      fontSize: 11.5,
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w600,
+                    'Document file',
+                    style: TextStyle(
+                      color: Color(0xFF8EA5C8),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '$issuedDate • $expiryDate',
-                  style: const TextStyle(
-                    color: _profileMuted,
-                    fontSize: 10,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0B2556),
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(color: const Color(0xFF163E75)),
+                  ),
+                  child: const Text(
+                    'PDF / IMAGE',
+                    style: TextStyle(
+                      color: Color(0xFF67A6FF),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: onAction,
-              borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+          const SizedBox(height: 14),
+
+          // Verification complete row
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0C3925),
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(color: const Color(0xFF1B6A41).withValues(alpha: 0.7)),
+                ),
+                child: const Icon(LucideIcons.shieldCheck, color: Color(0xFF22C55E), size: 16),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
                     Text(
-                      'View Details',
+                      'Verification complete',
                       style: TextStyle(
-                        color: Color(0xFF5AA5FF),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Icon(LucideIcons.chevronRight, size: 13, color: Color(0xFF5AA5FF)),
+                    SizedBox(height: 2),
+                    Text(
+                      'Your document has been approved.',
+                      style: TextStyle(
+                        color: Color(0xFF8EA5C8),
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Action Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onViewDocument,
+              icon: const Icon(LucideIcons.eye, color: Colors.white, size: 16),
+              label: const Text(
+                'View document',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFF07193C),
+                side: const BorderSide(color: Color(0xFF1B4E94)),
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGraphicPreview() {
+    if (isIdentity) {
+      return Container(
+        width: 78,
+        height: 48,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0C2B60), Color(0xFF071B3E)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF1B4E94), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 22,
+              height: 28,
+              decoration: BoxDecoration(
+                color: const Color(0xFF123B7D),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(
+                LucideIcons.userRound,
+                size: 14,
+                color: Color(0xFF67A6FF),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 3.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4988E8),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Container(
+                    width: 24,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2B5EA6),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Container(
+                    width: 28,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D457E),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        width: 78,
+        height: 48,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF221752), Color(0xFF120C30)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF4C3D9E), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 22,
+              height: 28,
+              decoration: BoxDecoration(
+                color: const Color(0xFF332378),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(
+                LucideIcons.house,
+                size: 14,
+                color: Color(0xFFA588F8),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 3.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFA588F8),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Container(
+                    width: 24,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF745CBF),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Container(
+                    width: 28,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4C388E),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+}
+
+// ==========================================
+// DOCUMENT VIEWER BOTTOM SHEET MODAL
+// ==========================================
+class _DocumentViewerModal extends StatefulWidget {
+  const _DocumentViewerModal({required this.documentType});
+
+  final String documentType;
+
+  @override
+  State<_DocumentViewerModal> createState() => _DocumentViewerModalState();
+}
+
+class _DocumentViewerModalState extends State<_DocumentViewerModal> {
+  bool _passwordVerified = true;
+  final TextEditingController _passwordController = TextEditingController(text: '••••••••');
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isIdentity = widget.documentType.contains('Identity');
+    final docTitle = isIdentity ? 'Identity Verification' : 'Address Verification';
+    final docBadge = isIdentity ? 'IDENTITY PROOF' : 'ADDRESS PROOF';
+    final docTypeDetail = isIdentity
+        ? 'National ID Card (Aadhaar / Passport)'
+        : 'Official Bank Statement / Utility Bill';
+    final docRef = isIdentity ? 'IND-****7842' : 'REF-ADDR-2024-819';
+    final docScore = isIdentity ? '96% (Auto-Approved >80%)' : '92% (Auto-Approved >80%)';
+    final docComparison = isIdentity
+        ? 'Name & Date of Birth matched with profile'
+        : 'Name & Complete Profile Address matched';
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      decoration: const BoxDecoration(
+        color: Color(0xFF081D44),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: Color(0xFF1B4E94), width: 1.5)),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF285494),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Header Row
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isIdentity ? const Color(0xFF0C2B60) : const Color(0xFF221752),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    isIdentity ? LucideIcons.idCard : LucideIcons.house,
+                    color: isIdentity ? const Color(0xFF4988E8) : const Color(0xFF9E86F8),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        docTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        docBadge,
+                        style: const TextStyle(
+                          color: Color(0xFF4988E8),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0C3925),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF1B6A41)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF22C55E),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'Approved',
+                        style: TextStyle(
+                          color: Color(0xFF22C55E),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(LucideIcons.x, color: Color(0xFF8EA5C8), size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Password Prompt Simulation Card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF051433),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _passwordVerified ? const Color(0xFF1B6A41) : const Color(0xFF1D4D8F),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: _passwordVerified
+                              ? const Color(0xFF0C3925)
+                              : const Color(0xFF0C2B60),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          _passwordVerified ? LucideIcons.shieldCheck : LucideIcons.lock,
+                          size: 16,
+                          color: _passwordVerified
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFF4988E8),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'CRM Password Authentication',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _passwordVerified
+                              ? const Color(0xFF0C3925)
+                              : const Color(0xFF13376E),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _passwordVerified ? 'Verified' : 'Required',
+                          style: TextStyle(
+                            color: _passwordVerified
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFF8EA5C8),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _passwordVerified
+                        ? 'Your CRM identity password was successfully verified. Full document decrypt key active for this session.'
+                        : 'Confirm your CRM password to decrypt and view confidential document files.',
+                    style: const TextStyle(
+                      color: Color(0xFF8EA5C8),
+                      fontSize: 11.5,
+                      height: 1.35,
+                    ),
+                  ),
+                  if (!_passwordVerified) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFF081D44),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              hintText: 'Enter CRM password',
+                              hintStyle: const TextStyle(color: Color(0xFF5B78A5), fontSize: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: Color(0xFF1D4D8F)),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                                  size: 16,
+                                  color: const Color(0xFF8EA5C8),
+                                ),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => setState(() => _passwordVerified = true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0875F5),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Verify', style: TextStyle(color: Colors.white, fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Document Details & Metadata
+            const Text(
+              'Document Details & Metadata',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF051433),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF13376E)),
+              ),
+              child: Column(
+                children: [
+                  _metaRow('Document Type', docTypeDetail),
+                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  _metaRow('Document Number', docRef),
+                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  _metaRow('AI Matching Score', docScore),
+                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  _metaRow('Comparison Result', docComparison),
+                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  _metaRow('Storage Vault', 'AES-256 Protected & Tamper Sealed'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Visual document preview box
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF040F27),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF0E2856)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            isIdentity ? LucideIcons.idCard : LucideIcons.fileSpreadsheet,
+                            color: const Color(0xFF4988E8),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isIdentity ? 'identity_document_verified.pdf' : 'address_statement_verified.pdf',
+                            style: const TextStyle(
+                              color: Color(0xFFD4E5FF),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Text(
+                        '1.8 MB',
+                        style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 11),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    height: 90,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF07193C),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF143B73)),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(LucideIcons.shieldCheck, color: Color(0xFF22C55E), size: 26),
+                          const SizedBox(height: 6),
+                          Text(
+                            'CONFIDENTIAL • VERIFIED BY CRM SYSTEM',
+                            style: TextStyle(
+                              color: const Color(0xFF67A6FF).withValues(alpha: 0.8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Close button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0C2B60),
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFF1D4D8F)),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _metaRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xFF8EA5C8), fontSize: 11.5),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2953,3 +3880,1532 @@ class PromoOrbitPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+// ==========================================
+// PAYMENT METHODS TAB VIEW COMPONENT
+// ==========================================
+class _PaymentMethodsTabView extends StatelessWidget {
+  const _PaymentMethodsTabView({
+    required this.bankName,
+    required this.bankAccountNumber,
+    required this.bankIfscCode,
+    required this.bankBranch,
+    required this.bankHolder,
+    required this.bankStatus,
+    required this.cryptoWalletAddress,
+    required this.cryptoCurrency,
+    required this.cryptoNetwork,
+    required this.cryptoStatus,
+    required this.onViewBankDetails,
+    required this.onEditBankDetails,
+    required this.onBankMenuAction,
+    required this.onViewCryptoDetails,
+    required this.onEditCryptoDetails,
+    required this.onCryptoMenuAction,
+  });
+
+  final String bankName;
+  final String bankAccountNumber;
+  final String bankIfscCode;
+  final String bankBranch;
+  final String bankHolder;
+  final String bankStatus;
+
+  final String cryptoWalletAddress;
+  final String cryptoCurrency;
+  final String cryptoNetwork;
+  final String cryptoStatus;
+
+  final VoidCallback onViewBankDetails;
+  final VoidCallback onEditBankDetails;
+  final ValueChanged<String> onBankMenuAction;
+  final VoidCallback onViewCryptoDetails;
+  final VoidCallback onEditCryptoDetails;
+  final ValueChanged<String> onCryptoMenuAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. Header Section
+        Center(
+          child: Column(
+            children: const [
+              Text(
+                'Payment Methods',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              SizedBox(height: 8),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Add, manage or update your payment destinations.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF8EA5C8),
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+
+        // 2. Card 1: Bank Account
+        _buildBankCard(context),
+        const SizedBox(height: 16),
+
+        // 3. Card 2: Crypto Wallet
+        _buildCryptoCard(context),
+        const SizedBox(height: 16),
+
+        // 4. Security Footer Note
+        _buildSecurityFooter(),
+      ],
+    );
+  }
+
+  Widget _buildBankCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF081D44),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF13376E), width: 1.2),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  LucideIcons.landmark,
+                  color: Color(0xFF081D44),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    const Text(
+                      'Bank Account',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    _connectedBadge(bankStatus),
+                  ],
+                ),
+              ),
+              _buildEllipsisMenu(onBankMenuAction),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Subtitle & 3D Isometric Illustration
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Expanded(
+                child: Text(
+                  'For bank-based withdrawals and eligible payouts.',
+                  style: TextStyle(
+                    color: Color(0xFF8EA5C8),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const _IsometricBankGraphic(),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Details container
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF06173B),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF102B5E), width: 1.2),
+            ),
+            child: Column(
+              children: [
+                _detailRow(label: 'Bank name', value: bankName),
+                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                _detailRow(label: 'Account number', value: bankAccountNumber),
+                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                _detailRow(label: 'IFSC code', value: bankIfscCode),
+                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                _detailRow(label: 'Branch name', value: bankBranch),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Action Buttons
+          _actionButtons(
+            onView: onViewBankDetails,
+            onEdit: onEditBankDetails,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCryptoCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF081D44),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF13376E), width: 1.2),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  LucideIcons.wallet,
+                  color: Color(0xFF6366F1),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    const Text(
+                      'Crypto Wallet',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    _connectedBadge(cryptoStatus),
+                  ],
+                ),
+              ),
+              _buildEllipsisMenu(onCryptoMenuAction),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Subtitle & 3D Isometric Illustration
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Expanded(
+                child: Text(
+                  'Manage a supported digital asset destination.',
+                  style: TextStyle(
+                    color: Color(0xFF8EA5C8),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const _IsometricCryptoGraphic(),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Details container
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF06173B),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF102B5E), width: 1.2),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Wallet address',
+                  style: TextStyle(
+                    color: Color(0xFF8EA5C8),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  cryptoWalletAddress,
+                  softWrap: true,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    height: 1.35,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                _detailRow(label: 'Currency', value: cryptoCurrency),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Action Buttons
+          _actionButtons(
+            onView: onViewCryptoDetails,
+            onEdit: onEditCryptoDetails,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityFooter() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF06183B),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF112E5E), width: 1.2),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C2B60),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF153F78)),
+            ),
+            child: const Icon(
+              LucideIcons.shieldCheck,
+              color: Color(0xFF4988E8),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Keep your destinations up to date.',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Always double-check account and wallet details before saving changes.',
+                  style: TextStyle(
+                    color: Color(0xFF8EA5C8),
+                    fontSize: 11.5,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _connectedBadge(String status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C3925),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF1B6A41)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Color(0xFF22C55E),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            status,
+            style: const TextStyle(
+              color: Color(0xFF22C55E),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEllipsisMenu(ValueChanged<String> onAction) {
+    return PopupMenuButton<String>(
+      icon: const Icon(LucideIcons.ellipsis, color: Color(0xFF8EA5C8), size: 20),
+      tooltip: 'Options',
+      color: const Color(0xFF071C44),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFF174783)),
+      ),
+      onSelected: onAction,
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'primary',
+          child: Row(
+            children: [
+              Icon(LucideIcons.star, size: 16, color: Color(0xFFF4C84A)),
+              SizedBox(width: 10),
+              Text('Set as primary', style: TextStyle(color: Colors.white, fontSize: 13)),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'refresh',
+          child: Row(
+            children: [
+              Icon(LucideIcons.refreshCw, size: 16, color: Color(0xFF4988E8)),
+              SizedBox(width: 10),
+              Text('Refresh status', style: TextStyle(color: Colors.white, fontSize: 13)),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'copy',
+          child: Row(
+            children: [
+              Icon(LucideIcons.copy, size: 16, color: Color(0xFFA9B9D5)),
+              SizedBox(width: 10),
+              Text('Copy details', style: TextStyle(color: Colors.white, fontSize: 13)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _detailRow({required String label, required String value}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF8EA5C8),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13.5,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _actionButtons({
+    required VoidCallback onView,
+    required VoidCallback onEdit,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 500;
+        final viewBtn = OutlinedButton.icon(
+          onPressed: onView,
+          icon: const Icon(LucideIcons.eye, color: Color(0xFF67A6FF), size: 16),
+          label: const Text(
+            'View Details',
+            style: TextStyle(
+              color: Color(0xFF67A6FF),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: const Color(0xFF07193C),
+            side: const BorderSide(color: Color(0xFF1B4E94)),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+
+        final editBtn = ElevatedButton.icon(
+          onPressed: onEdit,
+          icon: const Icon(LucideIcons.penLine, color: Colors.white, size: 16),
+          label: const Text(
+            'Edit Details',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1D4ED8),
+            foregroundColor: Colors.white,
+            elevation: 1.5,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+
+        if (isNarrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              viewBtn,
+              const SizedBox(height: 10),
+              editBtn,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: viewBtn),
+            const SizedBox(width: 12),
+            Expanded(child: editBtn),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ------------------------------------------
+// 3D/ISOMETRIC GRAPHIC ELEMENTS
+// ------------------------------------------
+
+class _IsometricBankGraphic extends StatelessWidget {
+  const _IsometricBankGraphic();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF0F326D).withValues(alpha: 0.5),
+            const Color(0xFF071B3E).withValues(alpha: 0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: const Color(0xFF1B4E94), width: 1.1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0D3B82).withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: CustomPaint(
+        painter: _IsometricBankPainter(),
+      ),
+    );
+  }
+}
+
+class _IsometricBankPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // Pediment / Roof 3D
+    // Front triangular pediment
+    final frontPediment = Path()
+      ..moveTo(w * 0.48, h * 0.12)
+      ..lineTo(w * 0.18, h * 0.40)
+      ..lineTo(w * 0.78, h * 0.40)
+      ..close();
+
+    final pedimentPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+
+    canvas.drawPath(frontPediment, pedimentPaint);
+
+    // Roof isometric side facet (depth)
+    final roofDepth = Path()
+      ..moveTo(w * 0.48, h * 0.12)
+      ..lineTo(w * 0.64, h * 0.04)
+      ..lineTo(w * 0.90, h * 0.32)
+      ..lineTo(w * 0.78, h * 0.40)
+      ..close();
+
+    final depthPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF3B82F6), Color(0xFF1E40AF)],
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+
+    canvas.drawPath(roofDepth, depthPaint);
+
+    // Architrave (eaves bar)
+    final architrave = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w * 0.14, h * 0.40, w * 0.68, h * 0.08),
+      const Radius.circular(2),
+    );
+    final eavePaint = Paint()..color = const Color(0xFF60A5FA);
+    canvas.drawRRect(architrave, eavePaint);
+
+    // 3 Classical Columns / Pillars
+    final pillarPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF93C5FD), Color(0xFF1D4ED8)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+
+    final colW = w * 0.10;
+    final colH = h * 0.28;
+    final colY = h * 0.48;
+
+    // Column 1
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.20, colY, colW, colH), const Radius.circular(1.5)),
+      pillarPaint,
+    );
+    // Column 2
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.43, colY, colW, colH), const Radius.circular(1.5)),
+      pillarPaint,
+    );
+    // Column 3
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.66, colY, colW, colH), const Radius.circular(1.5)),
+      pillarPaint,
+    );
+
+    // Plinth / Foundation Base
+    final plinth = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w * 0.12, h * 0.76, w * 0.72, h * 0.10),
+      const Radius.circular(2),
+    );
+    final plinthPaint = Paint()..color = const Color(0xFF1E3A8A);
+    canvas.drawRRect(plinth, plinthPaint);
+
+    // Golden accent dot on pediment
+    final goldPaint = Paint()..color = const Color(0xFFF4C84A);
+    canvas.drawCircle(Offset(w * 0.48, h * 0.28), 2.5, goldPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _IsometricCryptoGraphic extends StatelessWidget {
+  const _IsometricCryptoGraphic();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF2E1065).withValues(alpha: 0.5),
+            const Color(0xFF071B3E).withValues(alpha: 0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: const Color(0xFF4F46E5), width: 1.1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          // Isometric rotated crypto card
+          Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.002)
+              ..rotateZ(-0.15)
+              ..rotateX(0.1),
+            child: Container(
+              width: 48,
+              height: 30,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4338CA), Color(0xFF1E1B4B)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFF818CF8), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 4,
+                    offset: const Offset(1, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Metallic chip
+                  Container(
+                    width: 7,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFCD34D),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                  // Abstract card stripes
+                  Row(
+                    children: [
+                      Container(
+                        width: 14,
+                        height: 2,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFA5B4FC),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Container(
+                        width: 8,
+                        height: 2,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Overlapping glowing gold coin badge peeking at bottom right
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFDE68A), Color(0xFFD97706)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: const Color(0xFFFEF3C7), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(
+                  LucideIcons.coins,
+                  size: 11,
+                  color: Color(0xFF78350F),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ------------------------------------------
+// PAYMENT METHOD MODALS
+// ------------------------------------------
+
+class _PaymentDetailItem {
+  const _PaymentDetailItem({
+    required this.label,
+    required this.value,
+    this.copyable = false,
+  });
+
+  final String label;
+  final String value;
+  final bool copyable;
+}
+
+class _PaymentDestinationDetailsModal extends StatelessWidget {
+  const _PaymentDestinationDetailsModal({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBgColor,
+    required this.status,
+    required this.details,
+    required this.onEdit,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBgColor;
+  final String status;
+  final List<_PaymentDetailItem> details;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      decoration: const BoxDecoration(
+        color: Color(0xFF071B42),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: Color(0xFF1D4D8F), width: 1.5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 44,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Header Row
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Color(0xFF8EA5C8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0C3925),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF1B6A41)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      status,
+                      style: const TextStyle(
+                        color: Color(0xFF22C55E),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // Details List
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF051433),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF102B5E)),
+            ),
+            child: Column(
+              children: [
+                for (var i = 0; i < details.length; i++) ...[
+                  if (i > 0)
+                    const Divider(color: Color(0xFF0E2E66), height: 16, thickness: 1),
+                  _modalDetailRow(context, details[i]),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF1B4E94)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1D4ED8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: onEdit,
+                  icon: const Icon(LucideIcons.penLine, size: 16),
+                  label: const Text('Edit Details', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _modalDetailRow(BuildContext context, _PaymentDetailItem item) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            item.label,
+            style: const TextStyle(
+              color: Color(0xFF8EA5C8),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  item.value,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (item.copyable) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${item.label} copied to clipboard'),
+                        backgroundColor: const Color(0xFF0B2452),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: const BorderSide(color: Color(0xFF174783)),
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(LucideIcons.copy, size: 14, color: Color(0xFF67A6FF)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditBankDestinationModal extends StatefulWidget {
+  const _EditBankDestinationModal({
+    required this.currentBankName,
+    required this.currentAccountNumber,
+    required this.currentIfscCode,
+    required this.currentBranchName,
+    required this.onSave,
+  });
+
+  final String currentBankName;
+  final String currentAccountNumber;
+  final String currentIfscCode;
+  final String currentBranchName;
+  final void Function(String name, String accNum, String ifsc, String branch) onSave;
+
+  @override
+  State<_EditBankDestinationModal> createState() => _EditBankDestinationModalState();
+}
+
+class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _accountController;
+  late final TextEditingController _ifscController;
+  late final TextEditingController _branchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.currentBankName);
+    _accountController = TextEditingController(text: widget.currentAccountNumber);
+    _ifscController = TextEditingController(text: widget.currentIfscCode);
+    _branchController = TextEditingController(text: widget.currentBranchName);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _accountController.dispose();
+    _ifscController.dispose();
+    _branchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF0F6FD),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Dark Navy Header Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF082452),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Bank Details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          LucideIcons.x,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Scrollable Modal Body
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Top Banner Card
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE2EEFC),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            LucideIcons.landmark,
+                            color: Color(0xFF1D58D8),
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bank account information',
+                                style: TextStyle(
+                                  color: Color(0xFF081F4D),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Enter the account details you want to use for payouts.',
+                                style: TextStyle(
+                                  color: Color(0xFF6A82A8),
+                                  fontSize: 12,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(color: Color(0xFFDCE7F5), thickness: 1, height: 1),
+                    const SizedBox(height: 16),
+
+                    // 4 Form Input Fields
+                    _inputField(label: 'Bank name', controller: _nameController),
+                    const SizedBox(height: 14),
+                    _inputField(label: 'Account number', controller: _accountController),
+                    const SizedBox(height: 14),
+                    _inputField(label: 'IFSC code', controller: _ifscController),
+                    const SizedBox(height: 14),
+                    _inputField(label: 'Branch name', controller: _branchController),
+                    const SizedBox(height: 18),
+
+                    // Info Note Card
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEBF3FD),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFD5E4F5), width: 1),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(LucideIcons.shieldCheck, color: Color(0xFF2563EB), size: 18),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Check your bank details carefully before saving.',
+                              style: TextStyle(
+                                color: Color(0xFF5A739C),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Action Button: Save bank details ↗
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF143878),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: _handleSave,
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Save bank details',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(LucideIcons.arrowUpRight, size: 16, color: Colors.white),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleSave() {
+    final name = _nameController.text.trim();
+    final acc = _accountController.text.trim();
+    final ifsc = _ifscController.text.trim();
+    final branch = _branchController.text.trim();
+    if (name.isNotEmpty && acc.isNotEmpty && ifsc.isNotEmpty && branch.isNotEmpty) {
+      widget.onSave(name, acc, ifsc, branch);
+      Navigator.pop(context);
+    }
+  }
+
+  Widget _inputField({required String label, required TextEditingController controller}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF081F4D),
+            fontSize: 12.5,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          style: const TextStyle(
+            color: Color(0xFF081F4D),
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD8E5F4), width: 1.2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD8E5F4), width: 1.2),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditCryptoDestinationModal extends StatefulWidget {
+  const _EditCryptoDestinationModal({
+    required this.currentWalletAddress,
+    required this.currentCurrency,
+    required this.onSave,
+  });
+
+  final String currentWalletAddress;
+  final String currentCurrency;
+  final void Function(String address, String currency) onSave;
+
+  @override
+  State<_EditCryptoDestinationModal> createState() => _EditCryptoDestinationModalState();
+}
+
+class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal> {
+  late final TextEditingController _addressController;
+  late final TextEditingController _currencyController;
+
+  @override
+  void initState() {
+    super.initState();
+    _addressController = TextEditingController(text: widget.currentWalletAddress);
+    _currencyController = TextEditingController(text: widget.currentCurrency);
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    _currencyController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 28,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF071B42),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: Color(0xFF1D4D8F), width: 1.5)),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Edit Crypto Wallet',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Update your cryptocurrency destination address and currency.',
+              style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+            ),
+            const SizedBox(height: 18),
+            _inputField(label: 'Wallet Address', controller: _addressController),
+            const SizedBox(height: 12),
+            _inputField(label: 'Currency', controller: _currencyController),
+            const SizedBox(height: 22),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF1B4E94)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1D4ED8),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      final addr = _addressController.text.trim();
+                      final curr = _currencyController.text.trim();
+                      if (addr.isNotEmpty && curr.isNotEmpty) {
+                        widget.onSave(addr, curr);
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _inputField({required String label, required TextEditingController controller}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF8EA5C8),
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: const Color(0xFF051433),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF102B5E)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF102B5E)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+

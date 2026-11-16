@@ -200,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 Text(
                   'Remember me',
-                  style: TextStyle(color: Colors.white, fontSize: compact ? 12 : 16),
+                  style: TextStyle(color: Colors.white, fontSize: compact ? 12 : 14),
                 ),
                 const Spacer(),
                 TextButton(
@@ -211,7 +211,7 @@ class _LoginPageState extends State<LoginPage> {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: Text('Forgot Password?', style: TextStyle(fontSize: compact ? 11 : 15)),
+                  child: Text('Forgot Password?', style: TextStyle(fontSize: compact ? 11 : 13)),
                 ),
               ],
             ),

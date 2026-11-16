@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'pages/partnership_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/security_center_page.dart';
 
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
@@ -110,6 +111,16 @@ class _AppShellState extends State<AppShell> {
       );
       return;
     }
+    if (page == 'Security Center') {
+      showSecurityPasswordModal(
+        context,
+        onVerified: () {
+          if (!mounted) return;
+          setState(() => _selectedPage = 'Security Center');
+        },
+      );
+      return;
+    }
     setState(() => _selectedPage = page);
   }
 
@@ -118,7 +129,7 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       appBar: _AppHeader(
         title: _selectedPage,
-        onBack: _selectedPage == 'Profile'
+        onBack: (_selectedPage == 'Profile' || _selectedPage == 'Security Center')
             ? () => setState(() => _selectedPage = 'More')
             : null,
         onAvatarTap: () => _selectPage('Profile'),
@@ -153,7 +164,12 @@ class _AppShellState extends State<AppShell> {
                                                 onBack: () => setState(() => _selectedPage = 'More'),
                                                 onSelectPage: _selectPage,
                                               )
-                                            : _SectionPage(title: _selectedPage),
+                                            : _selectedPage == 'Security Center'
+                                                ? SecurityCenterPage(
+                                                    onBack: () => setState(() => _selectedPage = 'More'),
+                                                    onSelectPage: _selectPage,
+                                                  )
+                                                : _SectionPage(title: _selectedPage),
           ),
           BrokerBottomNavigation(
             selectedPage: _selectedPage,

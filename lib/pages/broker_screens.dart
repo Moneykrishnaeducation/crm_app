@@ -1126,71 +1126,65 @@ class BrokerBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
     top: false,
-    minimum: const EdgeInsets.only(bottom: 4),
+    minimum: const EdgeInsets.only(bottom: 5),
     child: Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: const BoxConstraints(maxWidth: 560),
         child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          margin: const EdgeInsets.fromLTRB(14, 3, 14, 7),
+          padding: const EdgeInsets.fromLTRB(7, 7, 7, 7),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: const Color(0xFFE2E8F1)),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: const Color(0xFFE2E8F1), width: 1),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x1A10264B),
-                blurRadius: 22,
-                offset: Offset(0, 6),
+                blurRadius: 18,
+                offset: Offset(0, 5),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(1.2),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30.8),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Row(
-              children: [
-                _BrokerNavItem(
-                  icon: LucideIcons.house,
-                  label: 'Dashboard',
-                  selected: selectedPage == 'Dashboard',
-                  onTap: () => onSelect('Dashboard'),
-                ),
-                _BrokerNavItem(
-                  icon: LucideIcons.receiptText,
-                  label: 'Transactions',
-                  selected: selectedPage == 'Transactions',
-                  onTap: () => onSelect('Transactions'),
-                ),
-                SizedBox(
-                  width: 68,
-                  height: 56,
-                  child: Center(
-                    child: Transform.translate(
-                      offset: const Offset(0, -18),
-                      child: _CenterQuickActionButton(
-                        onTap: () => _showQuickActions(context),
-                      ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _BrokerNavItem(
+                icon: LucideIcons.house,
+                label: 'Home',
+                selected: selectedPage == 'Dashboard',
+                onTap: () => onSelect('Dashboard'),
+              ),
+              _BrokerNavItem(
+                icon: LucideIcons.receiptText,
+                label: 'Activity',
+                selected: selectedPage == 'Transactions',
+                onTap: () => onSelect('Transactions'),
+              ),
+              SizedBox(
+                width: 62,
+                height: 54,
+                child: Center(
+                  child: Transform.translate(
+                    offset: const Offset(0, -9),
+                    child: _CenterQuickActionButton(
+                      onTap: () => _showQuickActions(context),
                     ),
                   ),
                 ),
-                _BrokerNavItem(
-                  icon: LucideIcons.layers,
-                  label: 'Accounts',
-                  selected: selectedPage == 'Trading Accounts',
-                  onTap: () => onSelect('Trading Accounts'),
-                ),
-                _BrokerNavItem(
-                  icon: LucideIcons.grid2x2,
-                  label: 'More',
-                  selected: selectedPage == 'More',
-                  onTap: () => onSelect('More'),
-                ),
-              ],
-            ),
+              ),
+              _BrokerNavItem(
+                icon: LucideIcons.layers,
+                label: 'Accounts',
+                selected: selectedPage == 'Trading Accounts',
+                onTap: () => onSelect('Trading Accounts'),
+              ),
+              _BrokerNavItem(
+                icon: LucideIcons.grid2x2,
+                label: 'More',
+                selected: selectedPage == 'More',
+                onTap: () => onSelect('More'),
+              ),
+            ],
           ),
         ),
       ),
@@ -1203,55 +1197,47 @@ class _CenterQuickActionButton extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_CenterQuickActionButton> createState() =>
-      _CenterQuickActionButtonState();
+  State<_CenterQuickActionButton> createState() => _CenterQuickActionButtonState();
 }
 
 class _CenterQuickActionButtonState extends State<_CenterQuickActionButton> {
   bool _isPressed = false;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: () {
-        HapticFeedback.mediumImpact();
-        widget.onTap();
-      },
-      child: AnimatedScale(
-        scale: _isPressed ? 0.92 : 1.0,
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF389BFF), Color(0xFF0868E8), Color(0xFF004CB8)],
+  Widget build(BuildContext context) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          widget.onTap();
+        },
+        child: AnimatedScale(
+          scale: _isPressed ? .93 : 1,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutCubic,
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: _brokerNavy,
+              shape: BoxShape.circle,
+              border: Border.all(color: _brokerGold, width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x2610244B),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-            border: Border.all(color: const Color(0x88A5D2FF), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0x660875F5),
-                blurRadius: _isPressed ? 10 : 16,
-                offset: _isPressed ? const Offset(0, 3) : const Offset(0, 6),
-              ),
-              const BoxShadow(color: Color(0x40389BFF), blurRadius: 8),
-            ],
-          ),
-          child: const Center(
-            child: Icon(LucideIcons.plus, color: Colors.white, size: 28),
+            child: const Center(
+              child: Icon(LucideIcons.plus, color: _brokerGold, size: 25),
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
 }
 
 class _QuickActionRow extends StatefulWidget {
@@ -1410,103 +1396,76 @@ class _BrokerNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(20),
-        splashColor: _brokerGold.withValues(alpha: 0.15),
-        highlightColor: _brokerGold.withValues(alpha: 0.08),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeOutCubic,
-          height: 58,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: selected
-                ? const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x28F4C84A), Color(0x0DF4C84A)],
-                  )
-                : null,
-            border: Border.all(
-              color: selected ? const Color(0x44F4C84A) : Colors.transparent,
-              width: 1,
-            ),
-            boxShadow: selected
-                ? const [
-                    BoxShadow(
-                      color: Color(0x28F4C84A),
-                      blurRadius: 10,
-                      spreadRadius: -2,
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 240),
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label: label,
+          child: Tooltip(
+            message: label,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onTap();
+              },
+              borderRadius: BorderRadius.circular(16),
+              splashColor: _brokerGold.withValues(alpha: .12),
+              highlightColor: _brokerBlue.withValues(alpha: .05),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOutCubic,
-                width: selected ? 14 : 0,
-                height: 2.5,
+                constraints: const BoxConstraints(minHeight: 54),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
                 decoration: BoxDecoration(
-                  color: _brokerGold,
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color: _brokerGold.withValues(alpha: 0.60),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 3),
-              AnimatedScale(
-                scale: selected ? 1.12 : 1.0,
-                duration: const Duration(milliseconds: 240),
-                curve: Curves.easeOutCubic,
-                child: Icon(
-                  icon,
                   color: selected
-                      ? const Color(0xFFB18418)
-                      : const Color(0xFF71809A),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(height: 3),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                      ? _brokerBlue.withValues(alpha: .07)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
                     color: selected
-                        ? const Color(0xFFB18418)
-                        : const Color(0xFF71809A),
-                    fontSize: selected ? 10.5 : 9.5,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    letterSpacing: selected ? 0.1 : 0.0,
+                        ? _brokerBlue.withValues(alpha: .12)
+                        : Colors.transparent,
                   ),
                 ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedScale(
+                      scale: selected ? 1.08 : 1,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        icon,
+                        color: selected ? _brokerBlue : const Color(0xFF8290A6),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected ? _brokerBlue : const Color(0xFF71809A),
+                        fontSize: 9.5,
+                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: selected ? 15 : 4,
+                      height: 2.5,
+                      decoration: BoxDecoration(
+                        color: selected ? _brokerGold : Colors.transparent,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    ),
-  );
+      );
 }

@@ -176,7 +176,7 @@ class _MoreSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 2, bottom: 9),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: Color(0xFF344766), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
           if (subtitle != null) ...[
             const SizedBox(height: 3),
             Text(subtitle!, style: const TextStyle(color: Color(0xFF8793A7), fontSize: 10)),
@@ -225,14 +225,14 @@ class _MoreMenuRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: const TextStyle(color: Color(0xFF1B2F50), fontSize: 12, fontWeight: FontWeight.w700)),
+                  Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w700)),
                   if (subtitle != null) ...[
                     const SizedBox(height: 3),
                     Text(subtitle!, style: const TextStyle(color: Color(0xFF8290A6), fontSize: 9, height: 1.25)),
                   ],
                 ])),
                 if (trailing != null) ...[
-                  Text(trailing!, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10, fontWeight: FontWeight.w600)),
+                  Text(trailing!, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
                   const SizedBox(width: 7),
                 ],
                 const Icon(LucideIcons.chevronRight, color: Color(0xFFA1ACBC), size: 17),

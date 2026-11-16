@@ -18,7 +18,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       toolbarHeight: 64,
-      backgroundColor: _background,
+      backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
@@ -26,7 +26,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
           ? IconButton(
               onPressed: onBack,
               tooltip: 'Back',
-              icon: const Icon(LucideIcons.arrowLeft, color: Colors.white, size: 20),
+              icon: const Icon(LucideIcons.arrowLeft, color: _sidebar, size: 20),
             )
           : null,
       titleSpacing: onBack != null ? 0 : 20,
@@ -51,7 +51,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
+              color: _sidebar,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -78,8 +78,8 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
             borderRadius: BorderRadius.circular(16),
             child: const CircleAvatar(
               radius: 16,
-              backgroundColor: _panelLight,
-              child: Icon(LucideIcons.userRound, size: 18, color: _gold),
+              backgroundColor: Color(0xFFEAF0F8),
+              child: Icon(LucideIcons.userRound, size: 18, color: _blue),
             ),
           ),
         ),

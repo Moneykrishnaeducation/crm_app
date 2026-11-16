@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
-const _securityNavy = Color(0xFF06163B);
-const _securityPanel = Color(0xFF081D44);
-const _securityBorder = Color(0xFF13376E);
+const _securityNavy = Color(0xFFF4F7FC);
+const _securityPanel = Color(0xFFFFFFFF);
+const _securityBorder = Color(0xFFDCE5F1);
 
 Future<bool?> showSecurityPasswordModal(
   BuildContext context, {
@@ -108,19 +108,19 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0A204A),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFF174783)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.arrowLeft, color: Colors.white, size: 16),
+                Icon(LucideIcons.arrowLeft, color: const Color(0xFF10264A), size: 16),
                 SizedBox(width: 6),
                 Text(
                   'Back',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -137,7 +137,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               Text(
                 'Security Center',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -145,7 +145,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               SizedBox(height: 2),
               Text(
                 'Control sign-in protection and manage trusted devices.',
-                style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 11),
+                style: TextStyle(color: Color(0xFF62738E), fontSize: 11),
               ),
             ],
           ),
@@ -198,7 +198,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D2F63),
+                      color: const Color(0xFFEAF1FA),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFF174783)),
                     ),
@@ -212,7 +212,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                         Text(
                           'Security & Devices',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: const Color(0xFF10264A),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -220,7 +220,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                         SizedBox(height: 4),
                         Text(
                           'Control sign-in protection and manage trusted devices.',
-                          style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+                          style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
                         ),
                       ],
                     ),
@@ -249,19 +249,19 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A204A),
+          color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFF1D4D8F)),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(LucideIcons.refreshCw, size: 14, color: Color(0xFF8EA5C8)),
+            Icon(LucideIcons.refreshCw, size: 14, color: Color(0xFF62738E)),
             SizedBox(width: 6),
             Text(
               'Refresh devices',
               style: TextStyle(
-                color: Color(0xFF8EA5C8),
+                color: Color(0xFF62738E),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -303,7 +303,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           const Text(
             'Your account, your devices',
             style: TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF10264A),
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -311,7 +311,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           const SizedBox(height: 4),
           const Text(
             'New browsers verify with an email one-time code before becoming trusted.',
-            style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 13),
+            style: TextStyle(color: Color(0xFF62738E), fontSize: 13),
           ),
           const SizedBox(height: 16),
           LayoutBuilder(
@@ -320,7 +320,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               final stat1 = Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF06163B),
+                  color: const Color(0xFFF4F7FC),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFF13376E)),
                 ),
@@ -329,12 +329,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   children: [
                     const Row(
                       children: [
-                        Icon(LucideIcons.laptop, size: 14, color: Color(0xFF8EA5C8)),
+                        Icon(LucideIcons.laptop, size: 14, color: Color(0xFF62738E)),
                         SizedBox(width: 6),
                         Text(
                           'TRUSTED DEVICES',
                           style: TextStyle(
-                            color: Color(0xFF8EA5C8),
+                            color: Color(0xFF62738E),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
@@ -346,7 +346,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     Text(
                       _isDeviceRevoked ? '0' : '1',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
@@ -354,7 +354,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     const SizedBox(height: 4),
                     const Text(
                       'Active trusted device',
-                      style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+                      style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
                     ),
                   ],
                 ),
@@ -363,7 +363,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               final stat2 = Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF06163B),
+                  color: const Color(0xFFF4F7FC),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFF13376E)),
                 ),
@@ -372,12 +372,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   children: [
                     Row(
                       children: [
-                        Icon(LucideIcons.clock, size: 14, color: Color(0xFF8EA5C8)),
+                        Icon(LucideIcons.clock, size: 14, color: Color(0xFF62738E)),
                         SizedBox(width: 6),
                         Text(
                           'EXPIRED SESSIONS',
                           style: TextStyle(
-                            color: Color(0xFF8EA5C8),
+                            color: Color(0xFF62738E),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
@@ -389,7 +389,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     Text(
                       '0',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
@@ -397,7 +397,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     SizedBox(height: 4),
                     Text(
                       'No longer trusted after 7 days',
-                      style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+                      style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
                     ),
                   ],
                 ),
@@ -443,7 +443,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D2F63),
+                  color: const Color(0xFFEAF1FA),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFF174783)),
                 ),
@@ -456,7 +456,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   child: const Text(
                     'Login CAPTCHA',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: const Color(0xFF10264A),
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -469,7 +469,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _loginCaptchaEnabled ? const Color(0xFF0F3670) : const Color(0xFF06163B),
+                    color: _loginCaptchaEnabled ? const Color(0xFFE8F1FD) : const Color(0xFFF4F7FC),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: _loginCaptchaEnabled ? const Color(0xFF2563EB) : const Color(0xFF1D4D8F),
@@ -480,14 +480,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     children: [
                       Icon(
                         _loginCaptchaEnabled ? LucideIcons.checkSquare : LucideIcons.square,
-                        color: _loginCaptchaEnabled ? const Color(0xFF38BDF8) : const Color(0xFF8EA5C8),
+                        color: _loginCaptchaEnabled ? const Color(0xFF38BDF8) : const Color(0xFF62738E),
                         size: 16,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         'Enabled',
                         style: TextStyle(
-                          color: _loginCaptchaEnabled ? Colors.white : const Color(0xFF8EA5C8),
+                          color: _loginCaptchaEnabled ? const Color(0xFF10264A) : const Color(0xFF62738E),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -501,7 +501,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           const SizedBox(height: 10),
           const Text(
             'Require a GeeTest challenge before password sign-in. Trusted existing sessions are not repeatedly challenged.',
-            style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12.5, height: 1.4),
+            style: TextStyle(color: Color(0xFF62738E), fontSize: 12.5, height: 1.4),
           ),
         ],
       ),
@@ -525,7 +525,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D2F63),
+                  color: const Color(0xFFEAF1FA),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFF174783)),
                 ),
@@ -538,7 +538,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   child: const Text(
                     'Email two-factor verification',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: const Color(0xFF10264A),
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -551,7 +551,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _email2faEnabled ? const Color(0xFF0F3670) : const Color(0xFF06163B),
+                    color: _email2faEnabled ? const Color(0xFFE8F1FD) : const Color(0xFFF4F7FC),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: _email2faEnabled ? const Color(0xFF2563EB) : const Color(0xFF1D4D8F),
@@ -562,14 +562,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     children: [
                       Icon(
                         _email2faEnabled ? LucideIcons.checkSquare : LucideIcons.square,
-                        color: _email2faEnabled ? const Color(0xFF38BDF8) : const Color(0xFF8EA5C8),
+                        color: _email2faEnabled ? const Color(0xFF38BDF8) : const Color(0xFF62738E),
                         size: 16,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         'Enabled',
                         style: TextStyle(
-                          color: _email2faEnabled ? Colors.white : const Color(0xFF8EA5C8),
+                          color: _email2faEnabled ? const Color(0xFF10264A) : const Color(0xFF62738E),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -583,7 +583,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           const SizedBox(height: 10),
           const Text(
             'When enabled, email OTP is required at every password sign-in. When disabled, trusted devices skip OTP; new or untrusted devices still verify.',
-            style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12.5, height: 1.4),
+            style: TextStyle(color: Color(0xFF62738E), fontSize: 12.5, height: 1.4),
           ),
         ],
       ),
@@ -600,7 +600,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               const Text(
                 'Trusted devices',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -608,7 +608,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               const SizedBox(height: 2),
               Text(
                 _isDeviceRevoked ? '0 devices can access your account' : '1 device can access your account',
-                style: const TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+                style: const TextStyle(color: Color(0xFF62738E), fontSize: 12),
               ),
             ],
           ),
@@ -653,7 +653,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         child: const Center(
           child: Text(
             'No trusted devices active. Sign in again to register a trusted device.',
-            style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 13),
+            style: TextStyle(color: Color(0xFF62738E), fontSize: 13),
           ),
         ),
       );
@@ -776,7 +776,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           const Text(
             'Windows browser',
             style: TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF10264A),
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -784,7 +784,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A),
+              color: const Color(0xFFE8F1FD),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFF2563EB)),
             ),
@@ -792,12 +792,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.layoutGrid, size: 13, color: Colors.white),
+                Icon(LucideIcons.layoutGrid, size: 13, color: const Color(0xFF10264A)),
                 SizedBox(width: 6),
                 Text(
                   'Windows',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -833,11 +833,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             children: [
               const Row(
                 children: [
-                  Icon(LucideIcons.laptop, size: 14, color: Color(0xFF8EA5C8)),
+                  Icon(LucideIcons.laptop, size: 14, color: Color(0xFF62738E)),
                   SizedBox(width: 8),
                   Text(
                     'Browser details:',
-                    style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+                    style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
                   ),
                 ],
               ),
@@ -846,14 +846,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF06163B),
+                  color: const Color(0xFFF4F7FC),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: _securityBorder),
                 ),
                 child: const Text(
                   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0',
                   style: TextStyle(
-                    color: Color(0xFFCFDCF3),
+                    color: Color(0xFF263B5A),
                     fontSize: 11,
                     height: 1.4,
                   ),
@@ -873,7 +873,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             child: Container(
               height: 42,
               decoration: BoxDecoration(
-                color: const Color(0xFF2A0F16),
+                color: const Color(0xFFFFF1F1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFF5C1D24)),
               ),
@@ -912,12 +912,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 14, color: const Color(0xFF8EA5C8)),
+                  Icon(icon, size: 14, color: const Color(0xFF62738E)),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       label,
-                      style: const TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+                      style: const TextStyle(color: Color(0xFF62738E), fontSize: 12),
                     ),
                   ),
                 ],
@@ -928,7 +928,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                 child: Text(
                   value,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -939,11 +939,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         }
         return Row(
           children: [
-            Icon(icon, size: 14, color: const Color(0xFF8EA5C8)),
+            Icon(icon, size: 14, color: const Color(0xFF62738E)),
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+              style: const TextStyle(color: Color(0xFF62738E), fontSize: 12),
             ),
             const SizedBox(width: 6),
             Expanded(
@@ -951,7 +951,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                 value,
                 textAlign: TextAlign.end,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -969,7 +969,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       children: [
         const Text(
           'Removing a device revokes its active tokens. It must verify by email the next time it signs in.',
-          style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12, height: 1.4),
+          style: TextStyle(color: Color(0xFF62738E), fontSize: 12, height: 1.4),
         ),
         const SizedBox(height: 14),
         InkWell(
@@ -982,7 +982,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             width: double.infinity,
             height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E0A10),
+              color: const Color(0xFFFFF1F1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFF5C1D24)),
             ),

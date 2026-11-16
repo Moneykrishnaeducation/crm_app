@@ -2,10 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
-const _profileNavy = Color(0xFF06163B);
-const _profilePanel = Color(0xFF0B2452);
-const _profileBorder = Color(0xFF174783);
-const _profileMuted = Color(0xFFA9B9D5);
+const _profileNavy = Color(0xFFF4F7FC);
+const _profilePanel = Color(0xFFFFFFFF);
+const _profileBorder = Color(0xFFDCE5F1);
+const _profileMuted = Color(0xFF62738E);
 const _profileBlue = Color(0xFF0875F5);
 const _profileGold = Color(0xFFF4C84A);
 const _profileGreen = Color(0xFF16A34A);
@@ -856,9 +856,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF07193C),
+        color: const Color(0xFFF7F9FC),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF143B73)),
+        border: Border.all(color: const Color(0xFFEAF1FA)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -929,7 +929,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF0E2E66) : Colors.transparent,
+          color: active ? const Color(0xFFF7F9FC) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: active
               ? Border.all(color: _profileGold, width: 1.2)
@@ -944,7 +944,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Icon(
                   icon,
                   size: 15,
-                  color: active ? Colors.white : _profileMuted,
+                  color: active ? const Color(0xFF10264A) : _profileMuted,
                 ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -953,7 +953,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: active ? Colors.white : _profileMuted,
+                      color: active ? const Color(0xFF10264A) : _profileMuted,
                       fontSize: 11,
                       fontWeight: active ? FontWeight.bold : FontWeight.w500,
                     ),
@@ -1044,7 +1044,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: Text(
                   'Profile Completion',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1133,7 +1133,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     Text(
                       'Account Fully Unlocked',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1153,7 +1153,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(color: Color(0xFF174783), thickness: 0.8),
+          const Divider(color: Color(0xFFDCE5F1), thickness: 0.8),
           const SizedBox(height: 12),
 
           // 4 Checklist items with green circular checkmarks
@@ -1193,7 +1193,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               label: const Text(
                 'Profile Completed',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1220,7 +1220,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           const Text(
             'Account Status',
             style: TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF10264A),
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -1250,7 +1250,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   child: const Center(
                     child: Icon(
                       LucideIcons.shieldCheck,
-                      color: Colors.white,
+                      color: const Color(0xFF10264A),
                       size: 20,
                     ),
                   ),
@@ -1264,7 +1264,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     const Text(
                       'Verified Account',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1336,7 +1336,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: Text(
                   'Quick Actions',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1409,9 +1409,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF071C44),
+          color: const Color(0xFFF7F9FC),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF174783)),
+          border: Border.all(color: const Color(0xFFDCE5F1)),
         ),
         child: Row(
           children: [
@@ -1431,7 +1431,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: const Color(0xFF10264A),
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1469,7 +1469,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           const Text(
             'Personal Information',
             style: TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF10264A),
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -1480,25 +1480,25 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             label: 'Full name',
             value: _name,
           ),
-          const Divider(color: Color(0xFF143B73), height: 18, thickness: 0.8),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
           _personalInfoRow(
             icon: LucideIcons.mail,
             label: 'Email address',
             value: _email,
           ),
-          const Divider(color: Color(0xFF143B73), height: 18, thickness: 0.8),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
           _personalInfoRow(
             icon: LucideIcons.phone,
             label: 'Phone number',
             value: _phone,
           ),
-          const Divider(color: Color(0xFF143B73), height: 18, thickness: 0.8),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
           _personalInfoRow(
             icon: LucideIcons.calendar,
             label: 'Date of birth',
             value: _dob,
           ),
-          const Divider(color: Color(0xFF143B73), height: 18, thickness: 0.8),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
           _personalInfoRow(
             icon: LucideIcons.mapPin,
             label: 'Address',
@@ -1541,7 +1541,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               Text(
                 value,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   height: 1.3,
@@ -1572,7 +1572,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: Text(
                   'Identity Verification',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1623,9 +1623,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF071C44),
+        color: const Color(0xFFF7F9FC),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF174783)),
+        border: Border.all(color: const Color(0xFFDCE5F1)),
       ),
       child: Row(
         children: [
@@ -1642,7 +1642,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             child: Text(
               title,
               style: const TextStyle(
-                color: Colors.white,
+                color: const Color(0xFF10264A),
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -1696,7 +1696,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: Text(
                   'Payment Methods',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1762,9 +1762,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF071C44),
+          color: const Color(0xFFF7F9FC),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF174783)),
+          border: Border.all(color: const Color(0xFFDCE5F1)),
         ),
         child: Row(
           children: [
@@ -1784,7 +1784,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: const Color(0xFF10264A),
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1849,7 +1849,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 const Text(
                   'Your Journey with VT Index',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 16.5,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1866,7 +1866,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: const Color(0xFF10264A),
                     foregroundColor: const Color(0xFF031438),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(
@@ -1904,9 +1904,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         decoration: const BoxDecoration(
-          color: Color(0xFF071B42),
+          color: Color(0xFFFFFFFF),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: Color(0xFF1D4D8F), width: 1.5)),
+          border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1917,7 +1917,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0x2410264A),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1929,7 +1929,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 const Text(
                   'Bank Account Details',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1967,7 +1967,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _profileBlue,
-                  foregroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF10264A),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => Navigator.pop(ctx),
@@ -1988,9 +1988,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         decoration: const BoxDecoration(
-          color: Color(0xFF071B42),
+          color: Color(0xFFFFFFFF),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: Color(0xFF1D4D8F), width: 1.5)),
+          border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2001,7 +2001,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0x2410264A),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2013,7 +2013,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 const Text(
                   'Crypto Wallet Details',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2048,7 +2048,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _profileBlue,
-                  foregroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF10264A),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => Navigator.pop(ctx),
@@ -2069,9 +2069,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         decoration: const BoxDecoration(
-          color: Color(0xFF071B42),
+          color: Color(0xFFFFFFFF),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: Color(0xFF1D4D8F), width: 1.5)),
+          border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2082,7 +2082,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0x2410264A),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2091,7 +2091,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             const Text(
               'Manage Payment Methods',
               style: TextStyle(
-                color: Colors.white,
+                color: const Color(0xFF10264A),
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -2111,7 +2111,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 ),
                 child: const Icon(LucideIcons.landmark, color: _profileBlue, size: 20),
               ),
-              title: const Text('Manage Bank Accounts', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+              title: const Text('Manage Bank Accounts', style: TextStyle(color: const Color(0xFF10264A), fontSize: 14, fontWeight: FontWeight.w600)),
               subtitle: const Text('SBI • ****3456 (Primary)', style: TextStyle(color: _profileMuted, fontSize: 11)),
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
@@ -2128,7 +2128,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 ),
                 child: const Icon(LucideIcons.wallet, color: _profileGold, size: 20),
               ),
-              title: const Text('Manage Crypto Wallets', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+              title: const Text('Manage Crypto Wallets', style: TextStyle(color: const Color(0xFF10264A), fontSize: 14, fontWeight: FontWeight.w600)),
               subtitle: const Text('UNANG · 123456789asd', style: TextStyle(color: _profileMuted, fontSize: 11)),
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
@@ -2150,7 +2150,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   _showSnack('Add new payment method window opened');
                 },
                 icon: const Icon(LucideIcons.plus, size: 18, color: _profileBlue),
-                label: const Text('Add Payment Method', style: TextStyle(color: Colors.white, fontSize: 13)),
+                label: const Text('Add Payment Method', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
               ),
             ),
           ],
@@ -2175,7 +2175,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -2228,7 +2228,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               Text(
                 value,
                 style: TextStyle(
-                  color: accentColor ?? Colors.white,
+                  color: accentColor ?? const Color(0xFF10264A),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -2271,7 +2271,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     Text(
                       'Personal Information',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -2288,7 +2288,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF113876),
-                  foregroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF10264A),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -2305,7 +2305,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(color: Color(0xFF174783), thickness: 0.8),
+          const Divider(color: Color(0xFFDCE5F1), thickness: 0.8),
           const SizedBox(height: 6),
 
           _detailCardRow(LucideIcons.user, 'Full Legal Name', _name),
@@ -2328,9 +2328,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFF071B42),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF143B73)),
+        border: Border.all(color: const Color(0xFFEAF1FA)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2356,7 +2356,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Text(
                   value,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2453,8 +2453,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         title: 'Bank Account Details',
         subtitle: 'Linked settlement account for bank withdrawals and fiat payouts.',
         icon: LucideIcons.landmark,
-        iconColor: const Color(0xFF081D44),
-        iconBgColor: Colors.white,
+        iconColor: const Color(0xFFF7F9FC),
+        iconBgColor: const Color(0xFF10264A),
         status: _bankStatus,
         details: [
           _PaymentDetailItem(label: 'Beneficiary Name', value: _bankHolder),
@@ -2484,7 +2484,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         subtitle: 'Authorized digital asset address for cryptocurrency settlements.',
         icon: LucideIcons.wallet,
         iconColor: const Color(0xFF6366F1),
-        iconBgColor: Colors.white,
+        iconBgColor: const Color(0xFF10264A),
         status: _cryptoStatus,
         details: [
           _PaymentDetailItem(label: 'Wallet Address', value: _cryptoWalletAddress, copyable: true),
@@ -2568,7 +2568,7 @@ class _VerificationTabView extends StatelessWidget {
                 'Verification Documents',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.2,
@@ -2581,7 +2581,7 @@ class _VerificationTabView extends StatelessWidget {
                   'View, upload or update your identity and address documents. Identity compares your name and date of birth; address proof compares your name and complete profile address. When fields can be compared, scores below 30% are rejected, 30%*80% require manual review, and above 80% are auto-approved. Unreadable fields or incomplete profile data go to manual review.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0xFF8EA5C8),
+                    color: Color(0xFF62738E),
                     fontSize: 12.5,
                     height: 1.45,
                   ),
@@ -2598,7 +2598,7 @@ class _VerificationTabView extends StatelessWidget {
           badgeLabel: 'IDENTITY PROOF',
           subtitle: 'Aadhaar, PAN, passport or driving licence',
           icon: LucideIcons.idCard,
-          iconBgColor: const Color(0xFF0C2B60),
+          iconBgColor: const Color(0xFFF7F9FC),
           iconColor: const Color(0xFF4988E8),
           badgeTagColor: const Color(0xFF4988E8),
           isIdentity: true,
@@ -2664,7 +2664,7 @@ class _VerificationTabView extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0C2B60),
+                      color: const Color(0xFFF7F9FC),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(LucideIcons.lock, color: Color(0xFF4988E8), size: 18),
@@ -2677,7 +2677,7 @@ class _VerificationTabView extends StatelessWidget {
                         Text(
                           'Your documents stay protected.',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: const Color(0xFF10264A),
                             fontSize: 12.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2686,7 +2686,7 @@ class _VerificationTabView extends StatelessWidget {
                         Text(
                           'You must verify your CRM password before viewing a document.',
                           style: TextStyle(
-                            color: Color(0xFF8EA5C8),
+                            color: Color(0xFF62738E),
                             fontSize: 12,
                             height: 1.4,
                           ),
@@ -2745,7 +2745,7 @@ class _VerificationDocCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF081D44),
+        color: const Color(0xFFF7F9FC),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF13376E), width: 1.2),
       ),
@@ -2774,7 +2774,7 @@ class _VerificationDocCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -2836,7 +2836,7 @@ class _VerificationDocCard extends StatelessWidget {
                 child: Text(
                   subtitle,
                   style: const TextStyle(
-                    color: Color(0xFF8EA5C8),
+                    color: Color(0xFF62738E),
                     fontSize: 12,
                     height: 1.35,
                   ),
@@ -2853,9 +2853,9 @@ class _VerificationDocCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF051433),
+              color: const Color(0xFFF7F9FC),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFF0F2B5B)),
+              border: Border.all(color: const Color(0xFFF7F9FC)),
             ),
             child: Row(
               children: [
@@ -2865,7 +2865,7 @@ class _VerificationDocCard extends StatelessWidget {
                   child: Text(
                     'Document file',
                     style: TextStyle(
-                      color: Color(0xFF8EA5C8),
+                      color: Color(0xFF62738E),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -2914,7 +2914,7 @@ class _VerificationDocCard extends StatelessWidget {
                     Text(
                       'Verification complete',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -2923,7 +2923,7 @@ class _VerificationDocCard extends StatelessWidget {
                     Text(
                       'Your document has been approved.',
                       style: TextStyle(
-                        color: Color(0xFF8EA5C8),
+                        color: Color(0xFF62738E),
                         fontSize: 12,
                       ),
                     ),
@@ -2939,18 +2939,18 @@ class _VerificationDocCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: onViewDocument,
-              icon: const Icon(LucideIcons.eye, color: Colors.white, size: 16),
+              icon: const Icon(LucideIcons.eye, color: const Color(0xFF10264A), size: 16),
               label: const Text(
                 'View document',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 13.5,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                backgroundColor: const Color(0xFF07193C),
-                side: const BorderSide(color: Color(0xFF1B4E94)),
+                backgroundColor: const Color(0xFFF7F9FC),
+                side: const BorderSide(color: Color(0xFFEAF1FA)),
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -2971,12 +2971,12 @@ class _VerificationDocCard extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF0C2B60), Color(0xFF071B3E)],
+            colors: [Color(0xFFF7F9FC), Color(0xFF071B3E)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF1B4E94), width: 1.2),
+          border: Border.all(color: const Color(0xFFEAF1FA), width: 1.2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.25),
@@ -3156,9 +3156,9 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: const BoxDecoration(
-        color: Color(0xFF081D44),
+        color: Color(0xFFF7F9FC),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color(0xFF1B4E94), width: 1.5)),
+        border: Border(top: BorderSide(color: Color(0xFFEAF1FA), width: 1.5)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -3184,7 +3184,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isIdentity ? const Color(0xFF0C2B60) : const Color(0xFF221752),
+                    color: isIdentity ? const Color(0xFFF7F9FC) : const Color(0xFF221752),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -3201,7 +3201,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                       Text(
                         docTitle,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: const Color(0xFF10264A),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -3250,7 +3250,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, color: Color(0xFF8EA5C8), size: 20),
+                  icon: const Icon(LucideIcons.x, color: Color(0xFF62738E), size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -3262,10 +3262,10 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF051433),
+                color: const Color(0xFFF7F9FC),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: _passwordVerified ? const Color(0xFF1B6A41) : const Color(0xFF1D4D8F),
+                  color: _passwordVerified ? const Color(0xFF1B6A41) : const Color(0xFFDCE5F1),
                 ),
               ),
               child: Column(
@@ -3278,7 +3278,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                         decoration: BoxDecoration(
                           color: _passwordVerified
                               ? const Color(0xFF0C3925)
-                              : const Color(0xFF0C2B60),
+                              : const Color(0xFFF7F9FC),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -3294,7 +3294,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                         child: Text(
                           'CRM Password Authentication',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: const Color(0xFF10264A),
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -3313,7 +3313,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                           style: TextStyle(
                             color: _passwordVerified
                                 ? const Color(0xFF22C55E)
-                                : const Color(0xFF8EA5C8),
+                                : const Color(0xFF62738E),
                             fontSize: 10.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -3327,7 +3327,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                         ? 'Your CRM identity password was successfully verified. Full document decrypt key active for this session.'
                         : 'Confirm your CRM password to decrypt and view confidential document files.',
                     style: const TextStyle(
-                      color: Color(0xFF8EA5C8),
+                      color: Color(0xFF62738E),
                       fontSize: 11.5,
                       height: 1.35,
                     ),
@@ -3340,22 +3340,22 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                           child: TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            style: const TextStyle(color: const Color(0xFF10264A), fontSize: 13),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: const Color(0xFF081D44),
+                              fillColor: const Color(0xFFF7F9FC),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: 'Enter CRM password',
                               hintStyle: const TextStyle(color: Color(0xFF5B78A5), fontSize: 12),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: Color(0xFF1D4D8F)),
+                                borderSide: const BorderSide(color: Color(0xFFDCE5F1)),
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
                                   size: 16,
-                                  color: const Color(0xFF8EA5C8),
+                                  color: const Color(0xFF62738E),
                                 ),
                                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                               ),
@@ -3370,7 +3370,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          child: const Text('Verify', style: TextStyle(color: Colors.white, fontSize: 12)),
+                          child: const Text('Verify', style: TextStyle(color: const Color(0xFF10264A), fontSize: 12)),
                         ),
                       ],
                     ),
@@ -3384,7 +3384,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
             const Text(
               'Document Details & Metadata',
               style: TextStyle(
-                color: Colors.white,
+                color: const Color(0xFF10264A),
                 fontSize: 13.5,
                 fontWeight: FontWeight.bold,
               ),
@@ -3394,20 +3394,20 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF051433),
+                color: const Color(0xFFF7F9FC),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFF13376E)),
               ),
               child: Column(
                 children: [
                   _metaRow('Document Type', docTypeDetail),
-                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  const Divider(color: Color(0xFFF7F9FC), height: 16),
                   _metaRow('Document Number', docRef),
-                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  const Divider(color: Color(0xFFF7F9FC), height: 16),
                   _metaRow('AI Matching Score', docScore),
-                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  const Divider(color: Color(0xFFF7F9FC), height: 16),
                   _metaRow('Comparison Result', docComparison),
-                  const Divider(color: Color(0xFF0F2B5B), height: 16),
+                  const Divider(color: Color(0xFFF7F9FC), height: 16),
                   _metaRow('Storage Vault', 'AES-256 Protected & Tamper Sealed'),
                 ],
               ),
@@ -3448,7 +3448,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                       ),
                       const Text(
                         '1.8 MB',
-                        style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 11),
+                        style: TextStyle(color: Color(0xFF62738E), fontSize: 11),
                       ),
                     ],
                   ),
@@ -3457,9 +3457,9 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                     height: 90,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF07193C),
+                      color: const Color(0xFFF7F9FC),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF143B73)),
+                      border: Border.all(color: const Color(0xFFEAF1FA)),
                     ),
                     child: Center(
                       child: Column(
@@ -3491,9 +3491,9 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0C2B60),
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Color(0xFF1D4D8F)),
+                  backgroundColor: const Color(0xFFF7F9FC),
+                  foregroundColor: const Color(0xFF10264A),
+                  side: const BorderSide(color: Color(0xFFDCE5F1)),
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -3513,7 +3513,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFF8EA5C8), fontSize: 11.5),
+          style: const TextStyle(color: Color(0xFF62738E), fontSize: 11.5),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -3521,7 +3521,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
             value,
             textAlign: TextAlign.right,
             style: const TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF10264A),
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
             ),
@@ -3555,10 +3555,10 @@ class _BannerOptionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF103670) : const Color(0xFF0A204A),
+          color: selected ? const Color(0xFF103670) : const Color(0xFFF4F7FC),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? _profileGold : const Color(0xFF174783),
+            color: selected ? _profileGold : const Color(0xFFDCE5F1),
             width: selected ? 1.5 : 1.0,
           ),
         ),
@@ -3573,7 +3573,7 @@ class _BannerOptionTile extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: const Color(0xFF10264A),
                       fontSize: 12.5,
                       fontWeight: selected ? FontWeight.bold : FontWeight.w600,
                     ),
@@ -3727,13 +3727,13 @@ class CelestialBannerPainter extends CustomPainter {
       final radius = (i % 3 == 0) ? 2.2 : (i % 2 == 0 ? 1.5 : 1.0);
       final alpha = (i % 3 == 0) ? 0.90 : 0.65;
 
-      starPaint.color = Colors.white.withValues(alpha: alpha);
+      starPaint.color = const Color(0xFF10264A).withValues(alpha: alpha);
       canvas.drawCircle(starOffset, radius, starPaint);
 
       // Star sparkle cross on prominent stars
       if (i % 4 == 0) {
         final crossPaint = Paint()
-          ..color = Colors.white.withValues(alpha: 0.6)
+          ..color = const Color(0xFF10264A).withValues(alpha: 0.6)
           ..strokeWidth = 0.8;
         canvas.drawLine(
           Offset(starOffset.dx - 4, starOffset.dy),
@@ -3936,7 +3936,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 'Payment Methods',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.2,
@@ -3949,7 +3949,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                   'Add, manage or update your payment destinations.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0xFF8EA5C8),
+                    color: Color(0xFF62738E),
                     fontSize: 12.5,
                     height: 1.4,
                   ),
@@ -3977,7 +3977,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
   Widget _buildBankCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF081D44),
+        color: const Color(0xFFF7F9FC),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF13376E), width: 1.2),
       ),
@@ -3993,12 +3993,12 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   LucideIcons.landmark,
-                  color: Color(0xFF081D44),
+                  color: Color(0xFFF7F9FC),
                   size: 22,
                 ),
               ),
@@ -4012,7 +4012,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                     const Text(
                       'Bank Account',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -4034,7 +4034,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 child: Text(
                   'For bank-based withdrawals and eligible payouts.',
                   style: TextStyle(
-                    color: Color(0xFF8EA5C8),
+                    color: Color(0xFF62738E),
                     fontSize: 12,
                     height: 1.35,
                   ),
@@ -4053,16 +4053,16 @@ class _PaymentMethodsTabView extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF06173B),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF102B5E), width: 1.2),
+              border: Border.all(color: const Color(0xFFF7F9FC), width: 1.2),
             ),
             child: Column(
               children: [
                 _detailRow(label: 'Bank name', value: bankName),
-                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
                 _detailRow(label: 'Account number', value: bankAccountNumber),
-                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
                 _detailRow(label: 'IFSC code', value: bankIfscCode),
-                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
                 _detailRow(label: 'Branch name', value: bankBranch),
               ],
             ),
@@ -4082,7 +4082,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
   Widget _buildCryptoCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF081D44),
+        color: const Color(0xFFF7F9FC),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF13376E), width: 1.2),
       ),
@@ -4098,7 +4098,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFF10264A),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -4117,7 +4117,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                     const Text(
                       'Crypto Wallet',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -4139,7 +4139,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 child: Text(
                   'Manage a supported digital asset destination.',
                   style: TextStyle(
-                    color: Color(0xFF8EA5C8),
+                    color: Color(0xFF62738E),
                     fontSize: 12,
                     height: 1.35,
                   ),
@@ -4158,7 +4158,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF06173B),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF102B5E), width: 1.2),
+              border: Border.all(color: const Color(0xFFF7F9FC), width: 1.2),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -4166,7 +4166,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 const Text(
                   'Wallet address',
                   style: TextStyle(
-                    color: Color(0xFF8EA5C8),
+                    color: Color(0xFF62738E),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -4176,14 +4176,14 @@ class _PaymentMethodsTabView extends StatelessWidget {
                   cryptoWalletAddress,
                   softWrap: true,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
                     height: 1.35,
                     letterSpacing: 0.3,
                   ),
                 ),
-                const Divider(color: Color(0xFF0E2E66), height: 18, thickness: 1),
+                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
                 _detailRow(label: 'Currency', value: cryptoCurrency),
               ],
             ),
@@ -4215,7 +4215,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0C2B60),
+              color: const Color(0xFFF7F9FC),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFF153F78)),
             ),
@@ -4233,7 +4233,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 Text(
                   'Keep your destinations up to date.',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
                   ),
@@ -4242,7 +4242,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 Text(
                   'Always double-check account and wallet details before saving changes.',
                   style: TextStyle(
-                    color: Color(0xFF8EA5C8),
+                    color: Color(0xFF62738E),
                     fontSize: 11.5,
                     height: 1.35,
                   ),
@@ -4290,12 +4290,12 @@ class _PaymentMethodsTabView extends StatelessWidget {
 
   Widget _buildEllipsisMenu(ValueChanged<String> onAction) {
     return PopupMenuButton<String>(
-      icon: const Icon(LucideIcons.ellipsis, color: Color(0xFF8EA5C8), size: 20),
+      icon: const Icon(LucideIcons.ellipsis, color: Color(0xFF62738E), size: 20),
       tooltip: 'Options',
-      color: const Color(0xFF071C44),
+      color: const Color(0xFFF7F9FC),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFF174783)),
+        side: const BorderSide(color: Color(0xFFDCE5F1)),
       ),
       onSelected: onAction,
       itemBuilder: (context) => [
@@ -4305,7 +4305,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
             children: [
               Icon(LucideIcons.star, size: 16, color: Color(0xFFF4C84A)),
               SizedBox(width: 10),
-              Text('Set as primary', style: TextStyle(color: Colors.white, fontSize: 13)),
+              Text('Set as primary', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
             ],
           ),
         ),
@@ -4315,7 +4315,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
             children: [
               Icon(LucideIcons.refreshCw, size: 16, color: Color(0xFF4988E8)),
               SizedBox(width: 10),
-              Text('Refresh status', style: TextStyle(color: Colors.white, fontSize: 13)),
+              Text('Refresh status', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
             ],
           ),
         ),
@@ -4323,9 +4323,9 @@ class _PaymentMethodsTabView extends StatelessWidget {
           value: 'copy',
           child: Row(
             children: [
-              Icon(LucideIcons.copy, size: 16, color: Color(0xFFA9B9D5)),
+              Icon(LucideIcons.copy, size: 16, color: Color(0xFF62738E)),
               SizedBox(width: 10),
-              Text('Copy details', style: TextStyle(color: Colors.white, fontSize: 13)),
+              Text('Copy details', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
             ],
           ),
         ),
@@ -4340,7 +4340,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF8EA5C8),
+            color: Color(0xFF62738E),
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -4352,7 +4352,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
             textAlign: TextAlign.end,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF10264A),
               fontSize: 13.5,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.2,
@@ -4382,8 +4382,8 @@ class _PaymentMethodsTabView extends StatelessWidget {
             ),
           ),
           style: OutlinedButton.styleFrom(
-            backgroundColor: const Color(0xFF07193C),
-            side: const BorderSide(color: Color(0xFF1B4E94)),
+            backgroundColor: const Color(0xFFF7F9FC),
+            side: const BorderSide(color: Color(0xFFEAF1FA)),
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -4393,18 +4393,18 @@ class _PaymentMethodsTabView extends StatelessWidget {
 
         final editBtn = ElevatedButton.icon(
           onPressed: onEdit,
-          icon: const Icon(LucideIcons.penLine, color: Colors.white, size: 16),
+          icon: const Icon(LucideIcons.penLine, color: const Color(0xFF10264A), size: 16),
           label: const Text(
             'Edit Details',
             style: TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF10264A),
               fontSize: 13,
               fontWeight: FontWeight.bold,
             ),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1D4ED8),
-            foregroundColor: Colors.white,
+            foregroundColor: const Color(0xFF10264A),
             elevation: 1.5,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
             shape: RoundedRectangleBorder(
@@ -4458,7 +4458,7 @@ class _IsometricBankGraphic extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: const Color(0xFF1B4E94), width: 1.1),
+        border: Border.all(color: const Color(0xFFEAF1FA), width: 1.1),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0D3B82).withValues(alpha: 0.25),
@@ -4745,9 +4745,9 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       decoration: const BoxDecoration(
-        color: Color(0xFF071B42),
+        color: Color(0xFFFFFFFF),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color(0xFF1D4D8F), width: 1.5)),
+        border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -4759,7 +4759,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
               width: 44,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: const Color(0x2410264A),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -4786,7 +4786,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF10264A),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -4795,7 +4795,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Color(0xFF8EA5C8),
+                        color: Color(0xFF62738E),
                         fontSize: 12,
                       ),
                     ),
@@ -4840,15 +4840,15 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF051433),
+              color: const Color(0xFFF7F9FC),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF102B5E)),
+              border: Border.all(color: const Color(0xFFF7F9FC)),
             ),
             child: Column(
               children: [
                 for (var i = 0; i < details.length; i++) ...[
                   if (i > 0)
-                    const Divider(color: Color(0xFF0E2E66), height: 16, thickness: 1),
+                    const Divider(color: Color(0xFFF7F9FC), height: 16, thickness: 1),
                   _modalDetailRow(context, details[i]),
                 ],
               ],
@@ -4862,12 +4862,12 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF1B4E94)),
+                    side: const BorderSide(color: Color(0xFFEAF1FA)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('Close', style: TextStyle(color: const Color(0xFF10264A), fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -4875,7 +4875,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1D4ED8),
-                    foregroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF10264A),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -4900,7 +4900,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
           child: Text(
             item.label,
             style: const TextStyle(
-              color: Color(0xFF8EA5C8),
+              color: Color(0xFF62738E),
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
             ),
@@ -4917,7 +4917,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                   item.value,
                   textAlign: TextAlign.end,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF10264A),
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -4930,11 +4930,11 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${item.label} copied to clipboard'),
-                        backgroundColor: const Color(0xFF0B2452),
+                        backgroundColor: const Color(0xFFFFFFFF),
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
-                          side: const BorderSide(color: Color(0xFF174783)),
+                          side: const BorderSide(color: Color(0xFFDCE5F1)),
                         ),
                         duration: const Duration(seconds: 2),
                       ),
@@ -5027,7 +5027,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                   const Text(
                     'Bank Details',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: const Color(0xFF10264A),
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -5039,17 +5039,17 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: const Color(0xFF10264A).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.18),
+                          color: const Color(0xFF10264A).withValues(alpha: 0.18),
                           width: 1.2,
                         ),
                       ),
                       child: const Center(
                         child: Icon(
                           LucideIcons.x,
-                          color: Colors.white,
+                          color: const Color(0xFF10264A),
                           size: 18,
                         ),
                       ),
@@ -5158,7 +5158,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF143878),
-                          foregroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF10264A),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -5173,11 +5173,11 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: const Color(0xFF10264A),
                               ),
                             ),
                             SizedBox(width: 8),
-                            Icon(LucideIcons.arrowUpRight, size: 16, color: Colors.white),
+                            Icon(LucideIcons.arrowUpRight, size: 16, color: const Color(0xFF10264A)),
                           ],
                         ),
                       ),
@@ -5226,7 +5226,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: const Color(0xFF10264A),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -5290,9 +5290,9 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
         MediaQuery.of(context).viewInsets.bottom + 28,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF071B42),
+        color: Color(0xFFFFFFFF),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color(0xFF1D4D8F), width: 1.5)),
+        border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -5304,7 +5304,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0x2410264A),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -5313,7 +5313,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
             const Text(
               'Edit Crypto Wallet',
               style: TextStyle(
-                color: Colors.white,
+                color: const Color(0xFF10264A),
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -5321,7 +5321,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
             const SizedBox(height: 4),
             const Text(
               'Update your cryptocurrency destination address and currency.',
-              style: TextStyle(color: Color(0xFF8EA5C8), fontSize: 12),
+              style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
             ),
             const SizedBox(height: 18),
             _inputField(label: 'Wallet Address', controller: _addressController),
@@ -5333,12 +5333,12 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF1B4E94)),
+                      side: const BorderSide(color: Color(0xFFEAF1FA)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text('Cancel', style: TextStyle(color: const Color(0xFF10264A), fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -5346,7 +5346,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1D4ED8),
-                      foregroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF10264A),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -5376,7 +5376,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF8EA5C8),
+            color: Color(0xFF62738E),
             fontSize: 12.5,
             fontWeight: FontWeight.w500,
           ),
@@ -5384,19 +5384,19 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: const TextStyle(color: const Color(0xFF10264A), fontSize: 14),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: const Color(0xFF051433),
+            fillColor: const Color(0xFFF7F9FC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF102B5E)),
+              borderSide: const BorderSide(color: Color(0xFFF7F9FC)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF102B5E)),
+              borderSide: const BorderSide(color: Color(0xFFF7F9FC)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),

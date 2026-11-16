@@ -6,21 +6,21 @@ class BrokerMorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        color: _brokerNavy,
+        color: const Color(0xFFF5F7FB),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 22),
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0xFF0A204A),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF174783)),
+                border: Border.all(color: const Color(0xFFE2E8F1)),
               ),
               child: const Row(children: [
-                Icon(LucideIcons.chartNoAxesCombined, color: Color(0xFF5AB8FF), size: 15),
+                Icon(LucideIcons.chartNoAxesCombined, color: Color(0xFF174A8B), size: 15),
                 SizedBox(width: 6),
-                Expanded(child: Text('System: VTIndex MT5', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600))),
+                Expanded(child: Text('System: VTIndex MT5', style: TextStyle(color: Color(0xFF10264B), fontSize: 9, fontWeight: FontWeight.w600))),
                 Icon(LucideIcons.circle, color: Color(0xFF38D98B), size: 7),
                 SizedBox(width: 5),
                 Text('Local | UTC+5:30', style: TextStyle(color: _brokerMuted, fontSize: 8)),
@@ -37,7 +37,7 @@ class BrokerMorePage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: _brokerPanel,
                     borderRadius: BorderRadius.circular(13),
-                    border: Border.all(color: const Color(0xFF174783)),
+                    border: Border.all(color: const Color(0xFFE2E8F1)),
                   ),
                   child: Row(children: [
                     Container(
@@ -68,7 +68,7 @@ class BrokerMorePage extends StatelessWidget {
                               Text(
                                 'INR-DEVOP B',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Color(0xFF10264B),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -145,7 +145,7 @@ class BrokerMorePage extends StatelessWidget {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: _brokerPanel,
-          title: const Text('Language', style: TextStyle(color: Colors.white)),
+              title: const Text('Language', style: TextStyle(color: Color(0xFF10264B))),
           content: const Text('English is currently selected.', style: TextStyle(color: _brokerMuted)),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
         ),
@@ -182,7 +182,7 @@ class _MoreMenuRow extends StatelessWidget {
               Icon(icon, color: accent, size: 17),
               const SizedBox(width: 10),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500)),
+                Text(title, style: const TextStyle(color: Color(0xFF10264B), fontSize: 10, fontWeight: FontWeight.w500)),
                 if (subtitle != null) ...[const SizedBox(height: 3), Text(subtitle!, style: const TextStyle(color: _brokerMuted, fontSize: 8))],
               ])),
               if (trailing != null) Text(trailing!, style: const TextStyle(color: _brokerMuted, fontSize: 8)),
@@ -208,7 +208,7 @@ class LogoutBottomSheet extends StatelessWidget {
           decoration: BoxDecoration(
             color: _brokerPanel,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFF174783)),
+            border: Border.all(color: const Color(0xFFE2E8F1)),
             boxShadow: const [
               BoxShadow(
                 color: Color(0xAA000817),
@@ -251,7 +251,7 @@ class LogoutBottomSheet extends StatelessWidget {
               const Text(
                 'Log Out',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF10264B),
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
@@ -273,9 +273,9 @@ class LogoutBottomSheet extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFF1D4A88)),
-                        backgroundColor: const Color(0xFF0F2E62),
+                        foregroundColor: const Color(0xFF10264B),
+                        side: const BorderSide(color: Color(0xFFE2E8F1)),
+                        backgroundColor: const Color(0xFFF3F6FB),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

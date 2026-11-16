@@ -179,7 +179,16 @@ class _AppShellState extends State<AppShell> {
     }
     if (page == 'Logout') {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => _AppEntry(onOpenDashboard: () {})),
+        MaterialPageRoute<void>(builder: (_) => _AppEntry(onOpenDashboard: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => AppShell(
+                themeMode: widget.themeMode,
+                onThemeModeChanged: widget.onThemeModeChanged,
+              ),
+            ),
+          );
+        })),
         (route) => false,
       );
       return;

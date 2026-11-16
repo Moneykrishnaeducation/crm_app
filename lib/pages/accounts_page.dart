@@ -23,95 +23,161 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   @override
   Widget build(BuildContext context) {
     final accounts = widget.accounts.where((account) {
-      final matchesQuery = account.login.toLowerCase().contains(_query.toLowerCase()) ||
-          account.name.toLowerCase().contains(_query.toLowerCase());
+      final q = _query.trim().toLowerCase();
+      final matchesQuery = q.isEmpty ||
+          account.login.toLowerCase().contains(q) ||
+          account.name.toLowerCase().contains(q) ||
+          account.type.toLowerCase().contains(q);
       final matchesFilter = _filter == 'All Accounts' ||
-          (_filter == 'Standard' && account.type == 'Live MT5');
+          (_filter == 'Live MT5' && account.type == 'Live MT5');
       return matchesQuery && matchesFilter;
     }).toList();
-    final liveAccountCount = widget.accounts.where((account) => account.type == 'Live MT5').length;
+    final liveCount = widget.accounts.where((a) => a.type == 'Live MT5').length;
 
     return Container(
       color: const Color(0xFFF5F7FB),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final compact = constraints.maxWidth < 620;
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
-          children: [
-            Row(children: [
-              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Trading Accounts', style: TextStyle(color: _brokerNavy, fontSize: 19, fontWeight: FontWeight.w700)),
-                SizedBox(height: 3),
-                Text('Manage your live, demo and investment accounts', style: TextStyle(color: _brokerMuted, fontSize: 9)),
-              ])),
-              IconButton(onPressed: () {}, icon: const Icon(LucideIcons.bell, color: _brokerNavy)),
-            ]),
-            const SizedBox(height: 11),
-            Row(children: [
-              _AccountAction(
-                icon: LucideIcons.circlePlus,
-                label: 'Open Account',
-                highlighted: true,
-                onTap: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 620;
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ACCOUNTS', style: TextStyle(color: Color(0xFF8290A6), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
+                        SizedBox(height: 3),
+                        Text('Trading accounts', style: TextStyle(color: _brokerNavy, fontSize: 24, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.5)),
+                        SizedBox(height: 5),
+                        Text('View balances, equity and account details', style: TextStyle(color: _brokerMuted, fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F1))),
+                    child: Row(children: [
+                      const Icon(LucideIcons.wallet, color: _brokerBlue, size: 14),
+                      const SizedBox(width: 6),
+                      Text('${widget.accounts.length} total', style: const TextStyle(color: _brokerNavy, fontSize: 9, fontWeight: FontWeight.w700)),
+                    ]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(children: [
+                _AccountAction(
+                  icon: LucideIcons.circlePlus,
+                  label: 'Open Account',
+                  highlighted: true,
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _AccountAction(icon: LucideIcons.arrowLeftRight, label: 'Transfer', onTap: () => widget.onSelectPage('Internal Transfer')),
+                const SizedBox(width: 8),
+                _AccountAction(icon: LucideIcons.monitor, label: 'Demo', onTap: () => widget.onSelectPage('Demo Accounts')),
+              ]),
+              const SizedBox(height: 18),
+              const Text('Account overview', style: TextStyle(color: _brokerNavy, fontSize: 14, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 9),
+              SizedBox(
+                height: 96,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    SizedBox(width: compact ? 155 : 190, child: const _AccountSummary(icon: LucideIcons.wallet, title: 'Total balance', value: '\$0.00', detail: 'Combined account balance', accent: Color(0xFF24A9D5))),
+                    const SizedBox(width: 9),
+                    SizedBox(width: compact ? 155 : 190, child: const _AccountSummary(icon: LucideIcons.layers, title: 'Total equity', value: '\$0.00', detail: 'Net asset value', accent: Color(0xFF8D70D9))),
+                    const SizedBox(width: 9),
+                    SizedBox(width: compact ? 155 : 190, child: _AccountSummary(icon: LucideIcons.usersRound, title: 'Live accounts', value: '$liveCount', detail: 'Connected MT5 accounts', accent: _brokerGold)),
+                  ],
                 ),
               ),
-              const SizedBox(width: 7),
-              _AccountAction(icon: LucideIcons.arrowLeftRight, label: 'Internal Transfer', onTap: () => widget.onSelectPage('Internal Transfer')),
-              const SizedBox(width: 7),
-              _AccountAction(icon: LucideIcons.monitor, label: 'Demo Account', onTap: () => widget.onSelectPage('Demo Accounts')),
-            ]),
-            const SizedBox(height: 12),
-            Row(children: [
-              const Expanded(child: _AccountSummary(icon: LucideIcons.wallet, title: 'Total Balance', value: '\$0.00', detail: 'Combined real account balance', accent: Color(0xFF24C6F4))),
-              const SizedBox(width: 8),
-              const Expanded(child: _AccountSummary(icon: LucideIcons.layers, title: 'Total Equity', value: '\$0.00', detail: 'Net asset value', accent: Color(0xFF9A75F7))),
-              const SizedBox(width: 8),
-              Expanded(child: _AccountSummary(icon: LucideIcons.usersRound, title: 'Active Accounts', value: '${widget.accounts.length} Live', detail: 'All activated MT5 accounts', accent: _brokerGold)),
-            ]),
-            const SizedBox(height: 14),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: [
-                _AccountFilter(label: 'All Accounts', count: '${widget.accounts.length}', selected: _filter == 'All Accounts', onTap: () => setState(() => _filter = 'All Accounts')),
-                const SizedBox(width: 7),
-                _AccountFilter(label: 'Standard', count: '$liveAccountCount', selected: _filter == 'Standard', onTap: () => setState(() => _filter = 'Standard')),
-                const SizedBox(width: 7),
-                _AccountFilter(label: 'VIP / ECN', count: '0', selected: _filter == 'VIP / ECN', onTap: () => setState(() => _filter = 'VIP / ECN')),
-              ]),
-            ),
-            const SizedBox(height: 9),
-            Row(children: [
-              Expanded(child: TextField(
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Expanded(child: Text('Your accounts', style: TextStyle(color: _brokerNavy, fontSize: 14, fontWeight: FontWeight.w800))),
+                  Text('${accounts.length} shown', style: const TextStyle(color: _brokerMuted, fontSize: 9, fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const SizedBox(height: 9),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: [
+                  _AccountFilter(label: 'All accounts', count: '${widget.accounts.length}', selected: _filter == 'All Accounts', onTap: () => setState(() => _filter = 'All Accounts')),
+                  const SizedBox(width: 7),
+                  _AccountFilter(label: 'Live MT5', count: '$liveCount', selected: _filter == 'Live MT5', onTap: () => setState(() => _filter = 'Live MT5')),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              TextField(
                 controller: _searchController,
                 onChanged: (value) => setState(() => _query = value),
-                style: const TextStyle(color: _brokerNavy, fontSize: 11),
+                style: const TextStyle(color: _brokerNavy, fontSize: 12),
                 decoration: InputDecoration(
-                  hintText: 'Search account, login ID...',
-                  hintStyle: const TextStyle(color: _brokerMuted, fontSize: 10),
-                  prefixIcon: const Icon(LucideIcons.search, color: _brokerMuted, size: 17),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                  hintText: 'Search by account name or login ID',
+                  hintStyle: const TextStyle(color: _brokerMuted, fontSize: 11),
+                  prefixIcon: const Icon(LucideIcons.search, color: _brokerMuted, size: 18),
+                  suffixIcon: _query.isEmpty ? null : IconButton(
+                    tooltip: 'Clear search',
+                    onPressed: () { _searchController.clear(); setState(() => _query = ''); },
+                    icon: const Icon(LucideIcons.x, color: _brokerMuted, size: 16),
+                  ),
                   filled: true,
-                  fillColor: const Color(0xFFFFFFFF),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Color(0xFFE2E8F1))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Color(0xFF3187F8))),
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F1))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF3187F8), width: 1.4)),
                 ),
-              )),
-              const SizedBox(width: 7),
-              IconButton(onPressed: () {}, style: IconButton.styleFrom(backgroundColor: const Color(0xFFFFFFFF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: const Icon(LucideIcons.listFilter, color: _brokerNavy, size: 18)),
-            ]),
-            const SizedBox(height: 10),
-            if (compact)
-              ...accounts.map((account) => _AccountCard(account: account))
-            else
-              _AccountTable(accounts: accounts),
-          ],
-        );
-      }),
+              ),
+              const SizedBox(height: 12),
+              if (accounts.isEmpty)
+                _AccountEmptyState(
+                  searching: _query.isNotEmpty,
+                  onClear: () { _searchController.clear(); setState(() { _query = ''; _filter = 'All Accounts'; }); },
+                  onOpen: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated),
+                  ),
+                )
+              else if (compact)
+                ...accounts.map((account) => _AccountCard(account: account))
+              else
+                _AccountTable(accounts: accounts),
+            ],
+          );
+        },
+      ),
     );
   }
+}
+
+class _AccountEmptyState extends StatelessWidget {
+  const _AccountEmptyState({required this.searching, required this.onClear, required this.onOpen});
+  final bool searching;
+  final VoidCallback onClear;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE2E8F1))),
+    child: Column(children: [
+      Container(width: 52, height: 52, decoration: BoxDecoration(color: const Color(0xFFEFF5FC), borderRadius: BorderRadius.circular(16)), child: const Icon(LucideIcons.wallet, color: _brokerBlue, size: 23)),
+      const SizedBox(height: 12),
+      Text(searching ? 'No matching accounts' : 'No trading accounts yet', style: const TextStyle(color: _brokerNavy, fontSize: 14, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 5),
+      Text(searching ? 'Try another account name or login ID.' : 'Open a live account to start managing your trading activity.', textAlign: TextAlign.center, style: const TextStyle(color: _brokerMuted, fontSize: 10, height: 1.5)),
+      const SizedBox(height: 14),
+      if (searching) OutlinedButton(onPressed: onClear, child: const Text('Clear filters')) else FilledButton.icon(onPressed: onOpen, icon: const Icon(LucideIcons.plus, size: 15), label: const Text('Open account')),
+    ]),
+  );
 }
 
 class BrokerAccount {

@@ -35,7 +35,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     final liveCount = widget.accounts.where((a) => a.type == 'Live MT5').length;
 
     return Container(
-      color: const Color(0xFFF5F7FB),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 620;
@@ -58,7 +58,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F1))),
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
                     child: Row(children: [
                       const Icon(LucideIcons.wallet, color: _brokerBlue, size: 14),
                       const SizedBox(width: 6),
@@ -130,9 +130,9 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                     icon: const Icon(LucideIcons.x, color: _brokerMuted, size: 16),
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).colorScheme.surface,
                   contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F1))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF3187F8), width: 1.4)),
                 ),
               ),
@@ -167,7 +167,7 @@ class _AccountEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE2E8F1))),
+    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor)),
     child: Column(children: [
       Container(width: 52, height: 52, decoration: BoxDecoration(color: const Color(0xFFEFF5FC), borderRadius: BorderRadius.circular(16)), child: const Icon(LucideIcons.wallet, color: _brokerBlue, size: 23)),
       const SizedBox(height: 12),
@@ -353,7 +353,7 @@ class _AccountSummary extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: 83,
     padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(13), border: Border.all(color: const Color(0xFFE2E8F1))),
+    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(13), border: Border.all(color: Theme.of(context).dividerColor)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [Icon(icon, color: accent, size: 15), const SizedBox(width: 4), Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _brokerNavy, fontSize: 8)))]),
       const SizedBox(height: 5),
@@ -411,7 +411,7 @@ class _AccountValue extends StatelessWidget {
 class _AccountTable extends StatelessWidget {
   const _AccountTable({required this.accounts}); final List<BrokerAccount> accounts;
   @override
-  Widget build(BuildContext context) => Container(decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F1))), child: Column(children: [
+  Widget build(BuildContext context) => Container(decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
     const Padding(padding: EdgeInsets.all(10), child: Row(children: [Expanded(flex: 3, child: Text('ACCOUNT / LOGIN', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('LEVERAGE', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('BALANCE', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('EQUITY', style: TextStyle(color: _brokerMuted, fontSize: 8))), Text('ACTIONS', style: TextStyle(color: _brokerMuted, fontSize: 8))])),
     for (final account in accounts) _AccountTableRow(account: account),
   ]));

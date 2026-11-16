@@ -70,6 +70,8 @@ class _LoginPageState extends State<LoginPage> {
             child: Image.asset(
               'assets/images/login_light_ribbons.png',
               fit: BoxFit.cover,
+              cacheWidth: 1080,
+              gaplessPlayback: true,
             ),
           ),
           const Positioned.fill(

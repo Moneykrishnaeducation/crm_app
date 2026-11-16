@@ -31,28 +31,41 @@ const _muted = Color(0xFF71809A);
 const _blue = Color(0xFF174A8B);
 const _gold = Color(0xFFD8A82E);
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final preferences = await SharedPreferences.getInstance();
+  final stored = preferences.getString('vtindex_theme_mode');
+  final initialThemeMode = switch (stored) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+  runApp(MyApp(initialThemeMode: initialThemeMode));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.initialThemeMode});
+
+  final ThemeMode? initialThemeMode;
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.system;
+  late ThemeMode _themeMode;
   late final ThemeData _lightTheme;
   late final ThemeData _darkTheme;
 
   @override
   void initState() {
     super.initState();
+    _themeMode = widget.initialThemeMode ?? ThemeMode.system;
     _lightTheme = _buildTheme(Brightness.light);
     _darkTheme = _buildTheme(Brightness.dark);
-    _loadThemeMode();
+    if (widget.initialThemeMode == null) {
+      _loadThemeMode();
+    }
   }
 
   Future<void> _loadThemeMode() async {
@@ -63,10 +76,13 @@ class _MyAppState extends State<MyApp> {
       'dark' => ThemeMode.dark,
       _ => ThemeMode.system,
     };
-    if (mounted) setState(() => _themeMode = mode);
+    if (mounted && _themeMode != mode) {
+      setState(() => _themeMode = mode);
+    }
   }
 
   Future<void> _setThemeMode(ThemeMode mode) async {
+    if (_themeMode == mode) return;
     setState(() => _themeMode = mode);
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString('vtindex_theme_mode', switch (mode) {
@@ -92,6 +108,7 @@ class _MyAppState extends State<MyApp> {
       cardColor: dark ? const Color(0xFF17243A) : Colors.white,
       dividerColor: dark ? const Color(0xFF2A3A53) : _border,
       fontFamily: GoogleFonts.poppins().fontFamily,
+      fontFamilyFallback: const ['sans-serif', 'Roboto'],
       appBarTheme: AppBarTheme(
         backgroundColor: dark ? const Color(0xFF101D31) : Colors.white,
         foregroundColor: dark ? const Color(0xFFF2F5FA) : _sidebar,

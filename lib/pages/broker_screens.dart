@@ -1121,22 +1121,28 @@ class BrokerBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
     top: false,
-    minimum: const EdgeInsets.only(bottom: 5),
+    minimum: const EdgeInsets.only(bottom: 7),
     child: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560),
         child: Container(
-          margin: const EdgeInsets.fromLTRB(14, 3, 14, 7),
-          padding: const EdgeInsets.fromLTRB(7, 7, 7, 7),
+          margin: const EdgeInsets.fromLTRB(18, 2, 18, 10),
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Theme.of(context).dividerColor, width: 1),
-            boxShadow: const [
+            borderRadius: BorderRadius.circular(27),
+            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .85), width: 1),
+            boxShadow: [
               BoxShadow(
-                color: Color(0x1A10264B),
-                blurRadius: 18,
-                offset: Offset(0, 5),
+                color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? .34 : .13),
+                blurRadius: 26,
+                spreadRadius: 1,
+                offset: const Offset(0, 9),
+              ),
+              BoxShadow(
+                color: _brokerBlue.withValues(alpha: .08),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
             ],
           ),

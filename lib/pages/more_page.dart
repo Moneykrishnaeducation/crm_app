@@ -156,9 +156,9 @@ class _MoreProfileCard extends StatelessWidget {
                   Icon(LucideIcons.badgeCheck, color: _brokerGold, size: 15),
                 ]),
                 SizedBox(height: 4),
-                Text('iyyanar@vtindex.com', style: TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+                Text('iyyanar@vtindex.com', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
                 SizedBox(height: 6),
-                Text('View profile', style: TextStyle(color: Color(0xFF24558B), fontSize: 10, fontWeight: FontWeight.w700)),
+                Text('View profile', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 10, fontWeight: FontWeight.w700)),
               ])),
               const Icon(LucideIcons.chevronRight, color: Color(0xFF8290A6), size: 20),
             ]),
@@ -228,7 +228,7 @@ class _MoreMenuRow extends StatelessWidget {
                   Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w700)),
                   if (subtitle != null) ...[
                     const SizedBox(height: 3),
-                    Text(subtitle!, style: const TextStyle(color: Color(0xFF8290A6), fontSize: 9, height: 1.25)),
+                    Text(subtitle!, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, height: 1.25)),
                   ],
                 ])),
                 if (trailing != null) ...[
@@ -255,9 +255,9 @@ class LogoutBottomSheet extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE5EAF2)),
+            border: Border.all(color: Theme.of(context).dividerColor),
             boxShadow: const [BoxShadow(color: Color(0x33000817), blurRadius: 24, offset: Offset(0, 8))],
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -270,9 +270,9 @@ class LogoutBottomSheet extends StatelessWidget {
               child: const Center(child: Icon(LucideIcons.logOut, color: Color(0xFFD64545), size: 25)),
             ),
             const SizedBox(height: 16),
-            const Text('Log Out', style: TextStyle(color: Color(0xFF10264B), fontSize: 17, fontWeight: FontWeight.w800)),
+            Text('Log Out', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            const Text('Are you sure you want to log out of your account? You will need to enter your credentials to sign back in.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF71809A), fontSize: 12, height: 1.45)),
+            Text('Are you sure you want to log out of your account? You will need to enter your credentials to sign back in.', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, height: 1.45)),
             const SizedBox(height: 22),
             Row(children: [
               Expanded(child: OutlinedButton(

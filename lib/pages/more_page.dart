@@ -18,15 +18,15 @@ class BrokerMorePage extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('YOUR ACCOUNT', style: TextStyle(color: _muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                      Text('YOUR ACCOUNT', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
                       SizedBox(height: 5),
-                      Text('More', style: TextStyle(color: _ink, fontSize: 27, fontWeight: FontWeight.w800, height: 1.1)),
+                      Text('More', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 27, fontWeight: FontWeight.w800, height: 1.1)),
                       SizedBox(height: 4),
-                      Text('Manage your profile, preferences and services', style: TextStyle(color: _muted, fontSize: 11)),
+                      Text('Manage your profile, preferences and services', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -108,7 +108,7 @@ class BrokerMorePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            const Center(child: Text('VTINDEX MT5  •  LOCAL TIME UTC+5:30', style: TextStyle(color: Color(0xFFA0AABD), fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: .55))),
+            Center(child: Text('VTINDEX MT5  •  LOCAL TIME UTC+5:30', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: .55))),
           ],
         ),
       );
@@ -179,7 +179,7 @@ class _MoreSectionLabel extends StatelessWidget {
           Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
           if (subtitle != null) ...[
             const SizedBox(height: 3),
-            Text(subtitle!, style: const TextStyle(color: Color(0xFF8793A7), fontSize: 10)),
+            Text(subtitle!, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
           ],
         ]),
       );
@@ -240,7 +240,7 @@ class _MoreMenuRow extends StatelessWidget {
             ),
           ),
         ),
-        if (showDivider) const Divider(height: 1, thickness: 1, indent: 49, color: Color(0xFFF0F2F6)),
+        if (showDivider) Divider(height: 1, thickness: 1, indent: 49, color: Theme.of(context).dividerColor),
       ]);
 }
 

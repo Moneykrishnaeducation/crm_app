@@ -16,7 +16,7 @@ class BrokerSettingsPage extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     final muted = theme.colorScheme.onSurfaceVariant;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
       children: [
         Text(
           'PREFERENCES',

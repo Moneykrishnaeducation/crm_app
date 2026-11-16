@@ -23,7 +23,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
         child: LayoutBuilder(builder: (context, constraints) {
           final compact = constraints.maxWidth < 520;
           return ListView(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 110),
             children: [
               Container(
                 padding: const EdgeInsets.fromLTRB(13, 10, 10, 10),

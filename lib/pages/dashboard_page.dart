@@ -18,7 +18,7 @@ class DashboardPage extends StatelessWidget {
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 820;
         return SingleChildScrollView(
-          padding: EdgeInsets.all(wide ? 24 : 16),
+          padding: EdgeInsets.fromLTRB(wide ? 24 : 16, wide ? 24 : 16, wide ? 24 : 16, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

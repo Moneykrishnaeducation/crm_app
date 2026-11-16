@@ -24,7 +24,7 @@ class BrokerDashboardPage extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 110),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -323,12 +323,10 @@ class _BrokerShortcut extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.selected = false,
   });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool selected;
   @override
   Widget build(BuildContext context) => Expanded(
     child: Padding(
@@ -340,12 +338,10 @@ class _BrokerShortcut extends StatelessWidget {
           height: 84,
           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? Theme.of(context).colorScheme.secondaryContainer : Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: selected
-                  ? _brokerGold
-                  : Theme.of(context).dividerColor,
+              color: Theme.of(context).dividerColor,
             ),
           ),
           child: Column(
@@ -353,7 +349,7 @@ class _BrokerShortcut extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: selected ? const Color(0xFFB18418) : _brokerBlue,
+                color: _brokerBlue,
                 size: 22,
               ),
               const SizedBox(height: 5),
@@ -753,7 +749,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: width > 900 ? 860 : 680),
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
             children: [
               Container(
                 padding: const EdgeInsets.all(5),
@@ -876,31 +872,6 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       ),
     );
   }
-}
-
-class _TransactionFilter extends StatelessWidget {
-  const _TransactionFilter({required this.label, this.selected = false});
-  final String label;
-  final bool selected;
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      decoration: BoxDecoration(
-        color: selected ? _brokerGold : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: selected ? _brokerNavy : Theme.of(context).colorScheme.surface,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    ),
-  );
 }
 
 class _TransactionData {
@@ -1127,65 +1098,79 @@ class BrokerBottomNavigation extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 560),
         child: Container(
           margin: const EdgeInsets.fromLTRB(18, 2, 18, 10),
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(27),
-            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .85), width: 1),
+            borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? .34 : .13),
-                blurRadius: 26,
-                spreadRadius: 1,
-                offset: const Offset(0, 9),
-              ),
-              BoxShadow(
-                color: _brokerBlue.withValues(alpha: .08),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark ? 0.35 : 0.10,
+                ),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _BrokerNavItem(
-                icon: LucideIcons.house,
-                label: 'Home',
-                selected: selectedPage == 'Dashboard',
-                onTap: () => onSelect('Dashboard'),
-              ),
-              _BrokerNavItem(
-                icon: LucideIcons.receiptText,
-                label: 'Activity',
-                selected: selectedPage == 'Transactions',
-                onTap: () => onSelect('Transactions'),
-              ),
-              SizedBox(
-                width: 62,
-                height: 54,
-                child: Center(
-                  child: Transform.translate(
-                    offset: const Offset(0, -9),
-                    child: _CenterQuickActionButton(
-                      onTap: () => _showQuickActions(context),
-                    ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xCC0E1A2E)
+                      : Colors.white.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0x33475569)
+                        : const Color(0x66CBD5E1),
+                    width: 1.2,
                   ),
                 ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _BrokerNavItem(
+                      icon: LucideIcons.house,
+                      label: 'Home',
+                      selected: selectedPage == 'Dashboard',
+                      onTap: () => onSelect('Dashboard'),
+                    ),
+                    _BrokerNavItem(
+                      icon: LucideIcons.receiptText,
+                      label: 'Activity',
+                      selected: selectedPage == 'Transactions',
+                      onTap: () => onSelect('Transactions'),
+                    ),
+                    SizedBox(
+                      width: 62,
+                      height: 54,
+                      child: Center(
+                        child: Transform.translate(
+                          offset: const Offset(0, -9),
+                          child: _CenterQuickActionButton(
+                            onTap: () => _showQuickActions(context),
+                          ),
+                        ),
+                      ),
+                    ),
+                    _BrokerNavItem(
+                      icon: LucideIcons.layers,
+                      label: 'Accounts',
+                      selected: selectedPage == 'Trading Accounts',
+                      onTap: () => onSelect('Trading Accounts'),
+                    ),
+                    _BrokerNavItem(
+                      icon: LucideIcons.grid2x2,
+                      label: 'More',
+                      selected: selectedPage == 'More',
+                      onTap: () => onSelect('More'),
+                    ),
+                  ],
+                ),
               ),
-              _BrokerNavItem(
-                icon: LucideIcons.layers,
-                label: 'Accounts',
-                selected: selectedPage == 'Trading Accounts',
-                onTap: () => onSelect('Trading Accounts'),
-              ),
-              _BrokerNavItem(
-                icon: LucideIcons.grid2x2,
-                label: 'More',
-                selected: selectedPage == 'More',
-                onTap: () => onSelect('More'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

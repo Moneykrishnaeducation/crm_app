@@ -92,7 +92,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         top: false,
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
           children: [
             // Top Mobile Navigation Bar
             _buildTopNavBar(),

@@ -492,7 +492,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         top: false,
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 28),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 110),
           children: [
             // Top Navigation Bar inside Profile Page
             _buildTopNavBar(),

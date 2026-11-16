@@ -4,16 +4,11 @@ class BrokerMorePage extends StatelessWidget {
   const BrokerMorePage({super.key, required this.onSelectPage});
   final ValueChanged<String> onSelectPage;
 
-  static const _ink = Color(0xFF10264B);
-  static const _muted = Color(0xFF71809A);
-  static const _line = Color(0xFFE7ECF4);
-  static const _surface = Colors.white;
-
   @override
   Widget build(BuildContext context) => Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -198,12 +193,18 @@ class _MoreMenuGroup extends StatelessWidget {
 }
 
 class _MoreMenuRow extends StatelessWidget {
-  const _MoreMenuRow({required this.icon, required this.title, required this.onTap, this.subtitle, this.trailing, this.accent = const Color(0xFF4775A8), this.showDivider = true});
+  const _MoreMenuRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.accent = const Color(0xFF4775A8),
+    this.showDivider = true,
+  });
   final IconData icon;
   final String title;
   final VoidCallback onTap;
   final String? subtitle;
-  final String? trailing;
   final Color accent;
   final bool showDivider;
 
@@ -231,10 +232,6 @@ class _MoreMenuRow extends StatelessWidget {
                     Text(subtitle!, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, height: 1.25)),
                   ],
                 ])),
-                if (trailing != null) ...[
-                  Text(trailing!, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 7),
-                ],
                 const Icon(LucideIcons.chevronRight, color: Color(0xFFA1ACBC), size: 17),
               ]),
             ),

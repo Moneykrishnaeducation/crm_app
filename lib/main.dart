@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -256,12 +258,8 @@ class _AppShellState extends State<AppShell> {
         bottom: false,
         child: Stack(
           children: [
-            Column(
-              children: [
-                            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 104),
-                child: LayoutBuilder(
+            Positioned.fill(
+              child: LayoutBuilder(
                 builder: (context, constraints) => Center(
                   child: SizedBox(
                     width: constraints.maxWidth.clamp(0.0, 1280.0),
@@ -295,8 +293,11 @@ class _AppShellState extends State<AppShell> {
                                 setState(() => _selectedPage = 'More'),
                             onSelectPage: _selectPage,
                           )
-                         : _selectedPage == 'Settings'
-                        ? BrokerSettingsPage(themeMode: widget.themeMode, onThemeModeChanged: widget.onThemeModeChanged)
+                        : _selectedPage == 'Settings'
+                        ? BrokerSettingsPage(
+                            themeMode: widget.themeMode,
+                            onThemeModeChanged: widget.onThemeModeChanged,
+                          )
                         : _selectedPage == 'Security Center'
                         ? SecurityCenterPage(
                             onBack: () =>
@@ -307,8 +308,6 @@ class _AppShellState extends State<AppShell> {
                   ),
                 ),
               ),
-            ),
-              ],
             ),
             Positioned(
               left: 0,

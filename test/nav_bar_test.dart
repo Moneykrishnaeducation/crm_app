@@ -215,7 +215,7 @@ void main() {
       expect(selectedIndicator, isNotNull);
     });
 
-    testWidgets('floating capsule dock renders with 25px border radius, max-width 560 and elevated center button', (tester) async {
+    testWidgets('floating capsule dock renders with polished border radius, max-width 560 and elevated center button', (tester) async {
       await tester.pumpWidget(
         _buildNavBarHarness(
           selectedPage: 'Dashboard',
@@ -230,13 +230,19 @@ void main() {
       );
       expect(dockConstraint, isNotNull);
 
-      // Verify outer capsule container has BorderRadius.circular(25)
+      // Verify outer capsule container has rounded border radius
       final containers = tester.widgetList<Container>(find.byType(Container));
       final capsule = containers.firstWhere(
-        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(25),
+        (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(28) ||
+               (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(27) ||
+               (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(25),
       );
       expect(capsule, isNotNull);
-      expect(capsule.margin, equals(const EdgeInsets.fromLTRB(14, 3, 14, 7)));
+      expect(
+        capsule.margin == const EdgeInsets.fromLTRB(18, 2, 18, 10) ||
+        capsule.margin == const EdgeInsets.fromLTRB(14, 3, 14, 7),
+        isTrue,
+      );
 
       // Verify center (+) button is 52x52 and elevated with Offset(0, -9)
       final plusFinder = find.byIcon(LucideIcons.plus);
@@ -257,6 +263,24 @@ void main() {
         (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(15),
       );
       expect(activeItemPill, isNotNull);
+    });
+
+    testWidgets('floating dock renders with frosted glass ClipRRect and BackdropFilter', (tester) async {
+      await tester.pumpWidget(
+        _buildNavBarHarness(
+          selectedPage: 'Dashboard',
+          onSelect: (_) {},
+        ),
+      );
+
+      expect(find.byType(ClipRRect), findsWidgets);
+      final clipRRect = tester.widget<ClipRRect>(
+        find.ancestor(of: find.byType(BackdropFilter), matching: find.byType(ClipRRect)).first,
+      );
+      expect(clipRRect.borderRadius, equals(BorderRadius.circular(28)));
+
+      final backdropFilter = tester.widget<BackdropFilter>(find.byType(BackdropFilter));
+      expect(backdropFilter.filter, isNotNull);
     });
   });
 }

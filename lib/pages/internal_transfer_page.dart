@@ -38,7 +38,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     child: LayoutBuilder(builder: (context, constraints) {
       final wide = constraints.maxWidth >= 680;
       final amount = double.tryParse(_amountController.text) ?? 0;
-      return ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 28), children: [
+      return ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 110), children: [
         Row(children: [
           Container(width: 40, height: 40, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor)), child: const Icon(LucideIcons.arrowLeftRight, color: _brokerBlue, size: 23)),
           const SizedBox(width: 10),

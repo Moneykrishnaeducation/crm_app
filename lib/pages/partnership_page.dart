@@ -100,7 +100,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
         child: LayoutBuilder(builder: (context, constraints) {
           final wide = constraints.maxWidth >= 900;
           return ListView(
-            padding: EdgeInsets.symmetric(horizontal: wide ? 32 : 16, vertical: 22),
+            padding: EdgeInsets.fromLTRB(wide ? 32 : 16, 22, wide ? 32 : 16, 110),
             children: [
               Center(
                 child: ConstrainedBox(

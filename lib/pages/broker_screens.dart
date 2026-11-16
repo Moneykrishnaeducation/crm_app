@@ -1090,92 +1090,97 @@ class BrokerBottomNavigation extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    top: false,
-    minimum: const EdgeInsets.only(bottom: 7),
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(18, 2, 18, 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(
-                  alpha: Theme.of(context).brightness == Brightness.dark ? 0.35 : 0.10,
-                ),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xCC0E1A2E)
-                      : Colors.white.withValues(alpha: 0.78),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0x33475569)
-                        : const Color(0x66CBD5E1),
-                    width: 1.2,
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return RepaintBoundary(
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 7),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(18, 2, 18, 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: isDark ? 0.35 : 0.10,
+                    ),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
                   ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _BrokerNavItem(
-                      icon: LucideIcons.house,
-                      label: 'Home',
-                      selected: selectedPage == 'Dashboard',
-                      onTap: () => onSelect('Dashboard'),
-                    ),
-                    _BrokerNavItem(
-                      icon: LucideIcons.receiptText,
-                      label: 'Activity',
-                      selected: selectedPage == 'Transactions',
-                      onTap: () => onSelect('Transactions'),
-                    ),
-                    SizedBox(
-                      width: 62,
-                      height: 54,
-                      child: Center(
-                        child: Transform.translate(
-                          offset: const Offset(0, -9),
-                          child: _CenterQuickActionButton(
-                            onTap: () => _showQuickActions(context),
-                          ),
-                        ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xEA0E1A2E)
+                          : const Color(0xEAFFFFFF),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0x33475569)
+                            : const Color(0x66CBD5E1),
+                        width: 1.2,
                       ),
                     ),
-                    _BrokerNavItem(
-                      icon: LucideIcons.layers,
-                      label: 'Accounts',
-                      selected: selectedPage == 'Trading Accounts',
-                      onTap: () => onSelect('Trading Accounts'),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _BrokerNavItem(
+                          icon: LucideIcons.house,
+                          label: 'Home',
+                          selected: selectedPage == 'Dashboard',
+                          onTap: () => onSelect('Dashboard'),
+                        ),
+                        _BrokerNavItem(
+                          icon: LucideIcons.receiptText,
+                          label: 'Activity',
+                          selected: selectedPage == 'Transactions',
+                          onTap: () => onSelect('Transactions'),
+                        ),
+                        SizedBox(
+                          width: 62,
+                          height: 54,
+                          child: Center(
+                            child: Transform.translate(
+                              offset: const Offset(0, -9),
+                              child: _CenterQuickActionButton(
+                                onTap: () => _showQuickActions(context),
+                              ),
+                            ),
+                          ),
+                        ),
+                        _BrokerNavItem(
+                          icon: LucideIcons.layers,
+                          label: 'Accounts',
+                          selected: selectedPage == 'Trading Accounts',
+                          onTap: () => onSelect('Trading Accounts'),
+                        ),
+                        _BrokerNavItem(
+                          icon: LucideIcons.grid2x2,
+                          label: 'More',
+                          selected: selectedPage == 'More',
+                          onTap: () => onSelect('More'),
+                        ),
+                      ],
                     ),
-                    _BrokerNavItem(
-                      icon: LucideIcons.grid2x2,
-                      label: 'More',
-                      selected: selectedPage == 'More',
-                      onTap: () => onSelect('More'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _CenterQuickActionButton extends StatefulWidget {
@@ -1190,36 +1195,38 @@ class _CenterQuickActionButtonState extends State<_CenterQuickActionButton> {
   bool _isPressed = false;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          widget.onTap();
-        },
-        child: AnimatedScale(
-          scale: _isPressed ? .93 : 1,
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOutCubic,
-          child: Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: _brokerNavy,
-              shape: BoxShape.circle,
-              border: Border.all(color: _brokerGold, width: 2),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x2610244B),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(LucideIcons.plus, color: _brokerGold, size: 25),
+  Widget build(BuildContext context) => RepaintBoundary(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            widget.onTap();
+          },
+          child: AnimatedScale(
+            scale: _isPressed ? .93 : 1,
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: _brokerNavy,
+                shape: BoxShape.circle,
+                border: Border.all(color: _brokerGold, width: 2),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x2610244B),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(LucideIcons.plus, color: _brokerGold, size: 25),
+              ),
             ),
           ),
         ),
@@ -1382,7 +1389,8 @@ class _BrokerNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-        child: Semantics(
+        child: RepaintBoundary(
+          child: Semantics(
           button: true,
           selected: selected,
           label: label,
@@ -1453,5 +1461,6 @@ class _BrokerNavItem extends StatelessWidget {
             ),
           ),
         ),
-      );
+      ),
+    );
 }

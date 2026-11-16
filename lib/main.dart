@@ -44,10 +44,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  late final ThemeData _lightTheme;
+  late final ThemeData _darkTheme;
 
   @override
   void initState() {
     super.initState();
+    _lightTheme = _buildTheme(Brightness.light);
+    _darkTheme = _buildTheme(Brightness.dark);
     _loadThemeMode();
   }
 
@@ -72,7 +76,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  ThemeData _buildTheme(Brightness brightness) {
+  static ThemeData _buildTheme(Brightness brightness) {
     final dark = brightness == Brightness.dark;
     final scheme = ColorScheme.fromSeed(
       seedColor: _blue,
@@ -107,8 +111,8 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'VT Index',
       debugShowCheckedModeBanner: false,
-      theme: _buildTheme(Brightness.light),
-      darkTheme: _buildTheme(Brightness.dark),
+      theme: _lightTheme,
+      darkTheme: _darkTheme,
       themeMode: _themeMode,
       home: _AppEntry(
         themeMode: _themeMode,
@@ -242,8 +246,41 @@ class _AppShellState extends State<AppShell> {
     setState(() => _selectedPage = page);
   }
 
+  int get _primaryTabIndex => switch (_selectedPage) {
+        'Dashboard' => 0,
+        'Transactions' => 1,
+        'Trading Accounts' => 2,
+        'More' => 3,
+        _ => -1,
+      };
+
+  Widget _buildSecondaryPage(String page) {
+    return KeyedSubtree(
+      key: ValueKey(page),
+      child: switch (page) {
+        'Partnership' => const BrokerPartnershipPage(),
+        'Internal Transfer' => const BrokerInternalTransferPage(),
+        'Demo Accounts' => const BrokerDemoAccountsPage(),
+        'Profile' => BrokerProfilePage(
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onSelectPage: _selectPage,
+          ),
+        'Settings' => BrokerSettingsPage(
+            themeMode: widget.themeMode,
+            onThemeModeChanged: widget.onThemeModeChanged,
+          ),
+        'Security Center' => SecurityCenterPage(
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onSelectPage: _selectPage,
+          ),
+        _ => _SectionPage(title: page),
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final primaryIndex = _primaryTabIndex;
     return Scaffold(
       appBar: _AppHeader(
         title: _selectedPage,
@@ -259,52 +296,42 @@ class _AppShellState extends State<AppShell> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: LayoutBuilder(
-                builder: (context, constraints) => Center(
-                  child: SizedBox(
-                    width: constraints.maxWidth.clamp(0.0, 1280.0),
-                    child: _selectedPage == 'Dashboard'
-                        ? BrokerDashboardPage(
-                            balanceVisible: _balanceVisible,
-                            onToggleBalance: () => setState(
-                              () => _balanceVisible = !_balanceVisible,
+              child: RepaintBoundary(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Center(
+                    child: SizedBox(
+                      width: constraints.maxWidth.clamp(0.0, 1280.0),
+                      height: constraints.maxHeight,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Offstage(
+                            offstage: primaryIndex == -1,
+                            child: IndexedStack(
+                              index: primaryIndex < 0 ? 0 : primaryIndex,
+                              children: [
+                                BrokerDashboardPage(
+                                  balanceVisible: _balanceVisible,
+                                  onToggleBalance: () => setState(
+                                    () => _balanceVisible = !_balanceVisible,
+                                  ),
+                                  onSelectPage: _selectPage,
+                                ),
+                                const BrokerTransactionsPage(),
+                                BrokerAccountsPage(
+                                  onSelectPage: _selectPage,
+                                  accounts: _accounts,
+                                  onAccountCreated: _addAccount,
+                                ),
+                                BrokerMorePage(onSelectPage: _selectPage),
+                              ],
                             ),
-                            onSelectPage: _selectPage,
-                          )
-                        : _selectedPage == 'Transactions'
-                        ? const BrokerTransactionsPage()
-                        : _selectedPage == 'Partnership'
-                        ? const BrokerPartnershipPage()
-                        : _selectedPage == 'Trading Accounts'
-                        ? BrokerAccountsPage(
-                            onSelectPage: _selectPage,
-                            accounts: _accounts,
-                            onAccountCreated: _addAccount,
-                          )
-                        : _selectedPage == 'Internal Transfer'
-                        ? const BrokerInternalTransferPage()
-                        : _selectedPage == 'Demo Accounts'
-                        ? const BrokerDemoAccountsPage()
-                        : _selectedPage == 'More'
-                        ? BrokerMorePage(onSelectPage: _selectPage)
-                        : _selectedPage == 'Profile'
-                        ? BrokerProfilePage(
-                            onBack: () =>
-                                setState(() => _selectedPage = 'More'),
-                            onSelectPage: _selectPage,
-                          )
-                        : _selectedPage == 'Settings'
-                        ? BrokerSettingsPage(
-                            themeMode: widget.themeMode,
-                            onThemeModeChanged: widget.onThemeModeChanged,
-                          )
-                        : _selectedPage == 'Security Center'
-                        ? SecurityCenterPage(
-                            onBack: () =>
-                                setState(() => _selectedPage = 'More'),
-                            onSelectPage: _selectPage,
-                          )
-                        : _SectionPage(title: _selectedPage),
+                          ),
+                          if (primaryIndex == -1)
+                            _buildSecondaryPage(_selectedPage),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -313,9 +340,11 @@ class _AppShellState extends State<AppShell> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: BrokerBottomNavigation(
-                selectedPage: _selectedPage,
-                onSelect: _selectPage,
+              child: RepaintBoundary(
+                child: BrokerBottomNavigation(
+                  selectedPage: _selectedPage,
+                  onSelect: _selectPage,
+                ),
               ),
             ),
           ],

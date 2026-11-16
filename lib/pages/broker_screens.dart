@@ -1388,9 +1388,22 @@ class _BrokerNavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Expanded(
-        child: RepaintBoundary(
-          child: Semantics(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? const Color(0xFFFFD166) : _brokerBlue;
+    final activeBackground = isDark
+        ? const Color(0xFF3A321D)
+        : _brokerBlue.withValues(alpha: .07);
+    final activeBorder = isDark
+        ? const Color(0xFF806323)
+        : _brokerBlue.withValues(alpha: .12);
+    final inactiveColor = isDark
+        ? const Color(0xFFB7C4D8)
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Expanded(
+      child: RepaintBoundary(
+        child: Semantics(
           button: true,
           selected: selected,
           label: label,
@@ -1402,8 +1415,8 @@ class _BrokerNavItem extends StatelessWidget {
                 onTap();
               },
               borderRadius: BorderRadius.circular(16),
-              splashColor: _brokerGold.withValues(alpha: .12),
-              highlightColor: _brokerBlue.withValues(alpha: .05),
+              splashColor: _brokerGold.withValues(alpha: .16),
+              highlightColor: activeColor.withValues(alpha: .08),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOutCubic,
@@ -1411,14 +1424,10 @@ class _BrokerNavItem extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
                 decoration: BoxDecoration(
-                  color: selected
-                      ? _brokerBlue.withValues(alpha: .07)
-                      : Colors.transparent,
+                  color: selected ? activeBackground : Colors.transparent,
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                    color: selected
-                        ? _brokerBlue.withValues(alpha: .12)
-                        : Colors.transparent,
+                    color: selected ? activeBorder : Colors.transparent,
                   ),
                 ),
                 child: Column(
@@ -1430,7 +1439,7 @@ class _BrokerNavItem extends StatelessWidget {
                       duration: const Duration(milliseconds: 200),
                       child: Icon(
                         icon,
-                        color: selected ? _brokerBlue : Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: selected ? activeColor : inactiveColor,
                         size: 20,
                       ),
                     ),
@@ -1440,7 +1449,7 @@ class _BrokerNavItem extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: selected ? _brokerBlue : Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: selected ? activeColor : inactiveColor,
                         fontSize: 9.5,
                         fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                       ),
@@ -1448,7 +1457,7 @@ class _BrokerNavItem extends StatelessWidget {
                     const SizedBox(height: 3),
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      width: selected ? 15 : 4,
+                      width: selected ? 17 : 4,
                       height: 2.5,
                       decoration: BoxDecoration(
                         color: selected ? _brokerGold : Colors.transparent,
@@ -1463,4 +1472,5 @@ class _BrokerNavItem extends StatelessWidget {
         ),
       ),
     );
+  }
 }

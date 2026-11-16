@@ -27,19 +27,65 @@ class BrokerMorePage extends StatelessWidget {
               ]),
             ),
             const SizedBox(height: 9),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-              decoration: BoxDecoration(color: _brokerPanel, borderRadius: BorderRadius.circular(13), border: Border.all(color: const Color(0xFF174783))),
-              child: Row(children: [
-                const CircleAvatar(radius: 19, backgroundColor: Color(0xFF163B78), child: Icon(LucideIcons.userRound, color: Colors.white, size: 20)),
-                const SizedBox(width: 10),
-                const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('V Tamizharasan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                  SizedBox(height: 3),
-                  Text('vtamizh...@gmail.com', style: TextStyle(color: _brokerMuted, fontSize: 9)),
-                ])),
-                const Icon(LucideIcons.chevronRight, color: _brokerMuted, size: 20),
-              ]),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(13),
+                onTap: () => onSelectPage('Profile'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: _brokerPanel,
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: const Color(0xFF174783)),
+                  ),
+                  child: Row(children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF5E9422),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'I',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'INR-DEVOP B',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(width: 5),
+                              Icon(LucideIcons.badgeCheck, color: _brokerGold, size: 14),
+                            ],
+                          ),
+                          SizedBox(height: 3),
+                          Text('iyyanar@vtindex.com', style: TextStyle(color: _brokerMuted, fontSize: 9)),
+                        ],
+                      ),
+                    ),
+                    const Icon(LucideIcons.chevronRight, color: _brokerMuted, size: 20),
+                  ]),
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             Container(

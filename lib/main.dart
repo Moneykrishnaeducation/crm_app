@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'pages/partnership_page.dart';
+import 'pages/profile_page.dart';
 
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
@@ -115,7 +116,13 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _AppHeader(title: _selectedPage),
+      appBar: _AppHeader(
+        title: _selectedPage,
+        onBack: _selectedPage == 'Profile'
+            ? () => setState(() => _selectedPage = 'More')
+            : null,
+        onAvatarTap: () => _selectPage('Profile'),
+      ),
       body: SafeArea(
         top: false,
         bottom: false,
@@ -141,7 +148,12 @@ class _AppShellState extends State<AppShell> {
                                     ? const BrokerDemoAccountsPage()
                                     : _selectedPage == 'More'
                                         ? BrokerMorePage(onSelectPage: _selectPage)
-                                    : _SectionPage(title: _selectedPage),
+                                        : _selectedPage == 'Profile'
+                                            ? BrokerProfilePage(
+                                                onBack: () => setState(() => _selectedPage = 'More'),
+                                                onSelectPage: _selectPage,
+                                              )
+                                            : _SectionPage(title: _selectedPage),
           ),
           BrokerBottomNavigation(
             selectedPage: _selectedPage,

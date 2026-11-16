@@ -3,9 +3,13 @@ part of '../main.dart';
 class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   const _AppHeader({
     required this.title,
+    this.onBack,
+    this.onAvatarTap,
   });
 
   final String title;
+  final VoidCallback? onBack;
+  final VoidCallback? onAvatarTap;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -18,7 +22,14 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
-      titleSpacing: 20,
+      leading: onBack != null
+          ? IconButton(
+              onPressed: onBack,
+              tooltip: 'Back',
+              icon: const Icon(LucideIcons.arrowLeft, color: Colors.white, size: 20),
+            )
+          : null,
+      titleSpacing: onBack != null ? 0 : 20,
       title: LayoutBuilder(
         builder: (context, constraints) {
           final compact = MediaQuery.sizeOf(context).width < 480;
@@ -60,12 +71,16 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
             icon: const Icon(LucideIcons.bell, color: _muted, size: 21),
           ),
         ],
-        const Padding(
-          padding: EdgeInsetsDirectional.only(end: 14),
-          child: CircleAvatar(
-            radius: 16,
-            backgroundColor: _panelLight,
-            child: Icon(LucideIcons.userRound, size: 18, color: _gold),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 14),
+          child: InkWell(
+            onTap: onAvatarTap,
+            borderRadius: BorderRadius.circular(16),
+            child: const CircleAvatar(
+              radius: 16,
+              backgroundColor: _panelLight,
+              child: Icon(LucideIcons.userRound, size: 18, color: _gold),
+            ),
           ),
         ),
       ],

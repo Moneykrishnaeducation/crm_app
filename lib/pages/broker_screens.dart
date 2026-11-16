@@ -31,15 +31,15 @@ class BrokerDashboardPage extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('WELCOME BACK', style: TextStyle(color: Color(0xFF8290A6), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
+                    Text('WELCOME BACK', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
                     SizedBox(height: 3),
-                    Text('Dashboard', style: TextStyle(color: Color(0xFF10264B), fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    Text('Dashboard', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                     SizedBox(height: 4),
-                    Text('Your trading portfolio at a glance', style: TextStyle(color: Color(0xFF71809A), fontSize: 11)),
+                    Text('Your trading portfolio at a glance', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
                   ],
                 ),
               ),
@@ -295,8 +295,8 @@ class _BrokerMetric extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF71809A),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                 ),
@@ -304,8 +304,8 @@ class _BrokerMetric extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
-                  color: Color(0xFF10264B),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -340,12 +340,12 @@ class _BrokerShortcut extends StatelessWidget {
           height: 84,
           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFFFF7DF) : Colors.white,
+            color: selected ? Theme.of(context).colorScheme.secondaryContainer : Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: selected
-                  ? const Color(0xFFE5BD54)
-                  : const Color(0xFFE2E8F1),
+                  ? _brokerGold
+                  : Theme.of(context).dividerColor,
             ),
           ),
           child: Column(
@@ -361,8 +361,8 @@ class _BrokerShortcut extends StatelessWidget {
                 label,
                 textAlign: TextAlign.center,
                 maxLines: 2,
-                style: const TextStyle(
-                  color: Color(0xFF10264B),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
                 ),
@@ -395,29 +395,29 @@ class _BrokerFundsPanel extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               LucideIcons.chartNoAxesColumn,
-              color: Color(0xFF174A8B),
+              color: Theme.of(context).colorScheme.primary,
               size: 19,
             ),
             SizedBox(width: 8),
             Text(
               'Portfolio allocation',
               style: TextStyle(
-                color: Color(0xFF10264B),
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ],
         ),
-        const Padding(
-          padding: EdgeInsets.only(left: 27, top: 2),
+        Padding(
+          padding: const EdgeInsets.only(left: 27, top: 2),
           child: Text(
             'Understand how your capital is distributed',
-            style: TextStyle(color: _brokerMuted, fontSize: 9),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
           ),
         ),
         const SizedBox(height: 10),
@@ -434,13 +434,13 @@ class _BrokerFundsPanel extends StatelessWidget {
                     children: [
                       Text(
                         'TOTAL FUNDS',
-                        style: TextStyle(color: Color(0xFF71809A), fontSize: 8),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8),
                       ),
                       SizedBox(height: 3),
                       Text(
                         '\$125.8K',
                         style: TextStyle(
-                          color: Color(0xFF10264B),
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -505,13 +505,13 @@ class _FundLegend extends StatelessWidget {
       Expanded(
         child: Text(
           label,
-          style: const TextStyle(color: Color(0xFF52627B), fontSize: 9),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9),
         ),
       ),
       Text(
         value,
         style: const TextStyle(
-          color: Color(0xFF10264B),
+          color: Theme.of(context).colorScheme.onSurface,
           fontSize: 9,
           fontWeight: FontWeight.w700,
         ),
@@ -553,11 +553,11 @@ class _TodayActivity extends StatelessWidget {
     children: [
       Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
               'Recent activity',
               style: TextStyle(
-                color: Color(0xFF10264B),
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
@@ -574,13 +574,13 @@ class _TodayActivity extends StatelessWidget {
       ),
       Container(
         decoration: BoxDecoration(
-          color: _brokerPanel,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: const Color(0xFFE2E8F1)),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
-        child: const Column(
+        child: Column(
           children: [
-            _ActivityTile(
+            const _ActivityTile(
               icon: LucideIcons.arrowDownLeft,
               title: 'Deposit',
               detail: 'Account Funding',
@@ -592,9 +592,9 @@ class _TodayActivity extends StatelessWidget {
               height: 1,
               indent: 14,
               endIndent: 14,
-              color: Color(0xFFE2E8F1),
+              color: Theme.of(context).dividerColor,
             ),
-            _ActivityTile(
+            const _ActivityTile(
               icon: LucideIcons.arrowUpRight,
               title: 'Withdrawal',
               detail: 'Payout Request',
@@ -630,8 +630,8 @@ class _ActivityTile extends StatelessWidget {
     ),
     title: Text(
       title,
-      style: const TextStyle(
-        color: Color(0xFF10264B),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 11,
         fontWeight: FontWeight.w700,
       ),

@@ -11,7 +11,7 @@ class BrokerMorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        color: const Color(0xFFF4F6FA),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
           children: [
@@ -90,7 +90,7 @@ class BrokerMorePage extends StatelessWidget {
             ]),
             const SizedBox(height: 16),
             Material(
-              color: _surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(15),
               child: InkWell(
                 borderRadius: BorderRadius.circular(15),
@@ -133,14 +133,14 @@ class _MoreProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
           child: Container(
             padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE5EAF2)), boxShadow: const [BoxShadow(color: Color(0x080F2748), blurRadius: 14, offset: Offset(0, 5))]),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor), boxShadow: const [BoxShadow(color: Color(0x080F2748), blurRadius: 14, offset: Offset(0, 5))]),
             child: Row(children: [
               Container(
                 width: 49,
@@ -192,7 +192,7 @@ class _MoreMenuGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 13),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17), border: Border.all(color: const Color(0xFFE5EAF2)), boxShadow: const [BoxShadow(color: Color(0x060F2748), blurRadius: 12, offset: Offset(0, 4))]),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: Theme.of(context).dividerColor), boxShadow: const [BoxShadow(color: Color(0x060F2748), blurRadius: 12, offset: Offset(0, 4))]),
         child: Column(children: children),
       );
 }

@@ -3,8 +3,8 @@ part of '../main.dart';
 class BrokerAccountsPage extends StatefulWidget {
   const BrokerAccountsPage({super.key, required this.onSelectPage, required this.accounts, required this.onAccountCreated});
   final ValueChanged<String> onSelectPage;
-  final List<_BrokerAccount> accounts;
-  final ValueChanged<_BrokerAccount> onAccountCreated;
+  final List<BrokerAccount> accounts;
+  final ValueChanged<BrokerAccount> onAccountCreated;
   @override
   State<BrokerAccountsPage> createState() => _BrokerAccountsPageState();
 }
@@ -114,14 +114,14 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   }
 }
 
-class _BrokerAccount {
-  const _BrokerAccount(this.name, this.login, this.leverage, this.balance, this.equity, this.type);
+class BrokerAccount {
+  const BrokerAccount(this.name, this.login, this.leverage, this.balance, this.equity, this.type);
   final String name, login, leverage, balance, equity, type;
 }
 
 class _OpenLiveAccountDialog extends StatefulWidget {
   const _OpenLiveAccountDialog({required this.onCreated});
-  final ValueChanged<_BrokerAccount> onCreated;
+  final ValueChanged<BrokerAccount> onCreated;
   @override
   State<_OpenLiveAccountDialog> createState() => _OpenLiveAccountDialogState();
 }
@@ -249,7 +249,7 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
       return;
     }
     final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
-    widget.onCreated(_BrokerAccount('XRSIM-USD-$login', login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
+    widget.onCreated(BrokerAccount('XRSIM-USD-$login', login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
     final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
     messenger.showSnackBar(SnackBar(content: Text('Live account $login created.')));
@@ -306,7 +306,7 @@ class _AccountFilter extends StatelessWidget {
 }
 
 class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.account}); final _BrokerAccount account;
+  const _AccountCard({required this.account}); final BrokerAccount account;
   @override
   Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: const Color(0xFF0B2452), borderRadius: BorderRadius.circular(13), border: Border.all(color: const Color(0xFF174783))), child: Column(children: [
     Row(children: [const CircleAvatar(radius: 14, backgroundColor: Color(0xFF173B73), child: Text('STD', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w700))), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)), const SizedBox(height: 3), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF32E789), fontSize: 8))])), Text('Login ${account.login}', style: const TextStyle(color: _brokerMuted, fontSize: 8))]),
@@ -322,7 +322,7 @@ class _AccountValue extends StatelessWidget {
 }
 
 class _AccountTable extends StatelessWidget {
-  const _AccountTable({required this.accounts}); final List<_BrokerAccount> accounts;
+  const _AccountTable({required this.accounts}); final List<BrokerAccount> accounts;
   @override
   Widget build(BuildContext context) => Container(decoration: BoxDecoration(color: const Color(0xFF081B40), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF174783))), child: Column(children: [
     const Padding(padding: EdgeInsets.all(10), child: Row(children: [Expanded(flex: 3, child: Text('ACCOUNT / LOGIN', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('LEVERAGE', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('BALANCE', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('EQUITY', style: TextStyle(color: _brokerMuted, fontSize: 8))), Text('ACTIONS', style: TextStyle(color: _brokerMuted, fontSize: 8))])),
@@ -330,7 +330,7 @@ class _AccountTable extends StatelessWidget {
   ]));
 }
 class _AccountTableRow extends StatelessWidget {
-  const _AccountTableRow({required this.account}); final _BrokerAccount account;
+  const _AccountTableRow({required this.account}); final BrokerAccount account;
   @override
   Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9), decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFF174783)))), child: Row(children: [
     Expanded(flex: 3, child: Row(children: [const CircleAvatar(radius: 12, backgroundColor: Color(0xFF173B73), child: Text('STD', style: TextStyle(color: Colors.white, fontSize: 6))), const SizedBox(width: 6), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF32E789), fontSize: 7))]))])),

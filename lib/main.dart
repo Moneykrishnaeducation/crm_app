@@ -77,14 +77,14 @@ class _AppEntryState extends State<_AppEntry> {
 class _AppShellState extends State<AppShell> {
   String _selectedPage = 'Dashboard';
   bool _balanceVisible = true;
-  final List<_BrokerAccount> _accounts = [
-    _BrokerAccount('XRSIM-USD-1', '3315', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
-    _BrokerAccount('XRSIM-USD-2', '3311', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
-    _BrokerAccount('XRSIM-USD-3', '3312', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
-    _BrokerAccount('XRSIM-USD-4', '3327', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+  final List<BrokerAccount> _accounts = [
+    BrokerAccount('XRSIM-USD-1', '3315', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+    BrokerAccount('XRSIM-USD-2', '3311', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+    BrokerAccount('XRSIM-USD-3', '3312', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
+    BrokerAccount('XRSIM-USD-4', '3327', '1:500', '\$0.00', '\$0.00', 'Live MT5'),
   ];
 
-  void _addAccount(_BrokerAccount account) => setState(() => _accounts.insert(0, account));
+  void _addAccount(BrokerAccount account) => setState(() => _accounts.insert(0, account));
 
   void _selectPage(String page) {
     if (page == 'Open Account') {
@@ -99,6 +99,13 @@ class _AppShellState extends State<AppShell> {
         context: context,
         barrierColor: const Color(0xCC020817),
         builder: (_) => FundsActionDialog(withdrawal: page == 'Withdraw'),
+      );
+      return;
+    }
+    if (page == 'Logout') {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const _AppEntry()),
+        (route) => false,
       );
       return;
     }

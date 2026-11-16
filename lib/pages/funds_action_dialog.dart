@@ -117,7 +117,7 @@ class _FundsActionDialogState extends State<FundsActionDialog> {
     Row(children: [Expanded(child: _payoutCard(0, LucideIcons.landmark, 'Bank Transfer', 'ocbc bank •••• 0111', 'Linked', '1–3 Business Days')), const SizedBox(width: 8), Expanded(child: _payoutCard(1, LucideIcons.wallet, 'Crypto Wallet', 'Connect your wallet', 'Setup Needed', 'Near-Instant (~10–30m)'))]),
     const SizedBox(height: 15), Row(children: [_stepTitle('3', 'ENTER WITHDRAWAL AMOUNT'), const Spacer(), const Text('Min: \$10.00', style: TextStyle(color: _muted, fontSize: 9))]),
     const SizedBox(height: 7), _moneyInput('\$', suffix: 'USD'),
-    const SizedBox(height: 8), Wrap(spacing: 6, children: [50, 100, 250, 500].map((v) => _amountChip('\$${v}', '$v')).toList()..add(_amountChip('MAX', '0'))),
+    const SizedBox(height: 8), Wrap(spacing: 6, children: [50, 100, 250, 500].map((v) => _amountChip('\$$v', '$v')).toList()..add(_amountChip('MAX', '0'))),
     const SizedBox(height: 12), _infoCard('Net Payout Amount', child: Row(children: [const Expanded(child: Text('Credited to your destination', style: TextStyle(color: _muted, fontSize: 9))), Text('\$${_amount.text.isEmpty ? '0.00' : _amount.text}', style: const TextStyle(color: Color(0xFF00D7A1), fontSize: 17, fontWeight: FontWeight.w800))])),
   ]);
 

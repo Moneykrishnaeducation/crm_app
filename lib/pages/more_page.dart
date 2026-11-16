@@ -74,15 +74,17 @@ class BrokerMorePage extends StatelessWidget {
               _MoreMenuRow(icon: LucideIcons.shieldCheck, title: 'Security Center', subtitle: 'Account protection and security', onTap: () => onSelectPage('Security Center')),
               _MoreMenuRow(icon: LucideIcons.network, title: 'Partnership', subtitle: 'IB overview, referrals and commissions', accent: _brokerGold, onTap: () => onSelectPage('Partnership')),
               _MoreMenuRow(icon: LucideIcons.layers, title: 'PAMM', subtitle: 'Managed investment accounts', onTap: () => onSelectPage('PAMM Account')),
-              _MoreMenuRow(icon: LucideIcons.briefcaseBusiness, title: 'Work Order Center', subtitle: 'View and manage service requests', onTap: () => onSelectPage('Transactions')),
-              _MoreMenuRow(icon: LucideIcons.gift, title: 'GTC Rewards', subtitle: 'Rewards and partnership benefits', onTap: () => onSelectPage('Partnership')),
-              _MoreMenuRow(icon: LucideIcons.wallet, title: 'Withdrawal Methods', subtitle: 'Manage available withdrawal options', onTap: () => onSelectPage('Transactions'), showDivider: false),
+            ]),
+            const SizedBox(height: 20),
+            const _MoreSectionLabel('COPY TRADING', subtitle: 'Tools and services for copy trading'),
+            _MoreMenuGroup(children: [
+              _MoreMenuRow(icon: LucideIcons.briefcaseBusiness, title: 'MAM Manager', subtitle: 'Manage your managed accounts', onTap: () => onSelectPage('Transactions')),
+              _MoreMenuRow(icon: LucideIcons.usersRound, title: 'MAM Investor', subtitle: 'Explore managed investment accounts', onTap: () => onSelectPage('Partnership')),
+              _MoreMenuRow(icon: LucideIcons.wallet, title: 'Available MAM', subtitle: 'View available managed accounts', onTap: () => onSelectPage('Transactions'), showDivider: false),
             ]),
             const SizedBox(height: 20),
             const _MoreSectionLabel('PREFERENCES & SUPPORT', subtitle: 'Personalise your app experience'),
             _MoreMenuGroup(children: [
-              _MoreMenuRow(icon: LucideIcons.globe, title: 'App Language', subtitle: 'Choose the language used in the app', trailing: 'English', onTap: () => _showLanguageDialog(context)),
-              _MoreMenuRow(icon: LucideIcons.languages, title: 'Email Language', subtitle: 'Language for account communications', trailing: 'English', onTap: () => _showLanguageDialog(context)),
               _MoreMenuRow(icon: LucideIcons.download, title: 'Download Center', subtitle: 'Access platform downloads', onTap: () => onSelectPage('Platform')),
               _MoreMenuRow(icon: LucideIcons.settings, title: 'Settings', subtitle: 'Application preferences', onTap: () => onSelectPage('Settings'), showDivider: false),
             ]),
@@ -123,16 +125,6 @@ class BrokerMorePage extends StatelessWidget {
         ),
       );
 
-  void _showLanguageDialog(BuildContext context) => showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          backgroundColor: _surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('Language', style: TextStyle(color: _ink, fontWeight: FontWeight.w700)),
-          content: const Text('English is currently selected.', style: TextStyle(color: _muted, fontSize: 13)),
-          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close'))],
-        ),
-      );
 }
 
 class _MoreProfileCard extends StatelessWidget {

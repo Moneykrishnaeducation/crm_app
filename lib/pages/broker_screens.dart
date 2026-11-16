@@ -45,7 +45,7 @@ class BrokerDashboardPage extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F1))),
+                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
                 child: const Row(children: [Icon(LucideIcons.activity, color: Color(0xFFD8A82E), size: 13), SizedBox(width: 5), Text('SYSTEM ONLINE', style: TextStyle(color: Color(0xFF174A8B), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4))]),
               ),
             ],
@@ -264,9 +264,9 @@ class _BrokerMetric extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE2E8F1)),
+      border: Border.all(color: Theme.of(context).dividerColor),
       boxShadow: const [
         BoxShadow(
           color: Color(0x090D2C56),
@@ -748,7 +748,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     final filters = ['All', 'Deposits', 'Withdrawals', 'Transfers'];
     final width = MediaQuery.sizeOf(context).width;
     return Container(
-      color: const Color(0xFFF5F7FB),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: width > 900 ? 860 : 680),
@@ -894,7 +894,7 @@ class _TransactionFilter extends StatelessWidget {
         label,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: selected ? _brokerNavy : Colors.white,
+          color: selected ? _brokerNavy : Theme.of(context).colorScheme.surface,
           fontSize: 9,
           fontWeight: FontWeight.w700,
         ),
@@ -1134,9 +1134,9 @@ class BrokerBottomNavigation extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(14, 3, 14, 7),
           padding: const EdgeInsets.fromLTRB(7, 7, 7, 7),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: const Color(0xFFE2E8F1), width: 1),
+            border: Border.all(color: Theme.of(context).dividerColor, width: 1),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x1A10264B),

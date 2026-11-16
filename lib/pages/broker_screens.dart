@@ -758,7 +758,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFE3E8F0)),
                 ),
@@ -783,8 +783,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: _filter == filter
-                                    ? Colors.white
-                                    : const Color(0xFF68758A),
+                                    ? Theme.of(context).colorScheme.onPrimary
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -805,14 +805,14 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'TRANSACTION ACTIVITY',
                             style: TextStyle(
-                              color: Color(0xFF78869A),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 9,
                               letterSpacing: 1,
                               fontWeight: FontWeight.w700,
@@ -822,7 +822,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                           Text(
                             'Your account movements',
                             style: TextStyle(
-                              color: Color(0xFF10213E),
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -862,7 +862,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                     Expanded(
                       child: Container(
                         height: 1,
-                        color: const Color(0xFFE2E7EF),
+                        color: Theme.of(context).dividerColor,
                       ),
                     ),
                   ],
@@ -931,12 +931,7 @@ class _TransactionGroup extends StatelessWidget {
       children: [
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0)
-            const Divider(
-              height: 1,
-              indent: 14,
-              endIndent: 14,
-              color: Color(0xFFE9EDF3),
-            ),
+            Divider(height: 1, indent: 14, endIndent: 14, color: Theme.of(context).dividerColor),
           _TransactionTile(data: items[i]),
         ],
       ],

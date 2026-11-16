@@ -46,7 +46,7 @@ class BrokerDashboardPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F1))),
-                child: const Row(children: [Icon(LucideIcons.activity, color: Color(0xFF20A879), size: 13), SizedBox(width: 5), Text('SYSTEM ONLINE', style: TextStyle(color: Color(0xFF287B62), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4))]),
+                child: const Row(children: [Icon(LucideIcons.activity, color: Color(0xFFD8A82E), size: 13), SizedBox(width: 5), Text('SYSTEM ONLINE', style: TextStyle(color: Color(0xFF174A8B), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4))]),
               ),
             ],
           ),
@@ -84,7 +84,7 @@ class BrokerDashboardPage extends StatelessWidget {
                   icon: LucideIcons.arrowDownLeft,
                   label: 'Total Deposits',
                   value: '\$125.8K',
-                  accent: Color(0xFF29D582),
+                  accent: Color(0xFFD8A82E),
                 ),
               ),
               const SizedBox(width: 10),
@@ -235,7 +235,7 @@ class _LiveUsdBadge extends StatelessWidget {
     ),
     child: const Row(
       children: [
-        Icon(LucideIcons.circle, color: Color(0xFF49E88E), size: 8),
+        Icon(LucideIcons.circle, color: Color(0xFFD8A82E), size: 8),
         SizedBox(width: 5),
         Text(
           'Live USD',
@@ -447,7 +447,7 @@ class _BrokerFundsPanel extends StatelessWidget {
                       ),
                       Text(
                         'ALLOCATED',
-                        style: TextStyle(color: Color(0xFF258564), fontSize: 8),
+                        style: TextStyle(color: Color(0xFFD8A82E), fontSize: 8),
                       ),
                     ],
                   ),
@@ -459,7 +459,7 @@ class _BrokerFundsPanel extends StatelessWidget {
               child: Column(
                 children: [
                   _FundLegend(
-                    color: Color(0xFF25C7F5),
+                    color: Color(0xFF174A8B),
                     label: 'Client Deposits',
                     value: '74%',
                   ),
@@ -471,7 +471,7 @@ class _BrokerFundsPanel extends StatelessWidget {
                   ),
                   SizedBox(height: 9),
                   _FundLegend(
-                    color: Color(0xFF36D77F),
+                    color: Color(0xFF8AA8D0),
                     label: 'Other Funds',
                     value: '8%',
                   ),

@@ -188,9 +188,11 @@ class _TransactionTile extends StatelessWidget {
 
 class BrokerBottomNavigation extends StatelessWidget {
   const BrokerBottomNavigation({super.key, required this.selectedPage, required this.onSelect});
-  final String selectedPage; final ValueChanged<String> onSelect;
+  final String selectedPage;
+  final ValueChanged<String> onSelect;
 
   void _showQuickActions(BuildContext context) {
+    HapticFeedback.mediumImpact();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -201,39 +203,108 @@ class BrokerBottomNavigation extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
           decoration: BoxDecoration(
-            color: _brokerPanel,
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: const Color(0xFF174783)),
-            boxShadow: const [BoxShadow(color: Color(0xAA000817), blurRadius: 24, offset: Offset(0, 8))],
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xF50C2556),
+                Color(0xFA071A40),
+                Color(0xFD04102C),
+              ],
+              stops: [0.0, 0.48, 1.0],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0x335CABFF), width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0xCC00040E),
+                blurRadius: 32,
+                offset: Offset(0, 10),
+              ),
+              BoxShadow(
+                color: Color(0x280875F5),
+                blurRadius: 18,
+                spreadRadius: -2,
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: _brokerMuted.withValues(alpha: .45), borderRadius: BorderRadius.circular(4)))),
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: const Color(0x558CA5CD),
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33389BFF),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 18),
-              const Text('Quick actions', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+              const Text(
+                'Quick actions',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
+              ),
               const SizedBox(height: 12),
-              _QuickActionRow(icon: LucideIcons.wallet, title: 'Deposit funds', onTap: () {
-                Navigator.pop(sheetContext);
-                onSelect('Deposit');
-              }),
-              _QuickActionRow(icon: LucideIcons.arrowUpRight, title: 'Withdraw funds', onTap: () {
-                Navigator.pop(sheetContext);
-                onSelect('Withdraw');
-              }),
-              _QuickActionRow(icon: LucideIcons.userRoundPlus, title: 'Open live account', onTap: () {
-                Navigator.pop(sheetContext);
-                onSelect('Open Account');
-              }),
-              _QuickActionRow(icon: LucideIcons.arrowLeftRight, title: 'Internal transfer', onTap: () {
-                Navigator.pop(sheetContext);
-                onSelect('Internal Transfer');
-              }),
-              _QuickActionRow(icon: LucideIcons.monitor, title: 'Create demo account', onTap: () {
-                Navigator.pop(sheetContext);
-                onSelect('Demo Accounts');
-              }),
+              _QuickActionRow(
+                icon: LucideIcons.wallet,
+                title: 'Deposit funds',
+                subtitle: 'Add money to your account',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onSelect('Deposit');
+                },
+              ),
+              _QuickActionRow(
+                icon: LucideIcons.arrowUpRight,
+                title: 'Withdraw funds',
+                subtitle: 'Transfer funds to your bank',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onSelect('Withdraw');
+                },
+              ),
+              _QuickActionRow(
+                icon: LucideIcons.userRoundPlus,
+                title: 'Open live account',
+                subtitle: 'Start trading with real capital',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onSelect('Open Account');
+                },
+              ),
+              _QuickActionRow(
+                icon: LucideIcons.arrowLeftRight,
+                title: 'Internal transfer',
+                subtitle: 'Move balance between accounts',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onSelect('Internal Transfer');
+                },
+              ),
+              _QuickActionRow(
+                icon: LucideIcons.monitor,
+                title: 'Create demo account',
+                subtitle: 'Practice strategies risk-free',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onSelect('Demo Accounts');
+                },
+              ),
             ],
           ),
         ),
@@ -244,49 +315,88 @@ class BrokerBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
         top: false,
-        minimum: const EdgeInsets.only(bottom: 8),
+        minimum: const EdgeInsets.only(bottom: 4),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 540),
+            constraints: const BoxConstraints(maxWidth: 520),
             child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(14, 18, 14, 4),
-              child: CustomPaint(
-                painter: _BrokerNavBarPainter(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  child: Row(
-                    children: [
-                      _BrokerNavItem(icon: LucideIcons.house, label: 'Dashboard', selected: selectedPage == 'Dashboard', onTap: () => onSelect('Dashboard')),
-                      _BrokerNavItem(icon: LucideIcons.receiptText, label: 'Transactions', selected: selectedPage == 'Transactions', onTap: () => onSelect('Transactions')),
-                      SizedBox(
-                        width: 76,
-                        height: 60,
-                        child: Center(
-                          child: Transform.translate(
-                            offset: const Offset(0, -25),
-                            child: Material(
-                              color: _brokerBlue,
-                              shape: const CircleBorder(),
-                              elevation: 8,
-                              shadowColor: _brokerBlue.withValues(alpha: .5),
-                              child: InkWell(
-                                customBorder: const CircleBorder(),
-                                onTap: () => _showQuickActions(context),
-                                child: const SizedBox(
-                                  width: 58,
-                                  height: 58,
-                                  child: Icon(LucideIcons.plus, color: Colors.white, size: 28),
-                                ),
-                              ),
-                            ),
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x6659A5FF),
+                    Color(0x221B498C),
+                  ],
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x88000512),
+                    blurRadius: 24,
+                    offset: Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Color(0x220875F5),
+                    blurRadius: 12,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(1.2),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30.8),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xF2091F48),
+                      Color(0xF604112B),
+                    ],
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  children: [
+                    _BrokerNavItem(
+                      icon: LucideIcons.house,
+                      label: 'Dashboard',
+                      selected: selectedPage == 'Dashboard',
+                      onTap: () => onSelect('Dashboard'),
+                    ),
+                    _BrokerNavItem(
+                      icon: LucideIcons.receiptText,
+                      label: 'Transactions',
+                      selected: selectedPage == 'Transactions',
+                      onTap: () => onSelect('Transactions'),
+                    ),
+                    SizedBox(
+                      width: 68,
+                      height: 56,
+                      child: Center(
+                        child: Transform.translate(
+                          offset: const Offset(0, -18),
+                          child: _CenterQuickActionButton(
+                            onTap: () => _showQuickActions(context),
                           ),
                         ),
                       ),
-                      _BrokerNavItem(icon: LucideIcons.layers, label: 'Accounts', selected: selectedPage == 'Trading Accounts', onTap: () => onSelect('Trading Accounts')),
-                      _BrokerNavItem(icon: LucideIcons.grid2x2, label: 'More', selected: selectedPage == 'More', onTap: () => onSelect('More')),
-                    ],
-                  ),
+                    ),
+                    _BrokerNavItem(
+                      icon: LucideIcons.layers,
+                      label: 'Accounts',
+                      selected: selectedPage == 'Trading Accounts',
+                      onTap: () => onSelect('Trading Accounts'),
+                    ),
+                    _BrokerNavItem(
+                      icon: LucideIcons.grid2x2,
+                      label: 'More',
+                      selected: selectedPage == 'More',
+                      onTap: () => onSelect('More'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -295,135 +405,215 @@ class BrokerBottomNavigation extends StatelessWidget {
       );
 }
 
-class _BrokerNavBarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    const cornerRadius = 24.0;
-    const r1 = 22.0; // shoulder fillet radius
-    const r2 = 36.5; // notch cutout radius
-    const cy = 13.0; // vertical center of button/cradle
-
-    final centerX = size.width / 2;
-    const d = r1 + r2;
-    final dy = (cy - r1).abs();
-    final dx = math.sqrt(d * d - dy * dy);
-
-    final c1x = -dx;
-    final c1y = r1;
-
-    final tx = c1x + r1 * (0 - c1x) / d;
-    final ty = c1y + r1 * (cy - c1y) / d;
-
-    final path = Path()
-      ..moveTo(cornerRadius, 0)
-      ..lineTo(centerX + c1x, 0)
-      // Left shoulder curve flowing down into notch
-      ..arcToPoint(
-        Offset(centerX + tx, ty),
-        radius: const Radius.circular(r1),
-        clockwise: true,
-      )
-      // Smooth concave cradle dipping under the + button
-      ..arcToPoint(
-        Offset(centerX - tx, ty),
-        radius: const Radius.circular(r2),
-        clockwise: false,
-      )
-      // Right shoulder curve flowing up into horizontal top edge
-      ..arcToPoint(
-        Offset(centerX - c1x, 0),
-        radius: const Radius.circular(r1),
-        clockwise: true,
-      )
-      // Top-right corner
-      ..lineTo(size.width - cornerRadius, 0)
-      ..arcToPoint(
-        Offset(size.width, cornerRadius),
-        radius: const Radius.circular(cornerRadius),
-      )
-      // Right edge
-      ..lineTo(size.width, size.height - cornerRadius)
-      // Bottom-right corner
-      ..arcToPoint(
-        Offset(size.width - cornerRadius, size.height),
-        radius: const Radius.circular(cornerRadius),
-      )
-      // Bottom edge
-      ..lineTo(cornerRadius, size.height)
-      // Bottom-left corner
-      ..arcToPoint(
-        Offset(0, size.height - cornerRadius),
-        radius: const Radius.circular(cornerRadius),
-      )
-      // Left edge
-      ..lineTo(0, cornerRadius)
-      // Top-left corner
-      ..arcToPoint(
-        const Offset(cornerRadius, 0),
-        radius: const Radius.circular(cornerRadius),
-      )
-      ..close();
-
-    // Subtle drop shadow matching the dark theme
-    canvas.drawShadow(path, const Color(0x99000817), 16, true);
-
-    // Navbar body fill
-    final paint = Paint()
-      ..color = const Color(0xFF071B42)
-      ..style = PaintingStyle.fill
-      ..isAntiAlias = true;
-    canvas.drawPath(path, paint);
-
-    // Outer border stroke
-    final borderPaint = Paint()
-      ..color = const Color(0xFF1B498C)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..isAntiAlias = true;
-    canvas.drawPath(path, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _QuickActionRow extends StatelessWidget {
-  const _QuickActionRow({required this.icon, required this.title, required this.onTap});
-  final IconData icon;
-  final String title;
+class _CenterQuickActionButton extends StatefulWidget {
+  const _CenterQuickActionButton({required this.onTap});
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 7),
-        child: Material(
-          color: const Color(0xFF071B42),
-          borderRadius: BorderRadius.circular(15),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(15),
-            onTap: onTap,
-            child: SizedBox(
-              height: 54,
-              child: Row(
-                children: [
-                  const SizedBox(width: 14),
-                  Icon(icon, color: _brokerBlue, size: 20),
-                  const SizedBox(width: 12),
-                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-                  const Spacer(),
-                  const Icon(LucideIcons.chevronRight, color: _brokerMuted, size: 17),
-                  const SizedBox(width: 12),
-                ],
+  State<_CenterQuickActionButton> createState() => _CenterQuickActionButtonState();
+}
+
+class _CenterQuickActionButtonState extends State<_CenterQuickActionButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        widget.onTap();
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF389BFF),
+                Color(0xFF0868E8),
+                Color(0xFF004CB8),
+              ],
+            ),
+            border: Border.all(
+              color: const Color(0x88A5D2FF),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0x660875F5),
+                blurRadius: _isPressed ? 10 : 16,
+                offset: _isPressed ? const Offset(0, 3) : const Offset(0, 6),
               ),
+              const BoxShadow(
+                color: Color(0x40389BFF),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(LucideIcons.plus, color: Colors.white, size: 28),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionRow extends StatefulWidget {
+  const _QuickActionRow({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  @override
+  State<_QuickActionRow> createState() => _QuickActionRowState();
+}
+
+class _QuickActionRowState extends State<_QuickActionRow> {
+  bool _isPressed = false;
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = _isPressed || _isHovered;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onTap();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0x4D0C2A62) : const Color(0x33071B42),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isActive ? const Color(0x554B96FF) : const Color(0x261E4F98),
+                width: 1,
+              ),
+              boxShadow: isActive
+                  ? const [
+                      BoxShadow(
+                        color: Color(0x220875F5),
+                        blurRadius: 10,
+                        offset: Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isActive
+                          ? const [Color(0x44389BFF), Color(0x280875F5)]
+                          : const [Color(0x260875F5), Color(0x1A0875F5)],
+                    ),
+                    border: Border.all(
+                      color: isActive ? const Color(0x665CABFF) : const Color(0x334B96FF),
+                      width: 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      widget.icon,
+                      color: isActive ? const Color(0xFF6DC4FF) : const Color(0xFF4BA2FF),
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                      if (widget.subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.subtitle!,
+                          style: const TextStyle(
+                            color: Color(0xFF8CA5CD),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                AnimatedSlide(
+                  offset: isActive ? const Offset(0.08, 0) : Offset.zero,
+                  duration: const Duration(milliseconds: 180),
+                  child: Icon(
+                    LucideIcons.chevronRight,
+                    color: isActive ? const Color(0xFFB9D5FF) : const Color(0x888CA5CD),
+                    size: 18,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _BrokerNavItem extends StatelessWidget {
-  const _BrokerNavItem({required this.icon, required this.label, required this.selected, required this.onTap});
-  final IconData icon; final String label; final bool selected; final VoidCallback onTap;
+  const _BrokerNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) => Expanded(
         child: Semantics(
@@ -431,32 +621,92 @@ class _BrokerNavItem extends StatelessWidget {
           selected: selected,
           label: label,
           child: InkWell(
-            onTap: onTap,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
             borderRadius: BorderRadius.circular(20),
+            splashColor: _brokerGold.withValues(alpha: 0.15),
+            highlightColor: _brokerGold.withValues(alpha: 0.08),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
+              duration: const Duration(milliseconds: 240),
               curve: Curves.easeOutCubic,
               height: 58,
               margin: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
               decoration: BoxDecoration(
-                color: selected ? _brokerGold.withValues(alpha: .16) : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
+                gradient: selected
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0x28F4C84A),
+                          Color(0x0DF4C84A),
+                        ],
+                      )
+                    : null,
+                border: Border.all(
+                  color: selected ? const Color(0x44F4C84A) : Colors.transparent,
+                  width: 1,
+                ),
+                boxShadow: selected
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x28F4C84A),
+                          blurRadius: 10,
+                          spreadRadius: -2,
+                        ),
+                      ]
+                    : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AnimatedScale(
-                    scale: selected ? 1.08 : 1,
-                    duration: const Duration(milliseconds: 220),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOutCubic,
-                    child: Icon(icon, color: selected ? _brokerGold : _brokerMuted, size: 20),
+                    width: selected ? 14 : 0,
+                    height: 2.5,
+                    decoration: BoxDecoration(
+                      color: _brokerGold,
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: selected
+                          ? [
+                              BoxShadow(
+                                color: _brokerGold.withValues(alpha: 0.60),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ]
+                          : null,
+                    ),
                   ),
                   const SizedBox(height: 3),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: selected ? _brokerGold : _brokerMuted, fontSize: 8.5, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+                  AnimatedScale(
+                    scale: selected ? 1.12 : 1.0,
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    child: Icon(
+                      icon,
+                      color: selected ? _brokerGold : const Color(0xFF8EA6CE),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected ? _brokerGold : const Color(0xFF8EA6CE),
+                        fontSize: selected ? 10.5 : 9.5,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                        letterSpacing: selected ? 0.1 : 0.0,
+                      ),
+                    ),
                   ),
                 ],
               ),

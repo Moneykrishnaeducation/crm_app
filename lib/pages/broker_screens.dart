@@ -62,7 +62,7 @@ class BrokerDashboardPage extends StatelessWidget {
                   icon: LucideIcons.userRound,
                   label: 'Live Accounts',
                   value: '1,825',
-                  accent: const Color(0xFF23C8E8),
+                  accent: _brokerBlue,
                 ),
               ),
               const SizedBox(width: 10),
@@ -525,9 +525,9 @@ class _FundDonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
     final sections = [
-      (const Color(0xFF25C7F5), 4.65),
+      (_brokerBlue, 4.65),
       (_brokerGold, 1.13),
-      (const Color(0xFF36D77F), .5),
+      (const Color(0xFF8AA8D0), .5),
     ];
     var start = -1.5708;
     for (final section in sections) {
@@ -626,7 +626,7 @@ class _ActivityTile extends StatelessWidget {
     dense: true,
     leading: Icon(
       icon,
-      color: incoming ? const Color(0xFF258564) : const Color(0xFFC65B58),
+      color: incoming ? _brokerGold : _brokerBlue,
     ),
     title: Text(
       title,
@@ -647,7 +647,7 @@ class _ActivityTile extends StatelessWidget {
         Text(
           amount,
           style: TextStyle(
-            color: incoming ? const Color(0xFF258564) : const Color(0xFFC65B58),
+            color: incoming ? _brokerGold : _brokerBlue,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
@@ -952,23 +952,23 @@ class _TransactionTile extends StatelessWidget {
     final color = data.incoming == null
         ? const Color(0xFF10213E)
         : data.incoming!
-        ? const Color(0xFF159767)
-        : const Color(0xFFD14E4A);
+        ? _brokerGold
+        : _brokerBlue;
     return ListTile(
       leading: Container(
         width: 38,
         height: 38,
         decoration: BoxDecoration(
           color: data.incoming == false
-              ? const Color(0xFFFFEEEE)
-              : const Color(0xFFEAF3FF),
+              ? const Color(0xFFF7F1E2)
+              : const Color(0xFFEAF0F8),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           data.icon,
           color: data.incoming == false
-              ? const Color(0xFFD14E4A)
-              : const Color(0xFF1768C4),
+              ? _brokerBlue
+              : _brokerBlue,
           size: 19,
         ),
       ),

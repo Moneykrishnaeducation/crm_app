@@ -46,7 +46,7 @@ class BrokerDashboardPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
-                child: const Row(children: [Icon(LucideIcons.activity, color: Color(0xFFD8A82E), size: 13), SizedBox(width: 5), Text('SYSTEM ONLINE', style: TextStyle(color: Color(0xFF174A8B), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4))]),
+                child: Row(children: [const Icon(LucideIcons.activity, color: _brokerGold, size: 13), const SizedBox(width: 5), Text('SYSTEM ONLINE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4))]),
               ),
             ],
           ),
@@ -428,7 +428,7 @@ class _BrokerFundsPanel extends StatelessWidget {
               height: 112,
               child: CustomPaint(
                 painter: _FundDonutPainter(),
-                child: const Center(
+                child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -510,7 +510,7 @@ class _FundLegend extends StatelessWidget {
       ),
       Text(
         value,
-        style: const TextStyle(
+        style: TextStyle(
           color: Theme.of(context).colorScheme.onSurface,
           fontSize: 9,
           fontWeight: FontWeight.w700,

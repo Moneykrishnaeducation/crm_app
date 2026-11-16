@@ -307,7 +307,7 @@ class _AppShellState extends State<AppShell> {
                   ),
                 ),
               ),
-            )
+            ),
               ],
             ),
             Positioned(
@@ -321,7 +321,7 @@ class _AppShellState extends State<AppShell> {
             ),
           ],
         ),
-      ),,
+      ),
     );
   }
 }

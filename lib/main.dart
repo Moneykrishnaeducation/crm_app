@@ -254,10 +254,14 @@ class _AppShellState extends State<AppShell> {
       body: SafeArea(
         top: false,
         bottom: false,
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: LayoutBuilder(
+            Column(
+              children: [
+                            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 104),
+                child: LayoutBuilder(
                 builder: (context, constraints) => Center(
                   child: SizedBox(
                     width: constraints.maxWidth.clamp(0.0, 1280.0),
@@ -303,14 +307,21 @@ class _AppShellState extends State<AppShell> {
                   ),
                 ),
               ),
+            )
+              ],
             ),
-            BrokerBottomNavigation(
-              selectedPage: _selectedPage,
-              onSelect: _selectPage,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: BrokerBottomNavigation(
+                selectedPage: _selectedPage,
+                onSelect: _selectPage,
+              ),
             ),
           ],
         ),
-      ),
+      ),,
     );
   }
 }

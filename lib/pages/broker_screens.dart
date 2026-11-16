@@ -19,7 +19,7 @@ class BrokerDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    color: const Color(0xFFF5F7FB),
+    color: Theme.of(context).scaffoldBackgroundColor,
     child: SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
@@ -381,9 +381,9 @@ class _BrokerFundsPanel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFE2E8F1)),
+      border: Border.all(color: Theme.of(context).dividerColor),
       boxShadow: const [
         BoxShadow(
           color: Color(0x090D2C56),
@@ -1436,7 +1436,7 @@ class _BrokerNavItem extends StatelessWidget {
                       duration: const Duration(milliseconds: 200),
                       child: Icon(
                         icon,
-                        color: selected ? _brokerBlue : const Color(0xFF8290A6),
+                        color: selected ? _brokerBlue : Theme.of(context).colorScheme.onSurfaceVariant,
                         size: 20,
                       ),
                     ),
@@ -1446,7 +1446,7 @@ class _BrokerNavItem extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: selected ? _brokerBlue : const Color(0xFF71809A),
+                        color: selected ? _brokerBlue : Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 9.5,
                         fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                       ),

@@ -149,15 +149,15 @@ class _MoreProfileCard extends StatelessWidget {
                 child: const Center(child: Text('I', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800))),
               ),
               const SizedBox(width: 12),
-              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Flexible(child: Text('INR-DEVOP B', overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFF10264B), fontSize: 13, fontWeight: FontWeight.w800))),
-                  SizedBox(width: 5),
-                  Icon(LucideIcons.badgeCheck, color: _brokerGold, size: 15),
+                  Flexible(child: Text('INR-DEVOP B', overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w800))),
+                  const SizedBox(width: 5),
+                  const Icon(LucideIcons.badgeCheck, color: _brokerGold, size: 15),
                 ]),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text('iyyanar@vtindex.com', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text('View profile', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 10, fontWeight: FontWeight.w700)),
               ])),
               const Icon(LucideIcons.chevronRight, color: Color(0xFF8290A6), size: 20),

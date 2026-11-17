@@ -143,9 +143,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
         tooltip: 'Notifications',
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notifications (99+ unread)')),
-          );
+          showAppToast('Notifications (99+ unread).', type: NotchToastType.info);
         },
         icon: Stack(
           clipBehavior: Clip.none,
@@ -195,9 +193,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         const _LiveBadge(),
         IconButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No new notifications.')),
-            );
+            showAppToast('No new notifications.', type: NotchToastType.info);
           },
           tooltip: 'Notifications',
           icon: const Icon(LucideIcons.bell, color: _muted, size: 21),
@@ -284,9 +280,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
                 trailing: const Icon(LucideIcons.chevronRight, size: 18),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Starting Live Chat...')),
-                  );
+                  showAppToast('Starting Live Chat...', type: NotchToastType.info);
                 },
               ),
               ListTile(
@@ -299,9 +293,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
                 trailing: const Icon(LucideIcons.chevronRight, size: 18),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Support ticket created.')),
-                  );
+                  showAppToast('Support ticket created.', type: NotchToastType.success);
                 },
               ),
             ],

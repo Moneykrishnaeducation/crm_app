@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -9,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
 import 'pages/mam_available_page.dart';
 import 'pages/mam_investor_page.dart';
@@ -212,6 +214,8 @@ class _AppEntry extends StatefulWidget {
 }
 
 class _AppEntryState extends State<_AppEntry> {
+  bool _splashFinished = false;
+
   void _openDashboard() {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
@@ -225,7 +229,99 @@ class _AppEntryState extends State<_AppEntry> {
   }
 
   @override
-  Widget build(BuildContext context) => LoginPage(onLogin: _openDashboard);
+  Widget build(BuildContext context) => _splashFinished
+      ? LoginPage(onLogin: _openDashboard)
+      : _LogoAnimationSplash(
+          onFinished: () {
+            if (mounted) setState(() => _splashFinished = true);
+          },
+        );
+}
+
+class _LogoAnimationSplash extends StatefulWidget {
+  const _LogoAnimationSplash({required this.onFinished});
+
+  final VoidCallback onFinished;
+
+  @override
+  State<_LogoAnimationSplash> createState() => _LogoAnimationSplashState();
+}
+
+class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
+  late final VideoPlayerController _controller;
+  Timer? _fallbackTimer;
+  bool _ready = false;
+  bool _finished = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _controller = VideoPlayerController.asset(
+      'assets/splash/Logo_animation.mp4',
+    );
+    _controller.addListener(_handlePlayback);
+    _fallbackTimer = Timer(const Duration(seconds: 7), _finish);
+    _initializeVideo();
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      await _controller.initialize();
+      if (!mounted) return;
+      setState(() => _ready = true);
+      await _controller.setVolume(0);
+      await _controller.play();
+    } catch (_) {
+      _finish();
+    }
+  }
+
+  void _handlePlayback() {
+    final value = _controller.value;
+    if (value.hasError) {
+      _finish();
+    } else if (value.isInitialized &&
+        value.duration > Duration.zero &&
+        value.position >= value.duration &&
+        !value.isPlaying) {
+      _finish();
+    }
+  }
+
+  void _finish() {
+    if (!mounted || _finished) return;
+    _finished = true;
+    _fallbackTimer?.cancel();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    widget.onFinished();
+  }
+
+  @override
+  void dispose() {
+    _fallbackTimer?.cancel();
+    _controller.removeListener(_handlePlayback);
+    _controller.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.white,
+        body: SizedBox.expand(
+          child: _ready
+              ? FittedBox(
+                  fit: BoxFit.fill,
+                  child: SizedBox(
+                    width: _controller.value.size.width,
+                    height: _controller.value.size.height,
+                    child: VideoPlayer(_controller),
+                  ),
+                )
+              : const SizedBox.expand(),
+        ),
+      );
 }
 
 class _AppShellState extends State<AppShell> {
@@ -349,7 +445,7 @@ class _AppShellState extends State<AppShell> {
         'Partnership' => const BrokerPartnershipPage(),
         'Internal Transfer' => const BrokerInternalTransferPage(),
         'Demo Accounts' => BrokerDemoAccountsPage(
-            onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onOpenTradingAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
           ),
         'Account Details' when _selectedAccount != null => BrokerAccountDetailsPage(
             account: _selectedAccount!,

@@ -696,7 +696,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             ),
           ),
           const SizedBox(height: 14),
-          const Divider(color: Theme.of(context).dividerColor, height: 1),
+          Divider(color: Theme.of(context).dividerColor, height: 1),
           const SizedBox(height: 12),
           _buildDeviceDetailRow(
             icon: LucideIcons.mapPin,

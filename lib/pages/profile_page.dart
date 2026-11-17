@@ -713,10 +713,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('MY PROFILE', style: TextStyle(
+              Text('VTINDEX CLIENT PORTAL', style: TextStyle(
                 color: _c.accentBlue, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
               const SizedBox(height: 4),
-              Text('Account & identity', style: TextStyle(
+              Text('Profile', style: TextStyle(
                 color: _c.text, fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: -.7)),
             ],
           ),
@@ -732,7 +732,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             onTap: _showEditDetailsSheet,
             child: Padding(
               padding: const EdgeInsets.all(11),
-              child: Icon(LucideIcons.settings2, color: _c.text, size: 19),
+              child: Icon(LucideIcons.userRoundPen, color: _c.text, size: 19),
             ),
           ),
         ),
@@ -801,7 +801,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     Flexible(child: Text(_name, maxLines: 2, overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.1, fontWeight: FontWeight.w900))),
                     const SizedBox(width: 5),
-                    const Icon(LucideIcons.badgeCheck, color: Color(0xFFFFD76A), size: 17),
                   ]),
                   const SizedBox(height: 6),
                   Text(_email, maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -1024,38 +1023,35 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   // ==========================================
   Widget _buildOverviewTab() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
+      Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Account snapshot', style: TextStyle(color: _c.text, fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: -.35)),
-          const SizedBox(height: 3),
-          Text('A quick view of your client profile', style: TextStyle(color: _c.muted, fontSize: 10.5)),
+          Text('Your account', style: TextStyle(color: _c.text, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -.55)),
+          const SizedBox(height: 4),
+          Text('Manage your personal and account information', style: TextStyle(color: _c.muted, fontSize: 11)),
         ])),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: _c.blueLight, borderRadius: BorderRadius.circular(20), border: Border.all(color: _c.blueBorder)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(LucideIcons.circleCheck, color: _c.accentBlue, size: 12),
-            const SizedBox(width: 5),
-            Text('Active', style: TextStyle(color: _c.accentBlue, fontSize: 10, fontWeight: FontWeight.w800)),
-          ]),
+        TextButton.icon(
+          onPressed: _showEditDetailsSheet,
+          icon: const Icon(LucideIcons.pencil, size: 13),
+          label: const Text('Edit'),
+          style: TextButton.styleFrom(foregroundColor: _c.accentBlue, textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
         ),
       ]),
-      const SizedBox(height: 14),
+      const SizedBox(height: 16),
       _buildMobileCompletionSummary(),
       const SizedBox(height: 22),
       Row(children: [
-        Expanded(child: Text('Manage your account', style: TextStyle(color: _c.text, fontSize: 15, fontWeight: FontWeight.w900))),
-        Text('QUICK ACCESS', style: TextStyle(color: _c.muted, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+        Expanded(child: Text('Quick actions', style: TextStyle(color: _c.text, fontSize: 16, fontWeight: FontWeight.w900))),
+        Text('4 SHORTCUTS', style: TextStyle(color: _c.muted, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: .9)),
       ]),
       const SizedBox(height: 11),
       GridView.count(
         crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.1,
+        crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.0,
         children: [
-          _mobileQuickAction(icon: LucideIcons.userRoundPen, title: 'Personal details', subtitle: 'Edit your information', onTap: () => setState(() => _selectedTabIndex = 1)),
-          _mobileQuickAction(icon: LucideIcons.fileCheck2, title: 'Verification', subtitle: 'Identity and address', onTap: () => setState(() => _selectedTabIndex = 2)),
-          _mobileQuickAction(icon: LucideIcons.landmark, title: 'Bank account', subtitle: 'Manage payout details', onTap: _showBankDetailsSheet),
-          _mobileQuickAction(icon: LucideIcons.wallet, title: 'Crypto wallet', subtitle: 'Manage wallet details', onTap: _showCryptoWalletSheet),
+          _mobileQuickAction(icon: LucideIcons.userRoundPen, title: 'Personal details', subtitle: 'Review your information', onTap: () => setState(() => _selectedTabIndex = 1)),
+          _mobileQuickAction(icon: LucideIcons.fileCheck2, title: 'Verification', subtitle: 'Manage KYC documents', onTap: () => setState(() => _selectedTabIndex = 2)),
+          _mobileQuickAction(icon: LucideIcons.landmark, title: 'Bank account', subtitle: 'Payout information', onTap: _showBankDetailsSheet),
+          _mobileQuickAction(icon: LucideIcons.wallet, title: 'Crypto wallet', subtitle: 'Wallet information', onTap: _showCryptoWalletSheet),
         ],
       ),
       const SizedBox(height: 22),
@@ -1069,39 +1065,70 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   Widget _buildMobileCompletionSummary() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFF10264A), Color(0xFF1B477A)]),
+        color: _c.card,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const [BoxShadow(color: Color(0x2410264A), blurRadius: 16, offset: Offset(0, 6))],
+        border: Border.all(color: _c.border),
+        boxShadow: _c.isDark ? null : _profileShadow,
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(width: 34, height: 34,
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(LucideIcons.shieldCheck, color: Color(0xFFFFD76A), size: 18)),
-          const SizedBox(width: 10),
+          Container(width: 38, height: 38,
+            decoration: BoxDecoration(color: _c.blueLight, borderRadius: BorderRadius.circular(12)),
+            child: Icon(LucideIcons.contactRound, color: _c.accentBlue, size: 19)),
+          const SizedBox(width: 11),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Profile completion', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 2),
-            Text('Your account information is up to date', style: TextStyle(color: Colors.white.withValues(alpha: .7), fontSize: 9.5)),
+            Text('Profile at a glance', style: TextStyle(color: _c.text, fontSize: 14, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 3),
+            Text('Choose a section to review or update', style: TextStyle(color: _c.muted, fontSize: 10)),
           ])),
-          const Text('100%', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 19, fontWeight: FontWeight.w900)),
         ]),
         const SizedBox(height: 14),
-        ClipRRect(borderRadius: BorderRadius.circular(10),
-          child: const LinearProgressIndicator(value: 1, minHeight: 6,
-            backgroundColor: Color(0xFF526987), valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF4C84A)))),
-        const SizedBox(height: 11),
-        Row(children: [
-          const Icon(LucideIcons.checkCircle2, color: Color(0xFF9EDDB2), size: 14),
-          const SizedBox(width: 7),
-          Expanded(child: Text('Profile and verification details are marked complete.',
-            style: TextStyle(color: Colors.white.withValues(alpha: .82), fontSize: 10, height: 1.3))),
-          const Icon(LucideIcons.arrowUpRight, color: Color(0xFFFFD76A), size: 16),
-        ]),
+        Divider(height: 1, color: _c.border),
+        _profileOverviewLink(
+          icon: LucideIcons.userRound, title: 'Personal information',
+          subtitle: 'Contact details and personal profile',
+          onTap: () => setState(() => _selectedTabIndex = 1),
+        ),
+        Divider(height: 1, color: _c.border),
+        _profileOverviewLink(
+          icon: LucideIcons.shieldCheck, title: 'Identity verification',
+          subtitle: 'Review submitted verification details',
+          onTap: () => setState(() => _selectedTabIndex = 2),
+        ),
+        Divider(height: 1, color: _c.border),
+        _profileOverviewLink(
+          icon: LucideIcons.wallet, title: 'Payment methods',
+          subtitle: 'Bank account and crypto wallet',
+          onTap: () => setState(() => _selectedTabIndex = 3),
+        ),
       ]),
+    );
+  }
+
+  Widget _profileOverviewLink({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
+          Icon(icon, color: _c.accentBlue, size: 17),
+          const SizedBox(width: 11),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: TextStyle(color: _c.text, fontSize: 11, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            Text(subtitle, style: TextStyle(color: _c.muted, fontSize: 9.5)),
+          ])),
+          Icon(LucideIcons.chevronRight, color: _c.muted, size: 17),
+        ]),
+      ),
     );
   }
 

@@ -486,38 +486,103 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: _profileBg,
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildTopNavBar(),
-                  const SizedBox(height: 18),
-                  _buildMobileProfileHeader(),
-                  const SizedBox(height: 22),
-                  _buildMobileSectionNavigation(),
-                  const SizedBox(height: 20),
-                  if (_selectedTabIndex == 0)
-                    _buildOverviewTab()
-                  else if (_selectedTabIndex == 1)
-                    _buildPersonalDetailsTab()
-                  else if (_selectedTabIndex == 2)
-                    _buildVerificationTab()
-                  else if (_selectedTabIndex == 3)
-                    _buildPaymentMethodsTab(),
-                ]),
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // This profile experience is intentionally phone-only.
+        // Do not introduce tablet or desktop breakpoints/layout variants.
+        if (constraints.maxWidth > 600) {
+          return Container(
+            color: _profileBg,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: _profileBlueLight,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: const Icon(
+                    LucideIcons.smartphone,
+                    color: _profileBlue,
+                    size: 34,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Mobile experience only',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _profileNavy,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'This profile is designed exclusively for mobile phone screens.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _profileMuted,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                OutlinedButton.icon(
+                  onPressed: widget.onBack,
+                  icon: const Icon(LucideIcons.arrowLeft, size: 16),
+                  label: const Text('Go back'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _profileBlue,
+                    side: const BorderSide(color: _profileBlueBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        return Container(
+          color: _profileBg,
+          child: SafeArea(
+            top: false,
+            bottom: false,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildTopNavBar(),
+                      const SizedBox(height: 18),
+                      _buildMobileProfileHeader(),
+                      const SizedBox(height: 22),
+                      _buildMobileSectionNavigation(),
+                      const SizedBox(height: 20),
+                      if (_selectedTabIndex == 0)
+                        _buildOverviewTab()
+                      else if (_selectedTabIndex == 1)
+                        _buildPersonalDetailsTab()
+                      else if (_selectedTabIndex == 2)
+                        _buildVerificationTab()
+                      else if (_selectedTabIndex == 3)
+                        _buildPaymentMethodsTab(),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

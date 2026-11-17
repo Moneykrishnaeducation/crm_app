@@ -115,7 +115,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
               onTap: () => widget.onAccountSelected(account),
             )),
           const SizedBox(height: 7),
-          Text('Combined live balance  ${liveAccounts.isEmpty ? 'â€”' : String.fromCharCode(36) + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+          Text('Combined live balance  ${liveAccounts.isEmpty ? '—' : String.fromCharCode(36) + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
         ],
       ),
     );
@@ -173,7 +173,7 @@ class _ReferenceAccountCard extends StatelessWidget {
                     Flexible(child: Text(account.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w800))),
                   ]),
                   const SizedBox(height: 7),
-                  Text('${account.name}  â€¢  ${account.leverage}', style: TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text('${account.name}  •  ${account.leverage}', style: TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w500)),
                 ])),
                 SizedBox(width: sparkWidth, height: 42, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
                 const SizedBox(width: 5),
@@ -185,7 +185,7 @@ class _ReferenceAccountCard extends StatelessWidget {
                 Container(width: 1, height: 35, color: dark ? const Color(0xFF29415F) : const Color(0xFFE0E7F0)),
                 Expanded(child: _ReferenceMetric(label: 'Equity', value: account.equity, color: fg, muted: muted)),
                 Container(width: 1, height: 35, color: dark ? const Color(0xFF29415F) : const Color(0xFFE0E7F0)),
-                Expanded(child: _ReferenceMetric(label: 'P/L', value: account.floatingPnl == null ? 'â€”' : (pnl > 0 ? '+' : pnl < 0 ? '-' : '') + r'$' + pnl.abs().toStringAsFixed(2), color: pnlColor, muted: muted)),
+                Expanded(child: _ReferenceMetric(label: 'P/L', value: account.floatingPnl == null ? '—' : (pnl > 0 ? '+' : pnl < 0 ? '-' : '') + r'$' + pnl.abs().toStringAsFixed(2), color: pnlColor, muted: muted)),
               ]),
             ]),
           ),
@@ -633,7 +633,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 Container(width: 1, height: 42, color: border),
                 metric('Equity', a.equity),
                 Container(width: 1, height: 42, color: border),
-                metric('Floating P/L', pnl == null ? 'â€”' : _money(pnl), valueColor: pnlColor),
+                metric('Floating P/L', pnl == null ? '—' : _money(pnl), valueColor: pnlColor),
               ])),
               Container(height: 1, color: border),
               Padding(padding: const EdgeInsets.fromLTRB(13, 12, 13, 12), child: Row(children: [
@@ -698,7 +698,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 Row(children: [
                   Expanded(child: stat(LucideIcons.receiptText, 'Closed trades shown', '${trades.length}', blue)),
                   const SizedBox(width: 9),
-                  Expanded(child: stat(LucideIcons.target, 'Sample win rate', trades.isEmpty ? 'â€”' : '${winRate.toStringAsFixed(1)}%', blue)),
+                  Expanded(child: stat(LucideIcons.target, 'Sample win rate', trades.isEmpty ? '—' : '${winRate.toStringAsFixed(1)}%', blue)),
                 ]),
                 const SizedBox(height: 9),
                 Row(children: [
@@ -730,7 +730,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 else
                   ...a.openPositions.map((p) => _detailTradeRow(
                     context, p.symbol,
-                    '${p.side.toUpperCase()} â€¢ ${p.volume} lots â€¢ Entry ${p.openPrice} â€¢ Mark ${p.currentPrice}',
+                    '${p.side.toUpperCase()} • ${p.volume} lots • Entry ${p.openPrice} • Mark ${p.currentPrice}',
                     _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border,
                   )),
               ],
@@ -747,7 +747,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 else
                   ...trades.map((t) => _detailTradeRow(
                     context, t.symbol,
-                    '${t.side.toUpperCase()} â€¢ ${t.volume} lots â€¢ ${t.closedAt}',
+                    '${t.side.toUpperCase()} • ${t.volume} lots • ${t.closedAt}',
                     _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border,
                   )),
               ],
@@ -769,14 +769,14 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               Text('Open positions', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               if (a.openPositions.isEmpty) Text('No open positions.', style: TextStyle(color: muted, fontSize: 10)),
-              ...a.openPositions.map((p) => _detailTradeRow(context, p.symbol, '${p.side.toUpperCase()} â€¢ ${p.volume} lots â€¢ Entry ${p.openPrice} â€¢ Mark ${p.currentPrice}', _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border)),
+              ...a.openPositions.map((p) => _detailTradeRow(context, p.symbol, '${p.side.toUpperCase()} • ${p.volume} lots • Entry ${p.openPrice} • Mark ${p.currentPrice}', _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border)),
             ])),
           ] else ...[
             Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Trade history', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               if (trades.isEmpty) Text('No closed trades are available in this account preview.', style: TextStyle(color: muted, fontSize: 10)),
-              ...trades.map((t) => _detailTradeRow(context, t.symbol, '${t.side.toUpperCase()} â€¢ ${t.volume} lots â€¢ ${t.closedAt}', _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border)),
+              ...trades.map((t) => _detailTradeRow(context, t.symbol, '${t.side.toUpperCase()} • ${t.volume} lots • ${t.closedAt}', _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border)),
             ])),
           ],
         ],

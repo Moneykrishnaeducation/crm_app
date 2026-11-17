@@ -495,7 +495,7 @@ class BrokerAccountDetailsPage extends StatefulWidget {
 }
 class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   String _tab = 'Positions';
-  String _money(double v) => '\${v < 0 ? '-' : ''}\${widget.account.currency} \${v.abs().toStringAsFixed(2)}';
+  String _money(double v) => (v < 0 ? '-' : '') + widget.account.currency + ' ' + v.abs().toStringAsFixed(2);
   Widget _empty(BuildContext context, IconData icon, String title, String message) {
     final cs = Theme.of(context).colorScheme;
     return Padding(padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 10), child: Column(children: [

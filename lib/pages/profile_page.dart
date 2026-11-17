@@ -4008,7 +4008,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
           mainAxisSpacing: 12,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 0.49,
+          childAspectRatio: 0.46,
           children: [
             _buildBankCard(context),
             _buildCryptoCard(context),

@@ -184,6 +184,7 @@ class _AppEntryState extends State<_AppEntry> {
 
 class _AppShellState extends State<AppShell> {
   String _selectedPage = 'Dashboard';
+  BrokerAccount? _selectedAccount;
   bool _balanceVisible = true;
   final List<BrokerAccount> _accounts = [
     BrokerAccount(
@@ -222,6 +223,13 @@ class _AppShellState extends State<AppShell> {
 
   void _addAccount(BrokerAccount account) =>
       setState(() => _accounts.insert(0, account));
+
+  void _openAccount(BrokerAccount account) {
+    setState(() {
+      _selectedAccount = account;
+      _selectedPage = 'Account Details';
+    });
+  }
 
   void _selectPage(String page) {
     if (page == 'Open Account') {
@@ -285,6 +293,11 @@ class _AppShellState extends State<AppShell> {
         'Partnership' => const BrokerPartnershipPage(),
         'Internal Transfer' => const BrokerInternalTransferPage(),
         'Demo Accounts' => const BrokerDemoAccountsPage(),
+        'Account Details' when _selectedAccount != null => BrokerAccountDetailsPage(
+            account: _selectedAccount!,
+            onBack: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onSelectPage: _selectPage,
+          ),
         'Profile' => BrokerProfilePage(
             onBack: () => setState(() => _selectedPage = 'More'),
             onSelectPage: _selectPage,
@@ -311,6 +324,7 @@ class _AppShellState extends State<AppShell> {
         title: _selectedPage,
         onBack: switch (_selectedPage) {
           'Profile' || 'Security Center' => () => setState(() => _selectedPage = 'More'),
+          'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
           'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
           _ => null,
         },
@@ -349,6 +363,7 @@ class _AppShellState extends State<AppShell> {
                                   onSelectPage: _selectPage,
                                   accounts: _accounts,
                                   onAccountCreated: _addAccount,
+                                  onAccountSelected: _openAccount,
                                 ),
                                 BrokerMorePage(onSelectPage: _selectPage),
                               ],

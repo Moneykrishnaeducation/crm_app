@@ -4069,7 +4069,9 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
               _buildSocialTradingHeader(),
               const SizedBox(height: 14),
               SizedBox(
-                height: 132,
+                // The summary card content needs more vertical room on compact
+                // screens to avoid a RenderFlex overflow.
+                height: 156,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),

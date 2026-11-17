@@ -66,7 +66,8 @@ class _PammPageState extends State<PammPage> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     body: SafeArea(child: LayoutBuilder(builder: (context, box) {
-      final compact = box.maxWidth < 760;
+      // Keep the header and table controls comfortable on tablet widths too.
+      final compact = box.maxWidth < 980;
       return Column(children: [
         _topBar(compact),
         Expanded(child: ListView(
@@ -121,24 +122,51 @@ class _PammPageState extends State<PammPage> {
     Text('Manage pools, investments and allocations.', style: TextStyle(color: _muted, fontSize: 10.5)),
   ]);
 
-  Widget _tabs(List<String> labels, bool compact) => Container(
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(color: _dark ? const Color(0xFF17243A) : const Color(0xFFEAF1FC),
-      borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
-    child: Row(children: [
-      for (var i = 0; i < labels.length; i++)
-        Expanded(child: InkWell(
-          onTap: () => setState(() { _tab = i; _query = ''; _search.clear(); }),
-          borderRadius: BorderRadius.circular(9),
-          child: AnimatedContainer(duration: const Duration(milliseconds: 160),
-            padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 8, vertical: 10),
-            decoration: BoxDecoration(color: _tab == i ? _blue : Colors.transparent, borderRadius: BorderRadius.circular(9)),
-            child: Center(child: Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: _tab == i ? Colors.white : _text, fontSize: compact ? 9 : 10.5, fontWeight: FontWeight.w700))),
-          ),
-        )),
-    ]),
-  );
+  Widget _tabs(List<String> labels, bool compact) {
+    final icons = [LucideIcons.chartNoAxesCombined, LucideIcons.chartColumn, LucideIcons.wallet];
+    final counts = [_managed.length, _available.length, _investments.length];
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: _dark ? const Color(0xFF17243A) : const Color(0xFFEAF1FC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _border),
+      ),
+      child: Row(children: [
+        for (var i = 0; i < labels.length; i++)
+          Expanded(child: InkWell(
+            onTap: () => setState(() { _tab = i; _query = ''; _search.clear(); }),
+            borderRadius: BorderRadius.circular(9),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 9, vertical: 10),
+              decoration: BoxDecoration(
+                color: _tab == i ? _blue : Colors.transparent,
+                borderRadius: BorderRadius.circular(9),
+                boxShadow: _tab == i ? [BoxShadow(color: _blue.withValues(alpha: .18), blurRadius: 8, offset: const Offset(0, 3))] : null,
+              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                if (!compact) ...[
+                  Icon(icons[i], size: 13, color: _tab == i ? Colors.white : _muted),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(child: Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: _tab == i ? Colors.white : _text, fontSize: compact ? 9 : 10.5, fontWeight: FontWeight.w700))),
+                const SizedBox(width: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _tab == i ? Colors.white.withValues(alpha: .18) : _border.withValues(alpha: .65),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text('${counts[i]}', style: TextStyle(color: _tab == i ? Colors.white : _muted, fontSize: 8, fontWeight: FontWeight.w800)),
+                ),
+              ]),
+            ),
+          )),
+      ]),
+    );
+  }
 
   Widget _miniStat(String label, String value, IconData icon, Color accent) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -219,20 +247,27 @@ class _PammPageState extends State<PammPage> {
       decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(22), border: Border.all(color: _border),
         boxShadow: const [BoxShadow(color: Color(0x0A0F2748), blurRadius: 9, offset: Offset(0, 3))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Padding(padding: const EdgeInsets.fromLTRB(18, 16, 18, 15), child: Row(children: [
-          Container(width: 6, height: 18, decoration: BoxDecoration(color: const Color(0xFF4C7BFF), borderRadius: BorderRadius.circular(5))),
-          const SizedBox(width: 10),
-          Expanded(child: Text(title, style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800))),
-          SizedBox(width: compact ? 145 : 285, height: 36, child: TextField(controller: _search,
-            onChanged: (v) => setState(() => _query = v), style: TextStyle(color: _text, fontSize: 11),
-            decoration: InputDecoration(hintText: 'Search name, MT5 login...', hintStyle: TextStyle(color: _muted, fontSize: 10),
-              prefixIcon: Icon(LucideIcons.search, color: _muted, size: 15), prefixIconConstraints: const BoxConstraints(minWidth: 34),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), filled: true, fillColor: _surface,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: BorderSide(color: _border)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: BorderSide(color: _border)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: _blue)))),
-          ),
-        ])),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 15),
+          child: compact
+            ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Row(children: [
+                  Container(width: 5, height: 20, decoration: BoxDecoration(color: const Color(0xFF4C7BFF), borderRadius: BorderRadius.circular(5))),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(title, style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800))),
+                  Text('${_tab == 0 ? _managed.length : _tab == 1 ? _available.length : _investments.length} records',
+                    style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w700)),
+                ]),
+                const SizedBox(height: 12),
+                _searchField(double.infinity),
+              ])
+            : Row(children: [
+                Container(width: 6, height: 18, decoration: BoxDecoration(color: const Color(0xFF4C7BFF), borderRadius: BorderRadius.circular(5))),
+                const SizedBox(width: 10),
+                Expanded(child: Text(title, style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800))),
+                _searchField(285),
+              ]),
+        ),
         Divider(height: 1, color: _border),
         if (_tab == 2)
           _investmentRows(investments, compact)
@@ -248,6 +283,28 @@ class _PammPageState extends State<PammPage> {
       ]),
     );
   }
+
+  Widget _searchField(double width) => SizedBox(
+    width: width,
+    height: 38,
+    child: TextField(
+      controller: _search,
+      onChanged: (v) => setState(() => _query = v),
+      style: TextStyle(color: _text, fontSize: 11),
+      decoration: InputDecoration(
+        hintText: 'Search name, MT5 login...',
+        hintStyle: TextStyle(color: _muted, fontSize: 10),
+        prefixIcon: Icon(LucideIcons.search, color: _muted, size: 15),
+        prefixIconConstraints: const BoxConstraints(minWidth: 36),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        filled: true,
+        fillColor: _surface,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: BorderSide(color: _border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: BorderSide(color: _border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: _blue)),
+      ),
+    ),
+  );
 
   Widget _poolRows(List<_PammPool> rows, bool compact) {
     if (rows.isEmpty) return _empty();

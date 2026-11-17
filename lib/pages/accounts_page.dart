@@ -30,7 +30,8 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
           account.name.toLowerCase().contains(q) ||
           account.type.toLowerCase().contains(q);
       final matchesFilter = _filter == 'All Accounts' ||
-          (_filter == 'Live MT5' && account.type == 'Live MT5');
+          (_filter == 'Live MT5' && account.type == 'Live MT5') ||
+          (_filter == 'Demo' && account.type != 'Live MT5');
       return matchesQuery && matchesFilter;
     }).toList();
     final liveCount = widget.accounts.where((a) => a.type == 'Live MT5').length;
@@ -114,6 +115,8 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                   _AccountFilter(label: 'All accounts', count: '${widget.accounts.length}', selected: _filter == 'All Accounts', onTap: () => setState(() => _filter = 'All Accounts')),
                   const SizedBox(width: 7),
                   _AccountFilter(label: 'Live MT5', count: '$liveCount', selected: _filter == 'Live MT5', onTap: () => setState(() => _filter = 'Live MT5')),
+                  const SizedBox(width: 7),
+                  _AccountFilter(label: 'Demo', count: '${widget.accounts.length - liveCount}', selected: _filter == 'Demo', onTap: () => setState(() => _filter = 'Demo')),
                 ]),
               ),
               const SizedBox(height: 10),

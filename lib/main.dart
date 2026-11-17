@@ -231,15 +231,6 @@ class _AppShellState extends State<AppShell> {
         BrokerTradeRecord(symbol: 'AUDUSD', side: 'sell', volume: '0.10', closedAt: 'Yesterday', profit: 8.30),
       ],
     ),
-    BrokerAccount(
-      'Demo', '3388', '1:500', r'$10,000.00', r'$10,000.00', 'Demo MT5',
-      server: 'VTIndex-Demo', currency: 'USD', floatingPnl: 0.00,
-      equityHistory: [10000, 10020, 10010, 9990, 10015, 10000, 10030, 10010, 10000, 10000],
-      recentTrades: [
-        BrokerTradeRecord(symbol: 'US30', side: 'buy', volume: '0.10', closedAt: 'Yesterday', profit: 42.00),
-        BrokerTradeRecord(symbol: 'EURUSD', side: 'sell', volume: '0.15', closedAt: 'Nov 15', profit: -18.20),
-      ],
-    ),
   ];
 
   void _addAccount(BrokerAccount account) =>

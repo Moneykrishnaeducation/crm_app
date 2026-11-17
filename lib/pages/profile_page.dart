@@ -666,6 +666,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = screenWidth < 360 ? 12.0 : screenWidth < 420 ? 14.0 : 18.0;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
@@ -678,7 +680,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 132),
+                  padding: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 132),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _buildMobileProfileHeader(),
@@ -707,6 +709,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   }
 
   Widget _buildProfilePageTitle() {
+    final compact = MediaQuery.sizeOf(context).width < 380;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -718,10 +721,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 color: _c.accentBlue, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.8)),
               const SizedBox(height: 5),
               Text('My profile', style: TextStyle(
-                color: _c.text, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -1.1)),
+                color: _c.text, fontSize: compact ? 25 : 28, fontWeight: FontWeight.w800, letterSpacing: -1.1)),
               const SizedBox(height: 3),
               Text('Personal details, verification and payment preferences',
-                style: TextStyle(color: _c.muted, fontSize: 10.5)),
+                style: TextStyle(color: _c.muted, fontSize: compact ? 10 : 11.5, height: 1.3)),
             ],
           ),
         ),
@@ -747,6 +750,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   // Minimal identity panel: no client-role labels or account-type badges.
   // Restored profile hero header without client-role labels.
   Widget _buildMobileProfileHeader() {
+    final compact = MediaQuery.sizeOf(context).width < 380;
+    final avatarSize = compact ? 68.0 : 82.0;
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -811,7 +816,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            padding: EdgeInsets.fromLTRB(compact ? 14 : 18, 16, compact ? 14 : 18, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -825,7 +830,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: compact ? 14 : 20),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -833,8 +838,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                       clipBehavior: Clip.none,
                       children: [
                         Container(
-                          width: 82,
-                          height: 82,
+                          width: avatarSize,
+                          height: avatarSize,
                           decoration: BoxDecoration(
                             color: _avatarBg,
                             shape: BoxShape.circle,
@@ -872,7 +877,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                         ),
                       ],
                     ),
-                    const SizedBox(width: 15),
+                    SizedBox(width: compact ? 11 : 15),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -883,7 +888,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: compact ? 16 : 18,
                               height: 1.1,
                               fontWeight: FontWeight.w900,
                             ),
@@ -895,7 +900,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: .76),
-                              fontSize: 10.5,
+                              fontSize: compact ? 10 : 11.5,
                             ),
                           ),
                         ],
@@ -1108,10 +1113,11 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   }
 
   Widget _buildMobileSectionNavigation() {
-    const tabs = [
+    final compact = MediaQuery.sizeOf(context).width < 380;
+    final tabs = [
       (icon: LucideIcons.layoutDashboard, label: 'Overview'),
       (icon: LucideIcons.userRound, label: 'Personal'),
-      (icon: LucideIcons.shieldCheck, label: 'Verification'),
+      (icon: LucideIcons.shieldCheck, label: compact ? 'Verify' : 'Verification'),
       (icon: LucideIcons.wallet, label: 'Payments'),
     ];
     return Container(
@@ -1133,7 +1139,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 240),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 1),
+                  constraints: const BoxConstraints(minHeight: 54),
+                  padding: EdgeInsets.symmetric(vertical: compact ? 8 : 10, horizontal: 1),
                   decoration: BoxDecoration(
                     color: _selectedTabIndex == i ? _c.card : Colors.transparent,
                     borderRadius: BorderRadius.circular(11),
@@ -1149,7 +1156,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                         color: _selectedTabIndex == i ? _c.accentBlue : _c.muted),
                       const SizedBox(height: 5),
                       Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w700,
+                        style: TextStyle(fontSize: compact ? 9 : 10, fontWeight: FontWeight.w700,
                           color: _selectedTabIndex == i ? _c.text : _c.muted)),
                     ],
                   ),
@@ -1205,12 +1212,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       children: [
         const SizedBox(height: 12),
         GridView.count(
-          crossAxisCount: 2,
+          crossAxisCount: MediaQuery.sizeOf(context).width < 350 ? 1 : 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.42,
+          childAspectRatio: MediaQuery.sizeOf(context).width < 350 ? 2.65 : 1.3,
           children: [
             _overviewStatusCard(
               icon: LucideIcons.idCard,
@@ -1263,7 +1270,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(15),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 380 ? 10 : 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: _c.border),
@@ -1294,7 +1301,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _c.text,
-                  fontSize: 11,
+                  fontSize: MediaQuery.sizeOf(context).width < 380 ? 10.5 : 11.5,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1303,7 +1310,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 detail,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: _c.muted, fontSize: 9),
+                style: TextStyle(color: _c.muted, fontSize: 10),
               ),
               const SizedBox(height: 7),
               Row(
@@ -1324,7 +1331,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: statusColor,
-                        fontSize: 9,
+                        fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
                     ),

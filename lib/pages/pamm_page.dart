@@ -428,7 +428,7 @@ class _PammPageState extends State<PammPage> {
     child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)));
 
   Widget _actions(_PammPool p) => Row(mainAxisSize: MainAxisSize.min, children: [
-    _goldButton('Deposit', () => _amountDialog('Deposit to ${p.name}')), const SizedBox(width: 6),
+    _goldButton('Deposit', () => _depositDialog(p.name)), const SizedBox(width: 6),
     OutlinedButton(onPressed: () => _details(p.name, p.login), style: OutlinedButton.styleFrom(
       foregroundColor: _text, side: BorderSide(color: _border), padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
       minimumSize: const Size(0, 34), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))),
@@ -436,7 +436,7 @@ class _PammPageState extends State<PammPage> {
   ]);
 
   Widget _actionsInvestment(_PammInvestment p) => Row(mainAxisSize: MainAxisSize.min, children: [
-    _goldButton('Deposit', () => _amountDialog('Deposit to ${p.name}')), const SizedBox(width: 6),
+    _goldButton('Deposit', () => _depositDialog(p.name)), const SizedBox(width: 6),
     OutlinedButton(onPressed: () => _details(p.name, p.login), style: OutlinedButton.styleFrom(
       foregroundColor: _text, side: BorderSide(color: _border), padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
       minimumSize: const Size(0, 34), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))),

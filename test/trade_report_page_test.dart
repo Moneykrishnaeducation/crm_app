@@ -90,6 +90,26 @@ void main() {
       expect(find.text('Hour'), findsOneWidget);
     });
 
+    testWidgets('triggers pull-to-refresh without error', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(buildTestableWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+
+      // Fling down to trigger refresh indicator
+      await tester.fling(find.byType(SingleChildScrollView), const Offset(0, 350), 1000);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Trade Report'), findsOneWidget);
+    });
+
     testWidgets('toggles eye icon to obscure and reveal Net Deposit', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
@@ -136,6 +156,55 @@ void main() {
 
       // Tap Day back
       await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('scrubbing on Equity Curve reveals interactive tooltip', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(buildTestableWidget());
+      await tester.pumpAndSettle();
+
+      final equityGesture = find.byKey(const Key('equity_curve_gesture'));
+      expect(equityGesture, findsOneWidget);
+
+      // Tap down to reveal tooltip
+      final gesture = await tester.startGesture(tester.getCenter(equityGesture));
+      await tester.pump();
+
+      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
+
+      // Move gesture across chart
+      await gesture.moveBy(const Offset(40, 0));
+      await tester.pump();
+      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('scrubbing on P&L Analysis reveals interactive tooltip', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(buildTestableWidget());
+      await tester.pumpAndSettle();
+
+      final pnlGesture = find.byKey(const Key('pnl_chart_gesture'));
+      expect(pnlGesture, findsOneWidget);
+
+      // Start gesture on chart
+      final gesture = await tester.startGesture(tester.getCenter(pnlGesture));
+      await tester.pump();
+
+      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
+
+      await gesture.up();
       await tester.pumpAndSettle();
     });
 
@@ -209,9 +278,10 @@ void main() {
       await tester.tap(find.text('Trade Time'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Select Trade Time Range'), findsOneWidget);
+      expect(find.text('Select Date Range'), findsOneWidget);
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('Last 7 Days'), findsOneWidget);
+      expect(find.text('This Month'), findsOneWidget);
       expect(find.text('Last 30 Days'), findsOneWidget);
       expect(find.text('Custom Range...'), findsOneWidget);
 
@@ -219,7 +289,7 @@ void main() {
       await tester.tap(find.text('Today'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Select Trade Time Range'), findsNothing);
+      expect(find.text('Select Date Range'), findsNothing);
     });
 
     testWidgets('back button triggers onBack callback when provided', (tester) async {

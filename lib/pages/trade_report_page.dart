@@ -22,9 +22,13 @@ class _TradeReportPageState extends State<TradeReportPage> {
   late String _selectedLogin;
   late DateTime _startDate;
   late DateTime _endDate;
+  String _selectedPreset = 'custom';
   String _symbolFilter = 'All Symbols';
   String _timeframe = 'Day';
   bool _hideNetDeposit = false;
+
+  Offset? _equityScrubOffset;
+  Offset? _pnlScrubOffset;
 
   final List<String> _symbolOptions = const [
     'All Symbols',
@@ -108,13 +112,26 @@ class _TradeReportPageState extends State<TradeReportPage> {
     return '$y / $m / $day';
   }
 
+  Color _getPnLColor(double val, Color defaultColor) {
+    if (val > 0) return const Color(0xFF16A34A);
+    if (val < 0) return const Color(0xFFDC2626);
+    return defaultColor;
+  }
+
   Future<void> _selectDateRange() async {
+    HapticFeedback.lightImpact();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF131D2E) : Colors.white;
+    final cardBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final mutedText = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final titleText = isDark ? Colors.white : const Color(0xFF0F172A);
+
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF131D2E) : Colors.white,
+      backgroundColor: cardBg,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -126,7 +143,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
               children: [
                 Center(
                   child: Container(
-                    width: 36,
+                    width: 38,
                     height: 4,
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
@@ -134,36 +151,84 @@ class _TradeReportPageState extends State<TradeReportPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Select Trade Time Range',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Text(
+                      'Select Date Range',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: titleText,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Trade Time',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: mutedText,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _buildPresetTile(
+                  ctx: ctx,
+                  key: 'today',
+                  title: 'Today',
+                  icon: LucideIcons.calendarCheck,
+                  isSelected: _selectedPreset == 'today',
+                  isDark: isDark,
+                  cardBorder: cardBorder,
+                  titleText: titleText,
+                ),
+                const SizedBox(height: 8),
+                _buildPresetTile(
+                  ctx: ctx,
+                  key: '7days',
+                  title: 'Last 7 Days',
+                  icon: LucideIcons.calendarRange,
+                  isSelected: _selectedPreset == '7days',
+                  isDark: isDark,
+                  cardBorder: cardBorder,
+                  titleText: titleText,
+                ),
+                const SizedBox(height: 8),
+                _buildPresetTile(
+                  ctx: ctx,
+                  key: 'month',
+                  title: 'This Month',
+                  icon: LucideIcons.calendarClock,
+                  isSelected: _selectedPreset == 'month',
+                  isDark: isDark,
+                  cardBorder: cardBorder,
+                  titleText: titleText,
+                ),
+                const SizedBox(height: 8),
+                _buildPresetTile(
+                  ctx: ctx,
+                  key: '30days',
+                  title: 'Last 30 Days',
+                  icon: LucideIcons.calendarDays,
+                  isSelected: _selectedPreset == '30days',
+                  isDark: isDark,
+                  cardBorder: cardBorder,
+                  titleText: titleText,
+                ),
+                const SizedBox(height: 8),
+                _buildPresetTile(
+                  ctx: ctx,
+                  key: 'custom',
+                  title: 'Custom Range...',
+                  icon: LucideIcons.slidersHorizontal,
+                  isSelected: _selectedPreset == 'custom',
+                  isDark: isDark,
+                  cardBorder: cardBorder,
+                  titleText: titleText,
                 ),
                 const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(LucideIcons.calendarCheck, size: 20, color: Color(0xFF2563EB)),
-                  title: const Text('Today', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  onTap: () => Navigator.pop(ctx, 'today'),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(LucideIcons.calendarRange, size: 20, color: Color(0xFF2563EB)),
-                  title: const Text('Last 7 Days', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  onTap: () => Navigator.pop(ctx, '7days'),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(LucideIcons.calendarDays, size: 20, color: Color(0xFF2563EB)),
-                  title: const Text('Last 30 Days', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  onTap: () => Navigator.pop(ctx, '30days'),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(LucideIcons.calendar, size: 20, color: Color(0xFF2563EB)),
-                  title: const Text('Custom Range...', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  onTap: () => Navigator.pop(ctx, 'custom'),
-                ),
               ],
             ),
           ),
@@ -176,16 +241,25 @@ class _TradeReportPageState extends State<TradeReportPage> {
     final now = DateTime.now();
     if (action == 'today') {
       setState(() {
+        _selectedPreset = 'today';
         _startDate = DateTime(now.year, now.month, now.day);
         _endDate = DateTime(now.year, now.month, now.day);
       });
     } else if (action == '7days') {
       setState(() {
+        _selectedPreset = '7days';
         _startDate = now.subtract(const Duration(days: 7));
+        _endDate = now;
+      });
+    } else if (action == 'month') {
+      setState(() {
+        _selectedPreset = 'month';
+        _startDate = DateTime(now.year, now.month, 1);
         _endDate = now;
       });
     } else if (action == '30days') {
       setState(() {
+        _selectedPreset = '30days';
         _startDate = now.subtract(const Duration(days: 30));
         _endDate = now;
       });
@@ -199,11 +273,76 @@ class _TradeReportPageState extends State<TradeReportPage> {
       );
       if (picked != null && mounted) {
         setState(() {
+          _selectedPreset = 'custom';
           _startDate = picked.start;
           _endDate = picked.end;
         });
       }
     }
+  }
+
+  Widget _buildPresetTile({
+    required BuildContext ctx,
+    required String key,
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required bool isDark,
+    required Color cardBorder,
+    required Color titleText,
+  }) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.pop(ctx, key);
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF2563EB).withValues(alpha: isDark ? 0.2 : 0.08)
+              : (isDark ? const Color(0xFF1E293B).withValues(alpha: 0.4) : const Color(0xFFF8FAFC)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF2563EB) : cardBorder,
+            width: isSelected ? 1.4 : 0.8,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF2563EB).withValues(alpha: 0.18)
+                    : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                size: 17,
+                color: isSelected ? const Color(0xFF2563EB) : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  fontSize: 14,
+                  color: isSelected ? const Color(0xFF2563EB) : titleText,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(LucideIcons.check, size: 18, color: Color(0xFF2563EB)),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showAccountPicker(BuildContext context) {
@@ -282,6 +421,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                             ? const Icon(LucideIcons.check, color: Color(0xFF2563EB), size: 20)
                             : null,
                         onTap: () {
+                          HapticFeedback.lightImpact();
                           setState(() {
                             _selectedLogin = acc.login;
                           });
@@ -301,6 +441,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }
 
   void _handleBack() {
+    HapticFeedback.lightImpact();
     if (widget.onBack != null) {
       widget.onBack!();
     } else {
@@ -340,41 +481,50 @@ class _TradeReportPageState extends State<TradeReportPage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 1. Date Range Filter Row
-            _buildDateRangeFilterRow(cardBg, cardBorder, mutedText, titleText),
-            const SizedBox(height: 12),
+      body: RefreshIndicator(
+        color: const Color(0xFF2563EB),
+        backgroundColor: cardBg,
+        onRefresh: () async {
+          HapticFeedback.lightImpact();
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (mounted) setState(() {});
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Date Range Filter Row
+              _buildDateRangeFilterRow(cardBg, cardBorder, mutedText, titleText),
+              const SizedBox(height: 12),
 
-            // 2. Hero Account Summary Card (Royal Blue Gradient)
-            _buildHeroAccountCard(currentAcc, balanceStr, equityStr),
-            const SizedBox(height: 16),
+              // 2. Hero Account Summary Card (Royal Blue Gradient with Ambient Glow)
+              _buildHeroAccountCard(currentAcc, balanceStr, equityStr),
+              const SizedBox(height: 16),
 
-            // 3. Closed Order Statistics Section
-            _buildClosedOrderStatisticsSection(cardBg, cardBorder, mutedText, titleText, isDark),
-            const SizedBox(height: 16),
+              // 3. Closed Order Statistics Section
+              _buildClosedOrderStatisticsSection(cardBg, cardBorder, mutedText, titleText, isDark),
+              const SizedBox(height: 16),
 
-            // 4. Order P&L & Total P&L Card
-            _buildOrderAndTotalPnLCard(cardBg, cardBorder, mutedText, titleText, isDark),
-            const SizedBox(height: 16),
+              // 4. Order P&L & Total P&L Card
+              _buildOrderAndTotalPnLCard(cardBg, cardBorder, mutedText, titleText, isDark),
+              const SizedBox(height: 16),
 
-            // 5. Deposit / Withdraw 2x2 Grid Cards
-            _buildDepositWithdrawGrid(cardBg, cardBorder, mutedText, titleText, isDark),
-            const SizedBox(height: 20),
+              // 5. Deposit / Withdraw 2x2 Grid Cards
+              _buildDepositWithdrawGrid(cardBg, cardBorder, mutedText, titleText, isDark),
+              const SizedBox(height: 20),
 
-            // 6. Equity Curve Section
-            _buildEquityCurveSection(cardBg, cardBorder, titleText, isDark),
-            const SizedBox(height: 20),
+              // 6. Equity Curve Section
+              _buildEquityCurveSection(cardBg, cardBorder, titleText, isDark),
+              const SizedBox(height: 20),
 
-            // 7. P&L Analysis Section
-            _buildPnLAnalysisSection(cardBg, cardBorder, mutedText, titleText, isDark),
-          ],
+              // 7. P&L Analysis Section
+              _buildPnLAnalysisSection(cardBg, cardBorder, mutedText, titleText, isDark),
+            ],
+          ),
         ),
       ),
     );
@@ -426,7 +576,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
     );
   }
 
-  // --- Hero Account Summary Card (Royal Blue Gradient) ---
+  // --- Hero Account Summary Card (Royal Blue Gradient with Radiant Glow) ---
   Widget _buildHeroAccountCard(
     BrokerAccount acc,
     String balance,
@@ -452,143 +602,173 @@ class _TradeReportPageState extends State<TradeReportPage> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Account selector pill
-          InkWell(
-            onTap: () => _showAccountPicker(context),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  width: 0.8,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // Ambient glow radial background
+            Positioned(
+              right: -40,
+              top: -40,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF2D72E2).withValues(alpha: 0.35),
+                      const Color(0xFF144EA5).withValues(alpha: 0.0),
+                    ],
+                  ),
                 ),
               ),
-              child: Row(
+            ),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'MT5',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.4,
+                  // Account selector pill
+                  InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _showAccountPicker(context);
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'MT5',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${acc.server ?? 'GTCGlobalSA-Server 2(MT5)'} - ${acc.login}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(LucideIcons.chevronDown, color: Colors.white, size: 14),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${acc.server ?? 'GTCGlobalSA-Server 2(MT5)'} - ${acc.login}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 10),
+                  Divider(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    height: 20,
+                    thickness: 0.8,
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Account Balance (USD)
+                  Text(
+                    'Account Balance (USD)',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(LucideIcons.chevronDown, color: Colors.white, size: 14),
+                  const SizedBox(height: 6),
+                  Text(
+                    balance,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Equity and Credit Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Account Equity (USD)',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.72),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              equity,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Total Credit (USD)',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.72),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              '0.00',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Divider(
-            color: Colors.white.withValues(alpha: 0.12),
-            height: 20,
-            thickness: 0.8,
-          ),
-          const SizedBox(height: 4),
-
-          // Account Balance (USD)
-          Text(
-            'Account Balance (USD)',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.72),
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            balance,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 18),
-
-          // Equity and Credit Row
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Account Equity (USD)',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.72),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      equity,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Total Credit (USD)',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.72),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      '0.00',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -668,7 +848,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                     ],
                   ),
                   SizedBox(
-                    width: 90,
+                    width: 92,
                     height: 52,
                     child: CustomPaint(
                       painter: _VolumeArcGaugePainter(isDark: isDark),
@@ -732,6 +912,11 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Color title,
     bool isDark,
   ) {
+    const posPnL = 0.00;
+    const closedPnL = 0.00;
+    const posTotalPnL = 0.00;
+    const closedTotalPnL = 0.00;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -752,14 +937,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: const Color(0xFF2563EB).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(LucideIcons.barChart2, size: 16, color: Color(0xFF2563EB)),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 flex: 3,
                 child: Text(
@@ -778,7 +963,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   children: [
                     Text('Position P&L', style: TextStyle(fontSize: 11, color: muted)),
                     const SizedBox(height: 2),
-                    Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
+                    Text(
+                      '0.00',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _getPnLColor(posPnL, title),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -789,7 +981,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   children: [
                     Text('Closed P&L', style: TextStyle(fontSize: 11, color: muted)),
                     const SizedBox(height: 2),
-                    Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
+                    Text(
+                      '0.00',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _getPnLColor(closedPnL, title),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -807,14 +1006,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: const Color(0xFF2563EB).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(LucideIcons.pieChart, size: 16, color: Color(0xFF2563EB)),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 flex: 3,
                 child: Text(
@@ -833,7 +1032,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   children: [
                     Text('Position Total P&L', style: TextStyle(fontSize: 11, color: muted)),
                     const SizedBox(height: 2),
-                    Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
+                    Text(
+                      '0.00',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _getPnLColor(posTotalPnL, title),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -844,7 +1050,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   children: [
                     Text('Closed Total P&L', style: TextStyle(fontSize: 11, color: muted)),
                     const SizedBox(height: 2),
-                    Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
+                    Text(
+                      '0.00',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _getPnLColor(closedTotalPnL, title),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -869,11 +1082,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: border, width: 0.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -883,14 +1103,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(LucideIcons.creditCard, size: 14, color: Color(0xFF2563EB)),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _hideNetDeposit ? '••••••' : '0.00',
@@ -898,11 +1118,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
                           ),
                         ),
                         InkWell(
-                          onTap: () => setState(() => _hideNetDeposit = !_hideNetDeposit),
-                          child: Icon(
-                            _hideNetDeposit ? LucideIcons.eyeOff : LucideIcons.eye,
-                            size: 15,
-                            color: muted,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _hideNetDeposit = !_hideNetDeposit);
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(
+                              _hideNetDeposit ? LucideIcons.eyeOff : LucideIcons.eye,
+                              size: 15,
+                              color: muted,
+                            ),
                           ),
                         ),
                       ],
@@ -914,11 +1141,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
             const SizedBox(width: 12),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: border, width: 0.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -928,14 +1162,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(LucideIcons.refreshCw, size: 14, color: Color(0xFF2563EB)),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Text('0', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
                       ],
                     ),
@@ -950,11 +1184,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: border, width: 0.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -964,14 +1205,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(LucideIcons.arrowDownToLine, size: 14, color: Color(0xFF2563EB)),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
                       ],
                     ),
@@ -982,11 +1223,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
             const SizedBox(width: 12),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: border, width: 0.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -996,14 +1244,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(LucideIcons.arrowUpFromLine, size: 14, color: Color(0xFF2563EB)),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
                       ],
                     ),
@@ -1051,9 +1299,87 @@ class _TradeReportPageState extends State<TradeReportPage> {
               ),
             ],
           ),
-          child: CustomPaint(
-            size: Size.infinite,
-            painter: _EquityCurvePainter(isDark: isDark),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const leftMargin = 28.0;
+              final chartWidth = constraints.maxWidth - leftMargin;
+              String? tooltipDate;
+              double? tooltipLeft;
+
+              if (_equityScrubOffset != null && chartWidth > 0) {
+                final clampedX = (_equityScrubOffset!.dx - leftMargin).clamp(0.0, chartWidth);
+                final t = (clampedX / chartWidth).clamp(0.0, 1.0);
+                final dayOffset = (t * 30).round();
+                final baseDate = DateTime(2026, 10, 18).add(Duration(days: dayOffset));
+                final mm = baseDate.month.toString().padLeft(2, '0');
+                final dd = baseDate.day.toString().padLeft(2, '0');
+                tooltipDate = '$mm/$dd';
+                tooltipLeft = (leftMargin + clampedX - 60).clamp(10.0, constraints.maxWidth - 120.0);
+              }
+
+              return GestureDetector(
+                key: const Key('equity_curve_gesture'),
+                behavior: HitTestBehavior.opaque,
+                onTapDown: (details) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _equityScrubOffset = details.localPosition);
+                },
+                onPanDown: (details) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _equityScrubOffset = details.localPosition);
+                },
+                onPanUpdate: (details) {
+                  setState(() => _equityScrubOffset = details.localPosition);
+                },
+                onPanEnd: (_) {
+                  setState(() => _equityScrubOffset = null);
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CustomPaint(
+                      size: Size.infinite,
+                      painter: _EquityCurvePainter(
+                        isDark: isDark,
+                        scrubOffset: _equityScrubOffset,
+                      ),
+                    ),
+                    if (tooltipDate != null && tooltipLeft != null)
+                      Positioned(
+                        left: tooltipLeft,
+                        top: 2,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF334155),
+                              width: 0.8,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x33000000),
+                                blurRadius: 6,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            '$tooltipDate • \$0.00 USD',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -1085,29 +1411,51 @@ class _TradeReportPageState extends State<TradeReportPage> {
             ),
             PopupMenuButton<String>(
               initialValue: _symbolFilter,
-              onSelected: (val) => setState(() => _symbolFilter = val),
+              tooltip: 'Select Symbol',
+              onSelected: (val) {
+                HapticFeedback.lightImpact();
+                setState(() => _symbolFilter = val);
+              },
               color: bg,
+              elevation: 8,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 side: BorderSide(color: border, width: 0.8),
               ),
               itemBuilder: (ctx) => _symbolOptions
                   .map(
                     (s) => PopupMenuItem<String>(
                       value: s,
-                      child: Text(
-                        s,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: s == _symbolFilter ? FontWeight.w700 : FontWeight.w500,
-                          color: s == _symbolFilter ? const Color(0xFF2563EB) : title,
-                        ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: s == _symbolFilter ? const Color(0xFF2563EB) : Colors.transparent,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              s,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: s == _symbolFilter ? FontWeight.w700 : FontWeight.w500,
+                                color: s == _symbolFilter ? const Color(0xFF2563EB) : title,
+                              ),
+                            ),
+                          ),
+                          if (s == _symbolFilter)
+                            const Icon(LucideIcons.check, size: 16, color: Color(0xFF2563EB)),
+                        ],
                       ),
                     ),
                   )
                   .toList(),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: bg,
                   borderRadius: BorderRadius.circular(8),
@@ -1118,7 +1466,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   children: [
                     Text(
                       _symbolFilter,
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: title),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: title),
                     ),
                     const SizedBox(width: 4),
                     Icon(LucideIcons.chevronDown, size: 13, color: muted),
@@ -1150,25 +1498,118 @@ class _TradeReportPageState extends State<TradeReportPage> {
         ),
         const SizedBox(height: 12),
 
-        // P&L Chart Container
-        Container(
-          height: 190,
-          padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: border, width: 0.8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: CustomPaint(
-            size: Size.infinite,
-            painter: _PnLAnalysisChartPainter(isDark: isDark),
+        // P&L Chart Container with AnimatedSwitcher
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: Container(
+            key: ValueKey('pnl_chart_$_timeframe'),
+            height: 190,
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border, width: 0.8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                const leftMargin = 28.0;
+                final chartWidth = constraints.maxWidth - leftMargin;
+                final labels = _timeframe == 'Hour'
+                    ? const ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59']
+                    : const [
+                        '10/18',
+                        '10/22',
+                        '10/26',
+                        '10/30',
+                        '11/03',
+                        '11/07',
+                        '11/11',
+                        '11/15',
+                      ];
+
+                String? tooltipLabel;
+                double? tooltipLeft;
+
+                if (_pnlScrubOffset != null && chartWidth > 0) {
+                  final clampedX = (_pnlScrubOffset!.dx - leftMargin).clamp(0.0, chartWidth);
+                  final t = (clampedX / chartWidth).clamp(0.0, 1.0);
+                  final index = (t * (labels.length - 1)).round().clamp(0, labels.length - 1);
+                  tooltipLabel = labels[index];
+                  tooltipLeft = (leftMargin + clampedX - 60).clamp(10.0, constraints.maxWidth - 120.0);
+                }
+
+                return GestureDetector(
+                  key: const Key('pnl_chart_gesture'),
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (details) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _pnlScrubOffset = details.localPosition);
+                  },
+                  onPanDown: (details) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _pnlScrubOffset = details.localPosition);
+                  },
+                  onPanUpdate: (details) {
+                    setState(() => _pnlScrubOffset = details.localPosition);
+                  },
+                  onPanEnd: (_) {
+                    setState(() => _pnlScrubOffset = null);
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CustomPaint(
+                        size: Size.infinite,
+                        painter: _PnLAnalysisChartPainter(
+                          isDark: isDark,
+                          timeframe: _timeframe,
+                          scrubOffset: _pnlScrubOffset,
+                        ),
+                      ),
+                      if (tooltipLabel != null && tooltipLeft != null)
+                        Positioned(
+                          left: tooltipLeft,
+                          top: 2,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF334155),
+                                width: 0.8,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x33000000),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              '$tooltipLabel • \$0.00 USD',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -1177,7 +1618,13 @@ class _TradeReportPageState extends State<TradeReportPage> {
 
   Widget _buildTimeframePill(String label, bool active) {
     return InkWell(
-      onTap: () => setState(() => _timeframe = label),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() {
+          _timeframe = label;
+          _pnlScrubOffset = null;
+        });
+      },
       borderRadius: BorderRadius.circular(6),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
@@ -1191,7 +1638,11 @@ class _TradeReportPageState extends State<TradeReportPage> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+            color: active
+                ? Colors.white
+                : (Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B)),
           ),
         ),
       ),
@@ -1241,14 +1692,14 @@ class _VolumeArcGaugePainter extends CustomPainter {
       activePaint,
     );
 
-    // Inner vertical volume bars
-    final barColors = [
-      const Color(0xFF93C5FD),
-      const Color(0xFF2563EB),
-      const Color(0xFF60A5FA),
-      const Color(0xFFBFDBFE),
+    // Inner vertical volume bars with pleasant blue gradients
+    final barGradients = [
+      [const Color(0xFF93C5FD), const Color(0xFF60A5FA)],
+      [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+      [const Color(0xFF60A5FA), const Color(0xFF2563EB)],
+      [const Color(0xFFBFDBFE), const Color(0xFF93C5FD)],
     ];
-    final barHeights = [14.0, 26.0, 19.0, 9.0];
+    final barHeights = [13.0, 26.0, 19.0, 10.0];
     const barWidth = 4.5;
     const barSpacing = 4.0;
     final totalWidth = (barHeights.length * barWidth) + ((barHeights.length - 1) * barSpacing);
@@ -1257,11 +1708,14 @@ class _VolumeArcGaugePainter extends CustomPainter {
 
     for (int i = 0; i < barHeights.length; i++) {
       final h = barHeights[i];
-      final rrect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(startX, baseY - h, barWidth, h),
-        const Radius.circular(2),
-      );
-      final p = Paint()..color = barColors[i % barColors.length];
+      final rect = Rect.fromLTWH(startX, baseY - h, barWidth, h);
+      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(2.5));
+      final shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: barGradients[i % barGradients.length],
+      ).createShader(rect);
+      final p = Paint()..shader = shader;
       canvas.drawRRect(rrect, p);
       startX += barWidth + barSpacing;
     }
@@ -1276,8 +1730,12 @@ class _VolumeArcGaugePainter extends CustomPainter {
 // Equity Curve Painter (solid blue curve line with Y-grid and X-dates)
 // -----------------------------------------------------------------------------
 class _EquityCurvePainter extends CustomPainter {
-  const _EquityCurvePainter({required this.isDark});
+  const _EquityCurvePainter({
+    required this.isDark,
+    this.scrubOffset,
+  });
   final bool isDark;
+  final Offset? scrubOffset;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1314,6 +1772,22 @@ class _EquityCurvePainter extends CustomPainter {
       tp.paint(canvas, Offset(leftMargin - tp.width - 6, y - tp.height / 2));
     }
 
+    final baselineY = chartHeight;
+
+    // Smooth blue gradient fill beneath the curve down to baseline
+    final fillGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        const Color(0xFF2563EB).withValues(alpha: 0.16),
+        const Color(0xFF2563EB).withValues(alpha: 0.0),
+      ],
+    );
+    final fillPaint = Paint()
+      ..shader = fillGradient.createShader(Rect.fromLTWH(leftMargin, baselineY - 26, chartWidth, 26))
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(Rect.fromLTWH(leftMargin, baselineY - 26, chartWidth, 26), fillPaint);
+
     // Solid blue curve/line across baseline
     final linePaint = Paint()
       ..color = const Color(0xFF2563EB)
@@ -1321,7 +1795,6 @@ class _EquityCurvePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final baselineY = chartHeight;
     canvas.drawLine(
       Offset(leftMargin, baselineY),
       Offset(size.width, baselineY),
@@ -1343,19 +1816,51 @@ class _EquityCurvePainter extends CustomPainter {
 
       tp.paint(canvas, Offset(dx, chartHeight + 6));
     }
+
+    // Touch scrubbing indicator
+    if (scrubOffset != null) {
+      final clampedX = scrubOffset!.dx.clamp(leftMargin, size.width);
+
+      // Guide line
+      final guidePaint = Paint()
+        ..color = const Color(0xFF2563EB).withValues(alpha: 0.45)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(clampedX, 0),
+        Offset(clampedX, baselineY),
+        guidePaint,
+      );
+
+      // Glowing dot at baseline
+      final haloPaint = Paint()..color = const Color(0xFF2563EB).withValues(alpha: 0.25);
+      canvas.drawCircle(Offset(clampedX, baselineY), 8.0, haloPaint);
+
+      final dotOuterPaint = Paint()..color = const Color(0xFF2563EB);
+      canvas.drawCircle(Offset(clampedX, baselineY), 4.5, dotOuterPaint);
+
+      final dotInnerPaint = Paint()..color = Colors.white;
+      canvas.drawCircle(Offset(clampedX, baselineY), 2.0, dotInnerPaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _EquityCurvePainter oldDelegate) =>
-      oldDelegate.isDark != isDark;
+      oldDelegate.isDark != isDark || oldDelegate.scrubOffset != scrubOffset;
 }
 
 // -----------------------------------------------------------------------------
-// P&L Analysis Chart Painter (dashed blue baseline across 8 dates)
+// P&L Analysis Chart Painter (dashed blue baseline across intervals)
 // -----------------------------------------------------------------------------
 class _PnLAnalysisChartPainter extends CustomPainter {
-  const _PnLAnalysisChartPainter({required this.isDark});
+  const _PnLAnalysisChartPainter({
+    required this.isDark,
+    required this.timeframe,
+    this.scrubOffset,
+  });
   final bool isDark;
+  final String timeframe;
+  final Offset? scrubOffset;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1411,33 +1916,64 @@ class _PnLAnalysisChartPainter extends CustomPainter {
       curX += dashWidth + dashSpace;
     }
 
-    // X-axis dates: 10/18, 10/22, 10/26, 10/30, 11/03, 11/07, 11/11, 11/15
-    final dates = [
-      '10/18',
-      '10/22',
-      '10/26',
-      '10/30',
-      '11/03',
-      '11/07',
-      '11/11',
-      '11/15',
-    ];
-    for (int i = 0; i < dates.length; i++) {
-      final x = leftMargin + (chartWidth / (dates.length - 1)) * i;
+    // X-axis intervals
+    final labels = timeframe == 'Hour'
+        ? const ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59']
+        : const [
+            '10/18',
+            '10/22',
+            '10/26',
+            '10/30',
+            '11/03',
+            '11/07',
+            '11/11',
+            '11/15',
+          ];
+
+    for (int i = 0; i < labels.length; i++) {
+      final x = leftMargin + (chartWidth / (labels.length - 1)) * i;
       final tp = TextPainter(
-        text: TextSpan(text: dates[i], style: textStyle),
+        text: TextSpan(text: labels[i], style: textStyle),
         textDirection: TextDirection.ltr,
       )..layout();
 
       var dx = x - tp.width / 2;
       if (i == 0) dx = leftMargin;
-      if (i == dates.length - 1) dx = size.width - tp.width;
+      if (i == labels.length - 1) dx = size.width - tp.width;
 
       tp.paint(canvas, Offset(dx, chartHeight + 6));
+    }
+
+    // Touch scrubbing indicator
+    if (scrubOffset != null) {
+      final clampedX = scrubOffset!.dx.clamp(leftMargin, size.width);
+
+      // Guide line
+      final guidePaint = Paint()
+        ..color = const Color(0xFF2563EB).withValues(alpha: 0.45)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(clampedX, 0),
+        Offset(clampedX, baselineY),
+        guidePaint,
+      );
+
+      // Glowing dot
+      final haloPaint = Paint()..color = const Color(0xFF2563EB).withValues(alpha: 0.25);
+      canvas.drawCircle(Offset(clampedX, baselineY), 8.0, haloPaint);
+
+      final dotOuterPaint = Paint()..color = const Color(0xFF2563EB);
+      canvas.drawCircle(Offset(clampedX, baselineY), 4.5, dotOuterPaint);
+
+      final dotInnerPaint = Paint()..color = Colors.white;
+      canvas.drawCircle(Offset(clampedX, baselineY), 2.0, dotInnerPaint);
     }
   }
 
   @override
   bool shouldRepaint(covariant _PnLAnalysisChartPainter oldDelegate) =>
-      oldDelegate.isDark != isDark;
+      oldDelegate.isDark != isDark ||
+      oldDelegate.timeframe != timeframe ||
+      oldDelegate.scrubOffset != scrubOffset;
 }

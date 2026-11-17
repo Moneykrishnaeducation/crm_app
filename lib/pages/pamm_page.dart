@@ -391,25 +391,390 @@ class _PammPageState extends State<PammPage> {
 
   void _createPool() {
     final name = TextEditingController();
-    final login = TextEditingController();
     final share = TextEditingController(text: '20');
-    showDialog<void>(context: context, builder: (d) => AlertDialog(
-      backgroundColor: _card,
-      title: Text('Create PAMM pool', style: TextStyle(color: _text, fontWeight: FontWeight.w800)),
-      content: SizedBox(width: 380, child: Column(mainAxisSize: MainAxisSize.min, children: [
-        _dialogField(name, 'Pool name'), const SizedBox(height: 9),
-        _dialogField(login, 'MT5 login'), const SizedBox(height: 9),
-        _dialogField(share, 'Profit share (%)', number: true),
-      ])),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(d), child: const Text('Cancel')),
-        FilledButton(onPressed: () {
-          if (name.text.trim().isEmpty || login.text.trim().isEmpty) return;
-          setState(() => _managed.add(_PammPool(name.text.trim(), login.text.trim(), '1:500', 0, double.tryParse(share.text) ?? 20)));
-          Navigator.pop(d);
-        }, style: FilledButton.styleFrom(backgroundColor: _gold, foregroundColor: const Color(0xFF17233D)), child: const Text('Create pool')),
-      ],
-    )).whenComplete(() { name.dispose(); login.dispose(); share.dispose(); });
+    final masterPassword = TextEditingController();
+    final investorPassword = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    var leverage = '1:500';
+    var showMasterPassword = false;
+    var showInvestorPassword = false;
+
+    showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x660B1730),
+      isScrollControlled: true,
+      useSafeArea: true,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (sheetContext) {
+        final screenHeight = MediaQuery.sizeOf(sheetContext).height;
+        final wide = MediaQuery.sizeOf(sheetContext).width >= 620;
+
+        Widget sectionTitle(String number, String title, {String? hint}) =>
+            Padding(
+              padding: const EdgeInsets.only(bottom: 7),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _blue.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(number, style: TextStyle(
+                    color: _blue, fontSize: 9, fontWeight: FontWeight.w800,
+                  )),
+                ),
+                const SizedBox(width: 8),
+                Text(title.toUpperCase(), style: TextStyle(
+                  color: _text, fontSize: 10, fontWeight: FontWeight.w800,
+                  letterSpacing: .25,
+                )),
+                const Spacer(),
+                if (hint != null) Flexible(child: Text(hint, textAlign: TextAlign.right,
+                  style: TextStyle(color: _muted, fontSize: 9))),
+              ]),
+            );
+
+        Widget fieldLabel(String label, {bool required = false, String? suffix}) =>
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Row(children: [
+                Expanded(child: RichText(text: TextSpan(
+                  style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w700),
+                  children: [
+                    TextSpan(text: label),
+                    if (required) const TextSpan(text: ' *', style: TextStyle(color: Color(0xFFEF4444))),
+                  ],
+                ))),
+                if (suffix != null) Text(suffix, style: TextStyle(color: _blue, fontSize: 10, fontWeight: FontWeight.w800)),
+              ]),
+            );
+
+        InputDecoration inputDecoration(String hint, {Widget? prefix, Widget? suffix}) =>
+            InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: _muted, fontSize: 11),
+              prefixIcon: prefix,
+              suffixIcon: suffix,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+              filled: true,
+              fillColor: _card,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(11),
+                borderSide: BorderSide(color: _border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(11),
+                borderSide: const BorderSide(color: _blue, width: 1.2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(11),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(11),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+            );
+
+        Widget textField(TextEditingController controller, String label, String hint,
+            {bool number = false, bool password = false, bool visible = false,
+             VoidCallback? onToggle}) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            fieldLabel(label, required: true),
+            TextFormField(
+              controller: controller,
+              obscureText: password && !visible,
+              keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+              style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w600),
+              decoration: inputDecoration(hint,
+                suffix: password ? IconButton(
+                  onPressed: onToggle,
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 14, color: _muted),
+                ) : null,
+              ),
+              validator: (value) {
+                final text = value?.trim() ?? '';
+                if (text.isEmpty) return 'Required';
+                if (password && !RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d_]{6,12}$').hasMatch(text)) {
+                  return 'Use 6–12 chars: upper, lower and number';
+                }
+                if (number && (double.tryParse(text) == null || double.parse(text) < 0 || double.parse(text) > 100)) {
+                  return 'Enter a value from 0 to 100';
+                }
+                return null;
+              },
+            ),
+          ]);
+        }
+
+        Widget passwordCard({
+          required String title,
+          required String access,
+          required TextEditingController controller,
+          required bool visible,
+          required VoidCallback toggle,
+        }) => Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: _surface,
+            border: Border.all(color: _border),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(LucideIcons.lock, size: 13, color: _muted),
+              const SizedBox(width: 6),
+              Expanded(child: Text(title, style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w800))),
+              Text(access, style: TextStyle(color: _muted, fontSize: 9)),
+            ]),
+            const SizedBox(height: 7),
+            TextFormField(
+              controller: controller,
+              obscureText: !visible,
+              style: TextStyle(color: _text, fontSize: 11),
+              decoration: inputDecoration('Enter password', suffix: IconButton(
+                onPressed: toggle,
+                visualDensity: VisualDensity.compact,
+                icon: Icon(visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 14, color: _muted),
+              )),
+              validator: (value) {
+                final text = value ?? '';
+                return RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d_]{6,12}$').hasMatch(text)
+                    ? null : '6–12 chars, uppercase, lowercase and number';
+              },
+            ),
+            const SizedBox(height: 5),
+            Text('6–12 characters, uppercase + lowercase + number; letters, numbers and underscore only.',
+              style: TextStyle(color: _muted, fontSize: 8.5, height: 1.35)),
+            const SizedBox(height: 5),
+            Wrap(spacing: 12, children: [
+              TextButton.icon(onPressed: toggle, icon: Icon(visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 12),
+                label: Text(visible ? 'Hide' : 'Reveal', style: const TextStyle(fontSize: 9))),
+              TextButton.icon(onPressed: () {
+                controller.text = 'Pamm_' + DateTime.now().millisecondsSinceEpoch.toString().substring(8) + 'A1';
+              }, icon: const Icon(LucideIcons.refreshCw, size: 12),
+                label: const Text('Regenerate', style: TextStyle(fontSize: 9))),
+            ]),
+          ]),
+        );
+
+        return StatefulBuilder(builder: (sheetContext, setSheetState) {
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 980,
+                maxHeight: screenHeight * .82,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _card,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                  border: Border(top: BorderSide(color: _border)),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .14), blurRadius: 24, offset: const Offset(0, -5))],
+                ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Container(width: 42, height: 4,
+                      decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(3))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 12, 10),
+                    child: Row(children: [
+                      Container(width: 38, height: 38,
+                        decoration: BoxDecoration(color: _blue.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)),
+                        child: const Icon(LucideIcons.usersRound, color: _blue, size: 19)),
+                      const SizedBox(width: 11),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Create PAMM account', style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 2),
+                        Text('Configure pool, trading preferences and credentials',
+                          style: TextStyle(color: _muted, fontSize: 10)),
+                      ])),
+                      IconButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        icon: Icon(LucideIcons.x, size: 17, color: _muted),
+                        tooltip: 'Close',
+                      ),
+                    ]),
+                  ),
+                  Divider(height: 1, color: _border),
+                  Flexible(
+                    child: Form(
+                      key: formKey,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                          sectionTitle('01', 'Account details'),
+                          TextFormField(
+                            controller: name,
+                            style: TextStyle(color: _text, fontSize: 12),
+                            decoration: inputDecoration('Enter PAMM account name',
+                              prefix: Icon(LucideIcons.userRound, size: 15, color: _muted)),
+                            validator: (value) => (value?.trim().isNotEmpty ?? false) ? null : 'Account name is required',
+                          ),
+                          const SizedBox(height: 12),
+                          sectionTitle('02', 'Trading preferences'),
+                          if (wide)
+                            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                fieldLabel('Performance fee', required: true, suffix: share.text + '%'),
+                                TextFormField(
+                                  controller: share,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  onChanged: (_) => setSheetState(() {}),
+                                  style: TextStyle(color: _text, fontSize: 11),
+                                  decoration: inputDecoration('20', prefix: Icon(LucideIcons.percent, size: 14, color: _muted)),
+                                  validator: (value) {
+                                    final n = double.tryParse(value ?? '');
+                                    return n != null && n >= 0 && n <= 100 ? null : 'Enter 0–100';
+                                  },
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(spacing: 5, children: [10, 20, 30, 40, 50].map((v) =>
+                                  ChoiceChip(
+                                    label: Text('$v%', style: const TextStyle(fontSize: 9)),
+                                    selected: share.text == '$v',
+                                    onSelected: (_) { share.text = '$v'; setSheetState(() {}); },
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                  )).toList()),
+                              ])),
+                              const SizedBox(width: 12),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                fieldLabel('Account leverage', required: true, suffix: leverage),
+                                Row(children: ['1:100', '1:200', '1:500'].map((v) => Expanded(child: Padding(
+                                  padding: const EdgeInsets.only(right: 5),
+                                  child: OutlinedButton(
+                                    onPressed: () => setSheetState(() => leverage = v),
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: leverage == v ? _blue : _card,
+                                      foregroundColor: leverage == v ? Colors.white : _text,
+                                      side: BorderSide(color: leverage == v ? _blue : _border),
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      minimumSize: const Size(0, 34),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                                    ),
+                                    child: Text(v, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700)),
+                                  ),
+                                ))).toList()),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  value: leverage,
+                                  isDense: true,
+                                  decoration: inputDecoration('Custom leverage'),
+                                  dropdownColor: _card,
+                                  style: TextStyle(color: _text, fontSize: 10),
+                                  items: ['1:50', '1:100', '1:200', '1:300', '1:500', '1:1000']
+                                    .map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                                  onChanged: (v) => setSheetState(() => leverage = v ?? leverage),
+                                ),
+                              ])),
+                            ])
+                          else ...[
+                            textField(share, 'Performance fee', '20', number: true),
+                            const SizedBox(height: 8),
+                            fieldLabel('Account leverage', required: true, suffix: leverage),
+                            Wrap(spacing: 6, children: ['1:100', '1:200', '1:500'].map((v) => ChoiceChip(
+                              label: Text(v, style: const TextStyle(fontSize: 10)),
+                              selected: leverage == v,
+                              onSelected: (_) => setSheetState(() => leverage = v),
+                            )).toList()),
+                          ],
+                          const SizedBox(height: 12),
+                          sectionTitle('03', 'Security credentials', hint: 'Keep master password private'),
+                          if (wide)
+                            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Expanded(child: passwordCard(
+                                title: 'Master password', access: 'Full access', controller: masterPassword,
+                                visible: showMasterPassword,
+                                toggle: () => setSheetState(() => showMasterPassword = !showMasterPassword),
+                              )),
+                              const SizedBox(width: 10),
+                              Expanded(child: passwordCard(
+                                title: 'Investor password', access: 'Read-only', controller: investorPassword,
+                                visible: showInvestorPassword,
+                                toggle: () => setSheetState(() => showInvestorPassword = !showInvestorPassword),
+                              )),
+                            ])
+                          else ...[
+                            passwordCard(title: 'Master password', access: 'Full access', controller: masterPassword,
+                              visible: showMasterPassword, toggle: () => setSheetState(() => showMasterPassword = !showMasterPassword)),
+                            const SizedBox(height: 8),
+                            passwordCard(title: 'Investor password', access: 'Read-only', controller: investorPassword,
+                              visible: showInvestorPassword, toggle: () => setSheetState(() => showInvestorPassword = !showInvestorPassword)),
+                          ],
+                          const SizedBox(height: 9),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(color: _blue.withValues(alpha: .055), borderRadius: BorderRadius.circular(9)),
+                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              const Icon(LucideIcons.info, color: _blue, size: 14),
+                              const SizedBox(width: 7),
+                              Expanded(child: Text('PAMM allocations are based on investor equity ratios. Review details before creating.',
+                                style: TextStyle(color: _muted, fontSize: 9, height: 1.35))),
+                            ]),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, color: _border),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
+                    child: Row(children: [
+                      Expanded(child: Row(children: [
+                        const Icon(LucideIcons.shieldCheck, color: _green, size: 14),
+                        const SizedBox(width: 6),
+                        Flexible(child: Text('Review details before submitting.',
+                          style: TextStyle(color: _muted, fontSize: 9))),
+                      ])),
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _text, side: BorderSide(color: _border),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(fontSize: 10)),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        onPressed: () {
+                          if (!(formKey.currentState?.validate() ?? false)) return;
+                          setState(() => _managed.add(_PammPool(
+                            name.text.trim(), 'Pending', leverage, 0,
+                            double.tryParse(share.text) ?? 20,
+                          )));
+                          Navigator.pop(sheetContext, true);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _blue, foregroundColor: Colors.white,
+                          elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                        ),
+                        icon: const Icon(LucideIcons.arrowRight, size: 13),
+                        label: const Text('Create account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+                      ),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+          );
+        });
+      },
+    ).whenComplete(() {
+      name.dispose();
+      share.dispose();
+      masterPassword.dispose();
+      investorPassword.dispose();
+    });
   }
 
   Widget _dialogField(TextEditingController c, String hint, {bool number = false}) => TextField(

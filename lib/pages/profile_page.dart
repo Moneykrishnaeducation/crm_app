@@ -766,6 +766,20 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
+          if (_bannerImagePath != null)
+            Positioned.fill(
+              child: Image.file(
+                File(_bannerImagePath!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.expand(),
+              ),
+            ),
+          if (_bannerImagePath != null)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Color(0x990B1D38),
+              ),
+            ),
           Positioned(
             right: -36,
             top: -54,

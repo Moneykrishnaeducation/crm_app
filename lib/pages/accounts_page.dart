@@ -469,14 +469,13 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   void _createAccount() {
     final accountName = _nameController.text.trim();
     if (accountName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name to continue.')));
+      showAppToast('Enter an account name to continue.', type: NotchToastType.warning);
       return;
     }
     final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
     widget.onCreated(BrokerAccount(accountName, login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
-    final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    messenger.showSnackBar(SnackBar(content: Text('Live account preview $login added.')));
+    showAppToast('Live account preview $login added.', type: NotchToastType.success);
   }
 }
 
@@ -604,7 +603,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               tooltip: 'Copy account login',
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: a.login));
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account login copied')));
+                showAppToast('Account login copied.', type: NotchToastType.success);
               },
               icon: Icon(LucideIcons.share2, color: fg, size: 20),
             ),

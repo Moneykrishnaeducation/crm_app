@@ -299,16 +299,12 @@ class _OpenLiveAccountSheet extends StatefulWidget {
 
 class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   final _nameController = TextEditingController();
-  final _masterPassword = TextEditingController();
-  final _investorPassword = TextEditingController();
   String _group = 'VIP - Recommended (Default)';
   String _leverage = '1:500';
 
   @override
   void dispose() {
     _nameController.dispose();
-    _masterPassword.dispose();
-    _investorPassword.dispose();
     super.dispose();
   }
 
@@ -337,7 +333,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
                 border: Border.all(color: border),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, -8))],
               ),
-              child: Column(mainAxisSize: MainAxisSize.max, children: [
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 10, bottom: 2),
                   child: Container(
@@ -417,26 +413,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
                       ),
                     )),
                 ]),
-                const SizedBox(height: 18),
-                _sectionHeading('ACCOUNT SECURITY', '03'),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: cs.primary.withValues(alpha: .06), borderRadius: BorderRadius.circular(13), border: Border.all(color: cs.primary.withValues(alpha: .18))),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Icon(LucideIcons.shieldCheck, color: cs.primary, size: 17),
-                    const SizedBox(width: 9),
-                    Expanded(child: Text('Use separate passwords for trading access and read-only monitoring. Keep both credentials private.', style: TextStyle(color: muted, fontSize: 10, height: 1.45))),
-                  ]),
-                ),
-                const SizedBox(height: 13),
-                _fieldLabel('Master password Â· Trading access'),
-                const SizedBox(height: 6),
-                _PasswordInput(controller: _masterPassword),
-                const SizedBox(height: 12),
-                _fieldLabel('Investor password Â· Read-only access'),
-                const SizedBox(height: 6),
-                _PasswordInput(controller: _investorPassword),
+
               ]),
             )),
             Divider(height: 1, color: border),
@@ -490,8 +467,8 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
 
   void _createAccount() {
     final accountName = _nameController.text.trim();
-    if (accountName.isEmpty || _masterPassword.text.isEmpty || _investorPassword.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name and both passwords to continue.')));
+    if (accountName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name to continue.')));
       return;
     }
     final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
@@ -499,41 +476,6 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
     final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
     messenger.showSnackBar(SnackBar(content: Text('Live account preview $login added.')));
-  }
-}
-
-class _PasswordInput extends StatefulWidget {
-  const _PasswordInput({required this.controller});
-  final TextEditingController controller;
-  @override
-  State<_PasswordInput> createState() => _PasswordInputState();
-}
-class _PasswordInputState extends State<_PasswordInput> {
-  bool _visible = false;
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final border = Theme.of(context).dividerColor;
-    final muted = cs.onSurfaceVariant;
-    return TextField(
-      controller: widget.controller,
-      obscureText: !_visible,
-      style: TextStyle(color: cs.onSurface, fontSize: 12),
-      decoration: InputDecoration(
-        prefixIcon: Icon(LucideIcons.lockKeyhole, size: 16, color: muted),
-        suffixIcon: IconButton(
-          tooltip: _visible ? 'Hide password' : 'Show password',
-          onPressed: () => setState(() => _visible = !_visible),
-          icon: Icon(_visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 17, color: muted),
-        ),
-        filled: true,
-        fillColor: cs.surfaceContainerHighest.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? .45 : .55),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
-      ),
-    );
   }
 }
 

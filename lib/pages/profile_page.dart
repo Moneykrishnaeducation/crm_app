@@ -927,6 +927,43 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
+  Widget _profileHeroMetric(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: _profileGold, size: 15),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: .62),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: .8,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value.isNotEmpty ? value : 'Not provided',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _profileInitial() => Center(child: Text(_name.isNotEmpty ? _name[0].toUpperCase() : 'U',
     style: const TextStyle(color: Colors.white, fontSize: 31, fontWeight: FontWeight.w800)));
 

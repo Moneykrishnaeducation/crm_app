@@ -775,7 +775,17 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                   Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 20),
                   const SizedBox(width: 8),
                   Expanded(child: Text('Account Performance', style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6), decoration: BoxDecoration(color: const Color(0xFF075B3A), borderRadius: BorderRadius.circular(20)), child: Text('${changePct >= 0 ? '+' : ''}${changePct.toStringAsFixed(2)}%', style: const TextStyle(color: green, fontSize: 11, fontWeight: FontWeight.w800))),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: (changePct >= 0 ? green : red).withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${changePct >= 0 ? '+' : ''}${changePct.toStringAsFixed(2)}%',
+                      style: TextStyle(color: changePct >= 0 ? green : red, fontSize: 11, fontWeight: FontWeight.w800),
+                    ),
+                  ),
                 ]),
                 const SizedBox(height: 8),
                 if (history.length > 1)
@@ -852,13 +862,13 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             ),
           ] else if (_tab == 'Trading Stats') ...[
             Row(children: [
-              Expanded(child: stat(LucideIcons.trendingUp, 'Average win', _money(averageWin), green)),
+              Expanded(child: stat(LucideIcons.trendingUp, 'Avg. win (shown)', _money(averageWin), green)),
               const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.trendingDown, 'Average loss', _money(-averageLoss), red)),
+              Expanded(child: stat(LucideIcons.trendingDown, 'Avg. loss (shown)', _money(-averageLoss), red)),
             ]),
             const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: stat(LucideIcons.chartLine, 'Net closed P/L', _money(totalProfit), totalProfit >= 0 ? green : red)),
+              Expanded(child: stat(LucideIcons.chartLine, 'Net P/L (shown trades)', _money(totalProfit), totalProfit >= 0 ? green : red)),
               const SizedBox(width: 9),
               Expanded(child: stat(LucideIcons.activity, 'Open positions', '${a.openPositions.length}', blue)),
             ]),

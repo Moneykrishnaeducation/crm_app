@@ -56,25 +56,6 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                     const Expanded(child: Text('Referral QR code', style: TextStyle(color: _partnershipNavy, fontSize: 18, fontWeight: FontWeight.w700))),
                     IconButton(tooltip: 'Close', onPressed: () => Navigator.of(sheetContext).pop(), icon: const Icon(LucideIcons.x, color: _partnershipMuted)),
                   ]),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(color: _partnershipCanvas, borderRadius: BorderRadius.circular(12), border: Border.all(color: _partnershipBorder)),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: modalPartnerIndex,
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        iconEnabledColor: _partnershipBlue,
-                        style: const TextStyle(color: _partnershipNavy, fontSize: 12),
-                        items: [for (var i = 0; i < _partners.length; i++) DropdownMenuItem(value: i, child: Text('${_partners[i].name} · ${_partners[i].code}'))],
-                        onChanged: (index) {
-                          if (index == null) return;
-                          setModalState(() => modalPartnerIndex = index);
-                          setState(() => _selectedPartnerIndex = index);
-                        },
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 18),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -145,7 +126,25 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
             const Text('Your partner code', style: TextStyle(color: _partnershipNavy, fontSize: 15, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             const Text('Share this code to invite new clients.', style: TextStyle(color: _partnershipMuted, fontSize: 12)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+            const Text('Referral QR code', style: TextStyle(color: _partnershipNavy, fontSize: 12, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(color: _partnershipCanvas, borderRadius: BorderRadius.circular(12), border: Border.all(color: _partnershipBorder)),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: _selectedPartnerIndex,
+                  isExpanded: true,
+                  dropdownColor: Colors.white,
+                  iconEnabledColor: _partnershipBlue,
+                  style: const TextStyle(color: _partnershipNavy, fontSize: 12),
+                  items: [for (var i = 0; i < _partners.length; i++) DropdownMenuItem(value: i, child: Text('${_partners[i].name} - ${_partners[i].code}', overflow: TextOverflow.ellipsis))],
+                  onChanged: (index) { if (index != null) setState(() => _selectedPartnerIndex = index); },
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(color: _partnershipCanvas, borderRadius: BorderRadius.circular(12), border: Border.all(color: _partnershipBorder)),
@@ -163,8 +162,6 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
         const _PartnershipShortcut(icon: LucideIcons.layers, label: 'Commission history'),
         const SizedBox(height: 8),
         _PartnershipShortcut(icon: LucideIcons.qrCode, label: 'Referral & QR studio', onTap: _showReferralQr),
-        const SizedBox(height: 8),
-        const _PartnershipShortcut(icon: LucideIcons.network, label: 'IB tree / org chart'),
       ]);
 
   Widget _buildPartnerColumn() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

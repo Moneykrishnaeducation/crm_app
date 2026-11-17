@@ -499,7 +499,7 @@ class _PammPageState extends State<PammPage> {
               validator: (value) {
                 final text = value?.trim() ?? '';
                 if (text.isEmpty) return 'Required';
-                if (password && !RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d_]{6,12}$').hasMatch(text)) {
+                if (password && !RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d_]{6,12}$').hasMatch(text)) {
                   return 'Use 6–12 chars: upper, lower and number';
                 }
                 if (number && (double.tryParse(text) == null || double.parse(text) < 0 || double.parse(text) > 100)) {
@@ -543,7 +543,7 @@ class _PammPageState extends State<PammPage> {
               )),
               validator: (value) {
                 final text = value ?? '';
-                return RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d_]{6,12}$').hasMatch(text)
+                return RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d_]{6,12}$').hasMatch(text)
                     ? null : '6–12 chars, uppercase, lowercase and number';
               },
             ),

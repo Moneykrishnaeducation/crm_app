@@ -512,7 +512,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     children: [
                       Icon(
                         _loginCaptchaEnabled ? LucideIcons.checkSquare : LucideIcons.square,
-                        color: _loginCaptchaEnabled ? const Color(0xFF38BDF8) : const Color(0xFF62738E),
+                        color: _loginCaptchaEnabled ? _bluePrimary : _textSecondary,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
@@ -590,7 +590,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     children: [
                       Icon(
                         _email2faEnabled ? LucideIcons.checkSquare : LucideIcons.square,
-                        color: _email2faEnabled ? const Color(0xFF38BDF8) : const Color(0xFF62738E),
+                        color: _email2faEnabled ? _bluePrimary : _textSecondary,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
@@ -682,224 +682,216 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         width: double.infinity,
         padding: const EdgeInsets.all(24),
         decoration: _mobileCardDecoration(),
-        child: const Center(
-          child: Text(
-            'No trusted devices active. Sign in again to register a trusted device.',
-            style: TextStyle(color: Color(0xFF62738E), fontSize: 13),
-          ),
+        child: const Column(
+          children: [
+            Icon(LucideIcons.monitorSmartphone, size: 30, color: _textSecondary),
+            SizedBox(height: 10),
+            Text(
+              'No trusted devices active',
+              style: TextStyle(color: _textPrimary, fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Sign in again to register this device as trusted.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: _textSecondary, fontSize: 12, height: 1.4),
+            ),
+          ],
         ),
       );
     }
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: _mobileCardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: [shield] TRUSTED DEVICE ... [✓ This device]
-          LayoutBuilder(
-            builder: (context, c) {
-              final tagWidget = Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _blueLight,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.shield, color: _bluePrimary, size: 12),
-                    SizedBox(width: 5),
-                    Text(
-                      'TRUSTED DEVICE',
-                      style: TextStyle(
-                        color: _bluePrimary,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              final deviceBadge = Container(
-                decoration: BoxDecoration(
-                  color: _greenLight,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF86EFAC)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.check, size: 12, color: _greenAccent),
-                    SizedBox(width: 4),
-                    Text(
-                      'This device',
-                      style: TextStyle(
-                        color: _greenAccent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              if (c.maxWidth < 340) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    tagWidget,
-                    const SizedBox(height: 8),
-                    deviceBadge,
-                  ],
-                );
-              }
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  tagWidget,
-                  deviceBadge,
-                ],
-              );
-            },
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _deviceStatusBadge(
+                icon: LucideIcons.shield,
+                label: 'TRUSTED DEVICE',
+                background: _blueLight,
+                foreground: _bluePrimary,
+                border: const Color(0xFFBFDBFE),
+              ),
+              _deviceStatusBadge(
+                icon: LucideIcons.check,
+                label: 'This device',
+                background: _greenLight,
+                foreground: _greenAccent,
+                border: const Color(0xFF86EFAC),
+              ),
+            ],
           ),
-          const SizedBox(height: 18),
-
-          // Illustration
-          const Center(child: _LaptopSecurityGraphic()),
           const SizedBox(height: 16),
-
-          // Title & Windows chip
+          const Center(child: _LaptopSecurityGraphic()),
+          const SizedBox(height: 14),
           const Text(
             'Windows browser',
-            style: TextStyle(
-              color: const Color(0xFF10264A),
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: _textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F1FD),
+              color: _blueLight,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF93C5FD)),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.layoutGrid, size: 13, color: const Color(0xFF10264A)),
+                Icon(LucideIcons.layoutGrid, size: 13, color: _bluePrimary),
                 SizedBox(width: 6),
-                Text(
-                  'Windows',
-                  style: TextStyle(
-                    color: const Color(0xFF10264A),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text('Windows', style: TextStyle(color: _blueDark, fontSize: 11, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          const Divider(color: _borderColor, height: 1),
           const SizedBox(height: 14),
-
-          // Details List
+          const Divider(color: _securityBorder, height: 1),
+          const SizedBox(height: 12),
           _buildDeviceDetailRow(
             icon: LucideIcons.mapPin,
             label: 'Public IP:',
             value: '104.22.224.94',
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 9),
           _buildDeviceDetailRow(
-            icon: LucideIcons.mapPin,
+            icon: LucideIcons.globe,
             label: 'Cloudflare proxy IP:',
             value: '104.22.224.94',
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 9),
           _buildDeviceDetailRow(
             icon: LucideIcons.clock,
             label: 'Last active:',
             value: '16/11/2026, 9:17:26 am',
           ),
-          const SizedBox(height: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 10),
+          const Row(
             children: [
-              const Row(
-                children: [
-                  Icon(LucideIcons.laptop, size: 14, color: Color(0xFF62738E)),
-                  SizedBox(width: 8),
-                  Text(
-                    'Browser details:',
-                    style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F7FC),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _securityBorder),
-                ),
-                child: const Text(
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0',
-                  style: TextStyle(
-                    color: Color(0xFF263B5A),
-                    fontSize: 11,
-                    height: 1.4,
-                  ),
-                ),
-              ),
+              Icon(LucideIcons.laptop, size: 14, color: _textSecondary),
+              SizedBox(width: 7),
+              Text('Browser details:', style: TextStyle(color: _textSecondary, fontSize: 11.5)),
             ],
           ),
-          const SizedBox(height: 18),
-
-          // [Remove trust] button
-          InkWell(
-            onTap: () {
-              setState(() => _isDeviceRevoked = true);
-              _showSnack('Device trust removed');
-            },
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF1F1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFECACA)),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(LucideIcons.logOut, size: 15, color: _redAccent),
-                  SizedBox(width: 6),
-                  Text(
-                    'Remove trust',
-                    style: TextStyle(
-                      color: _redAccent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF4F7FC),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: _securityBorder),
+            ),
+            child: const Text(
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0',
+              style: TextStyle(color: Color(0xFF40536F), fontSize: 10.5, height: 1.35),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: _confirmRemoveDevice,
+              icon: const Icon(LucideIcons.logOut, size: 15),
+              label: const Text('Remove trust', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _redAccent,
+                backgroundColor: const Color(0xFFFFF1F1),
+                side: const BorderSide(color: Color(0xFFFECACA)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _deviceStatusBadge({
+    required IconData icon,
+    required String label,
+    required Color background,
+    required Color foreground,
+    required Color border,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: foreground),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(color: foreground, fontSize: 10, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmRemoveDevice() async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(LucideIcons.shieldAlert, color: _redAccent, size: 30),
+              const SizedBox(height: 12),
+              const Text('Remove trusted device?', style: TextStyle(color: _textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              const Text(
+                'This device will need to verify again the next time it signs in.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _textSecondary, fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: _redAccent, foregroundColor: Colors.white),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Remove device'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirmed == true && mounted) {
+      setState(() => _isDeviceRevoked = true);
+      _showSnack('Device removed from this screen');
+    }
   }
 
   Widget _buildDeviceDetailRow({
@@ -1117,7 +1109,15 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
   }
 
   void _handleVerify() {
-    Navigator.of(context).pop(true);
+    if (_passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter your CRM password to continue.')),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password verification is not connected yet.')),
+    );
   }
 
   @override

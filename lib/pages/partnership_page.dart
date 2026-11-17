@@ -804,7 +804,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                 'Share this verified link or referral code to automatically route clients into this tier.',
                 style: TextStyle(color: Color(0xFF65758B), fontSize: 10),
               ),
-              const SizedBox(height: 11),
+              const SizedBox(height: 8),
               _ReferralLinkRow(
                 label: 'DIRECT REFERRAL CODE',
                 value: route.code,
@@ -2034,6 +2034,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     final created = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x660B1730),
       isScrollControlled: true,
       useSafeArea: true,
       isDismissible: true,
@@ -2047,7 +2048,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: 980,
-              maxHeight: MediaQuery.sizeOf(sheetContext).height * .88,
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * .76,
             ),
             child: const _ClientRegistrationDialog(),
           ),
@@ -2469,7 +2470,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).width < 760;
+    final compact = MediaQuery.sizeOf(context).width < 560;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -2498,7 +2499,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 10, 14, 12),
+            padding: const EdgeInsets.fromLTRB(16, 7, 12, 8),
             child: Row(
               children: [
                 _iconBadge(LucideIcons.userRound),
@@ -2550,7 +2551,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -2571,7 +2572,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                       'Enter the legal name as it appears on your identification documents.',
                       style: TextStyle(color: Color(0xFF8998AE), fontSize: 9),
                     ),
-                    const SizedBox(height: 17),
+                    const SizedBox(height: 11),
                     _section('2', 'CONTACT & TERRITORY', LucideIcons.phone),
                     const SizedBox(height: 11),
                     _responsive(compact, [
@@ -2657,19 +2658,28 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
       ? Column(
           children: [
             for (var i = 0; i < fields.length; i++) ...[
-              if (i > 0) const SizedBox(height: 12),
+              if (i > 0) const SizedBox(height: 9),
               fields[i],
             ],
           ],
         )
-      : Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < fields.length; i++) ...[
-              if (i > 0) const SizedBox(width: 12),
-              Expanded(child: fields[i]),
-            ],
-          ],
+      : LayoutBuilder(
+          builder: (context, constraints) {
+            final halfWidth = (constraints.maxWidth - 12) / 2;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 9,
+              children: [
+                for (var i = 0; i < fields.length; i++)
+                  SizedBox(
+                    width: fields.length.isOdd && i == fields.length - 1
+                        ? constraints.maxWidth
+                        : halfWidth,
+                    child: fields[i],
+                  ),
+              ],
+            );
+          },
         );
 
   Widget _textField(

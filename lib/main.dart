@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'pages/partnership_page.dart';
 import 'pages/profile_page.dart';
@@ -21,6 +22,7 @@ part 'pages/accounts_page.dart';
 part 'pages/internal_transfer_page.dart';
 part 'pages/demo_accounts_page.dart';
 part 'pages/more_page.dart';
+part 'pages/download_center_page.dart';
 part 'pages/settings_page.dart';
 part 'pages/login_page.dart';
 
@@ -318,6 +320,7 @@ class _AppShellState extends State<AppShell> {
             onBack: () => setState(() => _selectedPage = 'More'),
             onSelectPage: _selectPage,
           ),
+        'Platform' => const BrokerDownloadCenterPage(),
         'Settings' => BrokerSettingsPage(
             themeMode: widget.themeMode,
             onThemeModeChanged: widget.onThemeModeChanged,

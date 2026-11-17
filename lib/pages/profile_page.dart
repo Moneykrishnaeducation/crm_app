@@ -14,15 +14,15 @@ const _profileBorder = Color(0xFFDCE5F1);
 const _profileMuted = Color(0xFF62738E);
 const _profileBlue = Color(0xFF0875F5);
 const _profileGold = Color(0xFFF4C84A);
-const _profileGreen = Color(0xFF16A34A);
+const _profileGreen = Color(0xFF174A8B);
 const _profileCard = _profilePanel;
 const _profileText = _profileNavy;
 const _profileTextSecondary = _profileMuted;
 const _profileBlueDark = Color(0xFF174A8B);
 const _profileBlueLight = Color(0xFFEAF2FC);
 const _profileGoldLight = Color(0xFFFFF7E3);
-const _profileGreenLight = Color(0xFFEAF7EF);
-const _profileGreenBorder = Color(0xFFCBE9D4);
+const _profileGreenLight = Color(0xFFEAF2FC);
+const _profileGreenBorder = Color(0xFFD3E2F8);
 const _profileShadow = [
   BoxShadow(
     color: Color(0x0D10264A),

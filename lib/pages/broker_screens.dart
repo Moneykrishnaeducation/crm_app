@@ -2320,7 +2320,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
       Row(children: [
         Container(width: 38, height: 38, decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: accent, size: 19)),
         const SizedBox(width: 10),
-        Expanded(child: Text(title, style: const TextStyle(color: Color(0xFF647A99), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .45))),
+        Expanded(child: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .45))),
         Icon(LucideIcons.trendingUp, color: accent.withValues(alpha: .7), size: 20),
       ]),
       const SizedBox(height: 10),
@@ -2332,7 +2332,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
       const SizedBox(height: 10),
       Divider(height: 1, color: Theme.of(context).dividerColor),
       const SizedBox(height: 9),
-      Text(caption, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10.5)),
+      Text(caption, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10.5)),
     ]),
   );
 
@@ -2341,11 +2341,11 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     decoration: _cardDecoration,
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        const Expanded(child: Text('Understanding MAM Accounts', style: TextStyle(color: Color(0xFF10264B), fontSize: 14, fontWeight: FontWeight.w800))),
+        Expanded(child: Text('Understanding MAM Accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800))),
         Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(20)), child: const Text('PRO FEATURE', style: TextStyle(color: Color(0xFFB7791F), fontSize: 8, fontWeight: FontWeight.w800))),
       ]),
       const SizedBox(height: 5),
-      const Text('Multi-Account Management execution architecture', style: TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+      Text('Multi-Account Management execution architecture', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
       const SizedBox(height: 13),
       _guideRow(LucideIcons.refreshCw, 'Auto-Mirroring Engine', 'Master trades are mirrored to connected investor accounts.'),
       const SizedBox(height: 10),
@@ -2357,9 +2357,9 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFEAF2FF), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: const Color(0xFF2563EB), size: 16)),
     const SizedBox(width: 10),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: const TextStyle(color: Color(0xFF17345D), fontSize: 11, fontWeight: FontWeight.w800)),
+      Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11, fontWeight: FontWeight.w800)),
       const SizedBox(height: 3),
-      Text(body, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10, height: 1.35)),
+      Text(body, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, height: 1.35)),
     ])),
   ]);
 

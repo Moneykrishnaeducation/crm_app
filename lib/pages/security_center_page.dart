@@ -55,15 +55,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   bool _isDeviceRevoked = false;
 
   BoxDecoration _mobileCardDecoration() => BoxDecoration(
-    color: _cardBg,
+    color: Theme.of(context).colorScheme.surface,
     borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: _borderColor),
-    boxShadow: const [
-      BoxShadow(
-        color: Color(0x0D10264A),
-        blurRadius: 16,
-        offset: Offset(0, 5),
-      ),
+    border: Border.all(color: Theme.of(context).dividerColor),
+    boxShadow: Theme.of(context).brightness == Brightness.dark ? const [] : const [
+      BoxShadow(color: Color(0x0D10264A), blurRadius: 14, offset: Offset(0, 4)),
     ],
   );
 
@@ -76,7 +72,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           message,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         ),
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: Theme.of(context).colorScheme.inverseSurface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 2),
@@ -87,7 +83,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: _bgLight,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         top: false,
         bottom: false,
@@ -700,7 +696,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             ),
           ),
           const SizedBox(height: 14),
-          const Divider(color: _securityBorder, height: 1),
+          const Divider(color: Theme.of(context).dividerColor, height: 1),
           const SizedBox(height: 12),
           _buildDeviceDetailRow(
             icon: LucideIcons.mapPin,

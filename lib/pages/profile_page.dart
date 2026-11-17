@@ -727,21 +727,32 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   left: 0,
                   right: 0,
                   height: 130,
-                  child: _bannerImagePath != null
-                      ? Image.file(
-                          File(_bannerImagePath!),
-                          width: double.infinity,
-                          height: 130,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => CustomPaint(
-                            painter: CelestialBannerPainter(theme: _bannerTheme),
-                            child: const SizedBox.expand(),
-                          ),
-                        )
-                      : CustomPaint(
+                  child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (_bannerImagePath != null)
+                      Image.file(
+                        File(_bannerImagePath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => CustomPaint(
                           painter: CelestialBannerPainter(theme: _bannerTheme),
-                          child: const SizedBox.expand(),
                         ),
+                      )
+                    else
+                      CustomPaint(painter: CelestialBannerPainter(theme: _bannerTheme)),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: _isDark
+                              ? [Colors.black.withValues(alpha: 0.05), const Color(0xFF10264A).withValues(alpha: 0.58)]
+                              : [const Color(0xFF10264A).withValues(alpha: 0.02), const Color(0xFF10264A).withValues(alpha: 0.32)],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 ),
                 Positioned(
                   top: 14,
@@ -925,7 +936,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: _c.blueLight.withValues(alpha: _isDark ? 0.35 : 0.72),
+                    color: _c.subCard,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: _c.blueBorder),
                   ),
@@ -1008,7 +1019,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
       decoration: BoxDecoration(
-        color: _c.blueLight.withValues(alpha: _isDark ? 0.35 : 0.55),
+        color: _c.blueLight,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: _c.blueBorder),
       ),
@@ -1504,7 +1515,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               color: _c.blueLight,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: _profileBlue, size: 18),
+            child: Icon(icon, color: _c.accentBlue, size: 18),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1555,7 +1566,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         color: _c.card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _c.border),
-        boxShadow: _profileShadow,
+        boxShadow: _isDark ? null : _profileShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2078,7 +2089,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         color: _c.card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _c.border),
-        boxShadow: _profileShadow,
+        boxShadow: _isDark ? null : _profileShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2422,7 +2433,7 @@ class _VerificationTabView extends StatelessWidget {
           mainAxisSpacing: 12,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 0.50,
+          childAspectRatio: 0.72,
           children: [
             _VerificationDocCard(
               title: 'Identity Verification',
@@ -2441,7 +2452,7 @@ class _VerificationTabView extends StatelessWidget {
               subtitle: 'Bank statement or utility bill',
               icon: LucideIcons.house,
               iconBgColor: c.goldLight,
-              iconColor: const Color(0xFF7C3AED),
+              iconColor: c.accentBlue,
               badgeTagColor: c.isDark ? c.accentBlue : _profileBlueDark,
               isIdentity: false,
               onViewDocument: () => onViewDocument('Address Verification'),
@@ -2820,7 +2831,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                   ),
                   child: Icon(
                     isIdentity ? LucideIcons.idCard : LucideIcons.house,
-                    color: isIdentity ? c.accentBlue : const Color(0xFF7C3AED),
+                    color: c.accentBlue,
                     size: 20,
                   ),
                 ),

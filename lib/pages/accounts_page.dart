@@ -624,7 +624,9 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     final winRate = trades.isEmpty ? 0.0 : wins * 100 / trades.length;
     final totalProfit = trades.fold<double>(0, (sum, t) => sum + t.profit);
     final history = a.equityHistory;
-    final changePct = history.length > 1 && history.first != 0 ? ((history.last - history.first) / history.first) * 100 : 0.0;
+    final rangeCount = switch (_range) { '1D' => 3, '1W' => 5, '1M' => 8, '3M' => 10, 'YTD' => 12, _ => history.length };
+    final chartHistory = history.length > rangeCount ? history.sublist(history.length - rangeCount) : history;
+    final changePct = chartHistory.length > 1 && chartHistory.first != 0 ? ((chartHistory.last - chartHistory.first) / chartHistory.first) * 100 : 0.0;
 
     Widget metric(String label, String value, {Color? valueColor}) => Expanded(child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -772,7 +774,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 ]),
                 const SizedBox(height: 12),
                 if (history.length > 1)
-                  SizedBox(height: 112, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: history, color: green, gridColor: border)))
+                  SizedBox(height: 112, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: chartHistory, color: green, gridColor: border)))
                 else
                   SizedBox(height: 112, child: Center(child: Text('Performance history will appear after MT5 sync.', style: TextStyle(color: muted, fontSize: 10)))),
                 const SizedBox(height: 12),

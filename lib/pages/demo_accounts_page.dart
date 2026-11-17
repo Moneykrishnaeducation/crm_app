@@ -251,6 +251,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
     final screen = MediaQuery.sizeOf(context);
     return SafeArea(
       top: false,
+      bottom: false,
       child: Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
@@ -340,7 +341,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                 )),
                 Divider(height: 1, color: border),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
+                  padding: EdgeInsets.fromLTRB(18, 10, 18, 8 + MediaQuery.viewPaddingOf(context).bottom),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     SizedBox(height: 48, child: FilledButton.icon(
                       onPressed: _createAccount,

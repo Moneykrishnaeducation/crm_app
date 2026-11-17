@@ -349,6 +349,31 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  Widget _buildPrimaryTabLayer({
+    required int index,
+    required int activeIndex,
+    required Widget child,
+  }) {
+    final active = activeIndex == index;
+    return IgnorePointer(
+      ignoring: !active,
+      child: ExcludeSemantics(
+        excluding: !active,
+        child: AnimatedSlide(
+          offset: active ? Offset.zero : const Offset(0.035, 0),
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          child: AnimatedOpacity(
+            opacity: active ? 1 : 0,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryIndex = _primaryTabIndex;
@@ -383,31 +408,64 @@ class _AppShellState extends State<AppShell> {
                         children: [
                           Offstage(
                             offstage: primaryIndex == -1,
-                            child: IndexedStack(
-                              index: primaryIndex < 0 ? 0 : primaryIndex,
+                            child: Stack(
+                              fit: StackFit.expand,
                               children: [
-                                BrokerDashboardPage(
-                                  balanceVisible: _balanceVisible,
-                                  onToggleBalance: () => setState(
-                                    () => _balanceVisible = !_balanceVisible,
+                                _buildPrimaryTabLayer(
+                                  index: 0,
+                                  activeIndex: primaryIndex,
+                                  child: BrokerDashboardPage(
+                                    balanceVisible: _balanceVisible,
+                                    onToggleBalance: () => setState(
+                                      () => _balanceVisible = !_balanceVisible,
+                                    ),
+                                    onSelectPage: _selectPage,
                                   ),
-                                  onSelectPage: _selectPage,
                                 ),
-                                BrokerTransactionsPage(
-                                  accounts: _accounts,
+                                _buildPrimaryTabLayer(
+                                  index: 1,
+                                  activeIndex: primaryIndex,
+                                  child: BrokerTransactionsPage(accounts: _accounts),
                                 ),
-                                BrokerAccountsPage(
-                                  onSelectPage: _selectPage,
-                                  accounts: _accounts,
-                                  onAccountCreated: _addAccount,
-                                  onAccountSelected: _openAccount,
+                                _buildPrimaryTabLayer(
+                                  index: 2,
+                                  activeIndex: primaryIndex,
+                                  child: BrokerAccountsPage(
+                                    onSelectPage: _selectPage,
+                                    accounts: _accounts,
+                                    onAccountCreated: _addAccount,
+                                    onAccountSelected: _openAccount,
+                                  ),
                                 ),
-                                BrokerMorePage(onSelectPage: _selectPage),
+                                _buildPrimaryTabLayer(
+                                  index: 3,
+                                  activeIndex: primaryIndex,
+                                  child: BrokerMorePage(onSelectPage: _selectPage),
+                                ),
                               ],
                             ),
                           ),
                           if (primaryIndex == -1)
-                            _buildSecondaryPage(_selectedPage),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 280),
+                              reverseDuration: const Duration(milliseconds: 200),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, animation) {
+                                final slide = Tween<Offset>(
+                                  begin: const Offset(0.025, 0),
+                                  end: Offset.zero,
+                                ).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: slide,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: _buildSecondaryPage(_selectedPage),
+                            ),
                         ],
                       ),
                     ),

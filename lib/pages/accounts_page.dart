@@ -12,7 +12,6 @@ class BrokerAccountsPage extends StatefulWidget {
 
 class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   final _searchController = TextEditingController();
-  String _filter = 'All';
   String _query = '';
 
   @override
@@ -30,41 +29,18 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     const blue = Color(0xFF35A9F5);
     const green = Color(0xFF08D879);
     const red = Color(0xFFFF6268);
-    final all = widget.accounts;
-    final liveCount = all.where((a) => a.type == 'Live MT5').length;
-    final demoCount = all.length - liveCount;
-    final filtered = all.where((a) {
+    final liveAccounts = widget.accounts.where((a) => a.type == 'Live MT5').toList();
+    final filtered = liveAccounts.where((a) {
       final q = _query.trim().toLowerCase();
-      final matchText = q.isEmpty || a.login.toLowerCase().contains(q) || a.name.toLowerCase().contains(q) || a.type.toLowerCase().contains(q);
-      final matchFilter = _filter == 'All' || (_filter == 'Live' && a.type == 'Live MT5') || (_filter == 'Demo' && a.type != 'Live MT5');
-      return matchText && matchFilter;
+      return q.isEmpty || a.login.toLowerCase().contains(q) || a.name.toLowerCase().contains(q);
     }).toList();
-    final totalBalance = all.fold<double>(0, (sum, a) => sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
+    final totalBalance = liveAccounts.fold<double>(0, (sum, a) => sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
     final surface = dark ? panel : Colors.white;
     final border = dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE);
     final text = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
     final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF6F7F95);
 
-    Widget filter(String label, String value, String count, {Color? dot}) {
-      final selected = _filter == value;
-      return Expanded(child: InkWell(
-        onTap: () => setState(() => _filter = value),
-        borderRadius: BorderRadius.circular(13),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          height: 46,
-          decoration: BoxDecoration(
-            color: selected ? gold : surface,
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: selected ? gold : border, width: 1.2),
-          ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            if (dot != null) ...[Container(width: 9, height: 9, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)), const SizedBox(width: 6)],
-            Text('$label ($count)', style: TextStyle(color: selected ? const Color(0xFF101A29) : text, fontSize: 11, fontWeight: FontWeight.w800)),
-          ]),
-        ),
-      ));
-    }
+
 
     return Container(
       color: dark ? navy : Theme.of(context).scaffoldBackgroundColor,
@@ -77,20 +53,34 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
               const SizedBox(height: 5),
               Text('Trading Accounts', style: TextStyle(color: text, fontSize: 26, height: 1.12, fontWeight: FontWeight.w800, letterSpacing: -.65)),
               const SizedBox(height: 5),
-              Text('Manage your live and demo trading accounts', style: TextStyle(color: muted, fontSize: 12, height: 1.35)),
+              Text('Your live MT5 trading accounts', style: TextStyle(color: muted, fontSize: 12, height: 1.35)),
             ])),
             Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: border)), child: Row(children: [
               const Icon(LucideIcons.walletCards, color: blue, size: 15), const SizedBox(width: 6),
-              Text('${all.length} Accounts', style: TextStyle(color: text, fontSize: 10, fontWeight: FontWeight.w800)),
+              Text('${liveAccounts.length} Live', style: TextStyle(color: text, fontSize: 10, fontWeight: FontWeight.w800)),
             ])),
           ]),
           const SizedBox(height: 14),
           Row(children: [
-            filter('All', 'All', '${all.length}'),
-            const SizedBox(width: 8),
-            filter('Live', 'Live', '$liveCount', dot: green),
-            const SizedBox(width: 8),
-            filter('Demo', 'Demo', '$demoCount', dot: blue),
+            Expanded(child: SizedBox(
+              height: 48,
+              child: FilledButton.icon(
+                onPressed: () => showDialog<void>(context: context, builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated)),
+                style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+                icon: const Icon(LucideIcons.plusCircle, size: 18),
+                label: const Text('Open Account', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+              ),
+            )),
+            const SizedBox(width: 10),
+            Expanded(child: SizedBox(
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () => widget.onSelectPage('Demo Accounts'),
+                style: OutlinedButton.styleFrom(foregroundColor: text, side: BorderSide(color: border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                icon: const Icon(LucideIcons.flaskConical, size: 18),
+                label: const Text('Demo Accounts', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+              ),
+            )),
           ]),
           const SizedBox(height: 12),
           Row(children: [
@@ -108,31 +98,19 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: blue, width: 1.3)),
               ),
             )),
-            const SizedBox(width: 9),
-            Container(width: 48, height: 46, decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: IconButton(
-              tooltip: 'Filter accounts',
-              onPressed: () => setState(() { _filter = _filter == 'All' ? 'Live' : _filter == 'Live' ? 'Demo' : 'All'; }),
-              icon: Icon(LucideIcons.slidersHorizontal, color: text, size: 19),
-            )),
+
           ]),
           const SizedBox(height: 12),
           if (filtered.isEmpty)
-            _AccountEmptyState(searching: _query.isNotEmpty || _filter != 'All', onClear: () { _searchController.clear(); setState(() { _query = ''; _filter = 'All'; }); }, onOpen: () => showDialog<void>(context: context, builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated)))
+            _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() { _query = ''; }); }, onOpen: () {})
           else
             ...filtered.map((account) => _ReferenceAccountCard(
               account: account,
-              selected: all.isNotEmpty && account.login == all.first.login,
+              selected: liveAccounts.isNotEmpty && account.login == liveAccounts.first.login,
               onTap: () => widget.onAccountSelected(account),
             )),
-          const SizedBox(height: 5),
-          SizedBox(height: 52, child: FilledButton.icon(
-            onPressed: () => showDialog<void>(context: context, builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated)),
-            style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)), elevation: 0),
-            icon: const Icon(LucideIcons.plusCircle, size: 20),
-            label: const Text('Open New Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
-          )),
           const SizedBox(height: 7),
-          Text('Combined balance  ${all.isEmpty ? '—' : String.fromCharCode(36) + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+          Text('Combined live balance  ${liveAccounts.isEmpty ? '—' : String.fromCharCode(36) + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
         ],
       ),
     );

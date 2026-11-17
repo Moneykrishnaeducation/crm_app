@@ -39,21 +39,15 @@ class _LoginPageState extends State<LoginPage> {
 
   void _submitSignUp() {
     if (!_emailVerified) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verify your email before creating an account.')),
-      );
+      showAppToast('Verify your email before creating an account.', type: NotchToastType.warning);
       return;
     }
     if (!(_signUpFormKey.currentState?.validate() ?? false)) return;
     if (!_acceptedTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the Terms & Conditions to continue.')),
-      );
+      showAppToast('Please accept the Terms & Conditions to continue.', type: NotchToastType.warning);
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Account creation is not connected yet.')),
-    );
+    showAppToast('Account creation is not connected yet.', type: NotchToastType.info);
   }
 
   String? _required(String? value, String label) =>
@@ -312,15 +306,11 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: () {
                           final email = _emailController.text.trim();
                           if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Enter a valid email address first.')),
-                            );
+                            showAppToast('Enter a valid email address first.', type: NotchToastType.error);
                             return;
                           }
                           setState(() => _emailVerified = true);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Email verified. You can now create a password.')),
-                          );
+                          showAppToast('Email verified. You can now create a password.', type: NotchToastType.success);
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF2384F4),

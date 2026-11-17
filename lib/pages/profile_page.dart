@@ -877,48 +877,63 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       decoration: BoxDecoration(
         color: _profileBlueLight.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(15),
-        border: const Border(
-          left: BorderSide(color: _profileBlue, width: 3),
-          top: BorderSide(color: _profileBlueBorder),
-          right: BorderSide(color: _profileBlueBorder),
-          bottom: BorderSide(color: _profileBlueBorder),
-        ),
+        border: Border.all(color: _profileBlueBorder),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Icon(icon, color: _profileBlue, size: 23),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _profileMuted,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.35,
-                  ),
+          Row(
+            children: [
+              Icon(icon, color: _profileBlue, size: 23),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _profileMuted,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.35,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _profileNavy,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _profileNavy,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+              ),
+              const SizedBox(width: 3),
+              const Icon(
+                LucideIcons.chevronRight,
+                color: _profileNavy,
+                size: 16,
+              ),
+            ],
+          ),
+          Positioned(
+            left: -10,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 3,
+              decoration: BoxDecoration(
+                color: _profileBlue,
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
-          const SizedBox(width: 3),
-          const Icon(LucideIcons.chevronRight, color: _profileNavy, size: 16),
         ],
       ),
     );

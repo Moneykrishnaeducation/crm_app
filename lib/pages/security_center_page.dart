@@ -1086,8 +1086,6 @@ class _LaptopSecurityGraphic extends StatelessWidget {
             ),
           ),
         ],
-          ),
-        ),
       ),
     );
   }

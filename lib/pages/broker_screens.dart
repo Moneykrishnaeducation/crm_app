@@ -2446,75 +2446,165 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
   );
 
   Future<void> _showCreateMasterSheet() async {
-    final name = TextEditingController();
-    final share = TextEditingController(text: '20');
-    final masterPass = TextEditingController();
-    final investorPass = TextEditingController();
-    String risk = 'Medium', leverage = '1:500', payout = 'Weekly';
     await showModalBottomSheet<void>(
-      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (sheet) => StatefulBuilder(builder: (ctx, setSheet) => SafeArea(
-        child: Container(
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * .92),
-          padding: EdgeInsets.fromLTRB(18, 12, 18, MediaQuery.viewInsetsOf(ctx).bottom + 18),
-          decoration: BoxDecoration(color: Theme.of(ctx).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
-          child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFD3DCE8), borderRadius: BorderRadius.circular(4)))),
-            const SizedBox(height: 16),
-            Row(children: [
-              const Icon(LucideIcons.usersRound, color: Color(0xFF2563EB), size: 22),
-              const SizedBox(width: 9),
-              const Expanded(child: Text('Establish Master MAM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
-              IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(LucideIcons.x)),
-            ]),
-            const Text('Live MT5 Engine  •  Direct STP Allocation', style: TextStyle(color: Color(0xFF71809A), fontSize: 10)),
-            const SizedBox(height: 18),
-            _sheetLabel('MASTER STRATEGY NAME'),
-            TextField(controller: name, decoration: const InputDecoration(hintText: 'e.g. Apex Global Alpha Pool')),
-            const SizedBox(height: 14),
-            _sheetLabel('PROFIT SHARE (%)'),
-            TextField(controller: share, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(suffixText: '%', hintText: '1 - 50%')),
-            const SizedBox(height: 14),
-            _sheetLabel('RISK PROFILE'),
-            Wrap(spacing: 7, children: ['Low', 'Medium', 'High'].map((v) => ChoiceChip(label: Text(v), selected: risk == v, onSelected: (_) => setSheet(() => risk = v))).toList()),
-            const SizedBox(height: 14),
-            _sheetLabel('ACCOUNT LEVERAGE'),
-            DropdownButtonFormField<String>(value: leverage, items: ['1:100','1:200','1:400','1:500'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setSheet(() => leverage = v ?? leverage)),
-            const SizedBox(height: 14),
-            _sheetLabel('SETTLEMENT PAYOUT FREQUENCY'),
-            DropdownButtonFormField<String>(value: payout, items: ['Daily','Weekly','Monthly','Quarterly','Half-Yearly','Annually'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setSheet(() => payout = v ?? payout)),
-            const SizedBox(height: 14),
-            _sheetLabel('MASTER PASSWORD'),
-            TextField(controller: masterPass, obscureText: true, decoration: const InputDecoration(hintText: 'Master trading password')),
-            const SizedBox(height: 12),
-            _sheetLabel('INVESTOR PASSWORD'),
-            TextField(controller: investorPass, obscureText: true, decoration: const InputDecoration(hintText: 'Investor read-only password')),
-            const SizedBox(height: 18),
-            SizedBox(width: double.infinity, height: 48, child: FilledButton(
-              onPressed: () {
-                final parsedShare = double.tryParse(share.text.trim());
-                if (name.text.trim().isEmpty || parsedShare == null || parsedShare < 1 || parsedShare > 50 || masterPass.text.isEmpty || investorPass.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Complete all fields. Profit share must be between 1% and 50%.')));
-                  return;
-                }
-                setState(() => _masters.insert(0, _MamMaster(name: name.text.trim(), login: 'Pending setup', profitShare: parsedShare, leverage: leverage, balance: 0, status: 'Disabled', risk: risk, payout: payout)));
-                Navigator.pop(ctx);
-                _showInfo('MAM setup saved in this demo screen. Backend creation is not connected yet.');
-              },
-              child: const Text('Establish Master Account →', style: TextStyle(fontWeight: FontWeight.w800)),
-            )),
-          ])),
-        ),
-      )),
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CreateMamSheet(
+        onCreate: (master) {
+          if (!mounted) return;
+          setState(() => _masters.insert(0, master));
+          _showInfo('MAM setup saved in this demo screen. Backend creation is not connected yet.');
+        },
+      ),
     );
-    name.dispose(); share.dispose(); masterPass.dispose(); investorPass.dispose();
   }
-
-  Widget _sheetLabel(String value) => Padding(padding: const EdgeInsets.only(bottom: 7), child: Text(value, style: const TextStyle(color: Color(0xFF17345D), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .55)));
 
   void _openMasterDetails(_MamMaster master) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => _MamMasterDetailsPage(master: master, onChanged: () => setState(() {}))));
 
   void _showInfo(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
+
+class _CreateMamSheet extends StatefulWidget {
+  const _CreateMamSheet({required this.onCreate});
+
+  final ValueChanged<_MamMaster> onCreate;
+
+  @override
+  State<_CreateMamSheet> createState() => _CreateMamSheetState();
+}
+
+class _CreateMamSheetState extends State<_CreateMamSheet> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _shareController;
+  late final TextEditingController _masterPasswordController;
+  late final TextEditingController _investorPasswordController;
+
+  String _risk = 'Medium';
+  String _leverage = '1:500';
+  String _payout = 'Weekly';
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _shareController = TextEditingController(text: '20');
+    _masterPasswordController = TextEditingController();
+    _investorPasswordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _shareController.dispose();
+    _masterPasswordController.dispose();
+    _investorPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .92),
+        padding: EdgeInsets.fromLTRB(18, 12, 18, MediaQuery.viewInsetsOf(context).bottom + 18),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFD3DCE8), borderRadius: BorderRadius.circular(4)))),
+              const SizedBox(height: 16),
+              Row(children: [
+                const Icon(LucideIcons.usersRound, color: Color(0xFF2563EB), size: 22),
+                const SizedBox(width: 9),
+                const Expanded(child: Text('Establish Master MAM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
+                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.x)),
+              ]),
+              const Text('Live MT5 Engine  •  Direct STP Allocation', style: TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+              const SizedBox(height: 18),
+              _label('MASTER STRATEGY NAME'),
+              TextField(controller: _nameController, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(hintText: 'e.g. Apex Global Alpha Pool')),
+              const SizedBox(height: 14),
+              _label('PROFIT SHARE (%)'),
+              TextField(controller: _shareController, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(suffixText: '%', hintText: '1 - 50%')),
+              const SizedBox(height: 14),
+              _label('RISK PROFILE'),
+              Wrap(
+                spacing: 7,
+                children: ['Low', 'Medium', 'High'].map((value) => ChoiceChip(
+                  label: Text(value),
+                  selected: _risk == value,
+                  onSelected: (_) => setState(() => _risk = value),
+                )).toList(),
+              ),
+              const SizedBox(height: 14),
+              _label('ACCOUNT LEVERAGE'),
+              DropdownButtonFormField<String>(
+                value: _leverage,
+                items: ['1:100', '1:200', '1:400', '1:500'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+                onChanged: (value) => setState(() => _leverage = value ?? _leverage),
+              ),
+              const SizedBox(height: 14),
+              _label('SETTLEMENT PAYOUT FREQUENCY'),
+              DropdownButtonFormField<String>(
+                value: _payout,
+                items: ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Annually'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+                onChanged: (value) => setState(() => _payout = value ?? _payout),
+              ),
+              const SizedBox(height: 14),
+              _label('MASTER PASSWORD'),
+              TextField(controller: _masterPasswordController, obscureText: true, decoration: const InputDecoration(hintText: 'Master trading password')),
+              const SizedBox(height: 12),
+              _label('INVESTOR PASSWORD'),
+              TextField(controller: _investorPasswordController, obscureText: true, decoration: const InputDecoration(hintText: 'Investor read-only password')),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  onPressed: _submit,
+                  child: const Text('Establish Master Account →', style: TextStyle(fontWeight: FontWeight.w800)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _label(String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 7),
+    child: Text(value, style: const TextStyle(color: Color(0xFF17345D), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .55)),
+  );
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final share = double.tryParse(_shareController.text.trim());
+    if (name.isEmpty || share == null || share < 1 || share > 50 ||
+        _masterPasswordController.text.isEmpty || _investorPasswordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Complete all fields. Profit share must be between 1% and 50%.')),
+      );
+      return;
+    }
+
+    widget.onCreate(_MamMaster(
+      name: name,
+      login: 'Pending setup',
+      profitShare: share,
+      leverage: _leverage,
+      balance: 0,
+      status: 'Disabled',
+      risk: _risk,
+      payout: _payout,
+    ));
+    Navigator.of(context).pop();
+  }
 }
 
 class _MamMaster {

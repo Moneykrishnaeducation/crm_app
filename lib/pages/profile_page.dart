@@ -377,11 +377,11 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   children: [
                     _inputField(controller: nameCtrl, label: 'Full Legal Name', icon: LucideIcons.user),
                     const SizedBox(height: 12),
-                    _inputField(controller: emailCtrl, label: 'Email Address', icon: LucideIcons.mail),
+                    _inputField(controller: emailCtrl, label: 'Email Address', icon: LucideIcons.mail, keyboardType: TextInputType.emailAddress),
                     const SizedBox(height: 12),
-                    _inputField(controller: phoneCtrl, label: 'Phone Number', icon: LucideIcons.phone),
+                    _inputField(controller: phoneCtrl, label: 'Phone Number', icon: LucideIcons.phone, keyboardType: TextInputType.phone),
                     const SizedBox(height: 12),
-                    _inputField(controller: dobCtrl, label: 'Date of Birth', icon: LucideIcons.calendar),
+                    _inputField(controller: dobCtrl, label: 'Date of Birth', icon: LucideIcons.calendar, keyboardType: TextInputType.datetime),
                     const SizedBox(height: 12),
                     _inputField(controller: genderCtrl, label: 'Gender', icon: LucideIcons.userRound),
                     const SizedBox(height: 12),
@@ -466,6 +466,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     required String label,
     required IconData icon,
     int maxLines = 1,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,6 +480,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           cursorColor: _profileBlue,
           style: const TextStyle(color: _profileText, fontSize: 13, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
@@ -2057,6 +2061,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           _personalInfoRow(icon: LucideIcons.briefcase, label: 'Occupation', value: _occupation),
           const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
           _personalInfoRow(icon: LucideIcons.mapPin, label: 'City & Country', value: _location),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          _personalInfoRow(icon: LucideIcons.landmark, label: 'Tax Residency', value: _taxResidency),
         ],
       ),
     );
@@ -5410,9 +5416,9 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                     const SizedBox(height: 14),
                     _inputField(label: 'Account holder name', controller: _holderController),
                     const SizedBox(height: 14),
-                    _inputField(label: 'Account number', controller: _accountController),
+                    _inputField(label: 'Account number', controller: _accountController, keyboardType: TextInputType.number),
                     const SizedBox(height: 14),
-                    _inputField(label: 'IFSC code', controller: _ifscController),
+                    _inputField(label: 'IFSC code', controller: _ifscController, textCapitalization: TextCapitalization.characters),
                     const SizedBox(height: 14),
                     _inputField(label: 'Branch name', controller: _branchController),
                     const SizedBox(height: 18),
@@ -5622,9 +5628,9 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
             const SizedBox(height: 18),
             _inputField(label: 'Wallet Address', controller: _addressController),
             const SizedBox(height: 12),
-            _inputField(label: 'Currency', controller: _currencyController),
+            _inputField(label: 'Currency', controller: _currencyController, textCapitalization: TextCapitalization.characters),
             const SizedBox(height: 12),
-            _inputField(label: 'Network', controller: _networkController),
+            _inputField(label: 'Network', controller: _networkController, textCapitalization: TextCapitalization.characters),
             const SizedBox(height: 22),
             Row(
               children: [

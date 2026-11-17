@@ -1193,7 +1193,162 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         ),
         const SizedBox(height: 14),
         _buildMobileCompletionSummary(),
+        const SizedBox(height: 22),
+        _buildOverviewVerificationPaymentGrid(),
       ],
+    );
+  }
+
+  Widget _buildOverviewVerificationPaymentGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Verification & payment',
+          style: TextStyle(
+            color: _c.text,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -.3,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Current document and payout destination status',
+          style: TextStyle(color: _c.muted, fontSize: 10.5),
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 1.42,
+          children: [
+            _overviewStatusCard(
+              icon: LucideIcons.idCard,
+              title: 'Identity verification',
+              detail: 'Identity proof',
+              status: 'Approved',
+              onTap: () => setState(() => _selectedTabIndex = 2),
+            ),
+            _overviewStatusCard(
+              icon: LucideIcons.house,
+              title: 'Address verification',
+              detail: 'Address proof',
+              status: 'Approved',
+              onTap: () => setState(() => _selectedTabIndex = 2),
+            ),
+            _overviewStatusCard(
+              icon: LucideIcons.landmark,
+              title: 'Bank account',
+              detail: _bankName,
+              status: _bankStatus,
+              onTap: () => setState(() => _selectedTabIndex = 3),
+            ),
+            _overviewStatusCard(
+              icon: LucideIcons.wallet,
+              title: 'Crypto wallet',
+              detail: _cryptoCurrency + ' · ' + _cryptoNetwork,
+              status: _cryptoStatus,
+              onTap: () => setState(() => _selectedTabIndex = 3),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _overviewStatusCard({
+    required IconData icon,
+    required String title,
+    required String detail,
+    required String status,
+    required VoidCallback onTap,
+  }) {
+    final isApproved = status.toLowerCase() == 'approved' ||
+        status.toLowerCase() == 'connected';
+    final statusColor = isApproved ? const Color(0xFF23845B) : _c.accentBlue;
+    return Material(
+      color: _c.card,
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: _c.border),
+            boxShadow: _c.isDark ? null : _profileShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: _c.blueLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: _c.accentBlue, size: 17),
+                  ),
+                  const Spacer(),
+                  Icon(LucideIcons.chevronRight, color: _c.muted, size: 15),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _c.text,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: _c.muted, fontSize: 9),
+              ),
+              const SizedBox(height: 7),
+              Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      status,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

@@ -1,7 +1,8 @@
 part of '../main.dart';
 
 class BrokerDemoAccountsPage extends StatefulWidget {
-  const BrokerDemoAccountsPage({super.key});
+  const BrokerDemoAccountsPage({super.key, required this.onOpenLiveAccounts});
+  final VoidCallback onOpenLiveAccounts;
   @override
   State<BrokerDemoAccountsPage> createState() => _BrokerDemoAccountsPageState();
 }
@@ -58,16 +59,40 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
             ),
           ]),
           const SizedBox(height: 14),
-          SizedBox(
-            height: 48,
-            child: FilledButton.icon(
-              onPressed: _showCreateSheet,
-              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
-              icon: const Icon(LucideIcons.plusCircle, size: 18),
-              label: const Text('Create Demo Account', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+          Row(children: [
+            Expanded(
+              child: SizedBox(
+                height: 46,
+                child: OutlinedButton.icon(
+                  onPressed: widget.onOpenLiveAccounts,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: dark ? const Color(0xFF8CCBFF) : const Color(0xFF174A8B),
+                    side: BorderSide(color: border),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  icon: const Icon(LucideIcons.chartCandlestick, size: 16),
+                  label: const Text('Live Accounts', maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: SizedBox(
+                height: 46,
+                child: FilledButton.icon(
+                  onPressed: _showCreateSheet,
+                  style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)), elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 8)),
+                  icon: const Icon(LucideIcons.plusCircle, size: 16),
+                  label: const Text('Create Demo', maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                ),
+              ),
+            ),
+          ]),
           const SizedBox(height: 12),
           Row(children: [
             Expanded(child: _DemoMetric(icon: LucideIcons.wallet, label: 'VIRTUAL BALANCE',
@@ -315,7 +340,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                 )),
                 Divider(height: 1, color: border),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 13, 18, 16),
+                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     SizedBox(height: 48, child: FilledButton.icon(
                       onPressed: _createAccount,

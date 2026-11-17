@@ -745,96 +745,186 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   }
 
   // Minimal identity panel: no client-role labels or account-type badges.
+  // Restored profile hero header without client-role labels.
   Widget _buildMobileProfileHeader() {
     return Container(
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _c.border),
-        boxShadow: _c.isDark ? null : _profileShadow,
-      ),
-      child: Row(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  color: _avatarBg,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _c.border, width: 2),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: _profileImagePath != null
-                    ? Image.file(File(_profileImagePath!,), fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _profileInitial())
-                    : _profileInitial(),
-              ),
-              Positioned(
-                right: -3,
-                bottom: -3,
-                child: Material(
-                  color: _profileGold,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _showChangePhotoSheet,
-                    child: const SizedBox(
-                      width: 27, height: 27,
-                      child: Icon(LucideIcons.camera, size: 13, color: _profileNavy),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0B1D38), Color(0xFF153D70), Color(0xFF1B548A)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2410264A),
+            blurRadius: 22,
+            offset: Offset(0, 9),
           ),
-          const SizedBox(width: 14),
-          Expanded(
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned(
+            right: -36,
+            top: -54,
+            child: Container(
+              width: 170,
+              height: 170,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: .07),
+                  width: 24,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 24,
+            bottom: -78,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFF4C84A).withValues(alpha: .12),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 5),
-                Text(_email, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: _c.muted, fontSize: 10.5)),
-                const SizedBox(height: 9),
                 Row(
                   children: [
-                    Icon(LucideIcons.mapPin, size: 12, color: _c.accentBlue),
-                    const SizedBox(width: 5),
-                    Expanded(child: Text(_location, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: _c.muted, fontSize: 10))),
+                    const Spacer(),
+                    _profileHeaderAction(
+                      icon: LucideIcons.image,
+                      label: 'Cover',
+                      onTap: _showChangeBannerSheet,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 82,
+                          height: 82,
+                          decoration: BoxDecoration(
+                            color: _avatarBg,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: _profileImagePath != null
+                              ? Image.file(
+                                  File(_profileImagePath!),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _profileInitial(),
+                                )
+                              : _profileInitial(),
+                        ),
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Material(
+                            color: _profileGold,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: _showChangePhotoSheet,
+                              child: const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: Icon(
+                                  LucideIcons.camera,
+                                  size: 14,
+                                  color: Color(0xFF10264A),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              height: 1.1,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: .76),
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: .13),
+                ),
+                const SizedBox(height: 13),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _profileHeroMetric(
+                        LucideIcons.phone,
+                        'PHONE',
+                        _phone,
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 30,
+                      color: Colors.white.withValues(alpha: .15),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _profileHeroMetric(
+                        LucideIcons.mapPin,
+                        'LOCATION',
+                        _location,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _showChangeBannerSheet,
-            tooltip: 'Personalize profile',
-            icon: Icon(LucideIcons.imagePlus, color: _c.muted, size: 18),
-          ),
         ],
       ),
     );
-  }
-
-  Widget _profileHeroMetric(IconData icon, String label, String value) {
-    return Row(children: [
-      Icon(icon, color: const Color(0xFFFFD76A), size: 15),
-      const SizedBox(width: 8),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: .58), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .7)),
-        const SizedBox(height: 3),
-        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
-      ])),
-    ]);
   }
 
   Widget _profileInitial() => Center(child: Text(_name.isNotEmpty ? _name[0].toUpperCase() : 'U',

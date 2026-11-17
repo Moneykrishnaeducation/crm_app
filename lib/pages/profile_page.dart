@@ -1192,9 +1192,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           ],
         ),
         const SizedBox(height: 14),
-        _buildMobileCompletionSummary(),
-        const SizedBox(height: 22),
         _buildOverviewVerificationPaymentGrid(),
+        const SizedBox(height: 22),
+        _buildMobileCompletionSummary(),
       ],
     );
   }
@@ -1204,7 +1204,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Verification & payment',
+          'Overview',
           style: TextStyle(
             color: _c.text,
             fontSize: 17,

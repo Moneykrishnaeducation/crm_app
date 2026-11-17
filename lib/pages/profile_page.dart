@@ -709,7 +709,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: _c.border),
         boxShadow: _isDark ? null : _profileShadow,
       ),
@@ -718,276 +718,169 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            height: 164,
+            height: 176,
             child: Stack(
-              clipBehavior: Clip.none,
+              fit: StackFit.expand,
               children: [
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 130,
-                  child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (_bannerImagePath != null)
-                      Image.file(
-                        File(_bannerImagePath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => CustomPaint(
-                          painter: CelestialBannerPainter(theme: _bannerTheme),
-                        ),
-                      )
-                    else
-                      CustomPaint(painter: CelestialBannerPainter(theme: _bannerTheme)),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: _isDark
-                              ? [Colors.black.withValues(alpha: 0.05), const Color(0xFF10264A).withValues(alpha: 0.58)]
-                              : [const Color(0xFF10264A).withValues(alpha: 0.02), const Color(0xFF10264A).withValues(alpha: 0.32)],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                ),
-                Positioned(
-                  top: 14,
-                  right: 14,
-                  child: Material(
-                    color: _isDark ? const Color(0xFF1E2E48) : Colors.white.withValues(alpha: 0.82),
-                    borderRadius: BorderRadius.circular(24),
-                    child: InkWell(
-                      onTap: _showChangeBannerSheet,
-                      borderRadius: BorderRadius.circular(24),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(LucideIcons.image, color: _c.text, size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Edit cover',
-                              style: TextStyle(
-                                color: _c.text,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                if (_bannerImagePath != null)
+                  Image.file(File(_bannerImagePath!), fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => CustomPaint(painter: CelestialBannerPainter(theme: _bannerTheme)))
+                else
+                  CustomPaint(painter: CelestialBannerPainter(theme: _bannerTheme)),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [const Color(0xFF071A35).withValues(alpha: .08), const Color(0xFF071A35).withValues(alpha: .82)],
                     ),
                   ),
                 ),
                 Positioned(
-                  left: 18,
-                  bottom: 0,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 86,
-                        height: 86,
-                        decoration: BoxDecoration(
-                          color: _avatarBg,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: _c.card, width: 5),
-                          boxShadow: _isDark ? null : _profileShadow,
-                        ),
-                        alignment: Alignment.center,
-                        clipBehavior: Clip.antiAlias,
-                        child: _profileImagePath != null
-                            ? Image.file(
-                                File(_profileImagePath!),
-                                width: 86,
-                                height: 86,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Text(
-                                  _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
-                                  style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold),
-                                ),
-                              )
-                            : Text(
-                                _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                  top: 14, right: 14,
+                  child: _profileHeaderAction(
+                    icon: LucideIcons.image,
+                    label: 'Cover',
+                    onTap: _showChangeBannerSheet,
+                  ),
+                ),
+                Positioned(
+                  left: 18, bottom: 16,
+                  child: Row(children: [
+                    Container(
+                      width: 82, height: 82,
+                      decoration: BoxDecoration(
+                        color: _avatarBg,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _c.card, width: 4),
+                        boxShadow: const [BoxShadow(color: Color(0x44000000), blurRadius: 14, offset: Offset(0, 4))],
                       ),
-                      Positioned(
-                        right: -2,
-                        bottom: 2,
-                        child: Material(
-                          color: _profileBlue,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: _showChangePhotoSheet,
-                            child: const SizedBox(
-                              width: 31,
-                              height: 31,
-                              child: Icon(
-                                LucideIcons.camera,
-                                color: Colors.white,
-                                size: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                      clipBehavior: Clip.antiAlias,
+                      child: _profileImagePath != null
+                        ? Image.file(File(_profileImagePath!), fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _profileInitial())
+                        : _profileInitial(),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('VTINDEX CLIENT', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                      const SizedBox(height: 5),
+                      Text(_name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 3),
+                      Text(_email, maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.white.withValues(alpha: .78), fontSize: 10.5)),
+                    ]),
+                  ]),
+                ),
+                Positioned(
+                  left: 75, bottom: 15,
+                  child: Material(
+                    color: _profileBlue, shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _showChangePhotoSheet,
+                      child: const SizedBox(width: 29, height: 29, child: Icon(LucideIcons.camera, color: Colors.white, size: 14)),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 6,
-                        runSpacing: 5,
-                        children: [
-                          Text(
-                            _name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: _c.text,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const Icon(
-                            LucideIcons.badgeCheck,
-                            color: _profileGold,
-                            size: 17,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _c.greenLight,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'VERIFIED',
-                              style: TextStyle(
-                                color: _profileGreen,
-                                fontSize: 8,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: _showEditDetailsSheet,
-                      icon: const Icon(LucideIcons.pencil, size: 14),
-                      label: const Text('Edit profile'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _c.accentBlue,
-                        side: BorderSide(color: _c.blueBorder),
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 9,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Client account  ·  VT Index',
-                  style: TextStyle(
-                    color: _c.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(children: [
+                Expanded(child: Row(children: [
+                  Flexible(child: Text(_name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -.25))),
+                  const SizedBox(width: 5),
+                  const Icon(LucideIcons.badgeCheck, color: _profileGold, size: 16),
+                ])),
+                OutlinedButton.icon(
+                  onPressed: _showEditDetailsSheet,
+                  icon: const Icon(LucideIcons.pencil, size: 13),
+                  label: const Text('Edit profile'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _c.accentBlue,
+                    side: BorderSide(color: _c.blueBorder),
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                    textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _c.subCard,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _c.blueBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _profileContactItem(
-                          icon: LucideIcons.mail,
-                          value: _email,
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 30,
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        color: _c.blueBorder,
-                      ),
-                      Expanded(
-                        child: _profileContactItem(
-                          icon: LucideIcons.phone,
-                          value: _phone,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _mobileMetric(
-                        'ACCOUNT LEVEL',
-                        'Tier 3',
-                        LucideIcons.layers,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _mobileMetric(
-                        'PROFILE STATUS',
-                        'Complete',
-                        LucideIcons.shieldCheck,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ]),
+              const SizedBox(height: 4),
+              Row(children: [
+                Icon(LucideIcons.shieldCheck, color: _profileGreen, size: 13),
+                const SizedBox(width: 5),
+                Text('Client profile', style: TextStyle(color: _c.muted, fontSize: 10.5, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 8),
+                Container(width: 3, height: 3, decoration: BoxDecoration(color: _c.muted, shape: BoxShape.circle)),
+                const SizedBox(width: 8),
+                Text('VT Index', style: TextStyle(color: _c.muted, fontSize: 10.5)),
+              ]),
+              const SizedBox(height: 15),
+              Row(children: [
+                Expanded(child: _profileIdentityTile(LucideIcons.mail, 'EMAIL ADDRESS', _email)),
+                const SizedBox(width: 9),
+                Expanded(child: _profileIdentityTile(LucideIcons.phone, 'PHONE NUMBER', _phone)),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _profileIdentityTile(LucideIcons.layers, 'ACCOUNT LEVEL', 'Tier 3')),
+                const SizedBox(width: 9),
+                Expanded(child: _profileIdentityTile(LucideIcons.checkCircle, 'PROFILE STATUS', 'Complete')),
+              ]),
+            ]),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _profileInitial() => Center(child: Text(_name.isNotEmpty ? _name[0].toUpperCase() : 'U',
+    style: const TextStyle(color: Colors.white, fontSize: 31, fontWeight: FontWeight.w800)));
+
+  Widget _profileHeaderAction({required IconData icon, required String label, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.white.withValues(alpha: .16),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, color: Colors.white, size: 13),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _profileIdentityTile(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+      decoration: BoxDecoration(
+        color: _c.subCard,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: _c.subBorder),
+      ),
+      child: Row(children: [
+        Icon(icon, color: _c.accentBlue, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: _c.muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .45)),
+          const SizedBox(height: 4),
+          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: _c.text, fontSize: 10, fontWeight: FontWeight.w700)),
+        ])),
+      ]),
     );
   }
 
@@ -1080,77 +973,44 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     const tabs = [
       (icon: LucideIcons.layoutDashboard, label: 'Overview'),
       (icon: LucideIcons.userRound, label: 'Personal'),
-      (icon: LucideIcons.shieldCheck, label: 'Verification'),
+      (icon: LucideIcons.shieldCheck, label: 'KYC'),
       (icon: LucideIcons.wallet, label: 'Payments'),
     ];
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(17),
         border: Border.all(color: _c.border),
         boxShadow: _isDark ? null : _profileShadow,
       ),
-      child: Row(
-        children: [
-          for (var i = 0; i < tabs.length; i++)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Material(
-                  color: _selectedTabIndex == i ? _c.blueLight : Colors.transparent,
-                  borderRadius: BorderRadius.circular(13),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(13),
-                    onTap: () => setState(() => _selectedTabIndex = i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(13),
-                        border: Border.all(
-                          color: _selectedTabIndex == i ? _c.blueBorder : Colors.transparent,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            tabs[i].icon,
-                            size: 18,
-                            color: _selectedTabIndex == i ? _c.accentBlue : _c.muted,
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            tabs[i].label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              letterSpacing: 0.05,
-                              fontWeight: _selectedTabIndex == i ? FontWeight.w800 : FontWeight.w600,
-                              color: _selectedTabIndex == i ? _c.accentBlue : _c.muted,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            width: _selectedTabIndex == i ? 18 : 4,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: _selectedTabIndex == i ? _profileGold : Colors.transparent,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+      child: Row(children: [
+        for (var i = 0; i < tabs.length; i++)
+          Expanded(child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => setState(() => _selectedTabIndex = i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+              decoration: BoxDecoration(
+                color: _selectedTabIndex == i ? _c.blueLight : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _selectedTabIndex == i ? _c.blueBorder : Colors.transparent),
               ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(tabs[i].icon, size: 17, color: _selectedTabIndex == i ? _c.accentBlue : _c.muted),
+                const SizedBox(height: 5),
+                Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 9, fontWeight: _selectedTabIndex == i ? FontWeight.w800 : FontWeight.w600,
+                    color: _selectedTabIndex == i ? _c.accentBlue : _c.muted)),
+                const SizedBox(height: 4),
+                AnimatedContainer(duration: const Duration(milliseconds: 200),
+                  width: _selectedTabIndex == i ? 16 : 4, height: 2.5,
+                  decoration: BoxDecoration(color: _selectedTabIndex == i ? _profileGold : Colors.transparent, borderRadius: BorderRadius.circular(4))),
+              ]),
             ),
-        ],
-      ),
+          )),
+      ]),
     );
   }
 
@@ -1162,69 +1022,38 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Account overview',
-                style: TextStyle(color: _c.text, fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-              decoration: BoxDecoration(
-                color: _c.greenLight,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _c.greenBorder),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.circleCheck, color: _profileGreen, size: 12),
-                  SizedBox(width: 5),
-                  Text('Active', style: TextStyle(color: _profileGreen, fontSize: 10, fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Account overview', style: TextStyle(color: _c.text, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -.3)),
+            const SizedBox(height: 3),
+            Text('Your profile, verification and payout details', style: TextStyle(color: _c.muted, fontSize: 10.5)),
+          ])),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: _c.greenLight, borderRadius: BorderRadius.circular(20), border: Border.all(color: _c.greenBorder)),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(LucideIcons.circleCheck, color: _profileGreen, size: 12),
+              SizedBox(width: 5),
+              Text('Active', style: TextStyle(color: _profileGreen, fontSize: 10, fontWeight: FontWeight.w800)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 14),
         _buildMobileCompletionSummary(),
         const SizedBox(height: 22),
-        Text('Quick actions', style: TextStyle(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
+        Row(children: [
+          Expanded(child: Text('Quick actions', style: TextStyle(color: _c.text, fontSize: 15, fontWeight: FontWeight.w800))),
+          Text('SHORTCUTS', style: TextStyle(color: _c.muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .9)),
+        ]),
         const SizedBox(height: 11),
         GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 2.45,
+          crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.25,
           children: [
-            _mobileQuickAction(
-              icon: LucideIcons.userRound,
-              title: 'Edit details',
-              subtitle: 'Personal profile',
-              onTap: _showEditDetailsSheet,
-            ),
-            _mobileQuickAction(
-              icon: LucideIcons.shieldCheck,
-              title: 'Verification',
-              subtitle: 'View KYC status',
-              onTap: () => setState(() => _selectedTabIndex = 2),
-            ),
-            _mobileQuickAction(
-              icon: LucideIcons.landmark,
-              title: 'Bank account',
-              subtitle: 'Payout details',
-              onTap: _showBankDetailsSheet,
-            ),
-            _mobileQuickAction(
-              icon: LucideIcons.wallet,
-              title: 'Crypto wallet',
-              subtitle: 'Wallet settings',
-              onTap: _showCryptoWalletSheet,
-            ),
+            _mobileQuickAction(icon: LucideIcons.userRound, title: 'Edit details', subtitle: 'Personal profile', onTap: _showEditDetailsSheet),
+            _mobileQuickAction(icon: LucideIcons.shieldCheck, title: 'Verification', subtitle: 'View KYC status', onTap: () => setState(() => _selectedTabIndex = 2)),
+            _mobileQuickAction(icon: LucideIcons.landmark, title: 'Bank account', subtitle: 'Payout details', onTap: _showBankDetailsSheet),
+            _mobileQuickAction(icon: LucideIcons.wallet, title: 'Crypto wallet', subtitle: 'Wallet settings', onTap: _showCryptoWalletSheet),
           ],
         ),
         const SizedBox(height: 22),
@@ -1241,42 +1070,37 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _c.navy,
+        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [Color(0xFF10264A), Color(0xFF1B477A)]),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _c.border),
-        boxShadow: _isDark ? null : _profileShadow,
+        boxShadow: const [BoxShadow(color: Color(0x2410264A), blurRadius: 16, offset: Offset(0, 6))],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text('Profile completion', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
-              ),
-              Text('100%', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 17, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          const SizedBox(height: 11),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: const LinearProgressIndicator(
-              value: 1,
-              minHeight: 6,
-              backgroundColor: Color(0xFF526987),
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF4C84A)),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Row(
-            children: [
-              Icon(LucideIcons.shieldCheck, color: Color(0xFF9EDDB2), size: 15),
-              SizedBox(width: 7),
-              Expanded(child: Text('Your profile and verification are complete.', style: TextStyle(color: Color(0xFFD9E5F4), fontSize: 11, height: 1.3))),
-            ],
-          ),
-        ],
-      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(width: 34, height: 34,
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(LucideIcons.shieldCheck, color: Color(0xFFFFD76A), size: 18)),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Profile completion', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 2),
+            Text('Your account information is up to date', style: TextStyle(color: Colors.white.withValues(alpha: .7), fontSize: 9.5)),
+          ])),
+          const Text('100%', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 19, fontWeight: FontWeight.w900)),
+        ]),
+        const SizedBox(height: 14),
+        ClipRRect(borderRadius: BorderRadius.circular(10),
+          child: const LinearProgressIndicator(value: 1, minHeight: 6,
+            backgroundColor: Color(0xFF526987), valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF4C84A)))),
+        const SizedBox(height: 11),
+        Row(children: [
+          const Icon(LucideIcons.checkCircle2, color: Color(0xFF9EDDB2), size: 14),
+          const SizedBox(width: 7),
+          Expanded(child: Text('Profile and verification details are marked complete.',
+            style: TextStyle(color: Colors.white.withValues(alpha: .82), fontSize: 10, height: 1.3))),
+          const Icon(LucideIcons.arrowUpRight, color: Color(0xFFFFD76A), size: 16),
+        ]),
+      ]),
     );
   }
 

@@ -139,6 +139,128 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   }
 }
 
+
+class _ReferenceAccountCard extends StatelessWidget {
+  const _ReferenceAccountCard({required this.account, required this.selected, required this.onTap});
+  final BrokerAccount account;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    const gold = Color(0xFFFFC533);
+    const blue = Color(0xFF39B5FF);
+    const green = Color(0xFF08D879);
+    const red = Color(0xFFFF6268);
+    final live = account.type == 'Live MT5';
+    final pnl = account.floatingPnl ?? 0;
+    final pnlColor = pnl > 0 ? green : pnl < 0 ? red : (dark ? Colors.white : const Color(0xFF10213A));
+    final bg = dark ? const Color(0xFF101F34) : Colors.white;
+    final fg = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
+    final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF718096);
+    final border = selected ? gold : (dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE));
+    final equity = account.equityHistory.isNotEmpty ? account.equityHistory : <double>[1, 1.1, 1.04, 1.2, 1.13, 1.3, 1.26, 1.4];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(19),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(19),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(13, 13, 13, 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(19),
+              border: Border.all(color: border, width: selected ? 1.8 : 1.2),
+              boxShadow: selected && dark ? [BoxShadow(color: gold.withValues(alpha: .13), blurRadius: 13, spreadRadius: 1)] : null,
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFF163D70), borderRadius: BorderRadius.circular(14)), child: const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 25)),
+                const SizedBox(width: 11),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    _AccountPill(label: live ? 'Live' : 'Demo', color: live ? const Color(0xFF0B9E55) : const Color(0xFF4C91E8), foreground: Colors.white),
+                    const SizedBox(width: 6),
+                    const _AccountPill(label: 'MT5', color: Color(0xFF315D86), foreground: Colors.white),
+                    const SizedBox(width: 9),
+                    Flexible(child: Text(account.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w800))),
+                  ]),
+                  const SizedBox(height: 7),
+                  Text('${account.name}  •  ${account.leverage}', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w500)),
+                ])),
+                SizedBox(width: 78, height: 40, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
+                const SizedBox(width: 5),
+                Icon(selected ? LucideIcons.star : LucideIcons.star, color: selected ? gold : muted, size: 22),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: _ReferenceMetric(label: 'Balance', value: account.balance, color: fg, muted: muted)),
+                Container(width: 1, height: 35, color: dark ? const Color(0xFF29415F) : const Color(0xFFE0E7F0)),
+                Expanded(child: _ReferenceMetric(label: 'Equity', value: account.equity, color: fg, muted: muted)),
+                Container(width: 1, height: 35, color: dark ? const Color(0xFF29415F) : const Color(0xFFE0E7F0)),
+                Expanded(child: _ReferenceMetric(label: 'P/L', value: account.floatingPnl == null ? '—' : (pnl > 0 ? '+' : pnl < 0 ? '-' : '') + r'$' + pnl.abs().toStringAsFixed(2), color: pnlColor, muted: muted)),
+              ]),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountPill extends StatelessWidget {
+  const _AccountPill({required this.label, required this.color, required this.foreground});
+  final String label;
+  final Color color;
+  final Color foreground;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(18)),
+    child: Text(label, style: TextStyle(color: foreground, fontSize: 10, fontWeight: FontWeight.w800)),
+  );
+}
+
+class _ReferenceMetric extends StatelessWidget {
+  const _ReferenceMetric({required this.label, required this.value, required this.color, required this.muted});
+  final String label, value;
+  final Color color, muted;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w500)),
+      const SizedBox(height: 4),
+      FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w800))),
+    ]),
+  );
+}
+
+class _AccountSparkPainter extends CustomPainter {
+  const _AccountSparkPainter({required this.values, required this.color});
+  final List<double> values;
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || size.isEmpty) return;
+    final minV = values.reduce((a, b) => a < b ? a : b);
+    final maxV = values.reduce((a, b) => a > b ? a : b);
+    final range = (maxV - minV).abs() < .000001 ? 1.0 : maxV - minV;
+    final path = Path();
+    for (var i = 0; i < values.length; i++) {
+      final x = size.width * i / (values.length - 1);
+      final y = size.height - 3 - ((values[i] - minV) / range) * (size.height - 7);
+      if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
+    }
+    canvas.drawPath(path, Paint()..color = color..strokeWidth = 1.8..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+  }
+  @override
+  bool shouldRepaint(covariant _AccountSparkPainter old) => old.values != values || old.color != color;
+}
+
 class _AccountEmptyState extends StatelessWidget {
   const _AccountEmptyState({required this.searching, required this.onClear, required this.onOpen});
   final bool searching;

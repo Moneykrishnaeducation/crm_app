@@ -103,17 +103,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                     const SizedBox(height: 16),
                     Row(children: const [Expanded(child: _PartnershipStat(icon: LucideIcons.usersRound, label: 'Total clients', value: '2,458')), SizedBox(width: 12), Expanded(child: _PartnershipStat(icon: LucideIcons.coins, label: 'IB earnings', value: '\$4,820.00', gold: true))]),
                     const SizedBox(height: 16),
-                    if (wide)
-                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Expanded(flex: 6, child: _buildPartnerColumn()),
-                        const SizedBox(width: 16),
-                        Expanded(flex: 5, child: _buildToolsColumn()),
-                      ])
-                    else ...[
-                      _buildToolsColumn(),
-                      const SizedBox(height: 18),
-                      _buildPartnerColumn(),
-                    ],
+                    SizedBox(width: double.infinity, child: _buildToolsColumn()),
                   ]),
                 ),
               ),
@@ -173,10 +163,10 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
         const SizedBox(height: 8),
         _PartnershipShortcut(
           icon: LucideIcons.layers,
-          label: 'Commission history',
+          label: 'Commission ledger',
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => const BrokerCommissionHistoryPage(),
+              builder: (_) => const BrokerCommissionLedgerPage(),
             ),
           ),
         ),
@@ -198,15 +188,6 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
         ),
       ]);
 
-  Widget _buildPartnerColumn() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Partner profiles', style: TextStyle(color: _partnershipNavy, fontSize: 16, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _partnershipBorder)),
-          child: Column(children: [for (var i = 0; i < _partners.length; i++) _PartnerProfileTile(profile: _partners[i], selected: i == _selectedPartnerIndex, onTap: () => setState(() => _selectedPartnerIndex = i))]),
-        ),
-      ]);
 }
 
 
@@ -373,7 +354,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
         const Icon(LucideIcons.orbit, color: Color(0xFFC99A35), size: 27),
         const SizedBox(width: 9),
         const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('VT INDEX · REFERRAL STUDIO', style: TextStyle(color: Color(0xFF315CEB), fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          Text('VT INDEX Ãƒâ€šÃ‚Â· REFERRAL STUDIO', style: TextStyle(color: Color(0xFF315CEB), fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
           Text('Share your partner QR', style: TextStyle(color: Color(0xFF102746), fontSize: 12, fontWeight: FontWeight.w800)),
           Text('Scan to join directly', style: TextStyle(color: Color(0xFF728198), fontSize: 9)),
         ]),
@@ -455,7 +436,7 @@ class _ReferralPremiumPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(color: const Color(0xFFFFF8E7), border: Border.all(color: const Color(0xFFFFD76A)), borderRadius: BorderRadius.circular(20)),
-    child: const Text('♕ PREMIUM', style: TextStyle(color: Color(0xFFB97800), fontSize: 8, fontWeight: FontWeight.w900)),
+    child: const Text('ÃƒÂ¢Ã¢â€žÂ¢Ã¢â‚¬Â¢ PREMIUM', style: TextStyle(color: Color(0xFFB97800), fontSize: 8, fontWeight: FontWeight.w900)),
   );
 }
 
@@ -478,7 +459,7 @@ class _ReferralLinkRow extends StatelessWidget {
       ])),
       const SizedBox(width: 6),
       FilledButton.icon(onPressed: onPressed, icon: const Icon(LucideIcons.copy, size: 11), label: Text(buttonLabel, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800)), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF3858EA), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9), minimumSize: Size.zero)),
-      if (trailing != null) trailing!,
+      ?trailing,
     ]),
   );
 }
@@ -507,7 +488,7 @@ class BrokerCommissionWithdrawalPage extends StatefulWidget {
 
 class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdrawalPage> {
   static const double _availableBalance = 0;
-  static const String _account = '3327 — standard (KRSNA-USD-B) · Balance: USD 0.00';
+  static const String _account = '3327 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â standard (KRSNA-USD-B) Ãƒâ€šÃ‚Â· Balance: USD 0.00';
   final TextEditingController _amountController = TextEditingController();
   double _amount = 0;
   String _selectedAccount = _account;
@@ -537,9 +518,9 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
         title: const Text('Commission Withdrawal', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
         actions: [
           TextButton.icon(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BrokerCommissionHistoryPage())),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BrokerCommissionLedgerPage())),
             icon: const Icon(LucideIcons.history, size: 16),
-            label: const Text('History'),
+            label: const Text('Ledger'),
           ),
           const SizedBox(width: 8),
         ],
@@ -613,12 +594,12 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
         ]),
         const Divider(height: 22),
         const _PayoutBreakdownRow(label: 'Source Vault', value: 'IB Commission Balance'),
-        const _PayoutBreakdownRow(label: 'Target Account', value: '3327 · standard'),
-        _PayoutBreakdownRow(label: 'Requested Payout', value: 'USD ' + _amount.toStringAsFixed(2)),
+        const _PayoutBreakdownRow(label: 'Target Account', value: '3327 Ãƒâ€šÃ‚Â· standard'),
+        _PayoutBreakdownRow(label: 'Requested Payout', value: 'USD ${_amount.toStringAsFixed(2)}'),
         const _PayoutBreakdownRow(label: 'Transfer Fee', value: 'USD 0.00'),
         const Divider(height: 18, color: Color(0xFF263B5C)),
-        _PayoutBreakdownRow(label: 'Net Credited to Trading Account', value: 'USD ' + _amount.toStringAsFixed(2), strong: true),
-        _PayoutBreakdownRow(label: 'Est. Remaining Commission', value: 'USD ' + remaining.toStringAsFixed(2), strong: true),
+        _PayoutBreakdownRow(label: 'Net Credited to Trading Account', value: 'USD ${_amount.toStringAsFixed(2)}', strong: true),
+        _PayoutBreakdownRow(label: 'Est. Remaining Commission', value: 'USD ${remaining.toStringAsFixed(2)}', strong: true),
       ]),
     ),
     const SizedBox(height: 15),
@@ -708,9 +689,9 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
       Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 7, runSpacing: 7, children: [
         const Text('QUICK PRESETS:', style: TextStyle(color: Color(0xFF667A96), fontSize: 8, fontWeight: FontWeight.w900)),
         for (final percent in [25, 50, 75, 100])
-          _PayoutPreset(label: percent.toString() + '%', onTap: () => _setAmount(_availableBalance * percent / 100)),
+          _PayoutPreset(label: '$percent%', onTap: () => _setAmount(_availableBalance * percent / 100)),
         for (final amount in [100, 250, 500, 1000])
-          _PayoutPreset(label: 'USD ' + amount.toString(), onTap: () => _setAmount(amount.toDouble())),
+          _PayoutPreset(label: 'USD $amount', onTap: () => _setAmount(amount.toDouble())),
       ]),
       const SizedBox(height: 20),
       const Divider(color: Color(0xFF1D3153)),
@@ -769,52 +750,6 @@ class _PartnerProfile {
   final String code;
   final int clients;
   final bool primary;
-}
-
-class _PartnerProfileTile extends StatelessWidget {
-  const _PartnerProfileTile({required this.profile, required this.selected, required this.onTap});
-  final _PartnerProfile profile;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: selected ? _partnershipBlue.withValues(alpha: .06) : Colors.transparent,
-        child: InkWell(onTap: onTap, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), child: Row(children: [
-          Container(width: 34, height: 34, decoration: BoxDecoration(color: selected ? _partnershipBlue.withValues(alpha: .1) : _partnershipCanvas, borderRadius: BorderRadius.circular(10)), child: Icon(LucideIcons.userRound, size: 16, color: selected ? _partnershipBlue : _partnershipMuted)),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(profile.name, style: const TextStyle(color: _partnershipNavy, fontSize: 12, fontWeight: FontWeight.w700)),
-                    if (profile.primary) ...[
-                      const SizedBox(width: 7),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: _partnershipGold.withValues(alpha: .2), borderRadius: BorderRadius.circular(5)),
-                        child: const Text('Primary', style: TextStyle(color: _partnershipNavy, fontSize: 9, fontWeight: FontWeight.w700)),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(profile.code, style: const TextStyle(color: _partnershipMuted, fontSize: 10, fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text('\$0', style: TextStyle(color: _partnershipNavy, fontSize: 11, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 3),
-              Text('${profile.clients} clients', style: const TextStyle(color: _partnershipMuted, fontSize: 9)),
-            ],
-          ),
-        ]))),
-      );
 }
 
 class _PartnershipStat extends StatelessWidget {
@@ -893,7 +828,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
   final _searchController = TextEditingController();
   String _query = '';
   bool _expanded = true;
-  bool _showAllReferralLinks = true;
+  final bool _showAllReferralLinks = true;
 
   int get _networkCount => _ib.children.length + 1;
   int get _directCount => _ib.children.where((member) => member.level == 2).length;
@@ -907,10 +842,21 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
   }
 
   Future<void> _showAddClientDialog() async {
-    final created = await showDialog<bool>(
+    final created = await showModalBottomSheet<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => const _ClientRegistrationDialog(),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: const _ClientRegistrationDialog(),
+          ),
+        ),
+      ),
     );
     if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1185,16 +1131,21 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 760;
-    return Dialog(
-      insetPadding: const EdgeInsets.all(12),
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 980, maxHeight: MediaQuery.sizeOf(context).height * .92),
+    return Container(
+        height: MediaQuery.sizeOf(context).height * .9,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+          border: const Border(top: BorderSide(color: Color(0xFFDCE4EF))),
+          boxShadow: const [BoxShadow(color: Color(0x1A10264A), blurRadius: 24, offset: Offset(0, -5))],
+        ),
         child: Column(children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 14, 12),
+            padding: const EdgeInsets.only(top: 10),
+            child: Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(3))),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 10, 14, 12),
             child: Row(children: [
               _iconBadge(LucideIcons.userRound),
               const SizedBox(width: 11),
@@ -1264,8 +1215,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
             )),
           ),
         ]),
-      ),
-    );
+      );
   }
 
   Widget _responsive(bool compact, List<Widget> fields) => compact
@@ -1305,7 +1255,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
     _fieldLabel('COUNTRY / REGION', required: true),
     const SizedBox(height: 5),
     DropdownButtonFormField<String>(
-      value: _country,
+      initialValue: _country,
       isExpanded: true,
       validator: (value) => value == null ? 'Select a country' : null,
       decoration: _decoration('Search and select country', LucideIcons.globe),
@@ -1325,7 +1275,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
         Expanded(child: DropdownButtonHideUnderline(child: DropdownButton<int>(
           value: _partnerIndex,
           isExpanded: true,
-          items: [for (var i = 0; i < _partnerProfiles.length; i++) DropdownMenuItem(value: i, child: Text('${_partnerProfiles[i].name}  ${_partnerProfiles[i].primary ? 'PRIMARY  ' : ''}${_partnerProfiles[i].code}  ·  ${_partnerProfiles[i].clients} clients', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Color(0xFF25344A))))],
+          items: [for (var i = 0; i < _partnerProfiles.length; i++) DropdownMenuItem(value: i, child: Text('${_partnerProfiles[i].name}  ${_partnerProfiles[i].primary ? 'PRIMARY  ' : ''}${_partnerProfiles[i].code}  Ãƒâ€šÃ‚Â·  ${_partnerProfiles[i].clients} clients', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Color(0xFF25344A))))],
           onChanged: (value) {
             if (value == null) return;
             setState(() {
@@ -1335,7 +1285,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
           },
         ))),
         const SizedBox(width: 8),
-        Text(partner.primary ? '✓ Assigned' : 'Assigned', style: const TextStyle(color: Color(0xFF0BAE7A), fontSize: 9, fontWeight: FontWeight.w700)),
+        Text(partner.primary ? 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ Assigned' : 'Assigned', style: const TextStyle(color: Color(0xFF0BAE7A), fontSize: 9, fontWeight: FontWeight.w700)),
       ]),
     );
   }
@@ -1499,21 +1449,19 @@ class _TreePill extends StatelessWidget {
 }
 
 
-/// Commission history contains the two views shown in the supplied references.
-class BrokerCommissionHistoryPage extends StatefulWidget {
-  const BrokerCommissionHistoryPage({super.key});
+/// Dedicated page for closed trading commission ledger records.
+class BrokerCommissionLedgerPage extends StatefulWidget {
+  const BrokerCommissionLedgerPage({super.key});
 
   @override
-  State<BrokerCommissionHistoryPage> createState() => _BrokerCommissionHistoryPageState();
+  State<BrokerCommissionLedgerPage> createState() => _BrokerCommissionLedgerPageState();
 }
 
-class _BrokerCommissionHistoryPageState extends State<BrokerCommissionHistoryPage> {
-  int _selectedTab = 0;
+class _BrokerCommissionLedgerPageState extends State<BrokerCommissionLedgerPage> {
   int _ledgerRows = 15;
   String _ledgerSearch = '';
   String _symbolFilter = 'All Symbols (7)';
   String _sort = 'Close Time (Newest First)';
-  String _withdrawFilter = 'Pending';
 
   static const _ledger = <_CommissionLedgerEntry>[
     _CommissionLedgerEntry(name: 'TEST CRN', email: 'crmsupportpro@gmail.com', initials: 'TC', deal: '20922385', order: '678898116', account: '3384', symbol: 'XAUUSD', lots: '0.01', pnl: -96.87, commission: 0.06, close: '5 Nov 2026, 07:08 am'),
@@ -1539,7 +1487,7 @@ class _BrokerCommissionHistoryPageState extends State<BrokerCommissionHistoryPag
     return Scaffold(
       backgroundColor: _partnershipCanvas,
       appBar: AppBar(
-        title: const Text('Commission History'),
+        title: const Text('Commission Ledger'),
         leading: IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(LucideIcons.arrowLeft)),
       ),
       body: LayoutBuilder(builder: (context, constraints) {
@@ -1549,16 +1497,7 @@ class _BrokerCommissionHistoryPageState extends State<BrokerCommissionHistoryPag
           children: [
             _commissionHeader(),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(color: Colors.white, border: Border.all(color: _partnershipBorder), borderRadius: BorderRadius.circular(13)),
-              child: Row(children: [
-                Expanded(child: _CommissionTab(label: 'Withdrawal History', selected: _selectedTab == 0, onTap: () => setState(() => _selectedTab = 0))),
-                Expanded(child: _CommissionTab(label: 'Commission Ledger', selected: _selectedTab == 1, onTap: () => setState(() => _selectedTab = 1))),
-              ]),
-            ),
-            const SizedBox(height: 12),
-            if (_selectedTab == 0) _withdrawalContent(wide) else _ledgerContent(wide),
+            _ledgerContent(wide),
           ],
         );
       }),
@@ -1571,75 +1510,9 @@ class _BrokerCommissionHistoryPageState extends State<BrokerCommissionHistoryPag
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text('IB PAYOUTS', style: TextStyle(color: _partnershipGold, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
       const SizedBox(height: 6),
-      const Text('Commission History', style: TextStyle(color: _partnershipNavy, fontSize: 21, fontWeight: FontWeight.w800)),
+      const Text('Commission Ledger', style: TextStyle(color: _partnershipNavy, fontSize: 21, fontWeight: FontWeight.w800)),
       const SizedBox(height: 5),
-      const Text('Review your commission withdrawal requests and trading commission activity.', style: TextStyle(color: _partnershipMuted, fontSize: 11)),
-    ]),
-  );
-
-  Widget _withdrawalContent(bool wide) => Container(
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: _partnershipBorder), boxShadow: const [BoxShadow(color: Color(0x080B1D35), blurRadius: 14, offset: Offset(0, 4))]),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 15, 16, 13),
-        child: Row(children: [
-          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Withdrawal History', style: TextStyle(color: _partnershipNavy, fontSize: 15, fontWeight: FontWeight.w800)),
-            SizedBox(height: 4),
-            Text('Your recent payout requests and their current status.', style: TextStyle(color: _partnershipMuted, fontSize: 11)),
-          ])),
-          _CommissionFilterChip(label: 'Pending', selected: _withdrawFilter == 'Pending', onTap: () => setState(() => _withdrawFilter = 'Pending')),
-          const SizedBox(width: 5),
-          _CommissionFilterChip(label: 'All requests', selected: _withdrawFilter == 'All requests', onTap: () => setState(() => _withdrawFilter = 'All requests')),
-        ]),
-      ),
-      const Divider(height: 1, color: _partnershipBorder),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFFF7F9FC)),
-          headingRowHeight: 39,
-          dataRowMinHeight: 46,
-          dataRowMaxHeight: 52,
-          horizontalMargin: 15,
-          columnSpacing: wide ? 34 : 22,
-          columns: const [
-            DataColumn(label: _CommissionTableHeading('DATE')),
-            DataColumn(label: _CommissionTableHeading('ACCOUNT')),
-            DataColumn(label: _CommissionTableHeading('REQUEST TYPE')),
-            DataColumn(label: _CommissionTableHeading('AMOUNT')),
-            DataColumn(label: _CommissionTableHeading('STATUS')),
-            DataColumn(label: _CommissionTableHeading('NOTES')),
-          ],
-          rows: _withdrawFilter == 'Pending' || _withdrawFilter == 'All requests' ? [
-            DataRow(cells: [
-              const DataCell(_CommissionCell('30/1/2026, 10:30:34 am')),
-              const DataCell(_CommissionCell('2141715119', bold: true)),
-              DataCell(_CommissionPill('Commission withdrawal', color: _partnershipBlue)),
-              const DataCell(_CommissionCell('\$0.01', bold: true)),
-              DataCell(_CommissionPill('PENDING', color: const Color(0xFFE8A900), background: const Color(0xFFFFF5D9))),
-              const DataCell(_CommissionCell('Commission Withdrawal Request')),
-            ]),
-          ] : [],
-        ),
-      ),
-      const Divider(height: 1, color: _partnershipBorder),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-        child: Row(children: [
-          const Text('ROWS:', style: TextStyle(color: _partnershipMuted, fontSize: 9, fontWeight: FontWeight.w800)),
-          const SizedBox(width: 8),
-          const _CommissionCell('10'),
-          const SizedBox(width: 9),
-          const Text('Showing 1–1 of 1', style: TextStyle(color: _partnershipMuted, fontSize: 10)),
-          const Spacer(),
-          const Text('PAGE 1 OF 1', style: TextStyle(color: _partnershipNavy, fontSize: 9, fontWeight: FontWeight.w800)),
-          const SizedBox(width: 8),
-          const Icon(LucideIcons.chevronLeft, color: Color(0xFFB7C1CF), size: 17),
-          const SizedBox(width: 8),
-          const Icon(LucideIcons.chevronRight, color: _partnershipGold, size: 17),
-        ]),
-      ),
+      const Text('Review closed trading deals and the commission generated by your network.', style: TextStyle(color: _partnershipMuted, fontSize: 11)),
     ]),
   );
 
@@ -1722,7 +1595,7 @@ class _BrokerCommissionHistoryPageState extends State<BrokerCommissionHistoryPag
                     DataCell(_CommissionPill(e.account, color: const Color(0xFF5596DF), background: const Color(0xFFEAF3FF))),
                     DataCell(_CommissionPill(e.symbol, color: _partnershipNavy, background: Colors.white, outlined: true)),
                     DataCell(_CommissionCell('${e.lots} Lots', bold: true)),
-                    DataCell(_CommissionCell('${e.pnl < 0 ? '↓' : '↑'} ${e.pnl < 0 ? '-' : ''}\$${e.pnl.abs().toStringAsFixed(2)}', color: e.pnl < 0 ? const Color(0xFFE66C83) : const Color(0xFF16B98B), bold: true)),
+                    DataCell(_CommissionCell('${e.pnl < 0 ? 'ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“' : 'ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Ëœ'} ${e.pnl < 0 ? '-' : ''}\$${e.pnl.abs().toStringAsFixed(2)}', color: e.pnl < 0 ? const Color(0xFFE66C83) : const Color(0xFF16B98B), bold: true)),
                     DataCell(_CommissionCell('+\$${e.commission.toStringAsFixed(2)}', color: const Color(0xFF16B98B), bold: true)),
                     DataCell(_CommissionCell(e.close)),
                   ]),
@@ -1733,7 +1606,7 @@ class _BrokerCommissionHistoryPageState extends State<BrokerCommissionHistoryPag
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             child: Row(children: [
-              Text('Showing 1–${entries.length} of 47', style: const TextStyle(color: _partnershipMuted, fontSize: 10)),
+              Text('Showing 1ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“${entries.length} of 47', style: const TextStyle(color: _partnershipMuted, fontSize: 10)),
               const Spacer(),
               const Text('PAGE 1 OF 4', style: TextStyle(color: _partnershipNavy, fontSize: 9, fontWeight: FontWeight.w800)),
               const SizedBox(width: 8),
@@ -1752,22 +1625,6 @@ class _CommissionLedgerEntry {
   const _CommissionLedgerEntry({required this.name, required this.email, required this.initials, required this.deal, required this.order, required this.account, required this.symbol, required this.lots, required this.pnl, required this.commission, required this.close});
   final String name, email, initials, deal, order, account, symbol, lots, close;
   final double pnl, commission;
-}
-
-class _CommissionTab extends StatelessWidget {
-  const _CommissionTab({required this.label, required this.selected, required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Material(
-    color: selected ? const Color(0xFF1E4FE0) : Colors.transparent,
-    borderRadius: BorderRadius.circular(9),
-    child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(9), child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      child: Center(child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: selected ? Colors.white : _partnershipMuted, fontSize: 11, fontWeight: FontWeight.w800))),
-    )),
-  );
 }
 
 class _CommissionTableHeading extends StatelessWidget {
@@ -1817,19 +1674,6 @@ class _CommissionMetric extends StatelessWidget {
       Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _partnershipMuted, fontSize: 8)),
     ]),
   );
-}
-
-class _CommissionFilterChip extends StatelessWidget {
-  const _CommissionFilterChip({required this.label, required this.selected, required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-    decoration: BoxDecoration(color: selected ? const Color(0xFF1E4FE0) : Colors.white, border: Border.all(color: selected ? const Color(0xFF1E4FE0) : _partnershipBorder), borderRadius: BorderRadius.circular(8)),
-    child: Text(label.toUpperCase(), style: TextStyle(color: selected ? Colors.white : _partnershipMuted, fontSize: 8, fontWeight: FontWeight.w800)),
-  ));
 }
 
 class _CommissionDropdown extends StatelessWidget {

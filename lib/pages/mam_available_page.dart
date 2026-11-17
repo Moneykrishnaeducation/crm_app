@@ -496,7 +496,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: filters.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final filter = filters[index];
               final isSelected = _selectedFilter == filter;
@@ -562,7 +562,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _filteredPools.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final pool = _filteredPools[index];
         return _buildPoolCard(pool);
@@ -822,7 +822,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
             Text('From Trading Account', style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
-              value: _selectedAccount,
+              initialValue: _selectedAccount,
               dropdownColor: c.card,
               style: TextStyle(color: c.text, fontSize: 12.5),
               decoration: InputDecoration(

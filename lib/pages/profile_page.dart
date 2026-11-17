@@ -868,7 +868,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                               ? Image.file(
                                   File(_profileImagePath!),
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => _profileInitial(),
+                                  errorBuilder: (_, _, _) => _profileInitial(),
                                 )
                               : _profileInitial(),
                         ),
@@ -1023,113 +1023,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  Widget _profileIdentityTile(IconData icon, String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-      decoration: BoxDecoration(
-        color: _c.subCard,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: _c.subBorder),
-      ),
-      child: Row(children: [
-        Icon(icon, color: _c.accentBlue, size: 16),
-        const SizedBox(width: 8),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: _c.muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .45)),
-          const SizedBox(height: 4),
-          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: _c.text, fontSize: 10, fontWeight: FontWeight.w700)),
-        ])),
-      ]),
-    );
-  }
-
-  Widget _profileContactItem({
-    required IconData icon,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, color: _profileBlue, size: 17),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: _c.text,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _mobileMetric(String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
-      decoration: BoxDecoration(
-        color: _c.blueLight,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: _c.blueBorder),
-      ),
-      child: Stack(
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: _profileBlue, size: 23),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: _c.muted,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: _c.text,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            left: -10,
-            top: 0,
-            bottom: 0,
-            child: Container(
-              width: 3,
-              decoration: BoxDecoration(
-                color: _profileBlue,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMobileSectionNavigation() {
     final compact = MediaQuery.sizeOf(context).width < 380;
     final tabs = [
@@ -1261,7 +1154,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             _overviewStatusCard(
               icon: LucideIcons.wallet,
               title: 'Crypto wallet',
-              detail: _cryptoCurrency + ' · ' + _cryptoNetwork,
+              detail: '$_cryptoCurrency / $_cryptoNetwork',
               status: _cryptoStatus,
               onTap: () => setState(() => _selectedTabIndex = 3),
             ),
@@ -1444,441 +1337,13 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  Widget _mobileQuickAction({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: _c.card,
-      borderRadius: BorderRadius.circular(15),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: _c.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(color: _c.blueLight, borderRadius: BorderRadius.circular(11)),
-                child: Icon(icon, color: _profileBlue, size: 17),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _c.text, fontSize: 11, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 3),
-                    Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _c.muted, fontSize: 9)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-
-  // Personal Information Card
-  Widget _buildPersonalInformationCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _c.border),
-        boxShadow: _c.isDark ? null : _profileShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Personal Information',
-            style: TextStyle(
-              color: _c.text,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _personalInfoRow(
-            icon: LucideIcons.userRound,
-            label: 'Full name',
-            value: _name,
-          ),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(
-            icon: LucideIcons.mail,
-            label: 'Email address',
-            value: _email,
-          ),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(
-            icon: LucideIcons.phone,
-            label: 'Phone number',
-            value: _phone,
-          ),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(
-            icon: LucideIcons.calendar,
-            label: 'Date of birth',
-            value: _dob,
-          ),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(icon: LucideIcons.usersRound, label: 'Gender', value: _gender),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(icon: LucideIcons.flag, label: 'Nationality', value: _nationality),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(icon: LucideIcons.mapPin, label: 'Address', value: _address),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(icon: LucideIcons.briefcase, label: 'Occupation', value: _occupation),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(icon: LucideIcons.mapPin, label: 'City & Country', value: _location),
-          Divider(color: _c.border, height: 18, thickness: 0.8),
-          _personalInfoRow(icon: LucideIcons.landmark, label: 'Tax Residency', value: _taxResidency),
-        ],
-      ),
-    );
-  }
-
-  Widget _personalInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _c.blueLight,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: _profileBlue, size: 16),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: _c.muted,
-                  fontSize: 11,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: TextStyle(
-                  color: _c.text,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Identity Verification Card
-  Widget _buildIdentityVerificationCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _c.border),
-        boxShadow: _c.isDark ? null : _profileShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Identity Verification',
-                  style: TextStyle(
-                    color: _c.text,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () => setState(() => _selectedTabIndex = 2),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _c.blueLight,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _c.blueBorder),
-                  ),
-                  child: Text(
-                    'View all',
-                    style: TextStyle(
-                      color: _c.isDark ? _c.accentBlue : _profileBlueDark,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _verificationItemCard(
-            icon: LucideIcons.idCard,
-            title: 'Identity Proof',
-          ),
-          const SizedBox(height: 10),
-          _verificationItemCard(
-            icon: LucideIcons.house,
-            title: 'Address Proof',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _verificationItemCard({
-    required IconData icon,
-    required String title,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: _c.subCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _c.subBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: _c.blueLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: _c.accentBlue, size: 18),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                color: _c.text,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: _c.greenLight,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _c.greenBorder,
-              ),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(LucideIcons.check, size: 12, color: _profileGreen),
-                SizedBox(width: 4),
-                Text(
-                  'Verified',
-                  style: TextStyle(
-                    color: _profileGreen,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Payment Methods Card
-  Widget _buildPaymentMethodsCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _c.border),
-        boxShadow: _isDark ? null : _profileShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Payment Methods',
-                  style: TextStyle(
-                    color: _c.text,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: _showPaymentMethodsSheet,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _c.blueLight,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _c.blueBorder),
-                  ),
-                  child: const Text(
-                    'Manage',
-                    style: TextStyle(
-                      color: _profileBlueDark,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _paymentMethodTile(
-            icon: LucideIcons.landmark,
-            iconColor: _ProfileColors.of(context).accentBlue,
-            iconBg: _c.blueLight,
-            title: 'Bank Account',
-            subtitle: _maskedBankAccountNumber,
-            onTap: _showBankDetailsSheet,
-          ),
-          const SizedBox(height: 10),
-          _paymentMethodTile(
-            icon: LucideIcons.wallet,
-            iconColor: _profileGold,
-            iconBg: _c.goldLight,
-            title: 'Crypto Wallet',
-            subtitle: '$_cryptoCurrency · $_shortWalletAddress',
-            onTap: _showCryptoWalletSheet,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _paymentMethodTile({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBg,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: _c.subCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _c.subBorder),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: _c.text,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: _c.muted,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: _c.greenLight,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _c.greenBorder,
-                ),
-              ),
-              child: const Text(
-                'Active',
-                style: TextStyle(
-                  color: _profileGreen,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(LucideIcons.arrowUpRight, size: 16, color: _c.muted),
-          ],
-        ),
-      ),
-    );
-  }
-
-
   String get _maskedBankAccountNumber => _bankAccountNumber.length <= 4
       ? _bankAccountNumber
-      : '•••• ${_bankAccountNumber.substring(_bankAccountNumber.length - 4)}';
+      : 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ ${_bankAccountNumber.substring(_bankAccountNumber.length - 4)}';
 
   String get _shortWalletAddress => _cryptoWalletAddress.length <= 18
       ? _cryptoWalletAddress
-      : '${_cryptoWalletAddress.substring(0, 8)}…${_cryptoWalletAddress.substring(_cryptoWalletAddress.length - 6)}';
+      : '${_cryptoWalletAddress.substring(0, 8)}Ã¢â‚¬Â¦${_cryptoWalletAddress.substring(_cryptoWalletAddress.length - 6)}';
 
   void _showBankDetailsSheet() {
     showModalBottomSheet<void>(
@@ -1943,7 +1408,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             _infoRow('Account Holder', _bankHolder),
             _infoRow('IFSC / Routing Code', _bankIfscCode, copyable: true),
             _infoRow('Branch Name', _bankBranch),
-            _infoRow('Currency', 'INR (₹)'),
+            _infoRow('Currency', 'INR (Ã¢â€šÂ¹)'),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
@@ -2044,161 +1509,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showPaymentMethodsSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: BoxDecoration(
-          color: _c.card,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: _c.muted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Manage Payment Methods',
-              style: TextStyle(
-                color: _c.text,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Add, update, or remove bank accounts and crypto wallets.',
-              style: TextStyle(color: _c.muted, fontSize: 12),
-            ),
-            const SizedBox(height: 18),
-            Material(
-              color: _c.card,
-              child: ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _c.blueLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(LucideIcons.landmark, color: _profileBlue, size: 20),
-              ),
-              title: Text('Manage Bank Accounts', style: TextStyle(color: _c.text, fontSize: 14, fontWeight: FontWeight.w600)),
-              subtitle: Text('$_bankName • $_maskedBankAccountNumber (Primary)', style: TextStyle(color: _c.muted, fontSize: 11)),
-              trailing: Icon(LucideIcons.chevronRight, color: _c.muted, size: 18),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showBankDetailsSheet();
-              },
-            )
-            ),
-            Material(
-              color: _c.card,
-              child: ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: _profileGoldLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(LucideIcons.wallet, color: _profileGold, size: 20),
-              ),
-              title: Text('Manage Crypto Wallets', style: TextStyle(color: _c.text, fontSize: 14, fontWeight: FontWeight.w600)),
-              subtitle: Text('$_cryptoCurrency · $_shortWalletAddress', style: TextStyle(color: _c.muted, fontSize: 11)),
-              trailing: Icon(LucideIcons.chevronRight, color: _c.muted, size: 18),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showCryptoWalletSheet();
-              },
-            )
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: _c.blueBorder),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: _c.blueLight,
-                ),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showSnack('Add new payment method window opened');
-                },
-                icon: Icon(LucideIcons.plus, size: 18, color: _c.accentBlue),
-                label: Text('Add Payment Method', style: TextStyle(color: _c.text, fontSize: 13)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _completionItem({required String title, required String subtitle}) {
-    return Row(
-      children: [
-        const Icon(
-          LucideIcons.circleCheck,
-          color: _profileGreen,
-          size: 19,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: _c.text,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: _profileTextSecondary,
-                  fontSize: 10.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-          decoration: BoxDecoration(
-            color: _profileGreenLight,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Text(
-            'Verified',
-            style: TextStyle(
-              color: _profileGreen,
-              fontSize: 9.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -2939,7 +2249,7 @@ class _DocumentViewerModal extends StatefulWidget {
 
 class _DocumentViewerModalState extends State<_DocumentViewerModal> {
   bool _passwordVerified = true;
-  final TextEditingController _passwordController = TextEditingController(text: '••••••••');
+  final TextEditingController _passwordController = TextEditingController(text: 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢');
   bool _obscurePassword = true;
 
   @override
@@ -3271,7 +2581,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                           const Icon(LucideIcons.shieldCheck, color: _profileGreen, size: 26),
                           const SizedBox(height: 6),
                           Text(
-                            'CONFIDENTIAL • VERIFIED BY CRM SYSTEM',
+                            'CONFIDENTIAL Ã¢â‚¬Â¢ VERIFIED BY CRM SYSTEM',
                             style: TextStyle(
                               color: c.isDark ? c.accentBlue : _profileBlueDark,
                               fontSize: 10,
@@ -3856,7 +3166,7 @@ class _PaymentMethodsTabView extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              value.trim().isEmpty ? '—' : value,
+              value.trim().isEmpty ? 'Ã¢â‚¬â€' : value,
               maxLines: 1,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
@@ -4491,7 +3801,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Action Button: Save bank details ↗
+                    // Action Button: Save bank details Ã¢â€ â€”
                     SizedBox(
                       width: double.infinity,
                       height: 48,

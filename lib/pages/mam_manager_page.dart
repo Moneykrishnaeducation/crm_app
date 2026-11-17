@@ -535,7 +535,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: filters.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final filter = filters[index];
               final isSelected = _statusFilter == filter;
@@ -605,7 +605,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _filteredMasters.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final master = _filteredMasters[index];
         return _buildMasterCard(master);
@@ -894,7 +894,7 @@ class _CreateMamMasterSheetState extends State<_CreateMamMasterSheet> {
             Text('Allocation Rule', style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
-              value: _allocationMethod,
+              initialValue: _allocationMethod,
               dropdownColor: c.card,
               style: TextStyle(color: c.text, fontSize: 12.5),
               decoration: InputDecoration(
@@ -923,7 +923,7 @@ class _CreateMamMasterSheetState extends State<_CreateMamMasterSheet> {
                       Text('Leverage', style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        value: _leverage,
+                        initialValue: _leverage,
                         dropdownColor: c.card,
                         style: TextStyle(color: c.text, fontSize: 12.5),
                         decoration: InputDecoration(
@@ -953,7 +953,7 @@ class _CreateMamMasterSheetState extends State<_CreateMamMasterSheet> {
                       Text('Risk Profile', style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        value: _riskLevel,
+                        initialValue: _riskLevel,
                         dropdownColor: c.card,
                         style: TextStyle(color: c.text, fontSize: 12.5),
                         decoration: InputDecoration(

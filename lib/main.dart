@@ -39,6 +39,34 @@ const _muted = Color(0xFF71809A);
 const _blue = Color(0xFF174A8B);
 const _gold = Color(0xFFD8A82E);
 
+/// Central VTIndex notification API. Use these helpers instead of SnackBars.
+void showAppToast(String message, {NotchToastType type = NotchToastType.info}) {
+  switch (type) {
+    case NotchToastType.success:
+      toast.success(message);
+    case NotchToastType.error:
+      toast.error(message);
+    case NotchToastType.warning:
+      toast.warning(message);
+    case NotchToastType.info:
+      toast.info(message);
+    case NotchToastType.loading:
+      toast.loading(message);
+    default:
+      toast(message);
+  }
+}
+
+String showAppLoadingToast(String message) => toast.loading(message);
+
+void updateAppToast(String id, String message, {NotchToastType type = NotchToastType.info}) {
+  toast.update(id, title: message, type: type);
+}
+
+void dismissAppToast(String id) => toast.dismiss(id);
+
+
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final preferences = await SharedPreferences.getInstance();

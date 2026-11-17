@@ -123,7 +123,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _taxResidency = 'India (PAN: *****8921J)';
   String _address = 'No 3 south street kattu edaiyar villupuram, kattu edaiyar, tamil nadu, india, 605751';
   String _occupation = 'Software Engineer';
-  Color _avatarBg = const Color(0xFF5E9422); // Olive-green
+  Color _avatarBg = const Color(0xFF0875F5); // VTIndex blue
   String _bannerTheme = 'Cosmic Landscape';
   String? _profileImagePath;
   String? _bannerImagePath;
@@ -411,11 +411,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _colorCircle(const Color(0xFF5E9422), 'Olive (Default)'),
-                _colorCircle(const Color(0xFF0875F5), 'Sapphire'),
-                _colorCircle(const Color(0xFF9333EA), 'Amethyst'),
-                _colorCircle(const Color(0xFFE5A93C), 'Amber'),
-                _colorCircle(const Color(0xFFDC2626), 'Crimson'),
+                _colorCircle(const Color(0xFF0875F5), 'VT Blue'),
+                _colorCircle(const Color(0xFF174A8B), 'Navy'),
+                _colorCircle(const Color(0xFFF4C84A), 'Gold'),
               ],
             ),
           ],
@@ -680,13 +678,13 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _buildMobileProfileHeader(),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 18),
                       _buildMobileSectionNavigation(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 18),
                       if (_selectedTabIndex == 0)
                         _buildOverviewTab()
                       else if (_selectedTabIndex == 1)
@@ -1076,7 +1074,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     ];
     return Container(
       padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+        boxShadow: _isDark ? null : _profileShadow,
+      ),
       child: Row(
         children: [
           for (var i = 0; i < tabs.length; i++)
@@ -1084,23 +1087,49 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: Material(
-                  color: _selectedTabIndex == i ? _c.navy : Colors.transparent,
-                  borderRadius: BorderRadius.circular(11),
+                  color: _selectedTabIndex == i ? _c.blueLight : Colors.transparent,
+                  borderRadius: BorderRadius.circular(13),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(13),
                     onTap: () => setState(() => _selectedTabIndex = i),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(
+                          color: _selectedTabIndex == i ? _c.blueBorder : Colors.transparent,
+                        ),
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(tabs[i].icon, size: 17, color: _selectedTabIndex == i ? Colors.white : _c.muted),
+                          Icon(
+                            tabs[i].icon,
+                            size: 18,
+                            color: _selectedTabIndex == i ? _c.accentBlue : _c.muted,
+                          ),
                           const SizedBox(height: 5),
                           Text(
                             tabs[i].label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 9, fontWeight: _selectedTabIndex == i ? FontWeight.w700 : FontWeight.w500, color: _selectedTabIndex == i ? Colors.white : _c.muted),
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              letterSpacing: 0.05,
+                              fontWeight: _selectedTabIndex == i ? FontWeight.w800 : FontWeight.w600,
+                              color: _selectedTabIndex == i ? _c.accentBlue : _c.muted,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            width: _selectedTabIndex == i ? 18 : 4,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: _selectedTabIndex == i ? _profileGold : Colors.transparent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                           ),
                         ],
                       ),

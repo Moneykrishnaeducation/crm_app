@@ -8,6 +8,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'pages/mam_available_page.dart';
+import 'pages/mam_investor_page.dart';
+import 'pages/mam_manager_page.dart';
 import 'pages/partnership_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/security_center_page.dart';
@@ -322,7 +325,24 @@ class _AppShellState extends State<AppShell> {
             themeMode: widget.themeMode,
             onThemeModeChanged: widget.onThemeModeChanged,
           ),
-        'MAM Manager' => const BrokerMamManagerPage(),
+        'MAM Manager' => MamManagerPage(
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onSelectPage: _selectPage,
+          ),
+        'MAM Investor' => MamInvestorPage(
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onExploreAvailable: () => setState(() => _selectedPage = 'Available MAM'),
+          ),
+        'Available MAM' || 'MAM Available' => MamAvailablePage(
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onJoinedPool: (pool) {
+              setState(() => _selectedPage = 'MAM Investor');
+            },
+          ),
+        'Social Trading' => MamManagerPage(
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onSelectPage: _selectPage,
+          ),
         'Security Center' => SecurityCenterPage(
             onBack: () => setState(() => _selectedPage = 'More'),
             onSelectPage: _selectPage,
@@ -353,7 +373,13 @@ class _AppShellState extends State<AppShell> {
       appBar: _AppHeader(
         title: _selectedPage,
         onBack: switch (_selectedPage) {
-          'Profile' || 'Security Center' => () => setState(() => _selectedPage = 'More'),
+          'Profile' ||
+          'Security Center' ||
+          'MAM Manager' ||
+          'MAM Investor' ||
+          'Available MAM' ||
+          'MAM Available' ||
+          'Social Trading' => () => setState(() => _selectedPage = 'More'),
           'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
           'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
           'Trade Report' => () => setState(() => _selectedPage = 'Transactions'),

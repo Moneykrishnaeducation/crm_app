@@ -385,7 +385,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
         _ReferralSocialButton(icon: LucideIcons.messageCircle, color: const Color(0xFF00B98B), tooltip: 'WhatsApp', onTap: () => share('WhatsApp')),
         _ReferralSocialButton(icon: LucideIcons.send, color: const Color(0xFF25A9E8), tooltip: 'Telegram', onTap: () => share('Telegram')),
         _ReferralSocialButton(icon: LucideIcons.atSign, color: Colors.black, tooltip: 'X', onTap: () => share('X')),
-        _ReferralSocialButton(icon: LucideIcons.linkedin, color: const Color(0xFF1769AA), tooltip: 'LinkedIn', onTap: () => share('LinkedIn')),
+       _ReferralSocialButton(icon: LucideIcons.link, color: const Color(0xFF1769AA), tooltip: 'LinkedIn', onTap: () => share('LinkedIn')),
         _ReferralSocialButton(icon: LucideIcons.mail, color: const Color(0xFF8B28D9), tooltip: 'Email', onTap: () => share('Email')),
         _ReferralSocialButton(icon: LucideIcons.share2, color: const Color(0xFF3858EA), tooltip: 'Copy share link', onTap: () => copyText(referralUrl, 'Referral link')),
       ]),

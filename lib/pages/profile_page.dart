@@ -873,22 +873,52 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   Widget _mobileMetric(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(11),
-      decoration: BoxDecoration(color: _profileBg, borderRadius: BorderRadius.circular(13), border: Border.all(color: _profileBorder)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
+      decoration: BoxDecoration(
+        color: _profileBlueLight.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(15),
+        border: const Border(
+          left: BorderSide(color: _profileBlue, width: 3),
+          top: BorderSide(color: _profileBlueBorder),
+          right: BorderSide(color: _profileBlueBorder),
+          bottom: BorderSide(color: _profileBlueBorder),
+        ),
+      ),
       child: Row(
         children: [
-          Icon(icon, color: _profileBlue, size: 17),
+          Icon(icon, color: _profileBlue, size: 23),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _profileMuted, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-                const SizedBox(height: 3),
-                Text(value, style: const TextStyle(color: _profileNavy, fontSize: 12, fontWeight: FontWeight.w800)),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _profileMuted,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.35,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _profileNavy,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 3),
+          const Icon(LucideIcons.chevronRight, color: _profileNavy, size: 16),
         ],
       ),
     );

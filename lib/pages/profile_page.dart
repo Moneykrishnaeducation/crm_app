@@ -2964,30 +2964,38 @@ class _VerificationTabView extends StatelessWidget {
         const SizedBox(height: 22),
 
         // 2. Card 1: Identity Verification (IDENTITY PROOF)
-        _VerificationDocCard(
-          title: 'Identity Verification',
-          badgeLabel: 'IDENTITY PROOF',
-          subtitle: 'Aadhaar, PAN, passport or driving licence',
-          icon: LucideIcons.idCard,
-          iconBgColor: const Color(0xFFF7F9FC),
-          iconColor: const Color(0xFF4988E8),
-          badgeTagColor: const Color(0xFF4988E8),
-          isIdentity: true,
-          onViewDocument: () => onViewDocument('Identity Verification'),
-        ),
-        const SizedBox(height: 16),
-
-        // 3. Card 2: Address Verification (ADDRESS PROOF)
-        _VerificationDocCard(
-          title: 'Address Verification',
-          badgeLabel: 'ADDRESS PROOF',
-          subtitle: 'Bank statement or utility bill',
-          icon: LucideIcons.house,
-          iconBgColor: const Color(0xFFF3E8FF),
-          iconColor: const Color(0xFF7C3AED),
-          badgeTagColor: _profileBlueDark,
-          isIdentity: false,
-          onViewDocument: () => onViewDocument('Address Verification'),
+        // Verification document cards use a compact two-column phone grid.
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 0.50,
+          children: [
+            _VerificationDocCard(
+              title: 'Identity Verification',
+              badgeLabel: 'IDENTITY PROOF',
+              subtitle: 'Aadhaar, PAN, passport or driving licence',
+              icon: LucideIcons.idCard,
+              iconBgColor: const Color(0xFFF7F9FC),
+              iconColor: const Color(0xFF4988E8),
+              badgeTagColor: const Color(0xFF4988E8),
+              isIdentity: true,
+              onViewDocument: () => onViewDocument('Identity Verification'),
+            ),
+            _VerificationDocCard(
+              title: 'Address Verification',
+              badgeLabel: 'ADDRESS PROOF',
+              subtitle: 'Bank statement or utility bill',
+              icon: LucideIcons.house,
+              iconBgColor: const Color(0xFFF3E8FF),
+              iconColor: const Color(0xFF7C3AED),
+              badgeTagColor: _profileBlueDark,
+              isIdentity: false,
+              onViewDocument: () => onViewDocument('Address Verification'),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
 
@@ -3116,371 +3124,166 @@ class _VerificationDocCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FC),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder, width: 1.2),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _profileBorder),
         boxShadow: _profileShadow,
       ),
-      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Header Row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: iconBgColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: iconColor, size: 22),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: const Color(0xFF10264A),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      badgeLabel,
-                      style: TextStyle(
-                        color: badgeTagColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // [green dot] Approved green pill badge
+              const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _profileGreenLight,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _profileGreenBorder),
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: _profileGreen,
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: _profileGreen,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    const Text(
-                      'Approved',
-                      style: TextStyle(
-                        color: _profileGreen,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+              ),
+              const SizedBox(width: 4),
+              const Flexible(
+                child: Text(
+                  'Approved',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _profileGreen,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-
-          // Subtitle & Right-side graphic element
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFF62738E),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              _buildGraphicPreview(),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Document file box
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F9FC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFF7F9FC)),
-            ),
-            child: Row(
-              children: [
-                const Icon(LucideIcons.fileText, size: 16, color: _profileBlue),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'Document file',
-                    style: TextStyle(
-                      color: Color(0xFF62738E),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                  decoration: BoxDecoration(
-                    color: _profileBlueLight,
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: _profileBlueBorder),
-                  ),
-                  child: const Text(
-                    'PDF / IMAGE',
-                    style: TextStyle(
-                      color: _profileBlueDark,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-              ],
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _profileNavy,
+              fontSize: 13,
+              height: 1.2,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 14),
-
-          // Verification complete row
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: _profileGreenLight,
-                  borderRadius: BorderRadius.circular(7),
-                  border: Border.all(color: _profileGreenBorder),
-                ),
-                child: const Icon(LucideIcons.shieldCheck, color: _profileGreen, size: 16),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Verification complete',
-                      style: TextStyle(
-                        color: const Color(0xFF10264A),
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Your document has been approved.',
-                      style: TextStyle(
-                        color: Color(0xFF62738E),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Action Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onViewDocument,
-              icon: const Icon(LucideIcons.eye, color: const Color(0xFF10264A), size: 16),
-              label: const Text(
-                'View document',
-                style: TextStyle(
-                  color: const Color(0xFF10264A),
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                backgroundColor: const Color(0xFFF7F9FC),
-                side: const BorderSide(color: Color(0xFFEAF1FA)),
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+          const SizedBox(height: 5),
+          Text(
+            badgeLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: badgeTagColor,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGraphicPreview() {
-    if (isIdentity) {
-      return Container(
-        width: 78,
-        height: 48,
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFF7F9FC), Color(0xFF071B3E)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFEAF1FA), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x0F0F172A),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 22,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(
-                LucideIcons.userRound,
-                size: 14,
-                color: _profileBlue,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 3,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: _profileBlue,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Container(
-                    height: 2.5,
-                    width: 24,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF93C5FD),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Container(
-                    height: 2,
-                    width: 16,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF93C5FD),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      width: 78,
-      height: 48,
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFAF5FF), Color(0xFFF3E8FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFD8B4FE), width: 1.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F0F172A),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 22,
-            height: 28,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Icon(
-              LucideIcons.house,
-              size: 14,
-              color: Color(0xFF9333EA),
-            ),
-          ),
-          const SizedBox(width: 6),
+          const SizedBox(height: 9),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Text(
+              subtitle,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _profileMuted,
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+            decoration: BoxDecoration(
+              color: _profileBg,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: _profileBorder),
+            ),
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 3,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF9333EA),
-                    borderRadius: BorderRadius.circular(2),
+                Icon(LucideIcons.fileText, size: 16, color: _profileBlue),
+                SizedBox(height: 5),
+                Text(
+                  'Document file',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _profileMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Container(
-                  height: 2.5,
-                  width: 22,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFC084FC),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Container(
-                  height: 2,
-                  width: 14,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFC084FC),
-                    borderRadius: BorderRadius.circular(2),
+                Text(
+                  'PDF / IMAGE',
+                  style: TextStyle(
+                    color: _profileBlueDark,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              const Icon(
+                LucideIcons.shieldCheck,
+                color: _profileGreen,
+                size: 14,
+              ),
+              const SizedBox(width: 5),
+              const Expanded(
+                child: Text(
+                  'Verification complete',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _profileNavy,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onViewDocument,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _profileBlueDark,
+                side: const BorderSide(color: _profileBlueBorder),
+                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+                minimumSize: const Size(0, 34),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(9),
+                ),
+              ),
+              child: const Text(
+                'View document',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ],
@@ -3489,9 +3292,6 @@ class _VerificationDocCard extends StatelessWidget {
   }
 }
 
-// ==========================================
-// DOCUMENT VIEWER BOTTOM SHEET MODAL
-// ==========================================
 class _DocumentViewerModal extends StatefulWidget {
   const _DocumentViewerModal({required this.documentType});
 

@@ -623,7 +623,7 @@ class _EquityHistoryPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (values.length < 2 || size.isEmpty) return;
-    final minV = values.reduce(math.min); final maxV = values.reduce(math.max);
+    final minV = values.reduce((a, b) => a < b ? a : b); final maxV = values.reduce((a, b) => a > b ? a : b);
     final range = (maxV - minV).abs() < .000001 ? 1.0 : maxV - minV;
     final rect = Rect.fromLTWH(0, 4, size.width, size.height - 8);
     final grid = Paint()..color = gridColor..strokeWidth = 1;

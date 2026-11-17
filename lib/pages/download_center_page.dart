@@ -35,7 +35,6 @@ class BrokerDownloadCenterPage extends StatelessWidget {
     final muted = scheme.onSurfaceVariant;
     final border = theme.dividerColor;
     final gold = const Color(0xFFFFC52E);
-    final navy = dark ? const Color(0xFF101F35) : const Color(0xFFF4F7FC);
 
     return SafeArea(
       top: false,
@@ -92,10 +91,10 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: dark
-                          ? const [Color(0xFF172B48), Color(0xFF0D192B)]
-                          : const [Color(0xFFFFF8E5), Color(0xFFF0F5FC)],
+                          ? const [Color(0xFF101F35), Color(0xFF0A1426)]
+                          : const [Color(0xFFFFFFFF), Color(0xFFF2F6FC)],
                     ),
-                    border: Border.all(color: dark ? const Color(0xFF344B6A) : const Color(0xFFE0E6EF)),
+                    border: Border.all(color: dark ? const Color(0xFF29466A) : const Color(0xFFDCE5F1)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: dark ? .18 : .05),
@@ -149,7 +148,7 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0A9B68).withValues(alpha: .13),
+                                    color: gold.withValues(alpha: dark ? .16 : .20),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: const Text('RECOMMENDED', style: TextStyle(
@@ -193,11 +192,6 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 9),
-                            Center(
-                              child: Text('client.vtindex.com/platform',
-                                style: TextStyle(color: muted, fontSize: 9, letterSpacing: .2)),
-                            ),
                           ],
                         ),
                       ),
@@ -240,7 +234,7 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                       Container(
                         width: 46, height: 46,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2676C9).withValues(alpha: .13),
+                          color: const Color(0xFF3478F6).withValues(alpha: dark ? .18 : .10),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(LucideIcons.smartphone, color: Color(0xFF3E9BFF), size: 23),
@@ -265,7 +259,8 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                         icon: const Icon(LucideIcons.download, size: 14),
                         label: const Text('Get APK'),
                         style: FilledButton.styleFrom(
-                          foregroundColor: scheme.primary,
+                          foregroundColor: dark ? const Color(0xFFB8D2FF) : const Color(0xFF245DB5),
+                          backgroundColor: dark ? const Color(0xFF203B60) : const Color(0xFFEAF1FC),
                           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
                           textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),

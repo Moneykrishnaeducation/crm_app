@@ -2946,18 +2946,6 @@ class _VerificationTabView extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 10),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  'View, upload or update your identity and address documents. Identity compares your name and date of birth; address proof compares your name and complete profile address. When fields can be compared, scores below 30% are rejected, 30%*80% require manual review, and above 80% are auto-approved. Unreadable fields or incomplete profile data go to manual review.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF62738E),
-                    fontSize: 12.5,
-                    height: 1.45,
-                  ),
-                ),
-              ),
             ],
           ),
         ),

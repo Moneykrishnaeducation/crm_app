@@ -69,7 +69,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     return Container(
       color: dark ? navy : Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 126),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
         children: [
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -84,7 +84,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
               Text('${all.length} Accounts', style: TextStyle(color: text, fontSize: 10, fontWeight: FontWeight.w800)),
             ])),
           ]),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
           Row(children: [
             filter('All', 'All', '${all.length}'),
             const SizedBox(width: 8),
@@ -92,7 +92,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
             const SizedBox(width: 8),
             filter('Demo', 'Demo', '$demoCount', dot: blue),
           ]),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           Row(children: [
             Expanded(child: TextField(
               controller: _searchController,
@@ -115,7 +115,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
               icon: Icon(LucideIcons.slidersHorizontal, color: text, size: 19),
             )),
           ]),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           if (filtered.isEmpty)
             _AccountEmptyState(searching: _query.isNotEmpty || _filter != 'All', onClear: () { _searchController.clear(); setState(() { _query = ''; _filter = 'All'; }); }, onOpen: () => showDialog<void>(context: context, builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated)))
           else
@@ -171,7 +171,7 @@ class _ReferenceAccountCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(19),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 11),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(19),
               border: Border.all(color: border, width: selected ? 1.8 : 1.2),
@@ -179,7 +179,7 @@ class _ReferenceAccountCard extends StatelessWidget {
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Container(width: 50, height: 50, decoration: BoxDecoration(color: const Color(0xFF163D70), borderRadius: BorderRadius.circular(14)), child: const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 25)),
+                Container(width: 46, height: 46, decoration: BoxDecoration(color: const Color(0xFF163D70), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 23)),
                 const SizedBox(width: 11),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
@@ -187,7 +187,7 @@ class _ReferenceAccountCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     const _AccountPill(label: 'MT5', color: Color(0xFF315D86), foreground: Colors.white),
                     const SizedBox(width: 9),
-                    Flexible(child: Text(account.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 18, fontWeight: FontWeight.w800))),
+                    Flexible(child: Text(account.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w800))),
                   ]),
                   const SizedBox(height: 7),
                   Text('${account.name}  •  ${account.leverage}', style: TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w500)),
@@ -196,7 +196,7 @@ class _ReferenceAccountCard extends StatelessWidget {
                 const SizedBox(width: 5),
                 Icon(selected ? Icons.star : Icons.star_border, color: selected ? gold : muted, size: 22),
               ]),
-              const SizedBox(height: 14),
+              const SizedBox(height: 11),
               Row(children: [
                 Expanded(child: _ReferenceMetric(label: 'Balance', value: account.balance, color: fg, muted: muted)),
                 Container(width: 1, height: 35, color: dark ? const Color(0xFF29415F) : const Color(0xFFE0E7F0)),
@@ -231,9 +231,9 @@ class _ReferenceMetric extends StatelessWidget {
   final Color color, muted;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 7),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w500)),
+      Text(label, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w500)),
       const SizedBox(height: 5),
       FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w800))),
     ]),
@@ -649,7 +649,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     ]));
 
     Widget action(IconData icon, String label, bool primary, VoidCallback onTap) => Expanded(child: SizedBox(
-      height: 78,
+      height: 64,
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
@@ -660,7 +660,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
           padding: const EdgeInsets.symmetric(horizontal: 2),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 22), const SizedBox(height: 6),
+          Icon(icon, size: 20), const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
         ]),
       ),
@@ -673,7 +673,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          height: 46,
+          height: 42,
           decoration: BoxDecoration(color: selected ? gold : Colors.transparent, borderRadius: BorderRadius.circular(11)),
           alignment: Alignment.center,
           child: Text(value, style: TextStyle(color: selected ? const Color(0xFF101A29) : fg, fontSize: 11, fontWeight: FontWeight.w800)),
@@ -682,15 +682,15 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     }
 
     Widget stat(IconData icon, String label, String value, Color accent) => Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
       child: Row(children: [
-        Container(width: 37, height: 37, decoration: BoxDecoration(color: accent.withValues(alpha: .13), shape: BoxShape.circle), child: Icon(icon, color: accent, size: 19)),
+        Container(width: 32, height: 32, decoration: BoxDecoration(color: accent.withValues(alpha: .13), shape: BoxShape.circle), child: Icon(icon, color: accent, size: 17)),
         const SizedBox(width: 9),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label, style: TextStyle(color: muted, fontSize: 9)),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w800)),
+          Text(value, style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.w800)),
         ])),
       ]),
     );
@@ -698,7 +698,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     return Container(
       color: bg,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 126),
+        padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
         children: [
           Row(children: [
             IconButton(onPressed: widget.onBack, icon: Icon(LucideIcons.arrowLeft, color: fg, size: 23)),
@@ -716,8 +716,8 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
           Container(
             decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: border)),
             child: Column(children: [
-              Padding(padding: const EdgeInsets.fromLTRB(14, 14, 14, 12), child: Row(children: [
-                Container(width: 56, height: 56, decoration: BoxDecoration(color: const Color(0xFF163D70), borderRadius: BorderRadius.circular(14)), child: const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 28)),
+              Padding(padding: const EdgeInsets.fromLTRB(12, 11, 12, 10), child: Row(children: [
+                Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFF163D70), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 25)),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
@@ -732,7 +732,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 ])),
                 Icon(LucideIcons.star, color: gold, size: 24),
               ])),
-              Padding(padding: const EdgeInsets.fromLTRB(8, 2, 8, 12), child: Row(children: [
+              Padding(padding: const EdgeInsets.fromLTRB(7, 2, 7, 10), child: Row(children: [
                 metric('Balance', a.balance),
                 Container(width: 1, height: 42, color: border),
                 metric('Equity', a.equity),
@@ -749,7 +749,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               ])),
             ]),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(children: [
             action(LucideIcons.arrowDown, 'Deposit', true, () => widget.onSelectPage('Deposit')),
             const SizedBox(width: 8),
@@ -759,12 +759,12 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             const SizedBox(width: 8),
             action(LucideIcons.settings, 'Settings', false, () => widget.onSelectPage('Settings')),
           ]),
-          const SizedBox(height: 20),
-          Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')])),
           const SizedBox(height: 14),
+          Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')])),
+          const SizedBox(height: 10),
           if (_tab == 'Overview') ...[
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(19), border: Border.all(color: border)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
@@ -773,12 +773,12 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                   Expanded(child: Text('Account Performance', style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
                   Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6), decoration: BoxDecoration(color: const Color(0xFF075B3A), borderRadius: BorderRadius.circular(20)), child: Text('${changePct >= 0 ? '+' : ''}${changePct.toStringAsFixed(2)}%', style: const TextStyle(color: green, fontSize: 11, fontWeight: FontWeight.w800))),
                 ]),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 if (history.length > 1)
-                  SizedBox(height: 120, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: chartHistory, color: green, gridColor: border)))
+                  SizedBox(height: MediaQuery.sizeOf(context).height < 760 ? 88 : 108, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: chartHistory, color: green, gridColor: border)))
                 else
                   SizedBox(height: 112, child: Center(child: Text('Performance history will appear after MT5 sync.', style: TextStyle(color: muted, fontSize: 10)))),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Row(children: ['1D', '1W', '1M', '3M', 'YTD', 'All'].map((value) {
                   final selected = _range == value;
                   return Expanded(child: InkWell(onTap: () => setState(() => _range = value), borderRadius: BorderRadius.circular(18), child: Container(
@@ -788,7 +788,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                     child: Text(value, style: TextStyle(color: selected ? const Color(0xFF101A29) : fg, fontSize: 9, fontWeight: FontWeight.w800)),
                   )));
                 }).toList()),
-                const SizedBox(height: 13),
+                const SizedBox(height: 9),
                 Row(children: [
                   Expanded(child: stat(LucideIcons.trendingUp, 'Total trades', '${a.openPositions.length + trades.length}', blue)),
                   const SizedBox(width: 9),

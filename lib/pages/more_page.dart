@@ -10,33 +10,6 @@ class BrokerMorePage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('YOUR ACCOUNT', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-                      SizedBox(height: 5),
-                      Text('More', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 27, fontWeight: FontWeight.w800, height: 1.1)),
-                      SizedBox(height: 4),
-                      Text('Manage your profile, preferences and services', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(color: const Color(0xFFEAF7F0), borderRadius: BorderRadius.circular(20)),
-                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(LucideIcons.circle, color: Color(0xFF22A06B), size: 7),
-                    SizedBox(width: 6),
-                    Text('Online', style: TextStyle(color: Color(0xFF18794E), fontSize: 10, fontWeight: FontWeight.w700)),
-                  ]),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
             _MoreProfileCard(onTap: () => onSelectPage('Profile')),
             const SizedBox(height: 12),
             Container(

@@ -360,6 +360,7 @@ class _AppShellState extends State<AppShell> {
           'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
           'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
           'Trade Report' => () => setState(() => _selectedPage = 'Transactions'),
+          'Platform' => () => setState(() => _selectedPage = 'More'),
           _ => null,
         },
         onAvatarTap: () => _selectPage('Profile'),

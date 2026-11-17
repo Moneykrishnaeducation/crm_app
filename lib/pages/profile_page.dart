@@ -303,7 +303,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               style: TextStyle(color: _profileTextSecondary, fontSize: 12),
             ),
             const SizedBox(height: 18),
-            ListTile(
+            Material(
+              color: _profileCard,
+              child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: const BoxDecoration(
@@ -319,8 +321,11 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Navigator.pop(ctx);
                 _pickAndSaveImage(source: ImageSource.camera, isBanner: false);
               },
+            )
             ),
-            ListTile(
+            Material(
+              color: _profileCard,
+              child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: const BoxDecoration(
@@ -336,6 +341,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Navigator.pop(ctx);
                 _pickAndSaveImage(source: ImageSource.gallery, isBanner: false);
               },
+            )
             ),
             const SizedBox(height: 14),
             const Text(
@@ -729,9 +735,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                           width: double.infinity,
                           height: 130,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const CustomPaint(
+                          errorBuilder: (context, error, stackTrace) => CustomPaint(
                             painter: CelestialBannerPainter(theme: _bannerTheme),
-                            child: SizedBox.expand(),
+                            child: const SizedBox.expand(),
                           ),
                         )
                       : CustomPaint(
@@ -2785,7 +2791,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               style: TextStyle(color: _profileTextSecondary, fontSize: 12),
             ),
             const SizedBox(height: 18),
-            ListTile(
+            Material(
+              color: _profileCard,
+              child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: const BoxDecoration(
@@ -2801,8 +2809,11 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Navigator.pop(ctx);
                 _showBankDetailsSheet();
               },
+            )
             ),
-            ListTile(
+            Material(
+              color: _profileCard,
+              child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: const BoxDecoration(
@@ -2818,6 +2829,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Navigator.pop(ctx);
                 _showCryptoWalletSheet();
               },
+            )
             ),
             const SizedBox(height: 14),
             SizedBox(

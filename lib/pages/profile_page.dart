@@ -1280,7 +1280,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               onTap: _showEditDetailsSheet,
             ),
             _mobileQuickAction(
-              icon: LucideIcons.fileCheck,
+              icon: LucideIcons.shieldCheck,
               title: 'Verification',
               subtitle: 'View KYC status',
               onTap: () => setState(() => _selectedTabIndex = 2),

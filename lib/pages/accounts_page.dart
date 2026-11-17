@@ -433,7 +433,7 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(LucideIcons.lockKeyhole, color: muted, size: 12),
                   const SizedBox(width: 5),
-                  Text('Your account details are handled securely', style: TextStyle(color: muted, fontSize: 9)),
+                  Text('Account provisioning is not connected in this preview', style: TextStyle(color: muted, fontSize: 9)),
                 ]),
               ]),
             ),
@@ -476,7 +476,7 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
     widget.onCreated(BrokerAccount(accountName, login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
     final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    messenger.showSnackBar(SnackBar(content: Text('Live account $login created.')));
+    messenger.showSnackBar(SnackBar(content: Text('Live account preview $login added.')));
   }
 }
 

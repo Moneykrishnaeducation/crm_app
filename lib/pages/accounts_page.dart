@@ -12,7 +12,7 @@ class BrokerAccountsPage extends StatefulWidget {
 
 class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   final _searchController = TextEditingController();
-  String _filter = 'All Accounts';
+  String _filter = 'All';
   String _query = '';
 
   @override
@@ -23,161 +23,117 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final accounts = widget.accounts.where((account) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    const navy = Color(0xFF071629);
+    const panel = Color(0xFF101F34);
+    const gold = Color(0xFFFFC533);
+    const blue = Color(0xFF35A9F5);
+    const green = Color(0xFF08D879);
+    const red = Color(0xFFFF6268);
+    final all = widget.accounts;
+    final liveCount = all.where((a) => a.type == 'Live MT5').length;
+    final demoCount = all.length - liveCount;
+    final filtered = all.where((a) {
       final q = _query.trim().toLowerCase();
-      final matchesQuery = q.isEmpty ||
-          account.login.toLowerCase().contains(q) ||
-          account.name.toLowerCase().contains(q) ||
-          account.type.toLowerCase().contains(q);
-      final matchesFilter = _filter == 'All Accounts' ||
-          (_filter == 'Live MT5' && account.type == 'Live MT5') ||
-          (_filter == 'Demo' && account.type != 'Live MT5');
-      return matchesQuery && matchesFilter;
+      final matchText = q.isEmpty || a.login.toLowerCase().contains(q) || a.name.toLowerCase().contains(q) || a.type.toLowerCase().contains(q);
+      final matchFilter = _filter == 'All' || (_filter == 'Live' && a.type == 'Live MT5') || (_filter == 'Demo' && a.type != 'Live MT5');
+      return matchText && matchFilter;
     }).toList();
-    final liveCount = widget.accounts.where((a) => a.type == 'Live MT5').length;
-    double amount(String value) => double.tryParse(value.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
-    final totalBalance = widget.accounts.fold<double>(0, (sum, a) => sum + amount(a.balance));
-    final totalEquity = widget.accounts.fold<double>(0, (sum, a) => sum + amount(a.equity));
-    String money(double value) => String.fromCharCode(36) + value.toStringAsFixed(2);
+    final totalBalance = all.fold<double>(0, (sum, a) => sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
+    final surface = dark ? panel : Colors.white;
+    final border = dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE);
+    final text = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
+    final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF6F7F95);
+
+    Widget filter(String label, String value, String count, {Color? dot}) {
+      final selected = _filter == value;
+      return Expanded(child: InkWell(
+        onTap: () => setState(() => _filter = value),
+        borderRadius: BorderRadius.circular(13),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 43,
+          decoration: BoxDecoration(
+            color: selected ? gold : surface,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: selected ? gold : border, width: 1.2),
+          ),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            if (dot != null) ...[Container(width: 9, height: 9, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)), const SizedBox(width: 6)],
+            Text('$label ($count)', style: TextStyle(color: selected ? const Color(0xFF101A29) : text, fontSize: 11, fontWeight: FontWeight.w800)),
+          ]),
+        ),
+      ));
+    }
 
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 620;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ACCOUNTS', style: TextStyle(color: Color(0xFF8290A6), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
-                        SizedBox(height: 3),
-                        Text('Trading accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.5)),
-                        SizedBox(height: 5),
-                        Text('View balances, equity and account details', style: TextStyle(color: _brokerMuted, fontSize: 10)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
-                    child: Row(children: [
-                      const Icon(LucideIcons.wallet, color: _brokerBlue, size: 14),
-                      const SizedBox(width: 6),
-                      Text('${widget.accounts.length} total', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 9, fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
-                ],
+      color: dark ? navy : Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 17, 16, 126),
+        children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('ACCOUNTS', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
+              const SizedBox(height: 5),
+              Text('Trading Accounts', style: TextStyle(color: text, fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.6)),
+              const SizedBox(height: 5),
+              Text('Manage your live and demo trading accounts', style: TextStyle(color: muted, fontSize: 11)),
+            ])),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: border)), child: Row(children: [
+              const Icon(LucideIcons.walletCards, color: blue, size: 15), const SizedBox(width: 6),
+              Text('${all.length} Accounts', style: TextStyle(color: text, fontSize: 10, fontWeight: FontWeight.w800)),
+            ])),
+          ]),
+          const SizedBox(height: 19),
+          Row(children: [
+            filter('All', 'All', '${all.length}'),
+            const SizedBox(width: 8),
+            filter('Live', 'Live', '$liveCount', dot: green),
+            const SizedBox(width: 8),
+            filter('Demo', 'Demo', '$demoCount', dot: blue),
+          ]),
+          const SizedBox(height: 17),
+          Row(children: [
+            Expanded(child: TextField(
+              controller: _searchController,
+              onChanged: (v) => setState(() => _query = v),
+              style: TextStyle(color: text, fontSize: 12),
+              decoration: InputDecoration(
+                hintText: 'Search by account number, name...',
+                hintStyle: TextStyle(color: muted, fontSize: 11),
+                prefixIcon: Icon(LucideIcons.search, color: muted, size: 19),
+                filled: true, fillColor: surface, isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide(color: border)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: blue, width: 1.3)),
               ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD8A82E).withValues(alpha: .10),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFD8A82E).withValues(alpha: .35)),
-                ),
-                child: Row(children: [
-                  const Icon(LucideIcons.info, color: Color(0xFFD8A82E), size: 13),
-                  const SizedBox(width: 7),
-                  Expanded(child: Text(
-                    'PREVIEW MODE â€¢ Sample MT5 values for UI review only; not live account data.',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8, fontWeight: FontWeight.w600),
-                  )),
-                ]),
-              ),
-              const SizedBox(height: 14),
-              Row(children: [
-                _AccountAction(
-                  icon: LucideIcons.circlePlus,
-                  label: 'Open Account',
-                  highlighted: true,
-                  onTap: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _AccountAction(icon: LucideIcons.arrowLeftRight, label: 'Transfer', onTap: () => widget.onSelectPage('Internal Transfer')),
-                const SizedBox(width: 8),
-                _AccountAction(icon: LucideIcons.monitor, label: 'Demo', onTap: () => widget.onSelectPage('Demo Accounts')),
-              ]),
-              const SizedBox(height: 18),
-              Text('Account overview', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 9),
-              SizedBox(
-                height: 96,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    SizedBox(width: compact ? 155 : 190, child: _AccountSummary(icon: LucideIcons.wallet, title: 'Total balance', value: money(totalBalance), detail: 'Combined account balance', accent: Color(0xFF24A9D5))),
-                    const SizedBox(width: 9),
-                    SizedBox(width: compact ? 155 : 190, child: _AccountSummary(icon: LucideIcons.layers, title: 'Total equity', value: money(totalEquity), detail: 'Net asset value', accent: Color(0xFF8D70D9))),
-                    const SizedBox(width: 9),
-                    SizedBox(width: compact ? 155 : 190, child: _AccountSummary(icon: LucideIcons.usersRound, title: 'Live accounts', value: '$liveCount', detail: 'Connected MT5 accounts', accent: _brokerGold)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(child: Text('Your accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800))),
-                  Text('${accounts.length} shown', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600)),
-                ],
-              ),
-              const SizedBox(height: 9),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(children: [
-                  _AccountFilter(label: 'All accounts', count: '${widget.accounts.length}', selected: _filter == 'All Accounts', onTap: () => setState(() => _filter = 'All Accounts')),
-                  const SizedBox(width: 7),
-                  _AccountFilter(label: 'Live MT5', count: '$liveCount', selected: _filter == 'Live MT5', onTap: () => setState(() => _filter = 'Live MT5')),
-                  const SizedBox(width: 7),
-                  _AccountFilter(label: 'Demo', count: '${widget.accounts.length - liveCount}', selected: _filter == 'Demo', onTap: () => setState(() => _filter = 'Demo')),
-                ]),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() => _query = value),
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12),
-                decoration: InputDecoration(
-                  hintText: 'Search by account name or login ID',
-                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11),
-                  prefixIcon: const Icon(LucideIcons.search, color: _brokerMuted, size: 18),
-                  suffixIcon: _query.isEmpty ? null : IconButton(
-                    tooltip: 'Clear search',
-                    onPressed: () { _searchController.clear(); setState(() => _query = ''); },
-                    icon: const Icon(LucideIcons.x, color: _brokerMuted, size: 16),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF3187F8), width: 1.4)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (accounts.isEmpty)
-                _AccountEmptyState(
-                  searching: _query.isNotEmpty,
-                  onClear: () { _searchController.clear(); setState(() { _query = ''; _filter = 'All Accounts'; }); },
-                  onOpen: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated),
-                  ),
-                )
-              else if (compact)
-                ...accounts.map((account) => _AccountCard(account: account, onTap: () => widget.onAccountSelected(account), onDeposit: () => widget.onSelectPage('Deposit')))
-              else
-                _AccountTable(accounts: accounts, onSelect: widget.onAccountSelected),
-            ],
-          );
-        },
+            )),
+            const SizedBox(width: 9),
+            Container(width: 48, height: 46, decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: IconButton(
+              tooltip: 'Filter accounts',
+              onPressed: () => setState(() { _filter = _filter == 'All' ? 'Live' : _filter == 'Live' ? 'Demo' : 'All'; }),
+              icon: Icon(LucideIcons.slidersHorizontal, color: text, size: 19),
+            )),
+          ]),
+          const SizedBox(height: 17),
+          if (filtered.isEmpty)
+            _AccountEmptyState(searching: _query.isNotEmpty || _filter != 'All', onClear: () { _searchController.clear(); setState(() { _query = ''; _filter = 'All'; }); }, onOpen: () => showDialog<void>(context: context, builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated)))
+          else
+            ...filtered.map((account) => _ReferenceAccountCard(
+              account: account,
+              selected: false,
+              onTap: () => widget.onAccountSelected(account),
+            )),
+          const SizedBox(height: 5),
+          SizedBox(height: 52, child: FilledButton.icon(
+            onPressed: () => showDialog<void>(context: context, builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated)),
+            style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)), elevation: 0),
+            icon: const Icon(LucideIcons.plusCircle, size: 20),
+            label: const Text('Open New Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+          )),
+          const SizedBox(height: 7),
+          Text('Combined balance  ${all.isEmpty ? '—' : '$' + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+        ],
       ),
     );
   }

@@ -1297,13 +1297,7 @@ void _showQuickTradeDialog(
                       ),
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Instant SELL ${lotSize.toStringAsFixed(2)} $symbol @ ${sellPrice.toStringAsFixed(5)} executed',
-                            ),
-                          ),
-                        );
+                        showAppToast('Instant SELL ${lotSize.toStringAsFixed(2)} $symbol @ ${sellPrice.toStringAsFixed(5)} executed', type: NotchToastType.success);
                       },
                       child: Column(
                         children: [
@@ -1332,13 +1326,7 @@ void _showQuickTradeDialog(
                       ),
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Instant BUY ${lotSize.toStringAsFixed(2)} $symbol @ ${buyPrice.toStringAsFixed(5)} executed',
-                            ),
-                          ),
-                        );
+                        showAppToast('Instant BUY ${lotSize.toStringAsFixed(2)} $symbol @ ${buyPrice.toStringAsFixed(5)} executed', type: NotchToastType.success);
                       },
                       child: Column(
                         children: [
@@ -1795,14 +1783,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                 _accountBalances[_selectedLogin] =
                     (_accountBalances[_selectedLogin] ?? 0.0) + position.profit;
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Position ${position.symbol} closed successfully'),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: const Color(0xFF10264B),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              showAppToast('Position ${position.symbol} closed successfully', type: NotchToastType.success);
             },
             child: const Text('Confirm Close'),
           ),
@@ -1851,14 +1832,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               setState(() {
                 _accountPendingOrders[_selectedLogin]?.removeWhere((o) => o.id == order.id);
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Pending order for ${order.symbol} cancelled'),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: const Color(0xFF10264B),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              showAppToast('Pending order for ${order.symbol} cancelled', type: NotchToastType.info);
             },
             child: const Text('Cancel Order'),
           ),

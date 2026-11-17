@@ -189,6 +189,17 @@ class _AppShellState extends State<AppShell> {
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
     BrokerAccount(
+      'V Tamizharasan', '52132132', '1:500', '\$12,300.00', '\$12,450.00', 'Live MT5',
+      server: 'VTIndex-Live01', currency: 'USD', floatingPnl: 150.00,
+      equityHistory: [12100, 12150, 12200, 12280, 12350, 12450.00],
+      openPositions: [
+        BrokerOpenPosition(symbol: 'EURUSD', side: 'buy', volume: '0.50', openPrice: '1.08420', currentPrice: '1.08720', profit: 150.00),
+      ],
+      recentTrades: [
+        BrokerTradeRecord(symbol: 'GBPUSD', side: 'buy', volume: '0.10', closedAt: 'Today, 09:42', profit: 38.20),
+      ],
+    ),
+    BrokerAccount(
       'XRSIM-USD-1', '3315', '1:500', '\$12,500.00', '\$12,640.50', 'Live MT5',
       server: 'VTIndex-Live01', currency: 'USD', floatingPnl: 140.50,
       equityHistory: [12100, 12180, 12140, 12260, 12220, 12350, 12410, 12380, 12520, 12640.50],
@@ -373,7 +384,9 @@ class _AppShellState extends State<AppShell> {
                                   ),
                                   onSelectPage: _selectPage,
                                 ),
-                                const BrokerTransactionsPage(),
+                                BrokerTransactionsPage(
+                                  accounts: _accounts,
+                                ),
                                 BrokerAccountsPage(
                                   onSelectPage: _selectPage,
                                   accounts: _accounts,

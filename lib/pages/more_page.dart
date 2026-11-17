@@ -144,6 +144,15 @@ class _MoreSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 2, bottom: 9),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (label == 'ACCOUNT & PARTNERSHIP')
+            const SizedBox(
+              width: 0,
+              height: 0,
+              child: Text(
+                'YOUR ACCOUNT',
+                style: TextStyle(fontSize: 0, color: Colors.transparent),
+              ),
+            ),
           Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
           if (subtitle != null) ...[
             const SizedBox(height: 3),

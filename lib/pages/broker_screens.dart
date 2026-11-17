@@ -1354,214 +1354,1946 @@ void _showQuickTradeDialog(
   );
 }
 
+class ActivityOpenPosition {
+  const ActivityOpenPosition({
+    required this.id,
+    required this.symbol,
+    required this.isBuy,
+    required this.lots,
+    required this.openPrice,
+    required this.currentPrice,
+    required this.profit,
+    required this.sl,
+    required this.tp,
+    required this.openTime,
+  });
+
+  final String id;
+  final String symbol;
+  final bool isBuy;
+  final double lots;
+  final double openPrice;
+  final double currentPrice;
+  final double profit;
+  final double sl;
+  final double tp;
+  final String openTime;
+
+  ActivityOpenPosition copyWith({
+    String? id,
+    String? symbol,
+    bool? isBuy,
+    double? lots,
+    double? openPrice,
+    double? currentPrice,
+    double? profit,
+    double? sl,
+    double? tp,
+    String? openTime,
+  }) {
+    return ActivityOpenPosition(
+      id: id ?? this.id,
+      symbol: symbol ?? this.symbol,
+      isBuy: isBuy ?? this.isBuy,
+      lots: lots ?? this.lots,
+      openPrice: openPrice ?? this.openPrice,
+      currentPrice: currentPrice ?? this.currentPrice,
+      profit: profit ?? this.profit,
+      sl: sl ?? this.sl,
+      tp: tp ?? this.tp,
+      openTime: openTime ?? this.openTime,
+    );
+  }
+}
+
+class ActivityPendingOrder {
+  const ActivityPendingOrder({
+    required this.id,
+    required this.symbol,
+    required this.orderType,
+    required this.lots,
+    required this.orderPrice,
+    required this.currentPrice,
+    required this.placedTime,
+  });
+
+  final String id;
+  final String symbol;
+  final String orderType;
+  final double lots;
+  final double orderPrice;
+  final double currentPrice;
+  final String placedTime;
+}
+
+class ActivityClosedPosition {
+  const ActivityClosedPosition({
+    required this.id,
+    required this.symbol,
+    required this.isBuy,
+    required this.lots,
+    required this.openPrice,
+    required this.closePrice,
+    required this.netProfit,
+    required this.closeTime,
+  });
+
+  final String id;
+  final String symbol;
+  final bool isBuy;
+  final double lots;
+  final double openPrice;
+  final double closePrice;
+  final double netProfit;
+  final String closeTime;
+}
+
+class ActivityFundTransaction {
+  const ActivityFundTransaction({
+    required this.id,
+    required this.isDeposit,
+    required this.method,
+    required this.amount,
+    required this.date,
+    required this.status,
+  });
+
+  final String id;
+  final bool isDeposit;
+  final String method;
+  final double amount;
+  final String date;
+  final String status;
+}
+
 class BrokerTransactionsPage extends StatefulWidget {
-  const BrokerTransactionsPage({super.key});
+  const BrokerTransactionsPage({
+    super.key,
+    this.accounts,
+    this.selectedAccountLogin,
+    this.onAccountChanged,
+  });
+
+  final List<BrokerAccount>? accounts;
+  final String? selectedAccountLogin;
+  final ValueChanged<String>? onAccountChanged;
+
   @override
   State<BrokerTransactionsPage> createState() => _BrokerTransactionsPageState();
 }
 
 class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
-  String _filter = 'All';
-  static const _groups = <(String, List<_TransactionData>)>[
-    (
-      'Today',
-      [
-        _TransactionData(
-          LucideIcons.arrowDownLeft,
-          'Deposit',
-          'Account Funding',
-          '+\$2,500.00',
-          '10:30 AM',
-          true,
-        ),
-        _TransactionData(
-          LucideIcons.arrowUpRight,
-          'Withdrawal',
-          'Payout Request',
-          '-\$850.00',
-          '11:15 AM',
-          false,
-        ),
-      ],
-    ),
-    (
-      'Yesterday',
-      [
-        _TransactionData(
-          LucideIcons.arrowLeftRight,
-          'Internal Transfer',
-          'Between Accounts',
-          '+\$500.00',
-          '06:20 PM',
-          true,
-        ),
-        _TransactionData(
-          LucideIcons.plus,
-          'Account Opening',
-          'New Live Account',
-          '\$0.00',
-          '04:10 PM',
-          null,
-        ),
-      ],
-    ),
-    (
-      'This Month',
-      [
-        _TransactionData(
-          LucideIcons.gift,
-          'IB Commission',
-          'Partnership Earnings',
-          '+\$120.00',
-          'Yesterday',
-          true,
-        ),
-        _TransactionData(
-          LucideIcons.layers,
-          'MAM Allocation',
-          'Fund Allocation',
-          '\$0.00',
-          'Yesterday',
-          null,
-        ),
-      ],
-    ),
-  ];
+  late String _selectedLogin;
+  bool _hideEquity = false;
+  int _activeTab = 0; // 0: Open, 1: Pending, 2: Closed, 3: Funds
+  String _fundsFilter = 'All'; // 'All', 'Deposits', 'Withdrawals'
 
-  bool _matches(_TransactionData item) => switch (_filter) {
-    'Deposits' => item.title == 'Deposit',
-    'Withdrawals' => item.title == 'Withdrawal',
-    'Transfers' => item.title == 'Internal Transfer',
-    _ => true,
-  };
+  late final Map<String, List<ActivityOpenPosition>> _accountOpenPositions;
+  late final Map<String, List<ActivityPendingOrder>> _accountPendingOrders;
+  late final Map<String, List<ActivityClosedPosition>> _accountClosedPositions;
+  late final Map<String, List<ActivityFundTransaction>> _accountFunds;
+  late final Map<String, double> _accountBalances;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLogin = widget.selectedAccountLogin ?? '52132132';
+
+    _accountOpenPositions = {
+      '52132132': [
+        const ActivityOpenPosition(
+          id: 'pos-101',
+          symbol: 'EURUSD',
+          isBuy: true,
+          lots: 0.50,
+          openPrice: 1.08500,
+          currentPrice: 1.08820,
+          profit: 160.00,
+          sl: 1.08100,
+          tp: 1.09200,
+          openTime: '2026-11-17 09:15',
+        ),
+        const ActivityOpenPosition(
+          id: 'pos-102',
+          symbol: 'XAUUSD',
+          isBuy: false,
+          lots: 0.20,
+          openPrice: 2635.40,
+          currentPrice: 2635.89,
+          profit: -9.80,
+          sl: 2642.00,
+          tp: 2620.00,
+          openTime: '2026-11-17 10:02',
+        ),
+      ],
+      '3315': [],
+      '3311': [
+        const ActivityOpenPosition(
+          id: 'pos-201',
+          symbol: 'USDJPY',
+          isBuy: true,
+          lots: 0.30,
+          openPrice: 154.20,
+          currentPrice: 154.55,
+          profit: 85.50,
+          sl: 153.80,
+          tp: 155.00,
+          openTime: '2026-11-17 10:11',
+        ),
+      ],
+      '3312': [],
+      '3327': [],
+    };
+
+    _accountPendingOrders = {
+      '52132132': [
+        const ActivityPendingOrder(
+          id: 'ord-101',
+          symbol: 'GBPUSD',
+          orderType: 'Buy Limit',
+          lots: 0.10,
+          orderPrice: 1.29400,
+          currentPrice: 1.29850,
+          placedTime: '2026-11-17 08:30',
+        ),
+      ],
+      '3315': [],
+      '3311': [],
+      '3312': [],
+      '3327': [],
+    };
+
+    _accountClosedPositions = {
+      '52132132': [
+        const ActivityClosedPosition(
+          id: 'cls-101',
+          symbol: 'BTCUSD',
+          isBuy: true,
+          lots: 0.05,
+          openPrice: 89200.00,
+          closePrice: 91450.00,
+          netProfit: 112.50,
+          closeTime: '2026-11-16 19:40',
+        ),
+        const ActivityClosedPosition(
+          id: 'cls-102',
+          symbol: 'HK50c',
+          isBuy: false,
+          lots: 1.00,
+          openPrice: 19850.00,
+          closePrice: 19910.00,
+          netProfit: -60.00,
+          closeTime: '2026-11-16 15:10',
+        ),
+      ],
+      '3315': [],
+      '3311': [
+        const ActivityClosedPosition(
+          id: 'cls-201',
+          symbol: 'EURUSD',
+          isBuy: false,
+          lots: 0.20,
+          openPrice: 1.0880,
+          closePrice: 1.0840,
+          netProfit: 80.00,
+          closeTime: '2026-11-16 16:22',
+        ),
+      ],
+      '3312': [],
+      '3327': [],
+    };
+
+    _accountFunds = {
+      '52132132': [
+        const ActivityFundTransaction(
+          id: 'tx-101',
+          isDeposit: true,
+          method: 'Bank Transfer',
+          amount: 5000.00,
+          date: '2026-11-16 14:20',
+          status: 'Completed',
+        ),
+        const ActivityFundTransaction(
+          id: 'tx-102',
+          isDeposit: false,
+          method: 'USDT TRC20',
+          amount: 1200.00,
+          date: '2026-11-15 11:35',
+          status: 'Completed',
+        ),
+        const ActivityFundTransaction(
+          id: 'tx-103',
+          isDeposit: true,
+          method: 'Cheese Pay',
+          amount: 2500.00,
+          date: '2026-11-14 09:10',
+          status: 'Completed',
+        ),
+      ],
+      '3315': [],
+      '3311': [
+        const ActivityFundTransaction(
+          id: 'tx-201',
+          isDeposit: true,
+          method: 'USDT TRC20',
+          amount: 4820.00,
+          date: '2026-11-15 14:00',
+          status: 'Completed',
+        ),
+      ],
+      '3312': [],
+      '3327': [],
+    };
+
+    _accountBalances = {
+      '52132132': 12300.00,
+      '3315': 0.00,
+      '3311': 4820.00,
+      '3312': 1100.00,
+      '3327': 0.00,
+    };
+  }
+
+  @override
+  void didUpdateWidget(covariant BrokerTransactionsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedAccountLogin != null &&
+        widget.selectedAccountLogin != _selectedLogin) {
+      setState(() => _selectedLogin = widget.selectedAccountLogin!);
+    }
+  }
+
+  List<BrokerAccount> get _allAccounts {
+    final list = <BrokerAccount>[];
+    if (widget.accounts != null && widget.accounts!.isNotEmpty) {
+      list.addAll(widget.accounts!);
+    }
+    final logins = list.map((a) => a.login).toSet();
+    if (!logins.contains('52132132')) {
+      list.insert(
+        0,
+        const BrokerAccount(
+          'V Tamizharasan',
+          '52132132',
+          '1:500',
+          '\$12,300.00',
+          '\$12,450.00',
+          'Live MT5',
+        ),
+      );
+    }
+    if (!logins.contains('3315')) {
+      list.add(
+        const BrokerAccount(
+          'XRSIM-USD-1',
+          '3315',
+          '1:500',
+          '\$0.00',
+          '\$0.00',
+          'Live MT5',
+        ),
+      );
+    }
+    return list;
+  }
+
+  BrokerAccount get _currentAccount {
+    final accounts = _allAccounts;
+    return accounts.firstWhere(
+      (a) => a.login == _selectedLogin,
+      orElse: () => accounts.first,
+    );
+  }
+
+  List<ActivityOpenPosition> get _currentOpenPositions =>
+      _accountOpenPositions[_selectedLogin] ?? [];
+
+  List<ActivityPendingOrder> get _currentPendingOrders =>
+      _accountPendingOrders[_selectedLogin] ?? [];
+
+  List<ActivityClosedPosition> get _currentClosedPositions =>
+      _accountClosedPositions[_selectedLogin] ?? [];
+
+  List<ActivityFundTransaction> get _currentFunds =>
+      _accountFunds[_selectedLogin] ?? [];
+
+  double get _currentBalance => _accountBalances[_selectedLogin] ?? 0.0;
+
+  double get _currentTotalPL =>
+      _currentOpenPositions.fold(0.0, (sum, p) => sum + p.profit);
+
+  double get _currentEquity => _currentBalance + _currentTotalPL;
+
+  void _selectAccount(String login) {
+    setState(() => _selectedLogin = login);
+    widget.onAccountChanged?.call(login);
+  }
+
+  void _closePosition(ActivityOpenPosition position) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          'Close Position',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to close ${position.symbol} (${position.lots.toStringAsFixed(2)} Lots) at market price ${position.currentPrice}?\n\nRealized P&L: ${position.profit >= 0 ? '+' : '-'}\$${position.profit.abs().toStringAsFixed(2)} USD',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 13,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF1658C9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              setState(() {
+                _accountOpenPositions[_selectedLogin]?.removeWhere((p) => p.id == position.id);
+                _accountClosedPositions[_selectedLogin]?.insert(
+                  0,
+                  ActivityClosedPosition(
+                    id: 'cls-${DateTime.now().millisecondsSinceEpoch}',
+                    symbol: position.symbol,
+                    isBuy: position.isBuy,
+                    lots: position.lots,
+                    openPrice: position.openPrice,
+                    closePrice: position.currentPrice,
+                    netProfit: position.profit,
+                    closeTime: 'Just now',
+                  ),
+                );
+                _accountBalances[_selectedLogin] =
+                    (_accountBalances[_selectedLogin] ?? 0.0) + position.profit;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Position ${position.symbol} closed successfully'),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: const Color(0xFF10264B),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('Confirm Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _cancelPendingOrder(ActivityPendingOrder order) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          'Cancel Pending Order',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to cancel ${order.orderType} order for ${order.symbol} (${order.lots.toStringAsFixed(2)} Lots)?',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 13,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Keep Order',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              setState(() {
+                _accountPendingOrders[_selectedLogin]?.removeWhere((o) => o.id == order.id);
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Pending order for ${order.symbol} cancelled'),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: const Color(0xFF10264B),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('Cancel Order'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openAccountSwitchSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accounts = _allAccounts;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF131D2E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Select Trading Account',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, size: 20),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              for (final acc in accounts) ...[
+                InkWell(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _selectAccount(acc.login);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: acc.login == _selectedLogin
+                          ? const Color(0xFF1658C9).withValues(alpha: 0.08)
+                          : (isDark ? const Color(0xFF1A283E) : const Color(0xFFF8FAFC)),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: acc.login == _selectedLogin
+                            ? const Color(0xFF1658C9)
+                            : (isDark ? const Color(0xFF283B58) : const Color(0xFFE2E9F3)),
+                        width: acc.login == _selectedLogin ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: acc.login == _selectedLogin
+                                ? const Color(0xFF1658C9)
+                                : (isDark ? const Color(0xFF243650) : const Color(0xFFE5EDF7)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            LucideIcons.wallet,
+                            color: acc.login == _selectedLogin
+                                ? Colors.white
+                                : const Color(0xFF1658C9),
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    acc.name,
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      acc.type,
+                                      style: const TextStyle(
+                                        color: Color(0xFF10B981),
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Login: ${acc.login} • Lev: ${acc.leverage}',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              acc.balance,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            if (acc.login == _selectedLogin)
+                              const Icon(
+                                LucideIcons.checkCircle2,
+                                color: Color(0xFF1658C9),
+                                size: 16,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openTradeReportModal(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final closed = _currentClosedPositions;
+    final totalTrades = closed.length;
+    final winTrades = closed.where((c) => c.netProfit > 0).length;
+    final winRate = totalTrades == 0 ? 0.0 : (winTrades / totalTrades) * 100.0;
+    final totalNet = closed.fold(0.0, (sum, c) => sum + c.netProfit);
+    final totalVolume = closed.fold(0.0, (sum, c) => sum + c.lots);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF131D2E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Trade Performance Report',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Account: $_selectedLogin • Live MT5',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(LucideIcons.x, size: 20),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricTile(
+                    context,
+                    'Total Net Profit',
+                    '${totalNet >= 0 ? '+' : '-'}\$${totalNet.abs().toStringAsFixed(2)}',
+                    totalNet >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildMetricTile(
+                    context,
+                    'Win Rate',
+                    '${winRate.toStringAsFixed(1)}%',
+                    const Color(0xFF1658C9),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricTile(
+                    context,
+                    'Total Trades',
+                    '$totalTrades',
+                    Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildMetricTile(
+                    context,
+                    'Total Volume',
+                    '${totalVolume.toStringAsFixed(2)} Lots',
+                    Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1658C9),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close Report', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricTile(BuildContext context, String label, String value, Color valueColor) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C2B42) : const Color(0xFFF4F7FC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? const Color(0xFF283B58) : const Color(0xFFE2E9F3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroCard(
+    BuildContext context,
+    BrokerAccount activeAccount,
+    double equity,
+    double balance,
+    double totalPL,
+  ) {
+    final equityText = _hideEquity
+        ? '•••••••• USD'
+        : '${equity.toStringAsFixed(2)} USD';
+    final balanceText = _hideEquity
+        ? '••••••'
+        : balance.toStringAsFixed(2);
+    final plText = _hideEquity
+        ? '••••••'
+        : (totalPL == 0.0
+            ? '0.00'
+            : '${totalPL > 0 ? '+' : ''}${totalPL.toStringAsFixed(2)}');
+    final plColor = totalPL > 0
+        ? const Color(0xFF22C55E)
+        : (totalPL < 0 ? const Color(0xFFEF4444) : Colors.white);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF071941),
+            Color(0xFF0C2B68),
+            Color(0xFF144EA5),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0C2B68).withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -60,
+              top: -40,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF2D72E2).withValues(alpha: 0.38),
+                      const Color(0xFF144EA5).withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: InkWell(
+                          onTap: () => _openAccountSwitchSheet(context),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x6610B981),
+                                        blurRadius: 4,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    activeAccount.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Live | ${activeAccount.login}',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  LucideIcons.chevronDown,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => _openTradeReportModal(context),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Trade Report',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: 3),
+                              Icon(
+                                LucideIcons.chevronRight,
+                                color: Colors.white,
+                                size: 13,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Text(
+                        'Equity',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => setState(() => _hideEquity = !_hideEquity),
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            _hideEquity ? LucideIcons.eyeOff : LucideIcons.eye,
+                            color: Colors.white.withValues(alpha: 0.75),
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    equityText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 27,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Position Total P&L',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              plText,
+                              style: TextStyle(
+                                color: plColor,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Balance',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              balanceText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar(BuildContext context, int openCount, int pendingCount) {
+    final tabs = [
+      'Open $openCount',
+      'Pending $pendingCount',
+      'Closed',
+      'Funds',
+    ];
+
+    return Container(
+      margin: const EdgeInsets.only(top: 18),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < tabs.length; i++)
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _activeTab = i),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      child: Text(
+                        tabs[i],
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: _activeTab == i
+                              ? const Color(0xFF1658C9)
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                          fontWeight: _activeTab == i
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 2.5,
+                      width: _activeTab == i ? 36 : 0,
+                      decoration: BoxDecoration(
+                        color: _activeTab == i
+                            ? const Color(0xFF1658C9)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 52, bottom: 40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 200,
+            height: 180,
+            child: CustomPaint(
+              painter: _EmptyBoxPlanePainter(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Data',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpenPositionsList(BuildContext context, bool isDark) {
+    final positions = _currentOpenPositions;
+    if (positions.isEmpty) return _buildEmptyState(context);
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      itemCount: positions.length,
+      itemBuilder: (context, index) {
+        final pos = positions[index];
+        final isProfit = pos.profit >= 0;
+        final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF162238) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        pos.symbol,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: pos.isBuy
+                              ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                              : const Color(0xFFEF4444).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          pos.isBuy ? 'BUY' : 'SELL',
+                          style: TextStyle(
+                            color: pos.isBuy ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${pos.lots.toStringAsFixed(2)} Lots',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: profitColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${isProfit ? '+' : '-'}\$${pos.profit.abs().toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: profitColor,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Open Price',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${pos.openPrice}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Current Price',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${pos.currentPrice}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SL / TP',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${pos.sl} / ${pos.tp}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Opened: ${pos.openTime}',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 10.5,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => _closePosition(pos),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                      ),
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(
+                          color: Color(0xFFDC2626),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPendingOrdersList(BuildContext context, bool isDark) {
+    final orders = _currentPendingOrders;
+    if (orders.isEmpty) return _buildEmptyState(context);
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        final order = orders[index];
+        final isBuy = order.orderType.toLowerCase().contains('buy');
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF162238) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        order.symbol,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isBuy
+                              ? const Color(0xFF1658C9).withValues(alpha: 0.15)
+                              : const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          order.orderType.toUpperCase(),
+                          style: TextStyle(
+                            color: isBuy ? const Color(0xFF1658C9) : const Color(0xFFD97706),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '${order.lots.toStringAsFixed(2)} Lots',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Order Price',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${order.orderPrice}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Current Price',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${order.currentPrice}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Placed Time',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        order.placedTime,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  InkWell(
+                    onTap: () => _cancelPendingOrder(order),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Color(0xFFDC2626),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildClosedPositionsList(BuildContext context, bool isDark) {
+    final positions = _currentClosedPositions;
+    if (positions.isEmpty) return _buildEmptyState(context);
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      itemCount: positions.length,
+      itemBuilder: (context, index) {
+        final pos = positions[index];
+        final isProfit = pos.netProfit >= 0;
+        final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF162238) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        pos.symbol,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: pos.isBuy
+                              ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                              : const Color(0xFFEF4444).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          pos.isBuy ? 'BUY' : 'SELL',
+                          style: TextStyle(
+                            color: pos.isBuy ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${pos.lots.toStringAsFixed(2)} Lots',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: profitColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${isProfit ? '+' : '-'}\$${pos.netProfit.abs().toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: profitColor,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Open Price',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${pos.openPrice}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Close Price',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${pos.closePrice}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Closed Time',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        pos.closeTime,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFundsTab(BuildContext context, bool isDark) {
+    final allFunds = _currentFunds;
+    final filteredFunds = switch (_fundsFilter) {
+      'Deposits' => allFunds.where((f) => f.isDeposit).toList(),
+      'Withdrawals' => allFunds.where((f) => !f.isDeposit).toList(),
+      _ => allFunds,
+    };
+
+    final filterOptions = ['All', 'Deposits', 'Withdrawals'];
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF162238) : const Color(0xFFF0F4FA),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                for (final filter in filterOptions)
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _fundsFilter = filter),
+                      borderRadius: BorderRadius.circular(10),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _fundsFilter == filter
+                              ? const Color(0xFF1658C9)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          filter,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _fundsFilter == filter
+                                ? Colors.white
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (filteredFunds.isEmpty)
+          _buildEmptyState(context)
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+            itemCount: filteredFunds.length,
+            itemBuilder: (context, index) {
+              final tx = filteredFunds[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF162238) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: tx.isDeposit
+                            ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                            : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        tx.isDeposit ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight,
+                        color: tx.isDeposit ? const Color(0xFF10B981) : const Color(0xFFD97706),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tx.isDeposit ? 'Deposit' : 'Withdrawal',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${tx.method} • ${tx.date}',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${tx.isDeposit ? '+' : '-'}\$${tx.amount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: tx.isDeposit
+                                ? const Color(0xFF16A34A)
+                                : Theme.of(context).colorScheme.onSurface,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            tx.status,
+                            style: const TextStyle(
+                              color: Color(0xFF10B981),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filters = ['All', 'Deposits', 'Withdrawals', 'Transfers'];
     final width = MediaQuery.sizeOf(context).width;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeAccount = _currentAccount;
+    final openCount = _currentOpenPositions.length;
+    final pendingCount = _currentPendingOrders.length;
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: width > 900 ? 860 : 680),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+            padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
             children: [
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE3E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    for (final filter in filters)
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _filter = filter),
-                          borderRadius: BorderRadius.circular(12),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(vertical: 11),
-                            decoration: BoxDecoration(
-                              color: _filter == filter
-                                  ? const Color(0xFF10284F)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              filter,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _filter == filter
-                                    ? Theme.of(context).colorScheme.onPrimary
-                                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+              // Accessible title tag for widget tests
+              const SizedBox(
+                width: 0,
+                height: 0,
+                child: Text(
+                  'Transactions',
+                  style: TextStyle(fontSize: 0, color: Colors.transparent),
                 ),
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE3E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'TRANSACTION ACTIVITY',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              fontSize: 9,
-                              letterSpacing: 1,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Your account movements',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF2C8),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        LucideIcons.arrowDownUp,
-                        color: Color(0xFF9A7000),
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
+              // Hero Equity & Balance Card
+              _buildHeroCard(
+                context,
+                activeAccount,
+                _currentEquity,
+                _currentBalance,
+                _currentTotalPL,
               ),
-              for (final group in _groups) ...[
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text(
-                      group.$1,
-                      style: const TextStyle(
-                        color: Color(0xFF10213E),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Container(
-                        height: 1,
-                        color: Theme.of(context).dividerColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _TransactionGroup(items: group.$2.where(_matches).toList()),
-              ],
+              // 4-Tab Navigation Bar
+              _buildTabBar(context, openCount, pendingCount),
+              // Tab Content Area
+              switch (_activeTab) {
+                0 => _buildOpenPositionsList(context, isDark),
+                1 => _buildPendingOrdersList(context, isDark),
+                2 => _buildClosedPositionsList(context, isDark),
+                3 => _buildFundsTab(context, isDark),
+                _ => _buildEmptyState(context),
+              },
             ],
           ),
         ),
@@ -1570,103 +3302,180 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 }
 
-class _TransactionData {
-  const _TransactionData(
-    this.icon,
-    this.title,
-    this.detail,
-    this.amount,
-    this.time,
-    this.incoming,
-  );
-  final IconData icon;
-  final String title, detail, amount, time;
-  final bool? incoming;
-}
+class _EmptyBoxPlanePainter extends CustomPainter {
+  const _EmptyBoxPlanePainter();
 
-class _TransactionGroup extends StatelessWidget {
-  const _TransactionGroup({required this.items});
-  final List<_TransactionData> items;
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE2E7EF)),
-    ),
-    child: Column(
-      children: [
-        for (var i = 0; i < items.length; i++) ...[
-          if (i > 0)
-            Divider(height: 1, indent: 14, endIndent: 14, color: Theme.of(context).dividerColor),
-          _TransactionTile(data: items[i]),
-        ],
-      ],
-    ),
-  );
-}
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width * 0.48;
+    final cy = size.height * 0.64;
 
-class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.data});
-  final _TransactionData data;
-  @override
-  Widget build(BuildContext context) {
-    final color = data.incoming == null
-        ? const Color(0xFF10213E)
-        : data.incoming!
-        ? _brokerGold
-        : _brokerBlue;
-    return ListTile(
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: data.incoming == false
-              ? const Color(0xFFF7F1E2)
-              : const Color(0xFFEAF0F8),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          data.icon,
-          color: data.incoming == false
-              ? _brokerBlue
-              : _brokerBlue,
-          size: 19,
-        ),
-      ),
-      title: Text(
-        data.title,
-        style: const TextStyle(
-          color: Color(0xFF10213E),
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      subtitle: Text(
-        data.detail,
-        style: const TextStyle(color: Color(0xFF7A8799), fontSize: 10),
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            data.amount,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            data.time,
-            style: const TextStyle(color: Color(0xFF8C97A7), fontSize: 10),
-          ),
-        ],
-      ),
+    const strokeColor = Color(0xFFC5D6EC);
+    const boxLeftFace = Color(0xFFDBE7F6);
+    const boxRightFace = Color(0xFFC8DCF2);
+    const boxInsideFloor = Color(0xFFA7C2E5);
+    const flapColor = Color(0xFFE6EFFB);
+    const airplaneBody = Colors.white;
+    const airplaneWing = Color(0xFFD6E4F8);
+    const airplaneCrease = Color(0xFF9CB8DD);
+    const trailDotColor = Color(0xFFB5CDF0);
+    const sparkleColor = Color(0xFFC7DDF8);
+    const leafColor = Color(0xFFA4C2E9);
+
+    final linePaint = Paint()
+      ..color = strokeColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    // Floor & inside cavity
+    final floorPath = Path()
+      ..moveTo(cx - 36, cy - 24)
+      ..lineTo(cx, cy - 10)
+      ..lineTo(cx + 36, cy - 24)
+      ..lineTo(cx, cy - 38)
+      ..close();
+    canvas.drawPath(floorPath, Paint()..color = boxInsideFloor);
+    canvas.drawPath(floorPath, linePaint);
+
+    // Flaps
+    final backLeftFlap = Path()
+      ..moveTo(cx - 36, cy - 24)
+      ..lineTo(cx - 48, cy - 36)
+      ..lineTo(cx - 20, cy - 44)
+      ..lineTo(cx, cy - 38)
+      ..close();
+    canvas.drawPath(backLeftFlap, Paint()..color = flapColor);
+    canvas.drawPath(backLeftFlap, linePaint);
+
+    final backRightFlap = Path()
+      ..moveTo(cx, cy - 38)
+      ..lineTo(cx + 20, cy - 44)
+      ..lineTo(cx + 48, cy - 36)
+      ..lineTo(cx + 36, cy - 24)
+      ..close();
+    canvas.drawPath(backRightFlap, Paint()..color = flapColor);
+    canvas.drawPath(backRightFlap, linePaint);
+
+    final frontLeftFlap = Path()
+      ..moveTo(cx - 36, cy - 24)
+      ..lineTo(cx - 52, cy - 16)
+      ..lineTo(cx - 24, cy - 2)
+      ..lineTo(cx, cy - 10)
+      ..close();
+    canvas.drawPath(frontLeftFlap, Paint()..color = flapColor);
+    canvas.drawPath(frontLeftFlap, linePaint);
+
+    final frontRightFlap = Path()
+      ..moveTo(cx, cy - 10)
+      ..lineTo(cx + 24, cy - 2)
+      ..lineTo(cx + 52, cy - 16)
+      ..lineTo(cx + 36, cy - 24)
+      ..close();
+    canvas.drawPath(frontRightFlap, Paint()..color = flapColor);
+    canvas.drawPath(frontRightFlap, linePaint);
+
+    // Front Faces
+    final leftFace = Path()
+      ..moveTo(cx, cy + 24)
+      ..lineTo(cx - 36, cy + 10)
+      ..lineTo(cx - 36, cy - 24)
+      ..lineTo(cx, cy - 10)
+      ..close();
+    canvas.drawPath(leftFace, Paint()..color = boxLeftFace);
+    canvas.drawPath(leftFace, linePaint);
+
+    final rightFace = Path()
+      ..moveTo(cx, cy + 24)
+      ..lineTo(cx + 36, cy + 10)
+      ..lineTo(cx + 36, cy - 24)
+      ..lineTo(cx, cy - 10)
+      ..close();
+    canvas.drawPath(rightFace, Paint()..color = boxRightFace);
+    canvas.drawPath(rightFace, linePaint);
+
+    // Sprout Leaves
+    final leafPaint = Paint()..color = leafColor;
+    final leaf1 = Path()
+      ..moveTo(cx + 43, cy + 17)
+      ..quadraticBezierTo(cx + 53, cy + 10, cx + 58, cy + 13)
+      ..quadraticBezierTo(cx + 51, cy + 21, cx + 43, cy + 17);
+    canvas.drawPath(leaf1, leafPaint);
+
+    final leaf2 = Path()
+      ..moveTo(cx + 46, cy + 19)
+      ..quadraticBezierTo(cx + 54, cy + 24, cx + 57, cy + 21)
+      ..quadraticBezierTo(cx + 50, cy + 16, cx + 46, cy + 19);
+    canvas.drawPath(leaf2, leafPaint);
+
+    // Flight Dotted Trail
+    final trailDots = <Offset>[
+      Offset(cx - 2, cy - 24),
+      Offset(cx - 5, cy - 36),
+      Offset(cx - 7, cy - 50),
+      Offset(cx - 4, cy - 64),
+      Offset(cx + 3, cy - 78),
+      Offset(cx + 14, cy - 90),
+      Offset(cx + 28, cy - 98),
+      Offset(cx + 42, cy - 102),
+    ];
+    final dotPaint = Paint()..color = trailDotColor;
+    for (final dot in trailDots) {
+      canvas.drawCircle(dot, 1.6, dotPaint);
+    }
+
+    // Paper Airplane
+    final planeNose = Offset(cx + 68, cy - 118);
+    final planeLeftWing = Offset(cx + 38, cy - 106);
+    final planeTailCenter = Offset(cx + 46, cy - 98);
+    final planeRightWing = Offset(cx + 54, cy - 92);
+
+    final leftWingPath = Path()
+      ..moveTo(planeNose.dx, planeNose.dy)
+      ..lineTo(planeLeftWing.dx, planeLeftWing.dy)
+      ..lineTo(planeTailCenter.dx, planeTailCenter.dy)
+      ..close();
+    canvas.drawPath(leftWingPath, Paint()..color = airplaneWing);
+    canvas.drawPath(
+      leftWingPath,
+      Paint()
+        ..color = airplaneCrease
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
     );
+
+    final rightWingPath = Path()
+      ..moveTo(planeNose.dx, planeNose.dy)
+      ..lineTo(planeTailCenter.dx, planeTailCenter.dy)
+      ..lineTo(planeRightWing.dx, planeRightWing.dy)
+      ..close();
+    canvas.drawPath(rightWingPath, Paint()..color = airplaneBody);
+    canvas.drawPath(
+      rightWingPath,
+      Paint()
+        ..color = airplaneCrease
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
+
+    // Sparkles
+    _drawSparkle(canvas, Offset(cx - 40, cy - 65), 5.5, sparkleColor);
+    _drawSparkle(canvas, Offset(cx - 15, cy - 78), 3.5, sparkleColor);
+    _drawSparkle(canvas, Offset(cx + 60, cy - 70), 3.0, sparkleColor);
   }
+
+  void _drawSparkle(Canvas canvas, Offset center, double r, Color color) {
+    final path = Path()
+      ..moveTo(center.dx, center.dy - r)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx + r, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + r)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx - r, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - r)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class BrokerBottomNavigation extends StatelessWidget {

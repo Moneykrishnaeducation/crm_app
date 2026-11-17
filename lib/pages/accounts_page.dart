@@ -63,7 +63,14 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
             Expanded(child: SizedBox(
               height: 48,
               child: FilledButton.icon(
-                onPressed: () => showDialog<void>(context: context, builder: (_) => _OpenLiveAccountDialog(onCreated: widget.onAccountCreated)),
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  backgroundColor: Colors.transparent,
+                  barrierColor: Colors.black54,
+                  builder: (_) => _OpenLiveAccountSheet(onCreated: widget.onAccountCreated),
+                ),
                 style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
                 icon: const Icon(LucideIcons.plusCircle, size: 18),
                 label: const Text('Open Account', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
@@ -283,14 +290,14 @@ class BrokerTradeRecord {
   final double profit;
 }
 
-class _OpenLiveAccountDialog extends StatefulWidget {
-  const _OpenLiveAccountDialog({required this.onCreated});
+class _OpenLiveAccountSheet extends StatefulWidget {
+  const _OpenLiveAccountSheet({required this.onCreated});
   final ValueChanged<BrokerAccount> onCreated;
   @override
-  State<_OpenLiveAccountDialog> createState() => _OpenLiveAccountDialogState();
+  State<_OpenLiveAccountSheet> createState() => _OpenLiveAccountSheetState();
 }
 
-class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
+class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   final _nameController = TextEditingController();
   final _masterPassword = TextEditingController();
   final _investorPassword = TextEditingController();
@@ -312,22 +319,35 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
     final cs = theme.colorScheme;
     final border = theme.dividerColor;
     final muted = cs.onSurfaceVariant;
-    final width = MediaQuery.sizeOf(context).width;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.symmetric(horizontal: width < 380 ? 10 : 20, vertical: 18),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 460, maxHeight: MediaQuery.sizeOf(context).height * .9),
-        child: Container(
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: border),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, 14))],
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 17, 12, 15),
+    final screen = MediaQuery.sizeOf(context);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, -8))],
+              ),
+              child: Column(mainAxisSize: MainAxisSize.max, children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 2),
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(color: muted.withValues(alpha: .45), borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 12, 15),
               child: Row(children: [
                 Container(width: 44, height: 44, decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)), child: Icon(LucideIcons.walletCards, color: cs.primary, size: 22)),
                 const SizedBox(width: 12),
@@ -437,7 +457,9 @@ class _OpenLiveAccountDialogState extends State<_OpenLiveAccountDialog> {
                 ]),
               ]),
             ),
-          ]),
+              ]),
+            ),
+          ),
         ),
       ),
     );

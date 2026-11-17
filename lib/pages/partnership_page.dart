@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -179,7 +181,13 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
           ),
         ),
         const SizedBox(height: 8),
-        _PartnershipShortcut(icon: LucideIcons.qrCode, label: 'Referral & QR studio', onTap: _showReferralQr),
+        _PartnershipShortcut(
+          icon: LucideIcons.qrCode,
+          label: 'Referral & QR studio',
+          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => const BrokerReferralStudioPage(),
+          )),
+        ),
       ]);
 
   Widget _buildPartnerColumn() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -192,6 +200,294 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
         ),
       ]);
 }
+
+
+class BrokerReferralStudioPage extends StatefulWidget {
+  const BrokerReferralStudioPage({super.key});
+  @override
+  State<BrokerReferralStudioPage> createState() => _BrokerReferralStudioPageState();
+}
+
+class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
+  static const routes = <_ReferralRoute>[
+    _ReferralRoute('Gold', 'X0RCGYVH7A'),
+    _ReferralRoute('Gold-80', 'UENYAZWK4'),
+    _ReferralRoute('Test', '4Z7G7TKF4J'),
+    _ReferralRoute('test', 'IQ57TSDY38'),
+    _ReferralRoute('crm', '9BSFFEGGTL'),
+    _ReferralRoute('test3', '6F81L1IUK5'),
+    _ReferralRoute('INR IB-LIVE', 'INRIBLIVE01'),
+  ];
+  int selected = 2;
+  _ReferralRoute get route => routes[selected];
+  String get referralUrl => 'https://client.vtindex.com/?ref=\${route.code}';
+
+  Future<void> copyText(String value, String label) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copied')));
+  }
+
+  Future<void> share(String platform) async {
+    final encoded = Uri.encodeComponent('Join my VT Index partner network: $referralUrl');
+    final uri = switch (platform) {
+      'WhatsApp' => Uri.parse('https://wa.me/?text=$encoded'),
+      'Telegram' => Uri.parse('https://t.me/share/url?url=\${Uri.encodeComponent(referralUrl)}'),
+      'X' => Uri.parse('https://twitter.com/intent/tweet?text=$encoded'),
+      'LinkedIn' => Uri.parse('https://www.linkedin.com/sharing/share-offsite/?url=\${Uri.encodeComponent(referralUrl)}'),
+      'Email' => Uri(scheme: 'mailto', queryParameters: {'subject': 'My VT Index referral link', 'body': referralUrl}),
+      _ => Uri.parse('https://www.facebook.com/sharer/sharer.php?u=\${Uri.encodeComponent(referralUrl)}'),
+    };
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFFF1F5FB),
+    body: SafeArea(child: LayoutBuilder(builder: (context, constraints) {
+      final wide = constraints.maxWidth >= 900;
+      return SingleChildScrollView(
+        padding: EdgeInsets.all(wide ? 18 : 12),
+        child: Center(child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              IconButton(onPressed: () => Navigator.maybePop(context), icon: const Icon(LucideIcons.chevronLeft, color: Color(0xFF315CEB))),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Dashboard  >  Marketing Tools  >  Referral Studio', style: TextStyle(color: Color(0xFF315CEB), fontSize: 10, fontWeight: FontWeight.w700)),
+                SizedBox(height: 4),
+                Text('Referral & QR Studio', style: TextStyle(color: Color(0xFF102746), fontSize: 22, fontWeight: FontWeight.w900)),
+                Text('Distribute profiles, share links and generate branded scannable cards.', style: TextStyle(color: Color(0xFF52647D), fontSize: 11)),
+              ])),
+              if (wide) FilledButton.icon(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open Client List to add a client.'))), icon: const Icon(LucideIcons.userPlus, size: 14), label: const Text('Add Client')),
+            ]),
+            const SizedBox(height: 18),
+            GridView.count(
+              crossAxisCount: wide ? 4 : 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: wide ? 2.25 : 1.75,
+              children: const [
+                _ReferralMetric(icon: LucideIcons.usersRound, label: 'NETWORK CLIENTS', value: '1', note: 'Access all referral trees', color: Color(0xFF3858EA)),
+                _ReferralMetric(icon: LucideIcons.wallet, label: 'TOTAL COMMISSION', value: '\$0.00', note: 'Earned lifetime payout', color: Color(0xFF00B98B)),
+                _ReferralMetric(icon: LucideIcons.trendingUp, label: 'TRADED VOLUME', value: '0.0 L', note: 'Standard lots executed', color: Color(0xFF9B4CF0)),
+                _ReferralMetric(icon: LucideIcons.zap, label: 'ACTIVE REFERRAL LINKS', value: '7', note: 'View commission profiles', color: Color(0xFFFFA126)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (wide)
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(child: _profileCard()),
+                const SizedBox(width: 16),
+                SizedBox(width: 300, child: _qrCard()),
+              ])
+            else ...[
+              _profileCard(),
+              const SizedBox(height: 14),
+              _qrCard(),
+            ],
+          ]),
+        )),
+      );
+    })),
+  );
+
+  Widget _profileCard() => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(19), border: Border.all(color: const Color(0xFFE2E9F3))),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(LucideIcons.users, color: Color(0xFF315CEB), size: 17),
+        const SizedBox(width: 9),
+        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Commission Profiles', style: TextStyle(color: Color(0xFF102746), fontSize: 13, fontWeight: FontWeight.w800)),
+          Text('Select any profile to view its dedicated referral link, metrics, and shareable materials.', style: TextStyle(color: Color(0xFF65758B), fontSize: 10)),
+        ])),
+        const _ReferralPremiumPill(),
+      ]),
+      const SizedBox(height: 12),
+      const Divider(height: 1, color: Color(0xFFEAF0F7)),
+      const SizedBox(height: 10),
+      Wrap(spacing: 6, runSpacing: 7, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        const Text('SELECT ROUTE:', style: TextStyle(color: Color(0xFF53647B), fontSize: 9, fontWeight: FontWeight.w700)),
+        for (var i = 0; i < routes.length; i++)
+          ChoiceChip(
+            label: Text(routes[i].name), selected: selected == i, onSelected: (_) => setState(() => selected = i),
+            showCheckmark: false, visualDensity: VisualDensity.compact, side: BorderSide.none,
+            backgroundColor: const Color(0xFFF0F4F9), selectedColor: const Color(0xFF3858EA),
+            labelStyle: TextStyle(color: selected == i ? Colors.white : const Color(0xFF43536B), fontSize: 9, fontWeight: FontWeight.w700),
+          ),
+      ]),
+      const SizedBox(height: 12),
+      const Divider(height: 1, color: Color(0xFFEAF0F7)),
+      const SizedBox(height: 18),
+      Row(children: [
+        Container(width: 52, height: 52, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF5578F6), Color(0xFF3152DE)]), borderRadius: BorderRadius.circular(16)), child: const Icon(LucideIcons.chartNoAxesColumn, color: Colors.white, size: 24)),
+        const SizedBox(width: 13),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Flexible(child: Text(route.name.toUpperCase(), style: const TextStyle(color: Color(0xFF102746), fontSize: 13, fontWeight: FontWeight.w800))), const SizedBox(width: 6), const _ReferralPremiumPill()]),
+          const SizedBox(height: 3),
+          const Text('Tier 024', style: TextStyle(color: Color(0xFF53647B), fontSize: 10)),
+          const SizedBox(height: 7),
+          const Text('REFERRAL CODE', style: TextStyle(color: Color(0xFF728198), fontSize: 8, fontWeight: FontWeight.w800)),
+          Row(children: [
+            Text(route.code, style: const TextStyle(color: Color(0xFF315CEB), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .7)),
+            IconButton(visualDensity: VisualDensity.compact, onPressed: () => copyText(route.code, 'Referral code'), icon: const Icon(LucideIcons.copy, color: Color(0xFF91A0B4), size: 13)),
+          ]),
+        ])),
+        if (MediaQuery.sizeOf(context).width > 600) ...[
+          const _ReferralMiniStat(label: 'EARNINGS', value: '\$0.00', icon: LucideIcons.trendingUp, color: Color(0xFF00B98B)),
+          const SizedBox(width: 18),
+          const _ReferralMiniStat(label: 'VOLUME', value: '0.0 L', icon: LucideIcons.activity, color: Color(0xFF4285F4)),
+          const SizedBox(width: 18),
+          const _ReferralMiniStat(label: 'CLIENTS', value: '0', icon: LucideIcons.usersRound, color: Color(0xFFB54BEF)),
+        ],
+      ]),
+      const SizedBox(height: 16),
+      Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(color: const Color(0xFFFBFCFE), border: Border.all(color: const Color(0xFFE2E9F3)), borderRadius: BorderRadius.circular(13)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [const Expanded(child: Text('Active Commission Route', style: TextStyle(color: Color(0xFF102746), fontSize: 12, fontWeight: FontWeight.w800)),), const _ReferralPremiumPill()]),
+          const SizedBox(height: 3),
+          const Text('Share this verified link or referral code to automatically route clients into this tier.', style: TextStyle(color: Color(0xFF65758B), fontSize: 10)),
+          const SizedBox(height: 11),
+          _ReferralLinkRow(label: 'DIRECT REFERRAL CODE', value: route.code, buttonLabel: 'Copy Code', onPressed: () => copyText(route.code, 'Referral code')),
+          const SizedBox(height: 8),
+          _ReferralLinkRow(label: 'DIRECT REGISTRATION URL', value: referralUrl, buttonLabel: 'Copy Link', onPressed: () => copyText(referralUrl, 'Referral link'), trailing: IconButton(tooltip: 'Open link', onPressed: () => launchUrl(Uri.parse(referralUrl), mode: LaunchMode.externalApplication), icon: const Icon(LucideIcons.externalLink, size: 15))),
+        ]),
+      ),
+    ]),
+  );
+
+  Widget _qrCard() => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(color: const Color(0xFFF8FBFF), borderRadius: BorderRadius.circular(21), border: Border.all(color: const Color(0xFFE1EAF5)), boxShadow: const [BoxShadow(color: Color(0x100B1D35), blurRadius: 18, offset: Offset(0, 7))]),
+    child: Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(LucideIcons.orbit, color: Color(0xFFC99A35), size: 27),
+        const SizedBox(width: 9),
+        const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('VT INDEX · REFERRAL STUDIO', style: TextStyle(color: Color(0xFF315CEB), fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          Text('Share your partner QR', style: TextStyle(color: Color(0xFF102746), fontSize: 12, fontWeight: FontWeight.w800)),
+          Text('Scan to join directly', style: TextStyle(color: Color(0xFF728198), fontSize: 9)),
+        ]),
+      ]),
+      const SizedBox(height: 15),
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17), border: Border.all(color: const Color(0xFFDCE5F0)), boxShadow: const [BoxShadow(color: Color(0x140B1D35), blurRadius: 16, offset: Offset(0, 7))]),
+        child: QrImageView(key: ValueKey(referralUrl), data: referralUrl, version: QrVersions.auto, size: 178, backgroundColor: Colors.white, eyeStyle: const QrEyeStyle(color: Color(0xFF182C83)), dataModuleStyle: const QrDataModuleStyle(color: Color(0xFF182C83))),
+      ),
+      const SizedBox(height: 12),
+      const Text('REFERRAL CODE', style: TextStyle(color: Color(0xFF718198), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .8)),
+      const SizedBox(height: 4),
+      Text(route.code, style: const TextStyle(color: Color(0xFFB86D00), fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.4)),
+      const SizedBox(height: 13),
+      Wrap(alignment: WrapAlignment.center, spacing: 9, runSpacing: 8, children: [
+        _ReferralSocialButton(icon: LucideIcons.messageCircle, color: const Color(0xFF00B98B), tooltip: 'WhatsApp', onTap: () => share('WhatsApp')),
+        _ReferralSocialButton(icon: LucideIcons.send, color: const Color(0xFF25A9E8), tooltip: 'Telegram', onTap: () => share('Telegram')),
+        _ReferralSocialButton(icon: LucideIcons.atSign, color: Colors.black, tooltip: 'X', onTap: () => share('X')),
+        _ReferralSocialButton(icon: LucideIcons.linkedin, color: const Color(0xFF1769AA), tooltip: 'LinkedIn', onTap: () => share('LinkedIn')),
+        _ReferralSocialButton(icon: LucideIcons.mail, color: const Color(0xFF8B28D9), tooltip: 'Email', onTap: () => share('Email')),
+        _ReferralSocialButton(icon: LucideIcons.share2, color: const Color(0xFF3858EA), tooltip: 'Copy share link', onTap: () => copyText(referralUrl, 'Referral link')),
+      ]),
+      const SizedBox(height: 14),
+      SizedBox(width: double.infinity, child: FilledButton.icon(
+        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PDF export is not yet connected.'))),
+        icon: const Icon(LucideIcons.download, size: 14),
+        label: const Text('DOWNLOAD PDF CARD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+        style: FilledButton.styleFrom(backgroundColor: const Color(0xFF3858EA), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+      )),
+    ]),
+  );
+}
+
+class _ReferralRoute {
+  const _ReferralRoute(this.name, this.code);
+  final String name, code;
+}
+
+class _ReferralMetric extends StatelessWidget {
+  const _ReferralMetric({required this.icon, required this.label, required this.value, required this.note, required this.color});
+  final IconData icon;
+  final String label, value, note;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE3EAF3))),
+    child: Row(children: [
+      Container(width: 38, height: 38, decoration: BoxDecoration(color: color.withValues(alpha: .12), shape: BoxShape.circle), child: Icon(icon, color: color, size: 18)),
+      const SizedBox(width: 10),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF53647B), fontSize: 8, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: Color(0xFF102746), fontSize: 20, fontWeight: FontWeight.w900)),
+        Text(note, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w600)),
+      ])),
+    ]),
+  );
+}
+
+class _ReferralMiniStat extends StatelessWidget {
+  const _ReferralMiniStat({required this.label, required this.value, required this.icon, required this.color});
+  final String label, value;
+  final IconData icon;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    Icon(icon, color: color, size: 15),
+    const SizedBox(height: 4),
+    Text(label, style: const TextStyle(color: Color(0xFF728198), fontSize: 8, fontWeight: FontWeight.w800)),
+    Text(value, style: const TextStyle(color: Color(0xFF102746), fontSize: 11, fontWeight: FontWeight.w900)),
+  ]);
+}
+
+class _ReferralPremiumPill extends StatelessWidget {
+  const _ReferralPremiumPill();
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(color: const Color(0xFFFFF8E7), border: Border.all(color: const Color(0xFFFFD76A)), borderRadius: BorderRadius.circular(20)),
+    child: const Text('♕ PREMIUM', style: TextStyle(color: Color(0xFFB97800), fontSize: 8, fontWeight: FontWeight.w900)),
+  );
+}
+
+class _ReferralLinkRow extends StatelessWidget {
+  const _ReferralLinkRow({required this.label, required this.value, required this.buttonLabel, required this.onPressed, this.trailing});
+  final String label, value, buttonLabel;
+  final VoidCallback onPressed;
+  final Widget? trailing;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFE1E8F1)), borderRadius: BorderRadius.circular(11)),
+    child: Row(children: [
+      const Icon(LucideIcons.link, color: Color(0xFF3858EA), size: 15),
+      const SizedBox(width: 8),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(color: Color(0xFF738198), fontSize: 8, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 3),
+        SelectableText(value, maxLines: 1, style: const TextStyle(color: Color(0xFF102746), fontSize: 9, fontWeight: FontWeight.w700)),
+      ])),
+      const SizedBox(width: 6),
+      FilledButton.icon(onPressed: onPressed, icon: const Icon(LucideIcons.copy, size: 11), label: Text(buttonLabel, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800)), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF3858EA), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9), minimumSize: Size.zero)),
+      if (trailing != null) trailing!,
+    ]),
+  );
+}
+
+class _ReferralSocialButton extends StatelessWidget {
+  const _ReferralSocialButton({required this.icon, required this.color, required this.tooltip, required this.onTap});
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Tooltip(message: tooltip, child: InkWell(
+    onTap: onTap, borderRadius: BorderRadius.circular(30),
+    child: Container(width: 30, height: 30, decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 14)),
+  ));
+}
+
 
 class _PartnerProfile {
   const _PartnerProfile({required this.name, required this.code, required this.clients, this.primary = false});

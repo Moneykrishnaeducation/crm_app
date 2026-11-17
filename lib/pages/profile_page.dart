@@ -595,146 +595,269 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            height: 92,
-            width: double.infinity,
+            height: 164,
             child: Stack(
-              fit: StackFit.expand,
+              clipBehavior: Clip.none,
               children: [
-                CustomPaint(painter: CelestialBannerPainter(theme: _bannerTheme)),
                 Positioned(
-                  right: 12,
-                  top: 12,
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 130,
+                  child: CustomPaint(
+                    painter: _ProfileCoverPainter(),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+                Positioned(
+                  top: 14,
+                  right: 14,
                   child: Material(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.white.withValues(alpha: 0.82),
+                    borderRadius: BorderRadius.circular(24),
                     child: InkWell(
                       onTap: _showChangeBannerSheet,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                        padding: EdgeInsets.symmetric(horizontal: 11, vertical: 8),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.image, color: Colors.white, size: 14),
+                            Icon(LucideIcons.image, color: _profileNavy, size: 14),
                             SizedBox(width: 6),
-                            Text('Edit cover', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                            Text(
+                              'Edit cover',
+                              style: TextStyle(
+                                color: _profileNavy,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Transform.translate(
-                  offset: const Offset(0, -30),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                Positioned(
+                  left: 18,
+                  bottom: 0,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Stack(
-                        children: [
-                          Container(
-                            width: 68,
-                            height: 68,
-                            decoration: BoxDecoration(
-                              color: _avatarBg,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 4),
-                              boxShadow: _profileShadow,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
-                              style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.bold),
-                            ),
+                      Container(
+                        width: 86,
+                        height: 86,
+                        decoration: BoxDecoration(
+                          color: _avatarBg,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 5),
+                          boxShadow: _profileShadow,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 34,
+                            fontWeight: FontWeight.bold,
                           ),
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Material(
-                              color: _profileBlue,
-                              shape: const CircleBorder(),
-                              child: InkWell(
-                                customBorder: const CircleBorder(),
-                                onTap: _showChangePhotoSheet,
-                                child: const SizedBox(
-                                  width: 27,
-                                  height: 27,
-                                  child: Icon(LucideIcons.camera, color: Colors.white, size: 13),
-                                ),
+                        ),
+                      ),
+                      Positioned(
+                        right: -2,
+                        bottom: 2,
+                        child: Material(
+                          color: _profileBlue,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: _showChangePhotoSheet,
+                            child: const SizedBox(
+                              width: 31,
+                              height: 31,
+                              child: Icon(
+                                LucideIcons.camera,
+                                color: Colors.white,
+                                size: 15,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 5),
-                        child: OutlinedButton.icon(
-                          onPressed: _showEditDetailsSheet,
-                          icon: const Icon(LucideIcons.pencil, size: 14),
-                          label: const Text('Edit profile'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _profileBlue,
-                            side: const BorderSide(color: _profileBlueBorder),
-                            visualDensity: VisualDensity.compact,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                Transform.translate(
-                  offset: const Offset(0, -20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 7,
+                        spacing: 6,
                         runSpacing: 5,
                         children: [
-                          Text(_name, style: const TextStyle(color: _profileNavy, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
-                          const Icon(LucideIcons.badgeCheck, color: _profileGold, size: 18),
+                          Text(
+                            _name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _profileNavy,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const Icon(
+                            LucideIcons.badgeCheck,
+                            color: _profileGold,
+                            size: 17,
+                          ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: _profileGreenLight, borderRadius: BorderRadius.circular(20)),
-                            child: const Text('VERIFIED', style: TextStyle(color: _profileGreen, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _profileGreenLight,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'VERIFIED',
+                              style: TextStyle(
+                                color: _profileGreen,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      const Text('Client account · VT Index', style: TextStyle(color: _profileMuted, fontSize: 12, fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 13),
-                      _mobileContactLine(LucideIcons.mail, _email),
-                      const SizedBox(height: 8),
-                      _mobileContactLine(LucideIcons.phone, _phone),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(child: _mobileMetric('ACCOUNT LEVEL', 'Tier 3', LucideIcons.shieldCheck)),
-                          const SizedBox(width: 10),
-                          Expanded(child: _mobileMetric('PROFILE STATUS', 'Complete', LucideIcons.circleCheck)),
-                        ],
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _showEditDetailsSheet,
+                      icon: const Icon(LucideIcons.pencil, size: 14),
+                      label: const Text('Edit profile'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _profileBlue,
+                        side: const BorderSide(color: _profileBlueBorder),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 9,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'Client account  ·  VT Index',
+                  style: TextStyle(
+                    color: _profileMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _profileBlueLight.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _profileBlueBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _profileContactItem(
+                          icon: LucideIcons.mail,
+                          value: _email,
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 30,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        color: _profileBlueBorder,
+                      ),
+                      Expanded(
+                        child: _profileContactItem(
+                          icon: LucideIcons.phone,
+                          value: _phone,
+                        ),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _mobileMetric(
+                        'ACCOUNT LEVEL',
+                        'Tier 3',
+                        LucideIcons.layers,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _mobileMetric(
+                        'PROFILE STATUS',
+                        'Complete',
+                        LucideIcons.shieldCheck,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _profileContactItem({
+    required IconData icon,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: _profileBlue, size: 17),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _profileNavy,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -3757,6 +3880,67 @@ class _BannerOptionTile extends StatelessWidget {
 }
 
 /// Custom painter rendering a celestial / mountain landscape banner.
+class _ProfileCoverPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bounds = Offset.zero & size;
+    final background = Paint()
+      ..shader = const LinearGradient(
+        colors: [
+          Color(0xFFEAF3FF),
+          Color(0xFFBBD9FF),
+          Color(0xFF4C9AF5),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(bounds);
+    canvas.drawRect(bounds, background);
+
+    final paleWave = Path()
+      ..moveTo(0, size.height * 0.58)
+      ..cubicTo(
+        size.width * 0.18, size.height * 0.10,
+        size.width * 0.34, size.height * 0.88,
+        size.width * 0.57, size.height * 0.48,
+      )
+      ..cubicTo(
+        size.width * 0.76, size.height * 0.12,
+        size.width * 0.84, size.height * 0.02,
+        size.width, size.height * 0.22,
+      )
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+    canvas.drawPath(
+      paleWave,
+      Paint()..color = Colors.white.withValues(alpha: 0.48),
+    );
+
+    final whiteWave = Path()
+      ..moveTo(0, size.height * 0.78)
+      ..cubicTo(
+        size.width * 0.22, size.height * 0.40,
+        size.width * 0.40, size.height * 0.98,
+        size.width * 0.62, size.height * 0.62,
+      )
+      ..cubicTo(
+        size.width * 0.80, size.height * 0.34,
+        size.width * 0.90, size.height * 0.46,
+        size.width, size.height * 0.66,
+      )
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(
+      whiteWave,
+      Paint()..color = Colors.white.withValues(alpha: 0.62),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class CelestialBannerPainter extends CustomPainter {
   const CelestialBannerPainter({required this.theme});
 

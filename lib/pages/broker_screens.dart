@@ -2445,7 +2445,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
               const SizedBox(height: 3),
               Text('MT5 Master  ·  ID ${master.login}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
             ])),
-            _statusBadge(master.status),
+            _masterStatusBadge(master.status),
             const SizedBox(width: 3),
             Icon(LucideIcons.chevronRight, size: 17, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ]),
@@ -2458,6 +2458,22 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
             Expanded(child: _miniMetric('BALANCE', '\$0.00')),
           ]),
         ]),
+      ),
+    ),
+  );
+
+  Widget _masterStatusBadge(String status) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(
+      color: status == 'Active' ? const Color(0xFFE9FBF4) : const Color(0xFFFFECEC),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      status,
+      style: TextStyle(
+        color: status == 'Active' ? const Color(0xFF059669) : const Color(0xFFDC4444),
+        fontSize: 9,
+        fontWeight: FontWeight.w800,
       ),
     ),
   );

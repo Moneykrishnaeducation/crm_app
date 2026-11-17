@@ -624,6 +624,10 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     final losses = trades.where((t) => t.profit < 0).length;
     final winRate = trades.isEmpty ? 0.0 : wins * 100 / trades.length;
     final totalProfit = trades.fold<double>(0, (sum, t) => sum + t.profit);
+    final winningTrades = trades.where((t) => t.profit > 0).toList();
+    final losingTrades = trades.where((t) => t.profit < 0).toList();
+    final averageWin = winningTrades.isEmpty ? 0.0 : winningTrades.fold<double>(0, (sum, t) => sum + t.profit) / winningTrades.length;
+    final averageLoss = losingTrades.isEmpty ? 0.0 : losingTrades.fold<double>(0, (sum, t) => sum + t.profit.abs()) / losingTrades.length;
     final history = a.equityHistory;
     final rangeCount = switch (_range) { '1D' => 3, '1W' => 5, '1M' => 8, '3M' => 10, 'YTD' => 12, _ => history.length };
     final chartHistory = history.length > rangeCount ? history.sublist(history.length - rangeCount) : history;
@@ -790,9 +794,9 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 }).toList()),
                 const SizedBox(height: 9),
                 Row(children: [
-                  Expanded(child: stat(LucideIcons.trendingUp, 'Total trades', '${a.openPositions.length + trades.length}', blue)),
+                  Expanded(child: stat(LucideIcons.receiptText, 'Closed trades shown', '${trades.length}', blue)),
                   const SizedBox(width: 9),
-                  Expanded(child: stat(LucideIcons.target, 'Win rate', trades.isEmpty ? '—' : '${winRate.toStringAsFixed(1)}%', blue)),
+                  Expanded(child: stat(LucideIcons.target, 'Sample win rate', trades.isEmpty ? '—' : '${winRate.toStringAsFixed(1)}%', blue)),
                 ]),
                 const SizedBox(height: 9),
                 Row(children: [
@@ -810,8 +814,49 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               _detailInfoRow(context, LucideIcons.server, 'Server', a.server ?? 'Not provided', fg, muted, border),
               _detailInfoRow(context, LucideIcons.gauge, 'Leverage', a.leverage, fg, muted, border),
               _detailInfoRow(context, LucideIcons.coins, 'Currency', a.currency, fg, muted, border),
+              _detailInfoRow(context, LucideIcons.shieldCheck, 'Account type', a.type, fg, muted, border),
             ])),
+            const SizedBox(height: 12),
+            _detailSectionCard(
+              title: 'Open positions',
+              subtitle: '${a.openPositions.length} currently open',
+              icon: LucideIcons.activity,
+              surface: surface, border: border, fg: fg, muted: muted,
+              children: [
+                if (a.openPositions.isEmpty)
+                  _detailEmptyLine('No open positions on this account.', muted)
+                else
+                  ...a.openPositions.map((p) => _detailTradeRow(
+                    context, p.symbol,
+                    '${p.side.toUpperCase()} • ${p.volume} lots • Entry ${p.openPrice} • Mark ${p.currentPrice}',
+                    _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border,
+                  )),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _detailSectionCard(
+              title: 'Recent closed trades',
+              subtitle: '${trades.length} records in this preview',
+              icon: LucideIcons.history,
+              surface: surface, border: border, fg: fg, muted: muted,
+              children: [
+                if (trades.isEmpty)
+                  _detailEmptyLine('Closed trades will appear after MT5 history sync.', muted)
+                else
+                  ...trades.map((t) => _detailTradeRow(
+                    context, t.symbol,
+                    '${t.side.toUpperCase()} • ${t.volume} lots • ${t.closedAt}',
+                    _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border,
+                  )),
+              ],
+            ),
           ] else if (_tab == 'Trading Stats') ...[
+            Row(children: [
+              Expanded(child: stat(LucideIcons.trendingUp, 'Average win', _money(averageWin), green)),
+              const SizedBox(width: 9),
+              Expanded(child: stat(LucideIcons.trendingDown, 'Average loss', _money(-averageLoss), red)),
+            ]),
+            const SizedBox(height: 10),
             Row(children: [
               Expanded(child: stat(LucideIcons.chartLine, 'Net closed P/L', _money(totalProfit), totalProfit >= 0 ? green : red)),
               const SizedBox(width: 9),
@@ -822,13 +867,13 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               Text('Open positions', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               if (a.openPositions.isEmpty) Text('No open positions.', style: TextStyle(color: muted, fontSize: 10)),
-              ...a.openPositions.map((p) => _detailTradeRow(context, p.symbol, '${p.side.toUpperCase()} • ${p.volume} lots', _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border)),
+              ...a.openPositions.map((p) => _detailTradeRow(context, p.symbol, '${p.side.toUpperCase()} • ${p.volume} lots • Entry ${p.openPrice} • Mark ${p.currentPrice}', _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border)),
             ])),
           ] else ...[
             Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Trade history', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
-              if (trades.isEmpty) Text('Closed trades will appear after MT5 history sync.', style: TextStyle(color: muted, fontSize: 10)),
+              if (trades.isEmpty) Text('No closed trades are available in this account preview.', style: TextStyle(color: muted, fontSize: 10)),
               ...trades.map((t) => _detailTradeRow(context, t.symbol, '${t.side.toUpperCase()} • ${t.volume} lots • ${t.closedAt}', _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border)),
             ])),
           ],
@@ -864,6 +909,43 @@ Widget _detailTradeRow(BuildContext context, String symbol, String detail, Strin
     Container(height: 1, color: border),
   ]),
 );
+Widget _detailEmptyLine(String message, Color muted) => Padding(
+  padding: const EdgeInsets.symmetric(vertical: 14),
+  child: Row(children: [
+    Icon(LucideIcons.info, size: 15, color: muted),
+    const SizedBox(width: 8),
+    Expanded(child: Text(message, style: TextStyle(color: muted, fontSize: 10))),
+  ]),
+);
+
+Widget _detailSectionCard({
+  required String title,
+  required String subtitle,
+  required IconData icon,
+  required Color surface,
+  required Color border,
+  required Color fg,
+  required Color muted,
+  required List<Widget> children,
+}) => Container(
+  padding: const EdgeInsets.all(14),
+  decoration: BoxDecoration(
+    color: surface,
+    borderRadius: BorderRadius.circular(17),
+    border: Border.all(color: border),
+  ),
+  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Row(children: [
+      Icon(icon, color: const Color(0xFF39B5FF), size: 18),
+      const SizedBox(width: 8),
+      Expanded(child: Text(title, style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800))),
+      Text(subtitle, style: TextStyle(color: muted, fontSize: 9)),
+    ]),
+    const SizedBox(height: 8),
+    ...children,
+  ]),
+);
+
 class _EquityHistoryPainter extends CustomPainter {
   const _EquityHistoryPainter({required this.values, required this.color, required this.gridColor});
   final List<double> values; final Color color, gridColor;
@@ -880,6 +962,18 @@ class _EquityHistoryPainter extends CustomPainter {
       final x = rect.width * i / (values.length - 1); final y = rect.bottom - ((values[i] - minV) / range) * rect.height;
       if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
     }
+    final fillPath = Path.from(path)
+      ..lineTo(rect.right, rect.bottom)
+      ..lineTo(rect.left, rect.bottom)
+      ..close();
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [color.withValues(alpha: .25), color.withValues(alpha: .015)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(rect)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, Paint()..color = color..strokeWidth = 2.4..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
   }
   @override

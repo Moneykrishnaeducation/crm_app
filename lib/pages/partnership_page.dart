@@ -804,7 +804,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                 'Share this verified link or referral code to automatically route clients into this tier.',
                 style: TextStyle(color: Color(0xFF65758B), fontSize: 10),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 11),
               _ReferralLinkRow(
                 label: 'DIRECT REFERRAL CODE',
                 value: route.code,

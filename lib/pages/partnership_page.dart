@@ -168,7 +168,15 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
           ),
         ),
         const SizedBox(height: 8),
-        const _PartnershipShortcut(icon: LucideIcons.layers, label: 'Commission history'),
+        _PartnershipShortcut(
+          icon: LucideIcons.layers,
+          label: 'Commission history',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const BrokerCommissionHistoryPage(),
+            ),
+          ),
+        ),
         const SizedBox(height: 8),
         _PartnershipShortcut(icon: LucideIcons.qrCode, label: 'Referral & QR studio', onTap: _showReferralQr),
         const SizedBox(height: 8),
@@ -667,5 +675,356 @@ class _TreePill extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
     decoration: BoxDecoration(color: color.withValues(alpha: .09), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: .22))),
     child: Text(label, style: TextStyle(color: dark && color == _muted ? const Color(0xFFCFD8E7) : color, fontSize: 8, fontWeight: FontWeight.w700)),
+  );
+}
+
+
+/// Commission history contains the two views shown in the supplied references.
+class BrokerCommissionHistoryPage extends StatefulWidget {
+  const BrokerCommissionHistoryPage({super.key});
+
+  @override
+  State<BrokerCommissionHistoryPage> createState() => _BrokerCommissionHistoryPageState();
+}
+
+class _BrokerCommissionHistoryPageState extends State<BrokerCommissionHistoryPage> {
+  int _selectedTab = 0;
+  int _ledgerRows = 15;
+  String _ledgerSearch = '';
+  String _symbolFilter = 'All Symbols (7)';
+  String _sort = 'Close Time (Newest First)';
+  String _withdrawFilter = 'Pending';
+
+  static const _ledger = <_CommissionLedgerEntry>[
+    _CommissionLedgerEntry(name: 'TEST CRN', email: 'crmsupportpro@gmail.com', initials: 'TC', deal: '20922385', order: '678898116', account: '3384', symbol: 'XAUUSD', lots: '0.01', pnl: -96.87, commission: 0.06, close: '5 Nov 2026, 07:08 am'),
+    _CommissionLedgerEntry(name: 'TEST CRN', email: 'crmsupportpro@gmail.com', initials: 'TC', deal: '20776912', order: '678886341', account: '3384', symbol: 'EURUSD', lots: '0.01', pnl: -0.35, commission: 0.06, close: '27 Oct 2026, 06:54 pm'),
+    _CommissionLedgerEntry(name: 'Lakshminarayanan A', email: 'nanianandane@gmail.com', initials: 'LA', deal: '18338543', order: '227958624', account: '2141717622', symbol: 'XAUUSD.r', lots: '0.01', pnl: 1.65, commission: 0.03, close: '2 Jun 2026, 08:06 pm'),
+    _CommissionLedgerEntry(name: 'Lakshminarayanan A', email: 'nanianandane@gmail.com', initials: 'LA', deal: '18338199', order: '226590488', account: '2141717622', symbol: 'XAUUSD.r', lots: '0.01', pnl: 20.88, commission: 0.03, close: '2 Jun 2026, 07:52 pm'),
+    _CommissionLedgerEntry(name: 'Lakshminarayanan A', email: 'nanianandane@gmail.com', initials: 'LA', deal: '18338200', order: '227142739', account: '2141717622', symbol: 'XAUUSD.r', lots: '0.01', pnl: 37.90, commission: 0.03, close: '2 Jun 2026, 07:52 pm'),
+    _CommissionLedgerEntry(name: 'Lakshminarayanan A', email: 'nanianandane@gmail.com', initials: 'LA', deal: '18331796', order: '227088303', account: '2141717622', symbol: 'XAUUSD.r', lots: '0.01', pnl: 2.30, commission: 0.03, close: '2 Jun 2026, 02:16 pm'),
+    _CommissionLedgerEntry(name: 'Lakshminarayanan A', email: 'nanianandane@gmail.com', initials: 'LA', deal: '18331476', order: '226962801', account: '2141717622', symbol: 'XAUUSD.r', lots: '0.01', pnl: 2.48, commission: 0.03, close: '2 Jun 2026, 01:52 pm'),
+  ];
+
+  List<_CommissionLedgerEntry> get _filteredLedger {
+    final q = _ledgerSearch.trim().toLowerCase();
+    return _ledger.where((e) {
+      final matchesSearch = q.isEmpty || <String>[e.name, e.email, e.deal, e.order, e.account, e.symbol].any((v) => v.toLowerCase().contains(q));
+      final matchesSymbol = _symbolFilter == 'All Symbols (7)' || e.symbol == _symbolFilter;
+      return matchesSearch && matchesSymbol;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _partnershipCanvas,
+      appBar: AppBar(
+        title: const Text('Commission History'),
+        leading: IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(LucideIcons.arrowLeft)),
+      ),
+      body: LayoutBuilder(builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 900;
+        return ListView(
+          padding: EdgeInsets.fromLTRB(wide ? 24 : 14, 14, wide ? 24 : 14, 28),
+          children: [
+            _commissionHeader(),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(color: Colors.white, border: Border.all(color: _partnershipBorder), borderRadius: BorderRadius.circular(13)),
+              child: Row(children: [
+                Expanded(child: _CommissionTab(label: 'Withdrawal History', selected: _selectedTab == 0, onTap: () => setState(() => _selectedTab = 0))),
+                Expanded(child: _CommissionTab(label: 'Commission Ledger', selected: _selectedTab == 1, onTap: () => setState(() => _selectedTab = 1))),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            if (_selectedTab == 0) _withdrawalContent(wide) else _ledgerContent(wide),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _commissionHeader() => Container(
+    padding: const EdgeInsets.all(19),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17), border: Border.all(color: _partnershipBorder), boxShadow: const [BoxShadow(color: Color(0x080B1D35), blurRadius: 14, offset: Offset(0, 4))]),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('IB PAYOUTS', style: TextStyle(color: _partnershipGold, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+      const SizedBox(height: 6),
+      const Text('Commission History', style: TextStyle(color: _partnershipNavy, fontSize: 21, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 5),
+      const Text('Review your commission withdrawal requests and trading commission activity.', style: TextStyle(color: _partnershipMuted, fontSize: 11)),
+    ]),
+  );
+
+  Widget _withdrawalContent(bool wide) => Container(
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: _partnershipBorder), boxShadow: const [BoxShadow(color: Color(0x080B1D35), blurRadius: 14, offset: Offset(0, 4))]),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 15, 16, 13),
+        child: Row(children: [
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Withdrawal History', style: TextStyle(color: _partnershipNavy, fontSize: 15, fontWeight: FontWeight.w800)),
+            SizedBox(height: 4),
+            Text('Your recent payout requests and their current status.', style: TextStyle(color: _partnershipMuted, fontSize: 11)),
+          ])),
+          _CommissionFilterChip(label: 'Pending', selected: _withdrawFilter == 'Pending', onTap: () => setState(() => _withdrawFilter = 'Pending')),
+          const SizedBox(width: 5),
+          _CommissionFilterChip(label: 'All requests', selected: _withdrawFilter == 'All requests', onTap: () => setState(() => _withdrawFilter = 'All requests')),
+        ]),
+      ),
+      const Divider(height: 1, color: _partnershipBorder),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: WidgetStateProperty.all(const Color(0xFFF7F9FC)),
+          headingRowHeight: 39,
+          dataRowMinHeight: 46,
+          dataRowMaxHeight: 52,
+          horizontalMargin: 15,
+          columnSpacing: wide ? 34 : 22,
+          columns: const [
+            DataColumn(label: _CommissionTableHeading('DATE')),
+            DataColumn(label: _CommissionTableHeading('ACCOUNT')),
+            DataColumn(label: _CommissionTableHeading('REQUEST TYPE')),
+            DataColumn(label: _CommissionTableHeading('AMOUNT')),
+            DataColumn(label: _CommissionTableHeading('STATUS')),
+            DataColumn(label: _CommissionTableHeading('NOTES')),
+          ],
+          rows: _withdrawFilter == 'Pending' || _withdrawFilter == 'All requests' ? [
+            DataRow(cells: [
+              const DataCell(_CommissionCell('30/1/2026, 10:30:34 am')),
+              const DataCell(_CommissionCell('2141715119', bold: true)),
+              DataCell(_CommissionPill('Commission withdrawal', color: _partnershipBlue)),
+              const DataCell(_CommissionCell('\$0.01', bold: true)),
+              DataCell(_CommissionPill('PENDING', color: const Color(0xFFE8A900), background: const Color(0xFFFFF5D9))),
+              const DataCell(_CommissionCell('Commission Withdrawal Request')),
+            ]),
+          ] : [],
+        ),
+      ),
+      const Divider(height: 1, color: _partnershipBorder),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        child: Row(children: [
+          const Text('ROWS:', style: TextStyle(color: _partnershipMuted, fontSize: 9, fontWeight: FontWeight.w800)),
+          const SizedBox(width: 8),
+          const _CommissionCell('10'),
+          const SizedBox(width: 9),
+          const Text('Showing 1–1 of 1', style: TextStyle(color: _partnershipMuted, fontSize: 10)),
+          const Spacer(),
+          const Text('PAGE 1 OF 1', style: TextStyle(color: _partnershipNavy, fontSize: 9, fontWeight: FontWeight.w800)),
+          const SizedBox(width: 8),
+          const Icon(LucideIcons.chevronLeft, color: Color(0xFFB7C1CF), size: 17),
+          const SizedBox(width: 8),
+          const Icon(LucideIcons.chevronRight, color: _partnershipGold, size: 17),
+        ]),
+      ),
+    ]),
+  );
+
+  Widget _ledgerContent(bool wide) {
+    final entries = _filteredLedger;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      GridView.count(
+        crossAxisCount: wide ? 4 : 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 9,
+        mainAxisSpacing: 9,
+        childAspectRatio: wide ? 2.05 : 1.8,
+        children: const [
+          _CommissionMetric(label: 'TOTAL EARNINGS', value: '\$197.39', subtitle: 'Calculated IB commission payouts', icon: LucideIcons.trendingUp, accent: Color(0xFF16B98B)),
+          _CommissionMetric(label: 'VOLUME TRADED', value: '0.02 L', subtitle: 'Executed standard lots', icon: LucideIcons.activity, accent: Color(0xFF5C9EEB)),
+          _CommissionMetric(label: 'LEDGER RECORDS', value: '47', subtitle: 'Closed commission deals', icon: LucideIcons.layers, accent: Color(0xFFB56CE2)),
+          _CommissionMetric(label: 'FILTERED SUM', value: '\$1.95', subtitle: '47 matching transactions', icon: LucideIcons.award, accent: Color(0xFFE8AD22)),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Container(
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _partnershipBorder)),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.all(13),
+            child: Wrap(spacing: 8, runSpacing: 8, children: [
+              SizedBox(width: wide ? 390 : double.infinity, child: TextField(
+                onChanged: (v) => setState(() => _ledgerSearch = v),
+                style: const TextStyle(color: _partnershipNavy, fontSize: 11),
+                decoration: InputDecoration(
+                  hintText: 'Search clients, emails, accounts, deal tickets, or symbols...',
+                  hintStyle: const TextStyle(color: Color(0xFF9AA9BC), fontSize: 10),
+                  prefixIcon: const Icon(LucideIcons.search, color: _partnershipBlue, size: 17),
+                  filled: true, fillColor: const Color(0xFFF7F9FC),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: _partnershipBorder)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: _partnershipBorder)),
+                ),
+              )),
+              _CommissionDropdown(value: _symbolFilter, values: const ['All Symbols (7)', 'XAUUSD', 'EURUSD', 'XAUUSD.r'], onChanged: (v) => setState(() => _symbolFilter = v)),
+              _CommissionDropdown(value: _sort, values: const ['Close Time (Newest First)', 'Close Time (Oldest First)'], onChanged: (v) => setState(() => _sort = v)),
+              _CommissionDropdown(value: 'Show: $_ledgerRows rows', values: const ['Show: 15 rows', 'Show: 25 rows', 'Show: 50 rows'], onChanged: (v) => setState(() => _ledgerRows = int.parse(v.split(' ')[1]))),
+            ]),
+          ),
+          const Divider(height: 1, color: _partnershipBorder),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(const Color(0xFFF0F4FA)),
+              headingRowHeight: 40,
+              dataRowMinHeight: 55,
+              dataRowMaxHeight: 60,
+              horizontalMargin: 14,
+              columnSpacing: 23,
+              columns: const [
+                DataColumn(label: _CommissionTableHeading('CLIENT PROFILE')),
+                DataColumn(label: _CommissionTableHeading('DEAL TICKET')),
+                DataColumn(label: _CommissionTableHeading('ORDER TICKET')),
+                DataColumn(label: _CommissionTableHeading('TRADING ACCOUNT')),
+                DataColumn(label: _CommissionTableHeading('SYMBOL')),
+                DataColumn(label: _CommissionTableHeading('VOLUME (LOTS)')),
+                DataColumn(label: _CommissionTableHeading('CLIENT P/L')),
+                DataColumn(label: _CommissionTableHeading('IB COMMISSION')),
+                DataColumn(label: _CommissionTableHeading('CLOSE TIME')),
+              ],
+              rows: [
+                for (final e in entries.take(_ledgerRows))
+                  DataRow(cells: [
+                    DataCell(SizedBox(width: 175, child: Row(children: [
+                      Container(width: 31, height: 31, alignment: Alignment.center, decoration: BoxDecoration(color: const Color(0xFFDCEAFF), borderRadius: BorderRadius.circular(10)), child: Text(e.initials, style: const TextStyle(color: _partnershipBlue, fontSize: 9, fontWeight: FontWeight.w800))),
+                      const SizedBox(width: 8),
+                      Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(e.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _partnershipNavy, fontSize: 10, fontWeight: FontWeight.w800)),
+                        Text(e.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _partnershipMuted, fontSize: 9)),
+                      ])),
+                    ]))),
+                    DataCell(_CommissionCell(e.deal, bold: true)),
+                    DataCell(_CommissionCell(e.order, color: const Color(0xFF9AA8BB))),
+                    DataCell(_CommissionPill(e.account, color: const Color(0xFF5596DF), background: const Color(0xFFEAF3FF))),
+                    DataCell(_CommissionPill(e.symbol, color: _partnershipNavy, background: Colors.white, outlined: true)),
+                    DataCell(_CommissionCell('${e.lots} Lots', bold: true)),
+                    DataCell(_CommissionCell('${e.pnl < 0 ? '↓' : '↑'} ${e.pnl < 0 ? '-' : ''}\$${e.pnl.abs().toStringAsFixed(2)}', color: e.pnl < 0 ? const Color(0xFFE66C83) : const Color(0xFF16B98B), bold: true)),
+                    DataCell(_CommissionCell('+\$${e.commission.toStringAsFixed(2)}', color: const Color(0xFF16B98B), bold: true)),
+                    DataCell(_CommissionCell(e.close)),
+                  ]),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: _partnershipBorder),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(children: [
+              Text('Showing 1–${entries.length} of 47', style: const TextStyle(color: _partnershipMuted, fontSize: 10)),
+              const Spacer(),
+              const Text('PAGE 1 OF 4', style: TextStyle(color: _partnershipNavy, fontSize: 9, fontWeight: FontWeight.w800)),
+              const SizedBox(width: 8),
+              const Icon(LucideIcons.chevronLeft, color: Color(0xFFB7C1CF), size: 18),
+              const SizedBox(width: 8),
+              const Icon(LucideIcons.chevronRight, color: _partnershipGold, size: 18),
+            ]),
+          ),
+        ]),
+      ),
+    ]);
+  }
+}
+
+class _CommissionLedgerEntry {
+  const _CommissionLedgerEntry({required this.name, required this.email, required this.initials, required this.deal, required this.order, required this.account, required this.symbol, required this.lots, required this.pnl, required this.commission, required this.close});
+  final String name, email, initials, deal, order, account, symbol, lots, close;
+  final double pnl, commission;
+}
+
+class _CommissionTab extends StatelessWidget {
+  const _CommissionTab({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Material(
+    color: selected ? const Color(0xFF1E4FE0) : Colors.transparent,
+    borderRadius: BorderRadius.circular(9),
+    child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(9), child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      child: Center(child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: selected ? Colors.white : _partnershipMuted, fontSize: 11, fontWeight: FontWeight.w800))),
+    )),
+  );
+}
+
+class _CommissionTableHeading extends StatelessWidget {
+  const _CommissionTableHeading(this.label);
+  final String label;
+  @override
+  Widget build(BuildContext context) => Text(label, style: const TextStyle(color: _partnershipMuted, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .2));
+}
+
+class _CommissionCell extends StatelessWidget {
+  const _CommissionCell(this.value, {this.bold = false, this.color = _partnershipNavy});
+  final String value;
+  final bool bold;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Text(value, style: TextStyle(color: color, fontSize: 10, fontWeight: bold ? FontWeight.w800 : FontWeight.w500));
+}
+
+class _CommissionPill extends StatelessWidget {
+  const _CommissionPill(this.label, {required this.color, this.background, this.outlined = false});
+  final String label;
+  final Color color;
+  final Color? background;
+  final bool outlined;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(color: background ?? color.withValues(alpha: .09), borderRadius: BorderRadius.circular(8), border: outlined ? Border.all(color: const Color(0xFF7B8798)) : null),
+    child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+  );
+}
+
+class _CommissionMetric extends StatelessWidget {
+  const _CommissionMetric({required this.label, required this.value, required this.subtitle, required this.icon, required this.accent});
+  final String label, value, subtitle;
+  final IconData icon, accent;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _partnershipBorder)),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [Expanded(child: Text(label, style: const TextStyle(color: _partnershipMuted, fontSize: 8, fontWeight: FontWeight.w800))), Icon(icon, color: accent, size: 16)]),
+      const Spacer(),
+      Text(value, style: TextStyle(color: accent, fontSize: 21, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 4),
+      Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _partnershipMuted, fontSize: 8)),
+    ]),
+  );
+}
+
+class _CommissionFilterChip extends StatelessWidget {
+  const _CommissionFilterChip({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+    decoration: BoxDecoration(color: selected ? const Color(0xFF1E4FE0) : Colors.white, border: Border.all(color: selected ? const Color(0xFF1E4FE0) : _partnershipBorder), borderRadius: BorderRadius.circular(8)),
+    child: Text(label.toUpperCase(), style: TextStyle(color: selected ? Colors.white : _partnershipMuted, fontSize: 8, fontWeight: FontWeight.w800)),
+  ));
+}
+
+class _CommissionDropdown extends StatelessWidget {
+  const _CommissionDropdown({required this.value, required this.values, required this.onChanged});
+  final String value;
+  final List<String> values;
+  final ValueChanged<String> onChanged;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: BoxDecoration(color: const Color(0xFFF7F9FC), border: Border.all(color: _partnershipBorder), borderRadius: BorderRadius.circular(10)),
+    child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+      value: value, isDense: true, icon: const Icon(LucideIcons.chevronDown, size: 14, color: _partnershipMuted),
+      style: const TextStyle(color: _partnershipNavy, fontSize: 9, fontWeight: FontWeight.w700),
+      items: [for (final item in values) DropdownMenuItem(value: item, child: Text(item, overflow: TextOverflow.ellipsis))],
+      onChanged: (v) { if (v != null) onChanged(v); },
+    )),
   );
 }

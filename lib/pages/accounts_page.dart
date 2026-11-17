@@ -27,8 +27,6 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     const panel = Color(0xFF101F34);
     const gold = Color(0xFFFFC533);
     const blue = Color(0xFF35A9F5);
-    const green = Color(0xFF08D879);
-    const red = Color(0xFFFF6268);
     final liveAccounts = widget.accounts.where((a) => a.type == 'Live MT5').toList();
     final filtered = liveAccounts.where((a) {
       final q = _query.trim().toLowerCase();
@@ -102,7 +100,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
           ]),
           const SizedBox(height: 12),
           if (filtered.isEmpty)
-            _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() { _query = ''; }); }, onOpen: () {})
+            _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() { _query = ''; }); })
           else
             ...filtered.map((account) => _ReferenceAccountCard(
               account: account,
@@ -241,10 +239,9 @@ class _AccountSparkPainter extends CustomPainter {
 }
 
 class _AccountEmptyState extends StatelessWidget {
-  const _AccountEmptyState({required this.searching, required this.onClear, required this.onOpen});
+  const _AccountEmptyState({required this.searching, required this.onClear});
   final bool searching;
   final VoidCallback onClear;
-  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -257,7 +254,7 @@ class _AccountEmptyState extends StatelessWidget {
       const SizedBox(height: 5),
       Text(searching ? 'Try another account name or login ID.' : 'Open a live account to start managing your trading activity.', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, height: 1.5)),
       const SizedBox(height: 14),
-      if (searching) OutlinedButton(onPressed: onClear, child: const Text('Clear filters')) else FilledButton.icon(onPressed: onOpen, icon: const Icon(LucideIcons.plus, size: 15), label: const Text('Open account')),
+      if (searching) OutlinedButton(onPressed: onClear, child: const Text('Clear search')),
     ]),
   );
 }

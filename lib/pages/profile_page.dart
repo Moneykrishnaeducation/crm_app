@@ -2572,13 +2572,7 @@ class _VerificationTabView extends StatelessWidget {
         const SizedBox(height: 22),
 
         // Verification documents are stacked vertically for a clear, full-width layout.
-        GridView.count(
-          crossAxisCount: 1,
-          crossAxisSpacing: 0,
-          mainAxisSpacing: 12,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.35,
+        Column(
           children: [
             _VerificationDocCard(
               title: 'Identity Verification',
@@ -2758,41 +2752,51 @@ class _VerificationDocCard extends StatelessWidget {
                 ),
                 child: Icon(icon, color: iconColor, size: 18),
               ),
-              const Spacer(),
-              Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: _profileGreen,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Flexible(
+              const SizedBox(width: 10),
+              Expanded(
                 child: Text(
-                  'Approved',
+                  title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
+                    color: c.text,
+                    fontSize: 14,
+                    height: 1.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: c.greenLight,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: c.greenBorder),
+                ),
+                child: const Text(
+                  'Approved',
+                  style: TextStyle(
                     color: _profileGreen,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Text(
-            title,
-            maxLines: 2,
+            badgeLabel,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: c.text,
-              fontSize: 13,
-              height: 1.2,
+              color: badgeTagColor,
+              fontSize: 9,
               fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
             ),
+          ),
           ),
           const SizedBox(height: 5),
           Text(
@@ -2807,9 +2811,8 @@ class _VerificationDocCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 9),
-          Expanded(
-            child: Text(
-              subtitle,
+          Text(
+            subtitle,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -3625,15 +3628,10 @@ class _PaymentMethodsTabView extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         // Bank and crypto payment cards are displayed one per row.
-        GridView.count(
-          crossAxisCount: 1,
-          crossAxisSpacing: 0,
-          mainAxisSpacing: 12,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 0.95,
+        Column(
           children: [
             _buildBankCard(context),
+            const SizedBox(height: 12),
             _buildCryptoCard(context),
           ],
         ),
@@ -3717,24 +3715,25 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 ),
                 child: Icon(icon, color: iconColor, size: 18),
               ),
-              const Spacer(),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: c.text,
+                    fontSize: 14,
+                    height: 1.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _connectedBadge(context, status),
               _buildEllipsisMenu(context, onMenu),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: c.text,
-              fontSize: 13,
-              height: 1.2,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 5),
-          _connectedBadge(context, status),
           const SizedBox(height: 8),
           Text(
             description,
@@ -3747,11 +3746,9 @@ class _PaymentMethodsTabView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 9),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: details,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: details,
           ),
           SizedBox(
             width: double.infinity,

@@ -317,17 +317,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 112),
         children: [
-          _PartnershipProfileCard(onTap: () {
-            Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => const BrokerClientTreePage(),
-            ));
-          }, colors: colors),
-          const SizedBox(height: 22),
-          _PartnershipSectionLabel(
-            'PARTNERSHIP OVERVIEW',
-            subtitle: 'Your network, performance and referral earnings',
-            colors: colors,
-          ),
+         const SizedBox(height: 22),
           const SizedBox(height: 9),
           _buildHeroCard(context, colors),
           const SizedBox(height: 12),
@@ -354,46 +344,6 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
           const SizedBox(height: 9),
           _buildToolsColumn(context, colors),
           const SizedBox(height: 22),
-          _PartnershipSectionLabel(
-            'NETWORK MANAGEMENT',
-            subtitle: 'Access client hierarchy, payout records and commission tools',
-            colors: colors,
-          ),
-          const SizedBox(height: 9),
-          _PartnershipMenuGroup(colors: colors, children: [
-            _PartnershipShortcut(
-              icon: LucideIcons.usersRound,
-              label: 'Client list',
-              subtitle: 'View network hierarchy, downline tiers and accounts',
-              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => const BrokerClientTreePage(),
-              )),
-            ),
-            _PartnershipShortcut(
-              icon: LucideIcons.layers,
-              label: 'Commission history',
-              subtitle: 'Review withdrawal requests and trading commission activity',
-              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => const BrokerCommissionLedgerPage(),
-              )),
-            ),
-            _PartnershipShortcut(
-              icon: LucideIcons.qrCode,
-              label: 'Referral & QR studio',
-              subtitle: 'Create and share profile links and branded QR cards',
-              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => const BrokerReferralStudioPage(),
-              )),
-            ),
-            _PartnershipShortcut(
-              icon: LucideIcons.wallet,
-              label: 'Commission withdrawal',
-              subtitle: 'Transfer eligible IB commission to a live MT5 account',
-              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => const BrokerCommissionWithdrawalPage(),
-              )),
-            ),
-          ]),
         ],
       ),
     );
@@ -2332,66 +2282,6 @@ class _PartnerProfile {
 }
 
 
-class _PartnershipProfileCard extends StatelessWidget {
-  const _PartnershipProfileCard({required this.onTap, required this.colors});
-  final VoidCallback onTap;
-  final _PartnershipColors colors;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: colors.card,
-    borderRadius: BorderRadius.circular(18),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: colors.border),
-          boxShadow: [BoxShadow(
-            color: colors.cardShadow,
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          )],
-        ),
-        child: Row(children: [
-          Container(
-            width: 49,
-            height: 49,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [Color(0xFF244D80), Color(0xFF4979A9)]),
-            ),
-            child: const Center(child: Text('I', style: TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800,
-            ))),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Flexible(child: Text(
-                  'INR-DEVOP B',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800),
-                )),
-                const SizedBox(width: 5),
-                Icon(LucideIcons.badgeCheck, color: colors.gold, size: 15),
-              ]),
-              const SizedBox(height: 4),
-              Text('iyyanar@vtindex.com', style: TextStyle(color: colors.muted, fontSize: 10)),
-              const SizedBox(height: 6),
-              Text('View profile', style: TextStyle(color: colors.blue, fontSize: 10, fontWeight: FontWeight.w700)),
-            ],
-          )),
-          Icon(LucideIcons.chevronRight, color: colors.muted, size: 19),
-        ]),
-      ),
-    ),
-  );
-}
 
 class _PartnershipSectionLabel extends StatelessWidget {
   const _PartnershipSectionLabel(this.label, {this.subtitle, required this.colors});
@@ -2412,34 +2302,6 @@ class _PartnershipSectionLabel extends StatelessWidget {
       if (subtitle != null) ...[
         const SizedBox(height: 3),
         Text(subtitle!, style: TextStyle(color: colors.muted, fontSize: 10)),
-      ],
-    ]),
-  );
-}
-
-class _PartnershipMenuGroup extends StatelessWidget {
-  const _PartnershipMenuGroup({required this.children, required this.colors});
-  final List<_PartnershipShortcut> children;
-  final _PartnershipColors colors;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 13),
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: colors.border),
-      boxShadow: [if (!colors.isDark) BoxShadow(
-        color: colors.cardShadow,
-        blurRadius: 10,
-        offset: const Offset(0, 3),
-      )],
-    ),
-    child: Column(children: [
-      for (var i = 0; i < children.length; i++) ...[
-        children[i],
-        if (i != children.length - 1)
-          Divider(height: 1, indent: 47, color: colors.border),
       ],
     ]),
   );
@@ -2644,12 +2506,14 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       useSafeArea: true,
       isDismissible: true,
       enableDrag: true,
+      useRootNavigator: true,
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
         ),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: 980,
@@ -3078,7 +2942,6 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
-    final compact = MediaQuery.sizeOf(context).width < 560;
     return Container(
       decoration: BoxDecoration(
         color: colors.card,
@@ -3134,14 +2997,6 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Fill out the required information to register a new client profile.',
-                        style: TextStyle(
-                          color: colors.muted,
-                          fontSize: 10,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -3154,18 +3009,14 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
             ),
           ),
           Divider(height: 1, color: colors.border),
-          Flexible(
-            fit: FlexFit.loose,
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _section('1', 'PERSONAL IDENTITY', LucideIcons.userRound, colors),
-                    const SizedBox(height: 11),
-                    _responsive(compact, [
+          Form(
+            key: _formKey,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                    _responsive([
                       _textField(
                         _name,
                         'FULL NAME',
@@ -3176,67 +3027,62 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                       ),
                       _birthDateField(colors),
                     ]),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Enter the legal name as it appears on identification documents.',
-                      style: TextStyle(color: colors.muted, fontSize: 9),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _textField(
+                            _email,
+                            'EMAIL ADDRESS',
+                            'client@company.com',
+                            LucideIcons.mail,
+                            colors,
+                            required: true,
+                            email: true,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _textField(
+                            _phone,
+                            'PHONE NUMBER',
+                            '+1 (555) 234-5678',
+                            LucideIcons.phone,
+                            colors,
+                            required: true,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 11),
-                    _section('2', 'CONTACT & TERRITORY', LucideIcons.phone, colors),
-                    const SizedBox(height: 11),
-                    _responsive(compact, [
-                      _textField(
-                        _email,
-                        'EMAIL ADDRESS',
-                        'client@company.com',
-                        LucideIcons.mail,
-                        colors,
-                        required: true,
-                        email: true,
-                      ),
-                      _textField(
-                        _phone,
-                        'PHONE NUMBER',
-                        '+1 (555) 234-5678',
-                        LucideIcons.phone,
-                        colors,
-                        required: true,
-                      ),
-                      _countryField(colors),
-                    ]),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Trading reports and updates will be sent to this address.',
-                      style: TextStyle(color: colors.muted, fontSize: 9),
-                    ),
-                    const SizedBox(height: 17),
-                    _section('3', 'IB REFERRAL ALLOCATION', LucideIcons.link, colors),
-                    const SizedBox(height: 11),
+                    const SizedBox(height: 7),
+                    _countryField(colors),
+                    const SizedBox(height: 8),
                     _partnerField(colors),
-                    CheckboxListTile(
-                      value: _primary,
-                      onChanged: (value) => setState(() {
-                        _primary = value ?? false;
-                        if (_primary) {
-                          final primaryIndex = _partnerProfiles.indexWhere(
-                            (partner) => partner.primary,
-                          );
-                          if (primaryIndex >= 0) _partnerIndex = primaryIndex;
-                        }
-                      }),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: Text(
-                        'Primary referral profile is selected by default.',
-                        style: TextStyle(
-                          color: colors.blue,
-                          fontSize: 10,
+                    SizedBox(
+                      height: 34,
+                      child: CheckboxListTile(
+                        value: _primary,
+                        onChanged: (value) => setState(() {
+                          _primary = value ?? false;
+                          if (_primary) {
+                            final primaryIndex = _partnerProfiles.indexWhere(
+                              (partner) => partner.primary,
+                            );
+                            if (primaryIndex >= 0) _partnerIndex = primaryIndex;
+                          }
+                        }),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        title: Text(
+                          'Use primary referral profile',
+                          style: TextStyle(color: colors.blue, fontSize: 10),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
@@ -3265,33 +3111,25 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
     );
   }
 
-  Widget _responsive(bool compact, List<Widget> fields) => compact
-      ? Column(
-          children: [
-            for (var i = 0; i < fields.length; i++) ...[
-              if (i > 0) const SizedBox(height: 9),
-              fields[i],
-            ],
-          ],
-        )
-      : LayoutBuilder(
-          builder: (context, constraints) {
-            final halfWidth = (constraints.maxWidth - 12) / 2;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 9,
-              children: [
-                for (var i = 0; i < fields.length; i++)
-                  SizedBox(
-                    width: fields.length.isOdd && i == fields.length - 1
-                        ? constraints.maxWidth
-                        : halfWidth,
-                    child: fields[i],
-                  ),
-              ],
-            );
-          },
-        );
+  Widget _responsive(List<Widget> fields) => LayoutBuilder(
+    builder: (context, constraints) {
+      const gap = 10.0;
+      final halfWidth = (constraints.maxWidth - gap) / 2;
+      return Wrap(
+        spacing: gap,
+        runSpacing: 7,
+        children: [
+          for (var i = 0; i < fields.length; i++)
+            SizedBox(
+              width: fields.length.isOdd && i == fields.length - 1
+                  ? constraints.maxWidth
+                  : halfWidth,
+              child: fields[i],
+            ),
+        ],
+      );
+    },
+  );
 
   Widget _textField(
     TextEditingController controller,
@@ -3344,11 +3182,6 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
         },
         style: TextStyle(color: colors.text, fontSize: 11),
         decoration: _decoration('dd-mm-yyyy', LucideIcons.calendarDays, colors),
-      ),
-      const SizedBox(height: 5),
-      Text(
-        'Client must be 18+ to register in trading account.',
-        style: TextStyle(color: colors.muted, fontSize: 9),
       ),
     ],
   );
@@ -3433,39 +3266,6 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
       ),
     );
   }
-
-  Widget _section(String number, String title, IconData icon, _PartnershipColors colors) => Row(
-    children: [
-      _iconBadge(icon, colors),
-      const SizedBox(width: 10),
-      Container(
-        width: 16,
-        height: 16,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: colors.blue,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          number,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-      const SizedBox(width: 7),
-      Text(
-        title,
-        style: TextStyle(
-          color: colors.text,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    ],
-  );
 
   Widget _iconBadge(IconData icon, _PartnershipColors colors) => Container(
     width: 30,

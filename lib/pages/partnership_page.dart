@@ -374,7 +374,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
               label: 'Commission history',
               subtitle: 'Review withdrawal requests and trading commission activity',
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => const BrokerCommissionHistoryPage(),
+                builder: (_) => const BrokerCommissionLedgerPage(),
               )),
             ),
             _PartnershipShortcut(

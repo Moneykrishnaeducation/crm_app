@@ -18,132 +18,313 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: LayoutBuilder(builder: (context, constraints) {
-          final compact = constraints.maxWidth < 520;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 110),
-            children: [
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final muted = cs.onSurfaceVariant;
+    final border = theme.dividerColor;
+    final surface = cs.surface;
+
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final compact = constraints.maxWidth < 600;
+        final summaryColumns = constraints.maxWidth < 390 ? 1 : (compact ? 2 : 3);
+        return ListView(
+          padding: EdgeInsets.fromLTRB(compact ? 14 : 22, 14, compact ? 14 : 22, 116),
+          children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('PRACTICE TRADING', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.15)),
+                const SizedBox(height: 5),
+                Text('Demo Accounts', style: TextStyle(color: cs.onSurface, fontSize: compact ? 24 : 28, height: 1.12, fontWeight: FontWeight.w800, letterSpacing: -.6)),
+                const SizedBox(height: 5),
+                Text('Explore the markets in a simulated MT5 environment.', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
+              ])),
               Container(
-                padding: const EdgeInsets.fromLTRB(13, 10, 10, 10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Theme.of(context).dividerColor),
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(color: cs.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(15), border: Border.all(color: cs.primary.withValues(alpha: .16))),
+                child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 23),
+              ),
+            ]),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .10 : .025), blurRadius: 14, offset: const Offset(0, 5))],
+              ),
+              child: compact
+                  ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      _DemoIntroCopy(muted: muted, foreground: cs.onSurface),
+                      const SizedBox(height: 12),
+                      _CreateDemoButton(onPressed: () => _showCreateDialog(context), block: true),
+                    ])
+                  : Row(children: [
+                      Expanded(child: _DemoIntroCopy(muted: muted, foreground: cs.onSurface)),
+                      const SizedBox(width: 12),
+                      _CreateDemoButton(onPressed: () => _showCreateDialog(context)),
+                    ]),
+            ),
+            const SizedBox(height: 14),
+            LayoutBuilder(builder: (context, gridConstraints) {
+              final spacing = 9.0;
+              final width = (gridConstraints.maxWidth - spacing * (summaryColumns - 1)) / summaryColumns;
+              return Wrap(spacing: spacing, runSpacing: 9, children: [
+                SizedBox(width: width, child: const _DemoSummary(icon: LucideIcons.wallet, title: 'VIRTUAL BALANCE', value: r'$0.00', detail: 'Combined demo equity', tone: _DemoTone.blue)),
+                SizedBox(width: width, child: const _DemoSummary(icon: LucideIcons.activity, title: 'ACTIVE ACCOUNTS', value: '0', detail: 'Currently available', tone: _DemoTone.gold)),
+                SizedBox(width: width, child: const _DemoSummary(icon: LucideIcons.shieldCheck, title: 'TRADING MODE', value: 'Simulated', detail: 'No live funds at risk', tone: _DemoTone.neutral)),
+              ]);
+            }),
+            const SizedBox(height: 18),
+            Container(
+              decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: border)),
+              clipBehavior: Clip.antiAlias,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Your practice accounts', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 3),
+                    Text('Review and manage your virtual trading accounts.', style: TextStyle(color: muted, fontSize: 10)),
+                    const SizedBox(height: 13),
+                    if (compact) ...[
+                      _DemoSearch(controller: _searchController, onChanged: (value) => setState(() => _query = value)),
+                      const SizedBox(height: 10),
+                      _DemoFilters(filter: _filter, onSelect: (value) => setState(() => _filter = value)),
+                    ] else
+                      Row(children: [
+                        Expanded(child: _DemoFilters(filter: _filter, onSelect: (value) => setState(() => _filter = value))),
+                        const SizedBox(width: 12),
+                        SizedBox(width: 240, child: _DemoSearch(controller: _searchController, onChanged: (value) => setState(() => _query = value))),
+                      ]),
+                  ]),
                 ),
-                child: Row(children: [
-                  Container(width: 36, height: 36, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF33B7FF), Color(0xFF3858F5)]), borderRadius: BorderRadius.circular(11)), child: const Icon(LucideIcons.grid2x2, color: Colors.white, size: 20)),
-                  const SizedBox(width: 9),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Demo Accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)), SizedBox(height: 3), Text('Manage your virtual MT5 accounts.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9))])),
-                  IconButton(onPressed: () => setState(() {}), tooltip: 'Refresh', style: IconButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.surface, side: BorderSide(color: Theme.of(context).dividerColor), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))), icon: const Icon(LucideIcons.refreshCw, color: _brokerBlue, size: 17)),
-                  if (!compact) ...[
-                    const SizedBox(width: 6),
-                    FilledButton.icon(onPressed: () => _showCreateDialog(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF174A8B), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11)), icon: const Icon(LucideIcons.plus, size: 16), label: const Text('Create Demo Account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
-                  ],
-                ]),
-              ),
-              if (compact) ...[
-                const SizedBox(height: 8),
-                SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => _showCreateDialog(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF174A8B), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 11)), icon: const Icon(LucideIcons.plus, size: 16), label: const Text('Create Demo Account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)))),
-              ],
-              const SizedBox(height: 13),
-              Row(children: [
-                const Expanded(child: _DemoSummary(icon: LucideIcons.wallet, title: 'VIRTUAL PORTFOLIO', value: '\$0.00', detail: 'Combined simulated trading equity', iconColor: _brokerBlue)),
-                const SizedBox(width: 8),
-                const Expanded(child: _DemoSummary(icon: LucideIcons.monitor, title: 'ACTIVE SIMULATIONS', value: '0', detail: '0 active / 0 total demo accounts', iconColor: Color(0xFF8065E8), valueColor: Color(0xFF00D59A))),
-                const SizedBox(width: 8),
-                const Expanded(child: _DemoSummary(icon: LucideIcons.sparkles, title: 'EXECUTION ENVIRONMENT', value: 'Risk-Free', detail: 'Real-time market feeds & MT5 spread dynamics', iconColor: _brokerGold, gold: true)),
+                Divider(height: 1, color: border),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 30, 18, 30),
+                  child: Column(children: [
+                    Container(
+                      width: 66,
+                      height: 66,
+                      decoration: BoxDecoration(color: cs.primary.withValues(alpha: .08), shape: BoxShape.circle, border: Border.all(color: cs.primary.withValues(alpha: .13))),
+                      child: Icon(_query.isEmpty ? LucideIcons.chartNoAxesCombined : LucideIcons.searchX, color: cs.primary, size: 28),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(_query.isEmpty ? 'Your demo workspace is ready' : 'No matching demo accounts', textAlign: TextAlign.center, style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 6),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 330),
+                      child: Text(
+                        _query.isEmpty
+                            ? 'Create a virtual MT5 account to practise strategies and explore market conditions without using real funds.'
+                            : 'Try another account name or login ID, or clear your search to view all demo accounts.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: muted, fontSize: 11, height: 1.55),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_query.isNotEmpty)
+                      OutlinedButton.icon(
+                        onPressed: () { _searchController.clear(); setState(() => _query = ''); },
+                        icon: const Icon(LucideIcons.x, size: 15),
+                        label: const Text('Clear search'),
+                      )
+                    else
+                      _CreateDemoButton(onPressed: () => _showCreateDialog(context)),
+                    const SizedBox(height: 10),
+                    Text('Demo trading only · No real-money transactions', style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w500)),
+                  ]),
+                ),
               ]),
-              const SizedBox(height: 14),
-              Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)),
-                child: Column(children: [
-                  Padding(padding: const EdgeInsets.all(10), child: compact
-                      ? Column(children: [
-                          _DemoFilters(filter: _filter, onSelect: (value) => setState(() => _filter = value)),
-                          const SizedBox(height: 8),
-                          _DemoSearch(controller: _searchController, onChanged: (value) => setState(() => _query = value)),
-                        ])
-                      : Row(children: [
-                          Expanded(child: _DemoFilters(filter: _filter, onSelect: (value) => setState(() => _filter = value))),
-                          const SizedBox(width: 10),
-                          SizedBox(width: 225, child: _DemoSearch(controller: _searchController, onChanged: (value) => setState(() => _query = value))),
-                        ])),
-                  Divider(height: 1, color: Theme.of(context).dividerColor),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 280),
-                    child: Center(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Container(width: 56, height: 56, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, shape: BoxShape.circle), child: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 27)),
-                      const SizedBox(height: 12),
-                      Text(_query.isEmpty ? 'No Demo Accounts Found' : 'No matching demo accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 5),
-                      Text("You don't have any virtual practice accounts yet. Create your first practice account to get started.", textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, height: 1.4)),
-                      const SizedBox(height: 12),
-                      FilledButton(onPressed: () => _showCreateDialog(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF174A8B), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)), child: const Text('Open Practice Account', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700))),
-                    ]))),
-                  ),
-                ]),
-              ),
-            ],
-          );
-        }),
-      );
+            ),
+          ],
+        );
+      }),
+    );
+  }
 
   void _showCreateDialog(BuildContext context) {
-    showDialog<void>(
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: const Text('Create Demo Account', style: TextStyle(color: _brokerNavy)),
-        content: const Text('A virtual MT5 practice account will be created for this client.', style: TextStyle(color: _brokerMuted)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-          FilledButton(onPressed: () { Navigator.pop(dialogContext); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo account request created.'))); }, style: FilledButton.styleFrom(backgroundColor: _brokerBlue), child: const Text('Create')),
-        ],
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.viewInsetsOf(sheetContext).bottom),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: cs.onSurfaceVariant.withValues(alpha: .4), borderRadius: BorderRadius.circular(8)))),
+          const SizedBox(height: 18),
+          Row(children: [
+            Container(width: 42, height: 42, decoration: BoxDecoration(color: cs.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(13)), child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 21)),
+            const SizedBox(width: 11),
+            Expanded(child: Text('Create demo account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800))),
+            IconButton(onPressed: () => Navigator.pop(sheetContext), icon: Icon(LucideIcons.x, color: cs.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 10),
+          Text('A demo account uses virtual funds for simulated trading. No deposit is required.', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, height: 1.5)),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo account creation is not connected to the MT5 service yet.')));
+              },
+              style: FilledButton.styleFrom(backgroundColor: cs.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+              child: const Text('Continue', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+            ),
+          ),
+        ]),
       ),
     );
   }
 }
 
-class _DemoSummary extends StatelessWidget {
-  const _DemoSummary({required this.icon, required this.title, required this.value, required this.detail, required this.iconColor, this.valueColor = _brokerNavy, this.gold = false});
-  final IconData icon; final String title, value, detail; final Color iconColor, valueColor; final bool gold;
+class _DemoIntroCopy extends StatelessWidget {
+  const _DemoIntroCopy({required this.muted, required this.foreground});
+  final Color muted, foreground;
   @override
-  Widget build(BuildContext context) => Container(
-    height: 106,
-    padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(color: gold ? const Color(0xFFFFF7DF) : const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(15), border: Border.all(color: gold ? const Color(0xFFE5BD54) : const Color(0xFFE2E8F1))),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [Icon(icon, color: iconColor, size: 16), const SizedBox(width: 5), Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 7, fontWeight: FontWeight.w700)))]),
-      const SizedBox(height: 8),
-      FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: valueColor, fontSize: 20, fontWeight: FontWeight.w800))),
-      const SizedBox(height: 4),
-      Expanded(child: Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 7))),
-    ]),
-  );
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text('Practise before you trade live', style: TextStyle(color: foreground, fontSize: 14, fontWeight: FontWeight.w800)),
+    const SizedBox(height: 4),
+    Text('Use a simulated account to get familiar with MT5 tools and market execution.', style: TextStyle(color: muted, fontSize: 10, height: 1.45)),
+  ]);
+}
+
+class _CreateDemoButton extends StatelessWidget {
+  const _CreateDemoButton({required this.onPressed, this.block = false});
+  final VoidCallback onPressed;
+  final bool block;
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: block ? double.infinity : null,
+      height: 44,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(LucideIcons.plus, size: 17),
+        label: const Text('Create Demo Account', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+        style: FilledButton.styleFrom(backgroundColor: cs.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
+      ),
+    );
+  }
+}
+
+enum _DemoTone { blue, gold, neutral }
+
+class _DemoSummary extends StatelessWidget {
+  const _DemoSummary({required this.icon, required this.title, required this.value, required this.detail, required this.tone});
+  final IconData icon;
+  final String title, value, detail;
+  final _DemoTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final color = switch (tone) {
+      _DemoTone.blue => cs.primary,
+      _DemoTone.gold => const Color(0xFFD5A52C),
+      _DemoTone.neutral => cs.onSurfaceVariant,
+    };
+    return Container(
+      constraints: const BoxConstraints(minHeight: 104),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .35))),
+        ]),
+        const SizedBox(height: 9),
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: cs.onSurface, fontSize: 19, fontWeight: FontWeight.w800))),
+        const SizedBox(height: 3),
+        Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, height: 1.35)),
+      ]),
+    );
+  }
 }
 
 class _DemoFilters extends StatelessWidget {
   const _DemoFilters({required this.filter, required this.onSelect});
-  final String filter; final ValueChanged<String> onSelect;
+  final String filter;
+  final ValueChanged<String> onSelect;
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
-    _DemoFilter(label: 'All Accounts', count: '0', selected: filter == 'All Accounts', onTap: () => onSelect('All Accounts')),
-    const SizedBox(width: 6), _DemoFilter(label: 'Active', count: '0', selected: filter == 'Active', onTap: () => onSelect('Active')),
-    const SizedBox(width: 6), _DemoFilter(label: 'Suspended', count: '0', selected: filter == 'Suspended', onTap: () => onSelect('Suspended')),
-  ]));
+  Widget build(BuildContext context) => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(children: [
+      _DemoFilter(label: 'All Accounts', selected: filter == 'All Accounts', onTap: () => onSelect('All Accounts')),
+      const SizedBox(width: 6),
+      _DemoFilter(label: 'Active', selected: filter == 'Active', onTap: () => onSelect('Active')),
+      const SizedBox(width: 6),
+      _DemoFilter(label: 'Suspended', selected: filter == 'Suspended', onTap: () => onSelect('Suspended')),
+    ]),
+  );
 }
+
 class _DemoFilter extends StatelessWidget {
-  const _DemoFilter({required this.label, required this.count, required this.selected, required this.onTap});
-  final String label, count; final bool selected; final VoidCallback onTap;
+  const _DemoFilter({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(18), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: selected ? const Color(0xFF174A8B) : const Color(0xFFF3F6FB), border: Border.all(color: selected ? const Color(0xFF174A8B) : const Color(0xFFE2E8F1)), borderRadius: BorderRadius.circular(18)), child: Row(mainAxisSize: MainAxisSize.min, children: [Text(label, style: TextStyle(color: selected ? Colors.white : _brokerNavy, fontSize: 8, fontWeight: FontWeight.w700)), const SizedBox(width: 5), Text(count, style: TextStyle(color: selected ? Colors.white70 : _brokerMuted, fontSize: 8))])));
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary.withValues(alpha: .10) : Colors.transparent,
+          border: Border.all(color: selected ? cs.primary.withValues(alpha: .45) : Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(label, style: TextStyle(color: selected ? cs.primary : cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
 }
+
 class _DemoSearch extends StatelessWidget {
   const _DemoSearch({required this.controller, required this.onChanged});
-  final TextEditingController controller; final ValueChanged<String> onChanged;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
   @override
-  Widget build(BuildContext context) => TextField(controller: controller, onChanged: onChanged, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 9), decoration: InputDecoration(hintText: 'Search ID, holder, leverage...', hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8), prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 14), isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 8), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Theme.of(context).dividerColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _brokerBlue))));
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final border = Theme.of(context).dividerColor;
+    return SizedBox(
+      height: 42,
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: TextStyle(color: cs.onSurface, fontSize: 11),
+        decoration: InputDecoration(
+          hintText: 'Search account ID or name',
+          hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 10),
+          prefixIcon: Icon(LucideIcons.search, color: cs.onSurfaceVariant, size: 17),
+          isDense: true,
+          filled: true,
+          fillColor: Theme.of(context).scaffoldBackgroundColor,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary, width: 1.3)),
+        ),
+      ),
+    );
+  }
 }

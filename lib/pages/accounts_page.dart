@@ -38,7 +38,10 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     double amount(String value) => double.tryParse(value.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
     final totalBalance = widget.accounts.fold<double>(0, (sum, a) => sum + amount(a.balance));
     final totalEquity = widget.accounts.fold<double>(0, (sum, a) => sum + amount(a.equity));
-    String money(double value) => r'
+    String money(double value) => String.fromCharCode(36) + value.toStringAsFixed(2);
+
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 620;

@@ -3620,6 +3620,12 @@ class BrokerBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final width = MediaQuery.sizeOf(context).width;
+    final compact = width < 360;
+    final horizontalMargin = width < 360 ? 10.0 : 18.0;
+    final quickActionWidth = compact ? 54.0 : 62.0;
+    final navPadding = compact ? 4.0 : 8.0;
+
     return RepaintBoundary(
       child: SafeArea(
         top: false,
@@ -3628,35 +3634,29 @@ class BrokerBottomNavigation extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: Container(
-              margin: const EdgeInsets.fromLTRB(18, 2, 18, 10),
+              margin: EdgeInsets.fromLTRB(horizontalMargin, 2, horizontalMargin, 10),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: isDark ? 0.35 : 0.10,
-                    ),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.10),
+                    blurRadius: 22,
+                    offset: const Offset(0, 7),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(26),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                    padding: EdgeInsets.fromLTRB(navPadding, 6, navPadding, 6),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xEA0E1A2E)
-                          : const Color(0xEAFFFFFF),
-                      borderRadius: BorderRadius.circular(28),
+                      color: isDark ? const Color(0xEA0E1A2E) : const Color(0xEAFFFFFF),
+                      borderRadius: BorderRadius.circular(26),
                       border: Border.all(
-                        color: isDark
-                            ? const Color(0x33475569)
-                            : const Color(0x66CBD5E1),
-                        width: 1.2,
+                        color: isDark ? const Color(0x33475569) : const Color(0x66CBD5E1),
+                        width: 1.1,
                       ),
                     ),
                     child: Row(
@@ -3675,11 +3675,11 @@ class BrokerBottomNavigation extends StatelessWidget {
                           onTap: () => onSelect('Transactions'),
                         ),
                         SizedBox(
-                          width: 62,
+                          width: quickActionWidth,
                           height: 54,
                           child: Center(
                             child: Transform.translate(
-                              offset: const Offset(0, -9),
+                              offset: const Offset(0, -7),
                               child: _CenterQuickActionButton(
                                 onTap: () => _showQuickActions(context),
                               ),

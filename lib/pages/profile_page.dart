@@ -2551,25 +2551,29 @@ class _VerificationTabView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Header Section
-        Center(
+        Align(
+          alignment: Alignment.centerLeft,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Verification Documents',
-                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: c.text,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.2,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 4),
+              Text(
+                'Review your submitted identity and address documents.',
+                style: TextStyle(color: c.muted, fontSize: 12, height: 1.35),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 16),
 
         // Verification documents are stacked vertically for a clear, full-width layout.
         Column(
@@ -2585,6 +2589,7 @@ class _VerificationTabView extends StatelessWidget {
               isIdentity: true,
               onViewDocument: () => onViewDocument('Identity Verification'),
             ),
+            const SizedBox(height: 12),
             _VerificationDocCard(
               title: 'Address Verification',
               badgeLabel: 'ADDRESS PROOF',
@@ -3613,17 +3618,29 @@ class _PaymentMethodsTabView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Payment Methods',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: c.text,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.2,
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Payment Methods',
+                style: TextStyle(
+                  color: c.text,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Manage the destinations used for withdrawals and payouts.',
+                style: TextStyle(color: c.muted, fontSize: 12, height: 1.35),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         // Bank and crypto payment cards are displayed one per row.
         Column(
           children: [
@@ -3747,49 +3764,51 @@ class _PaymentMethodsTabView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: details,
           ),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onView,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
-                side: BorderSide(color: c.blueBorder),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                minimumSize: const Size(0, 32),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(9),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onView,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
+                    side: BorderSide(color: c.blueBorder),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                    minimumSize: const Size(0, 40),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  ),
+                  child: const Text(
+                    'View details',
+                    maxLines: 1,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-              child: const Text(
-                'View details',
-                maxLines: 1,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onEdit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _profileBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                minimumSize: const Size(0, 32),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(9),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onEdit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _profileBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                    minimumSize: const Size(0, 40),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  ),
+                  child: const Text(
+                    'Edit details',
+                    maxLines: 1,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-              child: const Text(
-                'Edit details',
-                maxLines: 1,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -3799,27 +3818,35 @@ class _PaymentMethodsTabView extends StatelessWidget {
   Widget _paymentGridDetail(BuildContext context, String label, String value) {
     final c = _ProfileColors.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: c.muted,
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
+          SizedBox(
+            width: 88,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: c.muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: c.text,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value.trim().isEmpty ? '—' : value,
+              maxLines: 1,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: c.text,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

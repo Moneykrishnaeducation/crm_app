@@ -1203,20 +1203,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Overview',
-          style: TextStyle(
-            color: _c.text,
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -.3,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Current document and payout destination status',
-          style: TextStyle(color: _c.muted, fontSize: 10.5),
-        ),
         const SizedBox(height: 12),
         GridView.count(
           crossAxisCount: 2,

@@ -2183,7 +2183,7 @@ class BrokerMamManagerPage extends StatefulWidget {
 class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
   String _filter = 'All Masters';
   String _search = '';
-  bool _showGuide = true;
+  bool _showGuide = false;
   final _searchController = TextEditingController();
   final List<_MamMaster> _masters = [
     _MamMaster(
@@ -2213,7 +2213,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
   }
 
   BoxDecoration get _cardDecoration => BoxDecoration(
-    color: Theme.of(context).cardColor,
+    color: Theme.of(context).colorScheme.surface,
     borderRadius: BorderRadius.circular(18),
     border: Border.all(color: Theme.of(context).dividerColor),
     boxShadow: const [BoxShadow(color: Color(0x080F2748), blurRadius: 12, offset: Offset(0, 4))],
@@ -2225,38 +2225,35 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(15, 14, 15, 112),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
         children: [
           _buildSocialTradingHeader(),
           const SizedBox(height: 14),
-          _buildSummaryCard(
-            title: 'TOTAL MAM BALANCE',
-            value: '\$0.00',
-            suffix: 'USD',
-            caption: 'Combined master account capital',
-            icon: LucideIcons.wallet,
-            tint: const Color(0xFFEAF2FF),
-            accent: const Color(0xFF2563EB),
-          ),
-          const SizedBox(height: 12),
-          _buildSummaryCard(
-            title: 'ACTIVE NODES',
-            value: '$_activeCount',
-            suffix: 'Live',
-            caption: '$_activeCount active out of ${_masters.length} master nodes',
-            icon: LucideIcons.activity,
-            tint: const Color(0xFFE9FBF4),
-            accent: const Color(0xFF059669),
-          ),
-          const SizedBox(height: 12),
-          _buildSummaryCard(
-            title: 'TOTAL MASTER NODES',
-            value: '${_masters.length}',
-            suffix: 'MAM',
-            caption: 'Multi-Account Management infrastructure',
-            icon: LucideIcons.usersRound,
-            tint: const Color(0xFFFFF7E6),
-            accent: const Color(0xFFB7791F),
+          SizedBox(
+            height: 132,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              children: [
+                SizedBox(width: 176, child: _buildSummaryCard(
+                  title: 'TOTAL BALANCE', value: '\$0.00', suffix: 'USD',
+                  caption: 'Master capital', icon: LucideIcons.wallet,
+                  tint: const Color(0xFFEAF2FF), accent: const Color(0xFF2563EB),
+                )),
+                const SizedBox(width: 10),
+                SizedBox(width: 176, child: _buildSummaryCard(
+                  title: 'ACTIVE NODES', value: '$_activeCount', suffix: 'Live',
+                  caption: 'Currently active', icon: LucideIcons.activity,
+                  tint: const Color(0xFFE9FBF4), accent: const Color(0xFF059669),
+                )),
+                const SizedBox(width: 10),
+                SizedBox(width: 176, child: _buildSummaryCard(
+                  title: 'MASTER NODES', value: '${_masters.length}', suffix: 'MAM',
+                  caption: 'Total accounts', icon: LucideIcons.usersRound,
+                  tint: const Color(0xFFFFF7E6), accent: const Color(0xFFB7791F),
+                )),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           if (_showGuide) ...[
@@ -2272,10 +2269,9 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
   Widget _buildSocialTradingHeader() => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: Theme.of(context).cardColor,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFBFDBFE)),
-      gradient: const LinearGradient(colors: [Color(0xFFF8FBFF), Color(0xFFEAF2FF)]),
+      border: Border.all(color: Theme.of(context).dividerColor),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
@@ -2398,7 +2394,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
       ),
       const SizedBox(height: 14),
       Row(children: const [
-        Expanded(flex: 4, child: Text('MASTER ACCOUNT', style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
+        Expanded(flex: 4, child: Text('MASTER', style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
         Expanded(flex: 3, child: Text('LOGIN ID', style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
         Expanded(flex: 2, child: Text('SHARE', textAlign: TextAlign.end, style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
       ]),
@@ -2427,23 +2423,50 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     );
   }
 
-  Widget _masterListTile(_MamMaster master) => InkWell(
-    onTap: () => _openMasterDetails(master),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(children: [
-        Container(width: 30, height: 30, decoration: const BoxDecoration(color: Color(0xFFEAF2FF), shape: BoxShape.circle), child: Center(child: Text(master.name.substring(0, 1).toUpperCase(), style: const TextStyle(color: Color(0xFF1E4295), fontSize: 12, fontWeight: FontWeight.w800)))),
-        const SizedBox(width: 8),
-        Expanded(flex: 4, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(master.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10.5, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 3),
-          const Text('● MT5 Master', style: TextStyle(color: Color(0xFF10B981), fontSize: 8, fontWeight: FontWeight.w700)),
-        ])),
-        Expanded(flex: 3, child: Text(master.login, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 9.5, fontWeight: FontWeight.w700))),
-        Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text('${master.profitShare.toStringAsFixed(2)}%', style: const TextStyle(color: Color(0xFFB45309), fontSize: 10, fontWeight: FontWeight.w800)))),
-      ]),
+  Widget _masterListTile(_MamMaster master) => Material(
+    color: Theme.of(context).colorScheme.surface,
+    borderRadius: BorderRadius.circular(15),
+    child: InkWell(
+      onTap: () => _openMasterDetails(master),
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 9),
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(width: 38, height: 38, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle), child: Center(child: Text(master.name.substring(0, 1).toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer, fontWeight: FontWeight.w800)))),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(master.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 3),
+              Text('MT5 Master  ·  ID ${master.login}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
+            ])),
+            _statusBadge(master.status),
+            const SizedBox(width: 3),
+            Icon(LucideIcons.chevronRight, size: 17, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ]),
+          const SizedBox(height: 12),
+          Divider(height: 1, color: Theme.of(context).dividerColor),
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: _miniMetric('PROFIT SHARE', '${master.profitShare.toStringAsFixed(2)}%')),
+            Expanded(child: _miniMetric('LEVERAGE', master.leverage)),
+            Expanded(child: _miniMetric('BALANCE', '\$0.00')),
+          ]),
+        ]),
+      ),
     ),
   );
+
+  Widget _miniMetric(String label, String value) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4)),
+    const SizedBox(height: 4),
+    Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11, fontWeight: FontWeight.w800)),
+  ]);
 
   Future<void> _showCreateMasterSheet() async {
     await showModalBottomSheet<void>(
@@ -2636,7 +2659,7 @@ class _MamMasterDetailsPageState extends State<_MamMasterDetailsPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.arrowLeft)), title: const Text('Master Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800))),
       body: ListView(padding: const EdgeInsets.fromLTRB(15, 10, 15, 30), children: [
-        Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [Expanded(child: Text(m.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800))), _statusBadge(m.status)]),
           const SizedBox(height: 7),
           Text('LOGIN ID  ${m.login}', style: const TextStyle(color: Color(0xFF71809A), fontSize: 10)),
@@ -2689,7 +2712,7 @@ class _MamMasterDetailsPageState extends State<_MamMasterDetailsPage> {
 
   Widget _statusBadge(String status) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: status == 'Active' ? const Color(0xFFE9FBF4) : const Color(0xFFFFECEC), borderRadius: BorderRadius.circular(20)), child: Text(status, style: TextStyle(color: status == 'Active' ? const Color(0xFF059669) : const Color(0xFFDC4444), fontSize: 9, fontWeight: FontWeight.w800)));
   Widget _detailAction(String label, IconData icon, VoidCallback action) => OutlinedButton.icon(onPressed: action, icon: Icon(icon, size: 14), label: Text(label, style: const TextStyle(fontSize: 10)));
-  Widget _detailSection(BuildContext context, String title, IconData icon, List<Widget> children) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _detailSection(BuildContext context, String title, IconData icon, List<Widget> children) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(children: [Icon(icon, color: const Color(0xFF2563EB), size: 17), const SizedBox(width: 8), Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800))]),
     const SizedBox(height: 9), const Divider(height: 1), ...children,
   ]));

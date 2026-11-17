@@ -89,7 +89,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
             height: 32,
             fit: BoxFit.contain,
             alignment: Alignment.centerLeft,
-            semanticLabel: 'VT Index',
+            semanticLabel: 'VTIndex',
           ),
         ),
       ],

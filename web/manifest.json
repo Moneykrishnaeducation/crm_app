@@ -1,11 +1,11 @@
 {
-    "name": "crm_app",
-    "short_name": "crm_app",
+    "name": "VTIndex",
+    "short_name": "VTIndex",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "VTIndex - Institutional Client Trading & CRM Portal",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

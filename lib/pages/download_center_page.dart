@@ -92,7 +92,7 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                               color: const Color(0xFF1B4F91).withValues(alpha: .16),
                               borderRadius: BorderRadius.circular(17),
                             ),
-                            child: const Icon(LucideIcons.chartCandlestick, color: Color(0xFF3E9BFF), size: 31),
+                            child: const Icon(LucideIcons.chartNoAxesCombined, color: Color(0xFF3E9BFF), size: 31),
                           ),
                           const SizedBox(width: 13),
                           Expanded(

@@ -15,6 +15,7 @@ import 'package:video_player/video_player.dart';
 import 'pages/mam_available_page.dart';
 import 'pages/mam_investor_page.dart';
 import 'pages/mam_manager_page.dart';
+import 'pages/pamm_page.dart';
 import 'pages/partnership_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/security_center_page.dart';
@@ -443,6 +444,9 @@ class _AppShellState extends State<AppShell> {
             onSelectPage: _selectPage,
           ),
         'Partnership' => const BrokerPartnershipPage(),
+        'PAMM Account' => PammPage(
+            onBack: () => setState(() => _selectedPage = 'More'),
+          ),
         'Internal Transfer' => const BrokerInternalTransferPage(),
         'Demo Accounts' => BrokerDemoAccountsPage(
             onOpenTradingAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),

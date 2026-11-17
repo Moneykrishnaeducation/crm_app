@@ -21,7 +21,8 @@ class BrokerMorePage extends StatelessWidget {
             ]),
             const SizedBox(height: 20),
 
-            const _MoreSectionLabel('PAMM INVESTMENTS', subtitle: 'Manage pools, explore available pools and track your investments'),
+            const _MoreSectionLabel('TRADING SERVICES', subtitle: 'PAMM investments, social trading and managed accounts'),
+
             _MoreMenuGroup(children: [
               _MoreMenuRow(
                 icon: LucideIcons.layers,
@@ -29,15 +30,7 @@ class BrokerMorePage extends StatelessWidget {
                 subtitle: 'Managed pools, available pools and my investments',
                 accent: const Color(0xFF365CEB),
                 onTap: () => onSelectPage('PAMM Account'),
-                showDivider: false,
               ),
-            ]),
-            const SizedBox(height: 20),
-
-            const _MoreSectionLabel('COPY TRADING & MAM', subtitle: 'Social trading and managed accounts'),
-            const _MoreSectionLabel('TRADING SERVICES', subtitle: 'Managed account and copy trading tools'),
-
-            _MoreMenuGroup(children: [
               _MoreMenuRow(icon: LucideIcons.briefcaseBusiness, title: 'MAM Manager', subtitle: 'Manage master nodes & allocation rules', onTap: () => onSelectPage('MAM Manager')),
               _MoreMenuRow(icon: LucideIcons.usersRound, title: 'MAM Investor', subtitle: 'View subscribed pools & net returns', onTap: () => onSelectPage('MAM Investor')),
               _MoreMenuRow(icon: LucideIcons.wallet, title: 'MAM Available', subtitle: 'Discover & invest in verified master pools', onTap: () => onSelectPage('Available MAM'), showDivider: false),

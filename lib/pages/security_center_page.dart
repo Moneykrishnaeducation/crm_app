@@ -1333,6 +1333,7 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
               ),
             ],
           ),
+          ),
         ),
       ),
     );

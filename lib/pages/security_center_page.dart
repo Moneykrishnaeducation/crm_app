@@ -517,7 +517,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Enabled',
+                        _loginCaptchaEnabled ? 'Enabled' : 'Disabled',
                         style: TextStyle(
                           color: _loginCaptchaEnabled ? const Color(0xFF10264A) : const Color(0xFF62738E),
                           fontSize: 12,
@@ -595,7 +595,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Enabled',
+                        _email2faEnabled ? 'Enabled' : 'Disabled',
                         style: TextStyle(
                           color: _email2faEnabled ? const Color(0xFF10264A) : const Color(0xFF62738E),
                           fontSize: 12,

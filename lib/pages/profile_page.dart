@@ -2571,15 +2571,14 @@ class _VerificationTabView extends StatelessWidget {
         ),
         const SizedBox(height: 22),
 
-        // 2. Card 1: Identity Verification (IDENTITY PROOF)
-        // Verification document cards use a compact two-column phone grid.
+        // Verification documents are stacked vertically for a clear, full-width layout.
         GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
+          crossAxisCount: 1,
+          crossAxisSpacing: 0,
           mainAxisSpacing: 12,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 0.72,
+          childAspectRatio: 1.35,
           children: [
             _VerificationDocCard(
               title: 'Identity Verification',
@@ -3625,13 +3624,14 @@ class _PaymentMethodsTabView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
+        // Bank and crypto payment cards are displayed one per row.
         GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
+          crossAxisCount: 1,
+          crossAxisSpacing: 0,
           mainAxisSpacing: 12,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 0.46,
+          childAspectRatio: 0.95,
           children: [
             _buildBankCard(context),
             _buildCryptoCard(context),

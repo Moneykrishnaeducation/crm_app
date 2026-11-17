@@ -672,7 +672,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         }
 
         return Container(
-          color: _profileBg,
+          color: Theme.of(context).scaffoldBackgroundColor,
           child: SafeArea(
             top: false,
             bottom: false,
@@ -1093,7 +1093,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     ];
     return Container(
       padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _profileBorder)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)),
       child: Row(
         children: [
           for (var i = 0; i < tabs.length; i++)

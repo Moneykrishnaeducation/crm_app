@@ -4392,14 +4392,14 @@ class _CreateMamSheetState extends State<_CreateMamSheet> {
               const SizedBox(height: 14),
               _label('ACCOUNT LEVERAGE'),
               DropdownButtonFormField<String>(
-                value: _leverage,
+                initialValue: _leverage,
                 items: ['1:100', '1:200', '1:400', '1:500'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
                 onChanged: (value) => setState(() => _leverage = value ?? _leverage),
               ),
               const SizedBox(height: 14),
               _label('SETTLEMENT PAYOUT FREQUENCY'),
               DropdownButtonFormField<String>(
-                value: _payout,
+                initialValue: _payout,
                 items: ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Annually'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
                 onChanged: (value) => setState(() => _payout = value ?? _payout),
               ),

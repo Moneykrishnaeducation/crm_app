@@ -576,13 +576,13 @@ class _TreeStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: dark ? const Color(0xFF17243A) : Colors.white, borderRadius: BorderRadius.circular(13), border: Border.all(color: dark ? const Color(0xFF29415F) : _border)),
+    decoration: BoxDecoration(color: dark ? const Color(0xFF17243A) : Colors.white, borderRadius: BorderRadius.circular(13), border: Border.all(color: dark ? const Color(0xFF29415F) : _partnershipBorder)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .35))), Icon(icon, color: accent, size: 13)]),
+      Row(children: [Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _partnershipMuted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .35))), Icon(icon, color: accent, size: 13)]),
       const Spacer(),
-      Text(value, style: TextStyle(color: dark ? Colors.white : _navy, fontSize: 19, fontWeight: FontWeight.w800, height: 1)),
+      Text(value, style: TextStyle(color: dark ? Colors.white : _partnershipNavy, fontSize: 19, fontWeight: FontWeight.w800, height: 1)),
       const SizedBox(height: 5),
-      Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _muted, fontSize: 8)),
+      Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _partnershipMuted, fontSize: 8)),
     ]),
   );
 }
@@ -598,9 +598,9 @@ class _TreeMemberCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = dark ? Colors.white : _navy;
-    final muted = dark ? const Color(0xFFA9B9CE) : _muted;
-    final border = dark ? const Color(0xFF29415F) : _border;
+    final fg = dark ? Colors.white : _partnershipNavy;
+    final muted = dark ? const Color(0xFFA9B9CE) : _partnershipMuted;
+    final border = dark ? const Color(0xFF29415F) : _partnershipBorder;
     final surface = dark ? const Color(0xFF17243A) : Colors.white;
     final accent = root ? const Color(0xFF387BFF) : const Color(0xFF00BFA5);
     return Container(
@@ -618,7 +618,7 @@ class _TreeMemberCard extends StatelessWidget {
             Wrap(spacing: 5, runSpacing: 3, crossAxisAlignment: WrapCrossAlignment.center, children: [
               Text(member.name, style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w800)),
               _TreePill(label: 'L${member.level}', color: root ? const Color(0xFF3B82F6) : const Color(0xFF00A991), dark: dark),
-              if (member.isPartner) _TreePill(label: 'Gold', color: _gold, dark: dark),
+              if (member.isPartner) _TreePill(label: 'Gold', color: _partnershipGold, dark: dark),
             ]),
             const SizedBox(height: 4),
             Text(member.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 9)),
@@ -626,9 +626,9 @@ class _TreeMemberCard extends StatelessWidget {
               if (member.phone != null) Text(member.phone!, style: TextStyle(color: muted, fontSize: 9)),
               if (member.joined != null) Text('Joined ${member.joined}', style: TextStyle(color: muted, fontSize: 9)),
               if (showReferralLink && member.referralCode != null) Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(LucideIcons.link, color: _blue, size: 10),
+                Icon(LucideIcons.link, color: _partnershipBlue, size: 10),
                 const SizedBox(width: 3),
-                Text(member.referralCode!, style: const TextStyle(color: _blue, fontSize: 8, fontWeight: FontWeight.w700)),
+                Text(member.referralCode!, style: const TextStyle(color: _partnershipBlue, fontSize: 8, fontWeight: FontWeight.w700)),
               ]),
             ]),
           ])),
@@ -642,7 +642,7 @@ class _TreeMemberCard extends StatelessWidget {
         ]),
         const SizedBox(height: 9),
         Row(children: [
-          if (member.isPartner) _TreePill(label: '${member.children.length} referrals', color: _blue, dark: dark),
+          if (member.isPartner) _TreePill(label: '${member.children.length} referrals', color: _partnershipBlue, dark: dark),
           const Spacer(),
           if (member.isPartner) _TreePill(label: 'IB Partner', color: const Color(0xFF00A870), dark: dark),
           const SizedBox(width: 6),

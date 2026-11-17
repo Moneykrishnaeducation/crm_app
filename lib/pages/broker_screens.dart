@@ -2167,3 +2167,442 @@ class _BrokerNavItem extends StatelessWidget {
     );
   }
 }
+
+
+// -----------------------------------------------------------------------------
+// MAM MANAGER — mobile-first manager workspace.
+// UI state is local/demo data until the MAM APIs are connected.
+// -----------------------------------------------------------------------------
+class BrokerMamManagerPage extends StatefulWidget {
+  const BrokerMamManagerPage({super.key});
+
+  @override
+  State<BrokerMamManagerPage> createState() => _BrokerMamManagerPageState();
+}
+
+class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
+  String _filter = 'All Masters';
+  String _search = '';
+  bool _showGuide = true;
+  final _searchController = TextEditingController();
+  final List<_MamMaster> _masters = [
+    _MamMaster(
+      name: 'Devo-Testmam',
+      login: '2141715173',
+      profitShare: 40,
+      leverage: '1:500',
+      balance: 0,
+      status: 'Disabled',
+      risk: 'Medium',
+      payout: 'Weekly',
+    ),
+  ];
+
+  int get _activeCount => _masters.where((m) => m.status == 'Active').length;
+  int get _disabledCount => _masters.where((m) => m.status == 'Disabled').length;
+  List<_MamMaster> get _visibleMasters => _masters.where((m) {
+    final statusMatch = _filter == 'All Masters' || m.status == _filter;
+    final q = _search.trim().toLowerCase();
+    return statusMatch && (q.isEmpty || m.name.toLowerCase().contains(q) || m.login.contains(q));
+  }).toList();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  BoxDecoration get _cardDecoration => BoxDecoration(
+    color: Theme.of(context).cardColor,
+    borderRadius: BorderRadius.circular(18),
+    border: Border.all(color: Theme.of(context).dividerColor),
+    boxShadow: const [BoxShadow(color: Color(0x080F2748), blurRadius: 12, offset: Offset(0, 4))],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(15, 14, 15, 112),
+        children: [
+          _buildSocialTradingHeader(),
+          const SizedBox(height: 14),
+          _buildSummaryCard(
+            title: 'TOTAL MAM BALANCE',
+            value: '\$0.00',
+            suffix: 'USD',
+            caption: 'Combined master account capital',
+            icon: LucideIcons.wallet,
+            tint: const Color(0xFFEAF2FF),
+            accent: const Color(0xFF2563EB),
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryCard(
+            title: 'ACTIVE NODES',
+            value: '$_activeCount',
+            suffix: 'Live',
+            caption: '$_activeCount active out of ${_masters.length} master nodes',
+            icon: LucideIcons.activity,
+            tint: const Color(0xFFE9FBF4),
+            accent: const Color(0xFF059669),
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryCard(
+            title: 'TOTAL MASTER NODES',
+            value: '${_masters.length}',
+            suffix: 'MAM',
+            caption: 'Multi-Account Management infrastructure',
+            icon: LucideIcons.usersRound,
+            tint: const Color(0xFFFFF7E6),
+            accent: const Color(0xFFB7791F),
+          ),
+          const SizedBox(height: 16),
+          if (_showGuide) ...[
+            _buildGuideCard(),
+            const SizedBox(height: 16),
+          ],
+          _buildMasterList(dark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocialTradingHeader() => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: const Color(0xFFBFDBFE)),
+      gradient: const LinearGradient(colors: [Color(0xFFF8FBFF), Color(0xFFEAF2FF)]),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Container(
+          width: 42, height: 42,
+          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)]), borderRadius: BorderRadius.circular(13)),
+          child: const Icon(LucideIcons.usersRound, color: Colors.white, size: 21),
+        ),
+        const SizedBox(width: 11),
+        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Social Trading', style: TextStyle(color: Color(0xFF10264B), fontSize: 16, fontWeight: FontWeight.w800)),
+          SizedBox(height: 3),
+          Text('Manage MAM accounts and investments.', style: TextStyle(color: Color(0xFF536987), fontSize: 10.5)),
+        ])),
+      ]),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: _headerAction('Create MAM', LucideIcons.plus, _showCreateMasterSheet, primary: true)),
+        const SizedBox(width: 7),
+        Expanded(child: _headerAction('Invest', LucideIcons.users, () => _showInfo('Investor discovery will be connected later.'))),
+        const SizedBox(width: 7),
+        Expanded(child: _headerAction(_showGuide ? 'Hide Guide' : 'Guide', LucideIcons.info, () => setState(() => _showGuide = !_showGuide), gold: true)),
+      ]),
+    ]),
+  );
+
+  Widget _headerAction(String label, IconData icon, VoidCallback action, {bool primary = false, bool gold = false}) => SizedBox(
+    height: 38,
+    child: FilledButton.icon(
+      onPressed: action,
+      icon: Icon(icon, size: 14),
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+      style: FilledButton.styleFrom(
+        backgroundColor: gold ? const Color(0xFFEAB308) : primary ? const Color(0xFF2563EB) : Colors.white,
+        foregroundColor: gold || primary ? Colors.white : const Color(0xFF17345D),
+        padding: const EdgeInsets.symmetric(horizontal: 7),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11), side: BorderSide(color: primary || gold ? Colors.transparent : const Color(0xFFBFDBFE))),
+      ),
+    ),
+  );
+
+  Widget _buildSummaryCard({required String title, required String value, required String suffix, required String caption, required IconData icon, required Color tint, required Color accent}) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: _cardDecoration,
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Container(width: 38, height: 38, decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: accent, size: 19)),
+        const SizedBox(width: 10),
+        Expanded(child: Text(title, style: const TextStyle(color: Color(0xFF647A99), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .45))),
+        Icon(LucideIcons.trendingUp, color: accent.withValues(alpha: .7), size: 20),
+      ]),
+      const SizedBox(height: 10),
+      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -.5)),
+        const SizedBox(width: 9),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4), decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(20)), child: Text(suffix, style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.w800))),
+      ]),
+      const SizedBox(height: 10),
+      Divider(height: 1, color: Theme.of(context).dividerColor),
+      const SizedBox(height: 9),
+      Text(caption, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10.5)),
+    ]),
+  );
+
+  Widget _buildGuideCard() => Container(
+    padding: const EdgeInsets.all(15),
+    decoration: _cardDecoration,
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Expanded(child: Text('Understanding MAM Accounts', style: TextStyle(color: Color(0xFF10264B), fontSize: 14, fontWeight: FontWeight.w800))),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(20)), child: const Text('PRO FEATURE', style: TextStyle(color: Color(0xFFB7791F), fontSize: 8, fontWeight: FontWeight.w800))),
+      ]),
+      const SizedBox(height: 5),
+      const Text('Multi-Account Management execution architecture', style: TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+      const SizedBox(height: 13),
+      _guideRow(LucideIcons.refreshCw, 'Auto-Mirroring Engine', 'Master trades are mirrored to connected investor accounts.'),
+      const SizedBox(height: 10),
+      _guideRow(LucideIcons.usersRound, 'Dynamic Lot Proportionality', 'Trade volumes scale according to each investor’s equity.'),
+    ]),
+  );
+
+  Widget _guideRow(IconData icon, String title, String body) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFEAF2FF), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: const Color(0xFF2563EB), size: 16)),
+    const SizedBox(width: 10),
+    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(title, style: const TextStyle(color: Color(0xFF17345D), fontSize: 11, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 3),
+      Text(body, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10, height: 1.35)),
+    ])),
+  ]);
+
+  Widget _buildMasterList(bool dark) => Container(
+    decoration: _cardDecoration,
+    padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: [
+          _filterChip('All Masters', _masters.length),
+          const SizedBox(width: 6),
+          _filterChip('Active', _activeCount),
+          const SizedBox(width: 6),
+          _filterChip('Disabled', _disabledCount),
+        ]),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _searchController,
+        onChanged: (v) => setState(() => _search = v),
+        decoration: InputDecoration(
+          hintText: 'Search master, ID, leverage...',
+          prefixIcon: const Icon(LucideIcons.search, size: 17),
+          isDense: true,
+          filled: true,
+          fillColor: dark ? const Color(0xFF101D31) : const Color(0xFFF7F9FC),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+        ),
+      ),
+      const SizedBox(height: 14),
+      Row(children: const [
+        Expanded(flex: 4, child: Text('MASTER ACCOUNT', style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
+        Expanded(flex: 3, child: Text('LOGIN ID', style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
+        Expanded(flex: 2, child: Text('SHARE', textAlign: TextAlign.end, style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
+      ]),
+      Divider(height: 16, color: Theme.of(context).dividerColor),
+      if (_visibleMasters.isEmpty)
+        Padding(padding: const EdgeInsets.symmetric(vertical: 26), child: Center(child: Text('No master accounts found', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12))))
+      else
+        ..._visibleMasters.map(_masterListTile),
+    ]),
+  );
+
+  Widget _filterChip(String label, int count) {
+    final selected = _filter == label;
+    return InkWell(
+      onTap: () => setState(() => _filter = label),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+        decoration: BoxDecoration(color: selected ? const Color(0xFF1E4295) : const Color(0xFFF0F4F9), borderRadius: BorderRadius.circular(12)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(label, style: TextStyle(color: selected ? Colors.white : const Color(0xFF425875), fontSize: 10, fontWeight: FontWeight.w800)),
+          const SizedBox(width: 6),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2), decoration: BoxDecoration(color: selected ? Colors.white24 : const Color(0xFFDDE5EF), borderRadius: BorderRadius.circular(8)), child: Text('$count', style: TextStyle(color: selected ? Colors.white : const Color(0xFF425875), fontSize: 9, fontWeight: FontWeight.w800))),
+        ]),
+      ),
+    );
+  }
+
+  Widget _masterListTile(_MamMaster master) => InkWell(
+    onTap: () => _openMasterDetails(master),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(children: [
+        Container(width: 30, height: 30, decoration: const BoxDecoration(color: Color(0xFFEAF2FF), shape: BoxShape.circle), child: Center(child: Text(master.name.substring(0, 1).toUpperCase(), style: const TextStyle(color: Color(0xFF1E4295), fontSize: 12, fontWeight: FontWeight.w800)))),
+        const SizedBox(width: 8),
+        Expanded(flex: 4, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(master.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10.5, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 3),
+          const Text('● MT5 Master', style: TextStyle(color: Color(0xFF10B981), fontSize: 8, fontWeight: FontWeight.w700)),
+        ])),
+        Expanded(flex: 3, child: Text(master.login, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 9.5, fontWeight: FontWeight.w700))),
+        Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text('${master.profitShare.toStringAsFixed(2)}%', style: const TextStyle(color: Color(0xFFB45309), fontSize: 10, fontWeight: FontWeight.w800)))),
+      ]),
+    ),
+  );
+
+  Future<void> _showCreateMasterSheet() async {
+    final name = TextEditingController();
+    final share = TextEditingController(text: '20');
+    final masterPass = TextEditingController();
+    final investorPass = TextEditingController();
+    String risk = 'Medium', leverage = '1:500', payout = 'Weekly';
+    await showModalBottomSheet<void>(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (sheet) => StatefulBuilder(builder: (ctx, setSheet) => SafeArea(
+        child: Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * .92),
+          padding: EdgeInsets.fromLTRB(18, 12, 18, MediaQuery.viewInsetsOf(ctx).bottom + 18),
+          decoration: BoxDecoration(color: Theme.of(ctx).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+          child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFD3DCE8), borderRadius: BorderRadius.circular(4)))),
+            const SizedBox(height: 16),
+            Row(children: [
+              const Icon(LucideIcons.usersRound, color: Color(0xFF2563EB), size: 22),
+              const SizedBox(width: 9),
+              const Expanded(child: Text('Establish Master MAM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
+              IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(LucideIcons.x)),
+            ]),
+            const Text('Live MT5 Engine  •  Direct STP Allocation', style: TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+            const SizedBox(height: 18),
+            _sheetLabel('MASTER STRATEGY NAME'),
+            TextField(controller: name, decoration: const InputDecoration(hintText: 'e.g. Apex Global Alpha Pool')),
+            const SizedBox(height: 14),
+            _sheetLabel('PROFIT SHARE (%)'),
+            TextField(controller: share, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(suffixText: '%', hintText: '1 - 50%')),
+            const SizedBox(height: 14),
+            _sheetLabel('RISK PROFILE'),
+            Wrap(spacing: 7, children: ['Low', 'Medium', 'High'].map((v) => ChoiceChip(label: Text(v), selected: risk == v, onSelected: (_) => setSheet(() => risk = v)).copyWith()).toList()),
+            const SizedBox(height: 14),
+            _sheetLabel('ACCOUNT LEVERAGE'),
+            DropdownButtonFormField<String>(value: leverage, items: ['1:100','1:200','1:400','1:500'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setSheet(() => leverage = v ?? leverage)),
+            const SizedBox(height: 14),
+            _sheetLabel('SETTLEMENT PAYOUT FREQUENCY'),
+            DropdownButtonFormField<String>(value: payout, items: ['Daily','Weekly','Monthly','Quarterly','Half-Yearly','Annually'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setSheet(() => payout = v ?? payout)),
+            const SizedBox(height: 14),
+            _sheetLabel('MASTER PASSWORD'),
+            TextField(controller: masterPass, obscureText: true, decoration: const InputDecoration(hintText: 'Master trading password')),
+            const SizedBox(height: 12),
+            _sheetLabel('INVESTOR PASSWORD'),
+            TextField(controller: investorPass, obscureText: true, decoration: const InputDecoration(hintText: 'Investor read-only password')),
+            const SizedBox(height: 18),
+            SizedBox(width: double.infinity, height: 48, child: FilledButton(
+              onPressed: () {
+                final parsedShare = double.tryParse(share.text.trim());
+                if (name.text.trim().isEmpty || parsedShare == null || parsedShare < 1 || parsedShare > 50 || masterPass.text.isEmpty || investorPass.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Complete all fields. Profit share must be between 1% and 50%.')));
+                  return;
+                }
+                setState(() => _masters.insert(0, _MamMaster(name: name.text.trim(), login: 'Pending setup', profitShare: parsedShare, leverage: leverage, balance: 0, status: 'Disabled', risk: risk, payout: payout)));
+                Navigator.pop(ctx);
+                _showInfo('MAM setup saved in this demo screen. Backend creation is not connected yet.');
+              },
+              child: const Text('Establish Master Account →', style: TextStyle(fontWeight: FontWeight.w800)),
+            )),
+          ])),
+        ),
+      )),
+    );
+    name.dispose(); share.dispose(); masterPass.dispose(); investorPass.dispose();
+  }
+
+  Widget _sheetLabel(String value) => Padding(padding: const EdgeInsets.only(bottom: 7), child: Text(value, style: const TextStyle(color: Color(0xFF17345D), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .55)));
+
+  void _openMasterDetails(_MamMaster master) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => _MamMasterDetailsPage(master: master, onChanged: () => setState(() {}))));
+
+  void _showInfo(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
+
+class _MamMaster {
+  _MamMaster({required this.name, required this.login, required this.profitShare, required this.leverage, required this.balance, required this.status, required this.risk, required this.payout});
+  final String name;
+  final String login;
+  final double profitShare;
+  final String leverage;
+  final double balance;
+  String status;
+  final String risk;
+  final String payout;
+}
+
+class _MamMasterDetailsPage extends StatefulWidget {
+  const _MamMasterDetailsPage({required this.master, required this.onChanged});
+  final _MamMaster master;
+  final VoidCallback onChanged;
+
+  @override
+  State<_MamMasterDetailsPage> createState() => _MamMasterDetailsPageState();
+}
+
+class _MamMasterDetailsPageState extends State<_MamMasterDetailsPage> {
+  @override
+  Widget build(BuildContext context) {
+    final m = widget.master;
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.arrowLeft)), title: const Text('Master Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800))),
+      body: ListView(padding: const EdgeInsets.fromLTRB(15, 10, 15, 30), children: [
+        Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Expanded(child: Text(m.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800))), _statusBadge(m.status)]),
+          const SizedBox(height: 7),
+          Text('LOGIN ID  ${m.login}', style: const TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+          const SizedBox(height: 16),
+          const Text('NET AVAILABLE BALANCE', style: TextStyle(color: Color(0xFF71809A), fontSize: 9, fontWeight: FontWeight.w800)),
+          const Text('\$0.00 USD', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            _detailAction('Quick Fund', LucideIcons.plus, () => _message(context, 'Funding will be connected later.')),
+            _detailAction('Withdraw', LucideIcons.wallet, () => _message(context, 'Withdrawal will be connected later.')),
+            _detailAction('Performance', LucideIcons.chartNoAxesCombined, () => _message(context, 'Performance data will be connected later.')),
+            _detailAction('Investor Pool', LucideIcons.users, () => _message(context, 'Investor allocation will be connected later.')),
+          ]),
+        ])),
+        const SizedBox(height: 12),
+        _detailSection(context, 'Master Specifications', LucideIcons.server, [
+          _detailLine('Trading platform', 'MetaTrader 5 (MT5)'),
+          _detailLine('Leverage', m.leverage),
+          _detailLine('Payout cycle', m.payout),
+          _detailLine('Risk profile', m.risk),
+          _detailLine('Profit share', '${m.profitShare.toStringAsFixed(2)}%'),
+        ]),
+        const SizedBox(height: 12),
+        _detailSection(context, 'Security & Credentials', LucideIcons.shieldCheck, [
+          _detailLine('Trader password', '••••••••••'),
+          _detailLine('Investor password', '••••••••••'),
+        ]),
+        const SizedBox(height: 12),
+        _detailSection(context, 'Live Orders & Controls', LucideIcons.activity, [
+          _detailLine('Open positions', '0'),
+          _detailLine('Execution status', m.status),
+        ]),
+        const SizedBox(height: 12),
+        _detailSection(context, 'Profit Share Wallet & Settlements', LucideIcons.wallet, [
+          _detailLine('Pending wallet', '\$0.00'),
+          _detailLine('Total settled', '\$0.00'),
+          _detailLine('Trades processed', '0'),
+        ]),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () => setState(() => m.status = m.status == 'Active' ? 'Disabled' : 'Active'),
+          icon: Icon(m.status == 'Active' ? LucideIcons.pause : LucideIcons.play),
+          label: Text(m.status == 'Active' ? 'Pause Master Node' : 'Activate Master Node'),
+        ),
+        const SizedBox(height: 8),
+        const Text('Demo UI only — balances, credentials, orders and settlements are placeholders until backend integration.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF71809A), fontSize: 9)),
+      ]),
+    );
+  }
+
+  Widget _statusBadge(String status) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: status == 'Active' ? const Color(0xFFE9FBF4) : const Color(0xFFFFECEC), borderRadius: BorderRadius.circular(20)), child: Text(status, style: TextStyle(color: status == 'Active' ? const Color(0xFF059669) : const Color(0xFFDC4444), fontSize: 9, fontWeight: FontWeight.w800)));
+  Widget _detailAction(String label, IconData icon, VoidCallback action) => OutlinedButton.icon(onPressed: action, icon: Icon(icon, size: 14), label: Text(label, style: const TextStyle(fontSize: 10)));
+  Widget _detailSection(BuildContext context, String title, IconData icon, List<Widget> children) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Row(children: [Icon(icon, color: const Color(0xFF2563EB), size: 17), const SizedBox(width: 8), Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800))]),
+    const SizedBox(height: 9), const Divider(height: 1), ...children,
+  ]));
+  Widget _detailLine(String label, String value) => Padding(padding: const EdgeInsets.only(top: 10), child: Row(children: [Expanded(child: Text(label, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10))), Text(value, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700))]));
+  void _message(BuildContext context, String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}

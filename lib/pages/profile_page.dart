@@ -3991,274 +3991,214 @@ class _PaymentMethodsTabView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Header Section
-        Center(
-          child: Column(
-            children: const [
-              Text(
-                'Payment Methods',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: const Color(0xFF10264A),
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              SizedBox(height: 8),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Add, manage or update your payment destinations.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF62738E),
-                    fontSize: 12.5,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
+        const Text(
+          'Payment Methods',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _profileNavy,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.2,
           ),
         ),
-        const SizedBox(height: 22),
-
-        // 2. Card 1: Bank Account
-        _buildBankCard(context),
+        const SizedBox(height: 18),
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 0.49,
+          children: [
+            _buildBankCard(context),
+            _buildCryptoCard(context),
+          ],
+        ),
         const SizedBox(height: 16),
-
-        // 3. Card 2: Crypto Wallet
-        _buildCryptoCard(context),
-        const SizedBox(height: 16),
-
-        // 4. Security Footer Note
         _buildSecurityFooter(),
       ],
     );
   }
 
   Widget _buildBankCard(BuildContext context) {
+    return _paymentGridCard(
+      icon: LucideIcons.landmark,
+      iconColor: _profileBlue,
+      title: 'Bank Account',
+      status: bankStatus,
+      description: 'Bank-based withdrawals and payouts',
+      details: [
+        _paymentGridDetail('Bank', bankName),
+        _paymentGridDetail('Account', bankAccountNumber),
+        _paymentGridDetail('IFSC', bankIfscCode),
+        _paymentGridDetail('Branch', bankBranch),
+      ],
+      onView: onViewBankDetails,
+      onEdit: onEditBankDetails,
+      onMenu: onBankMenuAction,
+    );
+  }
+
+  Widget _buildCryptoCard(BuildContext context) {
+    return _paymentGridCard(
+      icon: LucideIcons.wallet,
+      iconColor: _profileGold,
+      title: 'Crypto Wallet',
+      status: cryptoStatus,
+      description: 'Digital asset withdrawal destination',
+      details: [
+        _paymentGridDetail('Wallet', cryptoWalletAddress),
+        _paymentGridDetail('Currency', cryptoCurrency),
+        _paymentGridDetail('Network', cryptoNetwork),
+      ],
+      onView: onViewCryptoDetails,
+      onEdit: onEditCryptoDetails,
+      onMenu: onCryptoMenuAction,
+    );
+  }
+
+  Widget _paymentGridCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String status,
+    required String description,
+    required List<Widget> details,
+    required VoidCallback onView,
+    required VoidCallback onEdit,
+    required ValueChanged<String> onMenu,
+  }) {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FC),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder, width: 1.2),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _profileBorder),
         boxShadow: _profileShadow,
       ),
-      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10264A),
-                  borderRadius: BorderRadius.circular(12),
+                  color: _profileBlueLight,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  LucideIcons.landmark,
-                  color: Color(0xFFF7F9FC),
-                  size: 22,
-                ),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    const Text(
-                      'Bank Account',
-                      style: TextStyle(
-                        color: const Color(0xFF10264A),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    _connectedBadge(bankStatus),
-                  ],
-                ),
-              ),
-              _buildEllipsisMenu(onBankMenuAction),
+              const Spacer(),
+              _buildEllipsisMenu(onMenu),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // Subtitle & 3D Isometric Illustration
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Expanded(
-                child: Text(
-                  'For bank-based withdrawals and eligible payouts.',
-                  style: TextStyle(
-                    color: Color(0xFF62738E),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const _IsometricBankGraphic(),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Details container
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFF7F9FC), width: 1.2),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _profileNavy,
+              fontSize: 13,
+              height: 1.2,
+              fontWeight: FontWeight.w800,
             ),
+          ),
+          const SizedBox(height: 5),
+          _connectedBadge(status),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _profileMuted,
+              fontSize: 10,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Expanded(
             child: Column(
-              children: [
-                _detailRow(label: 'Bank name', value: bankName),
-                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
-                _detailRow(label: 'Account number', value: bankAccountNumber),
-                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
-                _detailRow(label: 'IFSC code', value: bankIfscCode),
-                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
-                _detailRow(label: 'Branch name', value: bankBranch),
-              ],
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: details,
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Action Buttons
-          _actionButtons(
-            onView: onViewBankDetails,
-            onEdit: onEditBankDetails,
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onView,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _profileBlueDark,
+                side: const BorderSide(color: _profileBlueBorder),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(9),
+                ),
+              ),
+              child: const Text(
+                'View details',
+                maxLines: 1,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onEdit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _profileBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(9),
+                ),
+              ),
+              child: const Text(
+                'Edit details',
+                maxLines: 1,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCryptoCard(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FC),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder, width: 1.2),
-        boxShadow: _profileShadow,
-      ),
-      padding: const EdgeInsets.all(20),
+  Widget _paymentGridDetail(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10264A),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  LucideIcons.wallet,
-                  color: _profileGold,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    const Text(
-                      'Crypto Wallet',
-                      style: TextStyle(
-                        color: const Color(0xFF10264A),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    _connectedBadge(cryptoStatus),
-                  ],
-                ),
-              ),
-              _buildEllipsisMenu(onCryptoMenuAction),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Subtitle & 3D Isometric Illustration
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Expanded(
-                child: Text(
-                  'Manage a supported digital asset destination.',
-                  style: TextStyle(
-                    color: Color(0xFF62738E),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const _IsometricCryptoGraphic(),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Details container
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFF7F9FC), width: 1.2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Wallet address',
-                  style: TextStyle(
-                    color: Color(0xFF62738E),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  cryptoWalletAddress,
-                  softWrap: true,
-                  style: const TextStyle(
-                    color: const Color(0xFF10264A),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    height: 1.35,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const Divider(color: Color(0xFFF7F9FC), height: 18, thickness: 1),
-                _detailRow(label: 'Currency', value: cryptoCurrency),
-              ],
+          Text(
+            label,
+            style: const TextStyle(
+              color: _profileMuted,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Action Buttons
-          _actionButtons(
-            onView: onViewCryptoDetails,
-            onEdit: onEditCryptoDetails,
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _profileNavy,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

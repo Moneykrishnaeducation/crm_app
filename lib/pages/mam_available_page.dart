@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_notch_toast/flutter_notch_toast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -741,12 +742,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
           if (widget.onJoinedPool != null) {
             widget.onJoinedPool!(pool);
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Successfully invested \$${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!'),
-              backgroundColor: _c.green,
-            ),
-          );
+          toast.success('Successfully invested \${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!');
         },
       ),
     );

@@ -161,6 +161,7 @@ class _ReferenceAccountCard extends StatelessWidget {
     final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF718096);
     final border = selected ? gold : (dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE));
     final equity = account.equityHistory.isNotEmpty ? account.equityHistory : <double>[1, 1.1, 1.04, 1.2, 1.13, 1.3, 1.26, 1.4];
+    final sparkWidth = MediaQuery.sizeOf(context).width < 380 ? 54.0 : 82.0;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -191,7 +192,7 @@ class _ReferenceAccountCard extends StatelessWidget {
                   const SizedBox(height: 7),
                   Text('${account.name}  •  ${account.leverage}', style: TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w500)),
                 ])),
-                SizedBox(width: 82, height: 42, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
+                SizedBox(width: sparkWidth, height: 42, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
                 const SizedBox(width: 5),
                 Icon(selected ? Icons.star : Icons.star_border, color: selected ? gold : muted, size: 22),
               ]),
@@ -633,7 +634,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w500)),
         const SizedBox(height: 5),
-        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: valueColor ?? fg, fontSize: 17, fontWeight: FontWeight.w800))),
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: valueColor ?? fg, fontSize: 19, fontWeight: FontWeight.w800))),
       ]),
     ));
 
@@ -641,9 +642,9 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
       Icon(icon, color: const Color(0xFF8FB5E0), size: 20),
       const SizedBox(width: 8),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(color: muted, fontSize: 9)),
+        Text(label, style: TextStyle(color: muted, fontSize: 10)),
         const SizedBox(height: 4),
-        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w700)),
       ])),
     ]));
 
@@ -681,15 +682,15 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     }
 
     Widget stat(IconData icon, String label, String value, Color accent) => Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(13), border: Border.all(color: border)),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
       child: Row(children: [
         Container(width: 37, height: 37, decoration: BoxDecoration(color: accent.withValues(alpha: .13), shape: BoxShape.circle), child: Icon(icon, color: accent, size: 19)),
         const SizedBox(width: 9),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: muted, fontSize: 8)),
+          Text(label, style: TextStyle(color: muted, fontSize: 9)),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800)),
+          Text(value, style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w800)),
         ])),
       ]),
     );
@@ -748,7 +749,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               ])),
             ]),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 16),
           Row(children: [
             action(LucideIcons.arrowDown, 'Deposit', true, () => widget.onSelectPage('Deposit')),
             const SizedBox(width: 8),
@@ -758,7 +759,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             const SizedBox(width: 8),
             action(LucideIcons.settings, 'Settings', false, () => widget.onSelectPage('Settings')),
           ]),
-          const SizedBox(height: 19),
+          const SizedBox(height: 20),
           Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')])),
           const SizedBox(height: 14),
           if (_tab == 'Overview') ...[
@@ -769,7 +770,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 Row(children: [
                   Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 20),
                   const SizedBox(width: 8),
-                  Expanded(child: Text('Account Performance', style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.w800))),
+                  Expanded(child: Text('Account Performance', style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
                   Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6), decoration: BoxDecoration(color: const Color(0xFF075B3A), borderRadius: BorderRadius.circular(20)), child: Text('${changePct >= 0 ? '+' : ''}${changePct.toStringAsFixed(2)}%', style: const TextStyle(color: green, fontSize: 11, fontWeight: FontWeight.w800))),
                 ]),
                 const SizedBox(height: 12),

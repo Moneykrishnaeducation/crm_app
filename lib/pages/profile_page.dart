@@ -730,12 +730,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                           height: 130,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => const CustomPaint(
-                            painter: _ProfileCoverPainter(),
+                            painter: CelestialBannerPainter(theme: _bannerTheme),
                             child: SizedBox.expand(),
                           ),
                         )
                       : CustomPaint(
-                          painter: _ProfileCoverPainter(),
+                          painter: CelestialBannerPainter(theme: _bannerTheme),
                           child: const SizedBox.expand(),
                         ),
                 ),

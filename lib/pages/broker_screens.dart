@@ -219,7 +219,13 @@ class _QuickActionsRow extends StatelessWidget {
             child: _QuickActionItem(
               icon: LucideIcons.fileText,
               label: 'Report Center',
-              onTap: () => onSelectPage('Transactions'),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TradeReportPage(),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -2318,7 +2324,18 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                       ),
                       const SizedBox(width: 8),
                       InkWell(
-                        onTap: () => _openTradeReportModal(context),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => TradeReportPage(
+                                accounts: _allAccounts,
+                                selectedAccountLogin: _selectedLogin,
+                                onAccountChanged: _selectAccount,
+                              ),
+                            ),
+                          );
+                        },
+                        onLongPress: () => _openTradeReportModal(context),
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -15,6 +15,7 @@ import 'pages/security_center_page.dart';
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
 part 'pages/broker_screens.dart';
+part 'pages/trade_report_page.dart';
 part 'pages/funds_action_dialog.dart';
 part 'pages/accounts_page.dart';
 part 'pages/internal_transfer_page.dart';
@@ -326,6 +327,20 @@ class _AppShellState extends State<AppShell> {
             onBack: () => setState(() => _selectedPage = 'More'),
             onSelectPage: _selectPage,
           ),
+        'Trade Report' => TradeReportPage(
+            accounts: _accounts,
+            selectedAccountLogin: _selectedAccount?.login,
+            onAccountChanged: (login) {
+              setState(() {
+                final acc = _accounts.firstWhere(
+                  (a) => a.login == login,
+                  orElse: () => _accounts.first,
+                );
+                _selectedAccount = acc;
+              });
+            },
+            onBack: () => setState(() => _selectedPage = 'Transactions'),
+          ),
         _ => _SectionPage(title: page),
       },
     );
@@ -341,6 +356,7 @@ class _AppShellState extends State<AppShell> {
           'Profile' || 'Security Center' => () => setState(() => _selectedPage = 'More'),
           'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
           'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
+          'Trade Report' => () => setState(() => _selectedPage = 'Transactions'),
           _ => null,
         },
         onAvatarTap: () => _selectPage('Profile'),

@@ -102,7 +102,7 @@ void main() {
       expect(find.text('•••••••• USD'), findsNothing);
     });
 
-    testWidgets('tapping Trade Report opens modal and displays trading performance', (tester) async {
+    testWidgets('tapping Trade Report navigates to TradeReportPage and can pop back', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -115,19 +115,20 @@ void main() {
       await tester.tap(find.text('Trade Report'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Trade Performance Report'), findsOneWidget);
-      expect(find.textContaining('Account: 52132132'), findsOneWidget);
-      expect(find.text('Total Net Profit'), findsOneWidget);
-      expect(find.text('Win Rate'), findsOneWidget);
-      expect(find.text('Total Trades'), findsOneWidget);
-      expect(find.text('Total Volume'), findsOneWidget);
-      expect(find.text('Close Report'), findsOneWidget);
+      expect(find.byType(TradeReportPage), findsOneWidget);
+      expect(find.text('Trade Time'), findsOneWidget);
+      expect(find.text('Closed Order Statistics'), findsOneWidget);
+      expect(find.text('Order P&L (USD)'), findsOneWidget);
+      expect(find.text('Total P&L (USD)'), findsOneWidget);
+      expect(find.text('Equity Curve'), findsOneWidget);
+      expect(find.text('P&L Analysis'), findsOneWidget);
 
-      // Dismiss Trade Report
-      await tester.tap(find.text('Close Report'));
+      // Pop back via Chevron Left
+      await tester.tap(find.byIcon(LucideIcons.chevronLeft));
       await tester.pumpAndSettle();
 
-      expect(find.text('Trade Performance Report'), findsNothing);
+      expect(find.byType(TradeReportPage), findsNothing);
+      expect(find.text('Live | 52132132'), findsOneWidget);
     });
 
     testWidgets('switching to empty account 3315 triggers No Data vector illustration and zero balance', (tester) async {

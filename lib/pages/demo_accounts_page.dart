@@ -148,9 +148,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
             ...filtered.map((account) => _ReferenceAccountCard(
               account: account,
               selected: false,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Demo account ${account.login} selected.')),
-              ),
+              onTap: () => showAppToast('Demo account ${account.login} selected.'),
             )),
           const SizedBox(height: 7),
           Text('Combined demo balance  ${_demoAccounts.isEmpty ? '—' : '\$ ${totalBalance.toStringAsFixed(2)}'}',
@@ -188,9 +186,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
             );
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Demo account preview $login added.')),
-          );
+          showAppToast('Demo account preview $login added.', type: NotchToastType.success);
         },
       ),
     );
@@ -392,11 +388,11 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
     final name = _nameController.text.trim();
     final balance = double.tryParse(_balanceController.text.trim());
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name to continue.')));
+      showAppToast('Enter an account name to continue.', type: NotchToastType.warning);
       return;
     }
     if (balance == null || !balance.isFinite || balance <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid virtual balance greater than zero.')));
+      showAppToast('Enter a valid virtual balance greater than zero.', type: NotchToastType.error);
       return;
     }
     Navigator.pop(context);

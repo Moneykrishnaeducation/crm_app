@@ -1086,6 +1086,8 @@ class _LaptopSecurityGraphic extends StatelessWidget {
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -1120,10 +1122,11 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
-        child: Container(
+        child: SingleChildScrollView(
+          child: Container(
           decoration: BoxDecoration(
             color: _cardBg,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: _borderColor),
             boxShadow: const [
               BoxShadow(
@@ -1213,7 +1216,7 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Enter your CRM password to open the Security & Devices tab.',
+                      'Enter your CRM password to continue to Security Center.',
                       style: TextStyle(
                         color: _textSecondary,
                         fontSize: 13.5,
@@ -1279,7 +1282,7 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                         const SizedBox(width: 8),
                         const Expanded(
                           child: Text(
-                            'Your password is checked securely and is not stored.',
+                            'Your password is protected and is not stored.',
                             style: TextStyle(
                               color: _textSecondary,
                               fontSize: 12,
@@ -1310,7 +1313,7 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Verify password →',
+                                'Verify password',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,

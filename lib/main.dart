@@ -189,23 +189,12 @@ class _AppShellState extends State<AppShell> {
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
     BrokerAccount(
-      'V Tamizharasan', '52132132', '1:500', '\$12,300.00', '\$12,450.00', 'Live MT5',
-      server: 'VTIndex-Live01', currency: 'USD', floatingPnl: 150.00,
-      equityHistory: [12100, 12150, 12200, 12280, 12350, 12450.00],
-      openPositions: [
-        BrokerOpenPosition(symbol: 'EURUSD', side: 'buy', volume: '0.50', openPrice: '1.08420', currentPrice: '1.08720', profit: 150.00),
-      ],
-      recentTrades: [
-        BrokerTradeRecord(symbol: 'GBPUSD', side: 'buy', volume: '0.10', closedAt: 'Today, 09:42', profit: 38.20),
-      ],
-    ),
-    BrokerAccount(
-      'XRSIM-USD-1', '3315', '1:500', '\$12,500.00', '\$12,640.50', 'Live MT5',
-      server: 'VTIndex-Live01', currency: 'USD', floatingPnl: 140.50,
-      equityHistory: [12100, 12180, 12140, 12260, 12220, 12350, 12410, 12380, 12520, 12640.50],
+      'Standard', '3315', '1:500', r'$2,560.00', r'$2,742.50', 'Live MT5',
+      server: 'VTIndex-MT5', currency: 'USD', floatingPnl: 182.50,
+      equityHistory: [2380, 2410, 2375, 2460, 2430, 2510, 2480, 2570, 2530, 2620, 2590, 2742.50],
       openPositions: [
         BrokerOpenPosition(symbol: 'XAUUSD', side: 'buy', volume: '0.10', openPrice: '2,345.20', currentPrice: '2,351.80', profit: 66.00),
-        BrokerOpenPosition(symbol: 'EURUSD', side: 'sell', volume: '0.20', openPrice: '1.08420', currentPrice: '1.08048', profit: 74.50),
+        BrokerOpenPosition(symbol: 'EURUSD', side: 'sell', volume: '0.20', openPrice: '1.08420', currentPrice: '1.08048', profit: 116.50),
       ],
       recentTrades: [
         BrokerTradeRecord(symbol: 'GBPUSD', side: 'buy', volume: '0.10', closedAt: 'Today, 09:42', profit: 38.20),
@@ -213,11 +202,11 @@ class _AppShellState extends State<AppShell> {
       ],
     ),
     BrokerAccount(
-      'XRSIM-USD-2', '3311', '1:500', '\$8,200.00', '\$8,140.00', 'Live MT5',
-      server: 'VTIndex-Live01', currency: 'USD', floatingPnl: -60.00,
-      equityHistory: [8300, 8260, 8290, 8210, 8240, 8180, 8200, 8160, 8190, 8140],
+      'ECN', '3311', '1:500', r'$1,240.00', r'$1,180.20', 'Live MT5',
+      server: 'VTIndex-MT5', currency: 'USD', floatingPnl: -59.80,
+      equityHistory: [1290, 1260, 1280, 1230, 1250, 1200, 1240, 1190, 1220, 1180.20],
       openPositions: [
-        BrokerOpenPosition(symbol: 'NAS100', side: 'sell', volume: '0.10', openPrice: '18,420.0', currentPrice: '18,480.0', profit: -60.00),
+        BrokerOpenPosition(symbol: 'NAS100', side: 'sell', volume: '0.10', openPrice: '18,420.0', currentPrice: '18,480.0', profit: -59.80),
       ],
       recentTrades: [
         BrokerTradeRecord(symbol: 'EURUSD', side: 'buy', volume: '0.20', closedAt: 'Today, 08:15', profit: 24.80),
@@ -225,11 +214,11 @@ class _AppShellState extends State<AppShell> {
       ],
     ),
     BrokerAccount(
-      'XRSIM-USD-3', '3312', '1:500', '\$5,600.00', '\$5,632.00', 'Live MT5',
-      server: 'VTIndex-Live02', currency: 'USD', floatingPnl: 32.00,
-      equityHistory: [5480, 5510, 5490, 5550, 5520, 5580, 5560, 5600, 5615, 5632],
+      'Pro', '3312', '1:500', r'$5,000.00', r'$5,320.00', 'Live MT5',
+      server: 'VTIndex-MT5', currency: 'USD', floatingPnl: 320.00,
+      equityHistory: [5000, 5080, 5050, 5140, 5100, 5200, 5160, 5270, 5230, 5320],
       openPositions: [
-        BrokerOpenPosition(symbol: 'BTCUSD', side: 'buy', volume: '0.01', openPrice: '67,100.0', currentPrice: '67,420.0', profit: 32.00),
+        BrokerOpenPosition(symbol: 'BTCUSD', side: 'buy', volume: '0.01', openPrice: '67,100.0', currentPrice: '67,420.0', profit: 320.00),
       ],
       recentTrades: [
         BrokerTradeRecord(symbol: 'XAUUSD', side: 'buy', volume: '0.05', closedAt: 'Today, 07:30', profit: 21.60),
@@ -237,8 +226,8 @@ class _AppShellState extends State<AppShell> {
       ],
     ),
     BrokerAccount(
-      'XRSIM-USD-4', '3327', '1:500', '\$10,000.00', '\$10,000.00', 'Live MT5',
-      server: 'VTIndex-Live02', currency: 'USD', floatingPnl: 0.00,
+      'Demo', '3388', '1:500', r'$10,000.00', r'$10,000.00', 'Demo MT5',
+      server: 'VTIndex-Demo', currency: 'USD', floatingPnl: 0.00,
       equityHistory: [10000, 10020, 10010, 9990, 10015, 10000, 10030, 10010, 10000, 10000],
       recentTrades: [
         BrokerTradeRecord(symbol: 'US30', side: 'buy', volume: '0.10', closedAt: 'Yesterday', profit: 42.00),

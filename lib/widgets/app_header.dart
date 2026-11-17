@@ -17,6 +17,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(58);
 
   bool get _isPrimaryTab => onBack == null;
+  bool get _usesBrandHeader => _isPrimaryTab || title == 'Account Details';
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +41,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
               statusBarBrightness: Brightness.light,
             ),
       automaticallyImplyLeading: false,
-      leading: onBack != null
+      leading: onBack != null && !_usesBrandHeader
           ? IconButton(
               onPressed: onBack,
               tooltip: 'Back',
@@ -51,13 +52,15 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
               ),
             )
           : null,
-      titleSpacing: onBack != null ? 0 : 16,
-      title: _isPrimaryTab
+      titleSpacing: _usesBrandHeader ? 16 : 0,
+      title: _usesBrandHeader
           ? _buildPrimaryBrandTitle(context)
           : _buildDetailTitle(context),
-      actions: _isPrimaryTab
-          ? _buildPrimaryBrandActions(context)
-          : _buildStandardActions(context, isDark),
+      actions: title == 'Account Details'
+          ? _buildAccountDetailActions(context, isDark)
+          : _isPrimaryTab
+              ? _buildPrimaryBrandActions(context)
+              : _buildStandardActions(context, isDark),
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(1),
         child: Divider(height: 1, thickness: 0.7, color: _border),
@@ -104,6 +107,23 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         fontWeight: FontWeight.w700,
       ),
     );
+  }
+
+  List<Widget> _buildAccountDetailActions(BuildContext context, bool isDark) {
+    return [
+      Padding(
+        padding: const EdgeInsetsDirectional.only(end: 14),
+        child: InkWell(
+          onTap: onAvatarTap,
+          borderRadius: BorderRadius.circular(16),
+          child: CircleAvatar(
+            radius: 16,
+            backgroundColor: isDark ? const Color(0xFF263750) : const Color(0xFFEAF0F8),
+            child: const Icon(LucideIcons.userRound, size: 18, color: _blue),
+          ),
+        ),
+      ),
+    ];
   }
 
   List<Widget> _buildPrimaryBrandActions(BuildContext context) {

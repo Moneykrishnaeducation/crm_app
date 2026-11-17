@@ -708,31 +708,35 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   Widget _buildProfilePageTitle() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('VTINDEX CLIENT PORTAL', style: TextStyle(
-                color: _c.accentBlue, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-              const SizedBox(height: 4),
-              Text('Profile', style: TextStyle(
-                color: _c.text, fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: -.7)),
+              Text('ACCOUNT SETTINGS', style: TextStyle(
+                color: _c.accentBlue, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.8)),
+              const SizedBox(height: 5),
+              Text('My profile', style: TextStyle(
+                color: _c.text, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -1.1)),
+              const SizedBox(height: 3),
+              Text('Personal details, verification and payment preferences',
+                style: TextStyle(color: _c.muted, fontSize: 10.5)),
             ],
           ),
         ),
         Material(
           color: _c.card,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(14),
             side: BorderSide(color: _c.border),
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(14),
             onTap: _showEditDetailsSheet,
             child: Padding(
-              padding: const EdgeInsets.all(11),
-              child: Icon(LucideIcons.userRoundPen, color: _c.text, size: 19),
+              padding: const EdgeInsets.all(12),
+              child: Icon(LucideIcons.pencilLine, color: _c.text, size: 18),
             ),
           ),
         ),
@@ -740,97 +744,80 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  // Native-app profile identity header. Keeps the existing avatar/banner actions.
+  // Minimal identity panel: no client-role labels or account-type badges.
   Widget _buildMobileProfileHeader() {
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFF0B1D38), Color(0xFF153D70), Color(0xFF1B548A)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [BoxShadow(color: Color(0x2410264A), blurRadius: 22, offset: Offset(0, 9))],
+        color: _c.card,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _c.border),
+        boxShadow: _c.isDark ? null : _profileShadow,
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
+      child: Row(
         children: [
-          Positioned(right: -36, top: -54,
-            child: Container(width: 170, height: 170,
-              decoration: BoxDecoration(shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: .07), width: 24)))),
-          Positioned(right: 24, bottom: -78,
-            child: Container(width: 180, height: 180,
-              decoration: BoxDecoration(shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFF4C84A).withValues(alpha: .12), width: 1.5)))),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const Expanded(child: Text('CLIENT PROFILE', style: TextStyle(
-                  color: Color(0xFFFFD76A), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.4))),
-                _profileHeaderAction(icon: LucideIcons.image, label: 'Cover', onTap: _showChangeBannerSheet),
-              ]),
-              const SizedBox(height: 20),
-              Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                Stack(clipBehavior: Clip.none, children: [
-                  Container(
-                    width: 82, height: 82,
-                    decoration: BoxDecoration(
-                      color: _avatarBg, shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  color: _avatarBg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _c.border, width: 2),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _profileImagePath != null
+                    ? Image.file(File(_profileImagePath!,), fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _profileInitial())
+                    : _profileInitial(),
+              ),
+              Positioned(
+                right: -3,
+                bottom: -3,
+                child: Material(
+                  color: _profileGold,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _showChangePhotoSheet,
+                    child: const SizedBox(
+                      width: 27, height: 27,
+                      child: Icon(LucideIcons.camera, size: 13, color: _profileNavy),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: _profileImagePath != null
-                      ? Image.file(File(_profileImagePath!), fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _profileInitial())
-                      : _profileInitial(),
                   ),
-                  Positioned(right: -2, bottom: -2,
-                    child: Material(
-                      color: const Color(0xFFF4C84A), shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(), onTap: _showChangePhotoSheet,
-                        child: const SizedBox(width: 28, height: 28,
-                          child: Icon(LucideIcons.camera, size: 14, color: Color(0xFF10264A))),
-                      ),
-                    )),
-                ]),
-                const SizedBox(width: 15),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    Flexible(child: Text(_name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.1, fontWeight: FontWeight.w900))),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 5),
+                Text(_email, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: _c.muted, fontSize: 10.5)),
+                const SizedBox(height: 9),
+                Row(
+                  children: [
+                    Icon(LucideIcons.mapPin, size: 12, color: _c.accentBlue),
                     const SizedBox(width: 5),
-                  ]),
-                  const SizedBox(height: 6),
-                  Text(_email, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white.withValues(alpha: .76), fontSize: 10.5)),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .11),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: .16)),
-                    ),
-                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(LucideIcons.shieldCheck, color: Color(0xFFFFD76A), size: 11),
-                      SizedBox(width: 5),
-                      Text('Client account', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
-                ])),
-              ]),
-              const SizedBox(height: 18),
-              Container(height: 1, color: Colors.white.withValues(alpha: .13)),
-              const SizedBox(height: 13),
-              Row(children: [
-                Expanded(child: _profileHeroMetric(LucideIcons.phone, 'PHONE', _phone)),
-                Container(width: 1, height: 30, color: Colors.white.withValues(alpha: .15)),
-                const SizedBox(width: 12),
-                Expanded(child: _profileHeroMetric(LucideIcons.mapPin, 'LOCATION', _location)),
-              ]),
-            ]),
+                    Expanded(child: Text(_location, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: _c.muted, fontSize: 10))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: _showChangeBannerSheet,
+            tooltip: 'Personalize profile',
+            icon: Icon(LucideIcons.imagePlus, color: _c.muted, size: 18),
           ),
         ],
       ),
@@ -989,63 +976,84 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: _c.card, borderRadius: BorderRadius.circular(16),
+        color: _c.subCard,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _c.border),
       ),
-      child: Row(children: [
-        for (var i = 0; i < tabs.length; i++)
-          Expanded(child: GestureDetector(
-            onTap: () => setState(() => _selectedTabIndex = i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 1),
-              decoration: BoxDecoration(
-                color: _selectedTabIndex == i ? _c.navy : Colors.transparent,
-                borderRadius: BorderRadius.circular(11),
+      child: Row(
+        children: [
+          for (var i = 0; i < tabs.length; i++)
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedTabIndex = i);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 1),
+                  decoration: BoxDecoration(
+                    color: _selectedTabIndex == i ? _c.card : Colors.transparent,
+                    borderRadius: BorderRadius.circular(11),
+                    border: _selectedTabIndex == i
+                        ? Border.all(color: _c.border)
+                        : null,
+                    boxShadow: _selectedTabIndex == i && !_c.isDark ? _profileShadow : null,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(tabs[i].icon, size: 16,
+                        color: _selectedTabIndex == i ? _c.accentBlue : _c.muted),
+                      const SizedBox(height: 5),
+                      Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w700,
+                          color: _selectedTabIndex == i ? _c.text : _c.muted)),
+                    ],
+                  ),
+                ),
               ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(tabs[i].icon, size: 16,
-                  color: _selectedTabIndex == i ? const Color(0xFFFFD76A) : _c.muted),
-                const SizedBox(height: 5),
-                Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800,
-                    color: _selectedTabIndex == i ? Colors.white : _c.muted)),
-              ]),
             ),
-          )),
-      ]),
+        ],
+      ),
     );
   }
-
 
   // ==========================================
   // TAB 1: OVERVIEW TAB
   // ==========================================
   Widget _buildOverviewTab() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Your account', style: TextStyle(color: _c.text, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -.55)),
-          const SizedBox(height: 4),
-          Text('Manage your personal and account information', style: TextStyle(color: _c.muted, fontSize: 11)),
-        ])),
-        TextButton.icon(
-          onPressed: _showEditDetailsSheet,
-          icon: const Icon(LucideIcons.pencil, size: 13),
-          label: const Text('Edit'),
-          style: TextButton.styleFrom(foregroundColor: _c.accentBlue, textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Account overview', style: TextStyle(
+                  color: _c.text, fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -.5)),
+                const SizedBox(height: 4),
+                Text('A clear view of your account information',
+                  style: TextStyle(color: _c.muted, fontSize: 10.5)),
+              ],
+            )),
+            TextButton.icon(
+              onPressed: _showEditDetailsSheet,
+              icon: const Icon(LucideIcons.pencil, size: 13),
+              label: const Text('Edit details'),
+              style: TextButton.styleFrom(
+                foregroundColor: _c.accentBlue,
+                textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
         ),
-      ]),
-      const SizedBox(height: 16),
-      _buildMobileCompletionSummary(),
-      const SizedBox(height: 22),
-      const SizedBox(height: 22),
-      _buildPersonalInformationCard(),
-      const SizedBox(height: 14),
-      _buildIdentityVerificationCard(),
-      const SizedBox(height: 14),
-      _buildPaymentMethodsCard(),
-    ]);
+        const SizedBox(height: 14),
+        _buildMobileCompletionSummary(),
+      ],
+    );
   }
 
   Widget _buildMobileCompletionSummary() {

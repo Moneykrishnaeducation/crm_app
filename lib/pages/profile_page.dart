@@ -1,4 +1,9 @@
+import 'dart:io';
 import 'dart:math' as math;
+
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -66,6 +71,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _occupation = 'Software Engineer';
   Color _avatarBg = const Color(0xFF5E9422); // Olive-green
   String _bannerTheme = 'Cosmic Landscape';
+  String? _profileImagePath;
+  String? _bannerImagePath;
+  final ImagePicker _imagePicker = ImagePicker();
 
   // Mutable Payment Methods details
   String _bankName = 'NONE BANK';
@@ -79,6 +87,80 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _cryptoCurrency = 'UNANG';
   String _cryptoNetwork = 'TRON (TRC20)';
   final String _cryptoStatus = 'Connected';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedProfileImages();
+  }
+
+  Future<void> _loadSavedProfileImages() async {
+    final preferences = await SharedPreferences.getInstance();
+    final avatarPath = preferences.getString('profile_avatar_path');
+    final bannerPath = preferences.getString('profile_banner_path');
+    final avatarExists = avatarPath != null && await File(avatarPath).exists();
+    final bannerExists = bannerPath != null && await File(bannerPath).exists();
+    if (!mounted) return;
+    setState(() {
+      _profileImagePath = avatarExists ? avatarPath : null;
+      _bannerImagePath = bannerExists ? bannerPath : null;
+    });
+  }
+
+  Future<void> _pickAndSaveImage({
+    required ImageSource source,
+    required bool isBanner,
+  }) async {
+    try {
+      final pickedImage = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 88,
+        maxWidth: isBanner ? 2200 : 1200,
+        maxHeight: isBanner ? 1200 : 1200,
+      );
+      if (pickedImage == null) return;
+
+      final appDirectory = await getApplicationDocumentsDirectory();
+      final imageFolder = Directory('${appDirectory.path}/profile_images');
+      if (!await imageFolder.exists()) {
+        await imageFolder.create(recursive: true);
+      }
+
+      final extension = pickedImage.path.contains('.')
+          ? pickedImage.path.split('.').last.toLowerCase()
+          : 'jpg';
+      final imageName = isBanner ? 'profile_banner' : 'profile_avatar';
+      final savedFile = await File(pickedImage.path).copy(
+        '${imageFolder.path}/${imageName}_${DateTime.now().millisecondsSinceEpoch}.$extension',
+      );
+
+      final preferences = await SharedPreferences.getInstance();
+      final preferenceKey = isBanner ? 'profile_banner_path' : 'profile_avatar_path';
+      final previousPath = preferences.getString(preferenceKey);
+      await preferences.setString(preferenceKey, savedFile.path);
+
+      if (previousPath != null && previousPath != savedFile.path) {
+        final previousFile = File(previousPath);
+        if (await previousFile.exists()) {
+          await previousFile.delete();
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        if (isBanner) {
+          _bannerImagePath = savedFile.path;
+        } else {
+          _profileImagePath = savedFile.path;
+        }
+      });
+      _showSnack(isBanner ? 'Profile banner updated successfully' : 'Profile photo updated successfully');
+    } catch (error) {
+      if (!mounted) return;
+      _showSnack('Unable to update image. Please check app permissions and try again.');
+      debugPrint('Profile image picker error: $error');
+    }
+  }
 
   void _showChangeBannerSheet() {
     showModalBottomSheet<void>(
@@ -168,7 +250,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 ),
                 onPressed: () {
                   Navigator.pop(ctx);
-                  _showSnack('Custom banner upload is available in device gallery');
+                  _pickAndSaveImage(source: ImageSource.gallery, isBanner: true);
                 },
                 icon: const Icon(LucideIcons.imageUp, size: 18, color: _profileBlue),
                 label: const Text('Upload Custom Image', style: TextStyle(color: _profileBlueDark, fontSize: 13, fontWeight: FontWeight.bold)),
@@ -235,7 +317,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
                 Navigator.pop(ctx);
-                _showSnack('Camera snapshot simulated');
+                _pickAndSaveImage(source: ImageSource.camera, isBanner: false);
               },
             ),
             ListTile(
@@ -252,7 +334,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
                 Navigator.pop(ctx);
-                _showSnack('Gallery file picker simulated');
+                _pickAndSaveImage(source: ImageSource.gallery, isBanner: false);
               },
             ),
             const SizedBox(height: 14),
@@ -641,10 +723,21 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   left: 0,
                   right: 0,
                   height: 130,
-                  child: CustomPaint(
-                    painter: _ProfileCoverPainter(),
-                    child: const SizedBox.expand(),
-                  ),
+                  child: _bannerImagePath != null
+                      ? Image.file(
+                          File(_bannerImagePath!),
+                          width: double.infinity,
+                          height: 130,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const CustomPaint(
+                            painter: _ProfileCoverPainter(),
+                            child: SizedBox.expand(),
+                          ),
+                        )
+                      : CustomPaint(
+                          painter: _ProfileCoverPainter(),
+                          child: const SizedBox.expand(),
+                        ),
                 ),
                 Positioned(
                   top: 14,
@@ -692,14 +785,26 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                           boxShadow: _profileShadow,
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: _profileImagePath != null
+                            ? Image.file(
+                                File(_profileImagePath!),
+                                width: 86,
+                                height: 86,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Text(
+                                  _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
+                                  style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold),
+                                ),
+                              )
+                            : Text(
+                                _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                       Positioned(
                         right: -2,

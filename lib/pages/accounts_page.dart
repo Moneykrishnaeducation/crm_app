@@ -884,4 +884,3 @@ class _EquityHistoryPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _EquityHistoryPainter old) => old.values != values || old.color != color || old.gridColor != gridColor;
 }
- + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),

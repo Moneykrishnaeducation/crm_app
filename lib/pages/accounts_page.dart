@@ -1,10 +1,11 @@
 part of '../main.dart';
 
 class BrokerAccountsPage extends StatefulWidget {
-  const BrokerAccountsPage({super.key, required this.onSelectPage, required this.accounts, required this.onAccountCreated});
+  const BrokerAccountsPage({super.key, required this.onSelectPage, required this.accounts, required this.onAccountCreated, required this.onAccountSelected});
   final ValueChanged<String> onSelectPage;
   final List<BrokerAccount> accounts;
   final ValueChanged<BrokerAccount> onAccountCreated;
+  final ValueChanged<BrokerAccount> onAccountSelected;
   @override
   State<BrokerAccountsPage> createState() => _BrokerAccountsPageState();
 }
@@ -147,9 +148,9 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                   ),
                 )
               else if (compact)
-                ...accounts.map((account) => _AccountCard(account: account))
+                ...accounts.map((account) => _AccountCard(account: account, onTap: () => widget.onAccountSelected(account), onDeposit: () => widget.onSelectPage('Deposit')))
               else
-                _AccountTable(accounts: accounts),
+                _AccountTable(accounts: accounts, onSelect: widget.onAccountSelected),
             ],
           );
         },
@@ -393,37 +394,151 @@ class _AccountFilter extends StatelessWidget {
 }
 
 class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.account}); final BrokerAccount account;
+  const _AccountCard({required this.account, required this.onTap, required this.onDeposit});
+  final BrokerAccount account; final VoidCallback onTap; final VoidCallback onDeposit;
   @override
-  Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(13), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
-    Row(children: [const CircleAvatar(radius: 15, backgroundColor: Color(0xFFEAF2FC), child: Text('MT5', style: TextStyle(color: _brokerBlue, fontSize: 7, fontWeight: FontWeight.w800))), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w700)), const SizedBox(height: 3), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF258564), fontSize: 8, fontWeight: FontWeight.w600))])), Text('Login ${account.login}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8))]),
-    const Divider(height: 16, color: Color(0xFF1B3B68)),
-    Row(children: [Expanded(child: _AccountValue(label: 'LEVERAGE', value: account.leverage)), Expanded(child: _AccountValue(label: 'BALANCE (USD)', value: account.balance)), Expanded(child: _AccountValue(label: 'EQUITY (USD)', value: account.equity, green: true)), FilledButton(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(0, 29)), child: const Text('Deposit', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700)))]),
-  ]));
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final live = account.type == 'Live MT5';
+    return Padding(padding: const EdgeInsets.only(bottom: 11), child: Material(
+      color: cs.surface, borderRadius: BorderRadius.circular(18),
+      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(18), child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(width: 40, height: 40, decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(13)), child: Icon(LucideIcons.chartNoAxesCombined, color: cs.primary, size: 20)),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Row(children: [
+                Container(width: 6, height: 6, decoration: BoxDecoration(color: live ? const Color(0xFF20B981) : const Color(0xFF3998F5), shape: BoxShape.circle)),
+                const SizedBox(width: 5), Text(account.type, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
+                const SizedBox(width: 8), Text('MT5', style: TextStyle(color: cs.primary, fontSize: 9, fontWeight: FontWeight.w800)),
+              ]),
+            ])),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('LOGIN ID', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 7, letterSpacing: .7)),
+              const SizedBox(height: 3), Text(account.login, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w800)),
+            ]),
+            const SizedBox(width: 5), Icon(LucideIcons.chevronRight, color: cs.onSurfaceVariant, size: 17),
+          ]),
+          const SizedBox(height: 14), Container(height: 1, color: Theme.of(context).dividerColor), const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _AccountValue(label: 'BALANCE', value: account.balance)),
+            Expanded(child: _AccountValue(label: 'EQUITY', value: account.equity, green: true)),
+            Expanded(child: _AccountValue(label: 'LEVERAGE', value: account.leverage)),
+          ]),
+          const SizedBox(height: 13),
+          Row(children: [
+            Expanded(child: OutlinedButton(onPressed: onTap, style: OutlinedButton.styleFrom(foregroundColor: cs.primary, side: BorderSide(color: Theme.of(context).dividerColor), minimumSize: const Size(0, 36), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), child: const Text('View details', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)))),
+            const SizedBox(width: 8),
+            Expanded(child: FilledButton.icon(onPressed: onDeposit, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, minimumSize: const Size(0, 36), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), icon: const Icon(LucideIcons.arrowDownToLine, size: 14), label: const Text('Deposit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)))),
+          ]),
+        ]),
+      )),
+    ));
+  }
 }
+
 class _AccountValue extends StatelessWidget {
   const _AccountValue({required this.label, required this.value, this.green = false});
   final String label, value; final bool green;
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 6)), const SizedBox(height: 4), Text(value, style: TextStyle(color: green ? const Color(0xFF00E78A) : _brokerNavy, fontSize: 9, fontWeight: FontWeight.w700))]);
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 7, fontWeight: FontWeight.w700, letterSpacing: .5)),
+      const SizedBox(height: 5),
+      Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: green ? const Color(0xFF20B981) : cs.onSurface, fontSize: 11, fontWeight: FontWeight.w800)),
+    ]);
+  }
 }
 
 class _AccountTable extends StatelessWidget {
-  const _AccountTable({required this.accounts}); final List<BrokerAccount> accounts;
+  const _AccountTable({required this.accounts, required this.onSelect});
+  final List<BrokerAccount> accounts; final ValueChanged<BrokerAccount> onSelect;
   @override
-  Widget build(BuildContext context) => Container(decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
-    const Padding(padding: EdgeInsets.all(10), child: Row(children: [Expanded(flex: 3, child: Text('ACCOUNT / LOGIN', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('LEVERAGE', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('BALANCE', style: TextStyle(color: _brokerMuted, fontSize: 8))), Expanded(child: Text('EQUITY', style: TextStyle(color: _brokerMuted, fontSize: 8))), Text('ACTIONS', style: TextStyle(color: _brokerMuted, fontSize: 8))])),
-    for (final account in accounts) _AccountTableRow(account: account),
-  ]));
+  Widget build(BuildContext context) => Column(children: [
+    for (final account in accounts) _AccountCard(account: account, onTap: () => onSelect(account), onDeposit: () {}),
+  ]);
 }
-class _AccountTableRow extends StatelessWidget {
-  const _AccountTableRow({required this.account}); final BrokerAccount account;
+
+class BrokerAccountDetailsPage extends StatelessWidget {
+  const BrokerAccountDetailsPage({super.key, required this.account, required this.onBack, required this.onSelectPage});
+  final BrokerAccount account; final VoidCallback onBack; final ValueChanged<String> onSelectPage;
+
+  Widget _row(BuildContext context, IconData icon, String label, String value) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Row(children: [
+      Container(width: 34, height: 34, decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(10)), child: Icon(icon, size: 16, color: cs.primary)),
+      const SizedBox(width: 10), Expanded(child: Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11))),
+      Text(value, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700)),
+    ]));
+  }
+
+  Widget _action(BuildContext context, IconData icon, String label, bool primary, VoidCallback tap) {
+    final cs = Theme.of(context).colorScheme;
+    return Expanded(child: SizedBox(height: 72, child: OutlinedButton(onPressed: tap,
+      style: OutlinedButton.styleFrom(backgroundColor: primary ? _brokerGold : cs.surface, foregroundColor: primary ? _brokerNavy : cs.onSurface, side: BorderSide(color: primary ? _brokerGold : Theme.of(context).dividerColor), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), padding: const EdgeInsets.symmetric(horizontal: 2)),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 19), const SizedBox(height: 6), Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800))]),
+    )));
+  }
+
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9), decoration: BoxDecoration(border: Border(top: BorderSide(color: Theme.of(context).dividerColor))), child: Row(children: [
-    Expanded(flex: 3, child: Row(children: [const CircleAvatar(radius: 13, backgroundColor: Color(0xFFEAF2FC), child: Text('MT5', style: TextStyle(color: _brokerBlue, fontSize: 6, fontWeight: FontWeight.w800))), const SizedBox(width: 6), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(account.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w700)), Text('● ${account.type}', style: const TextStyle(color: Color(0xFF258564), fontSize: 7, fontWeight: FontWeight.w600))]))])),
-    Expanded(child: Text('${account.login}  ${account.leverage}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8))),
-    Expanded(child: Text(account.balance, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w700))),
-    Expanded(child: Text(account.equity, style: const TextStyle(color: Color(0xFF00E78A), fontSize: 8, fontWeight: FontWeight.w700))),
-    FilledButton(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, minimumSize: const Size(48, 24), padding: const EdgeInsets.symmetric(horizontal: 6)), child: const Text('Deposit', style: TextStyle(fontSize: 7))),
-  ]));
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme; final live = account.type == 'Live MT5';
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 120), children: [
+      Row(children: [IconButton(onPressed: onBack, icon: const Icon(LucideIcons.arrowLeft)), Expanded(child: Text('Account details', style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.w800))), IconButton(onPressed: () => onSelectPage('Trading Accounts'), icon: const Icon(LucideIcons.layoutGrid))]),
+      const SizedBox(height: 12),
+      Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(
+        gradient: LinearGradient(colors: Theme.of(context).brightness == Brightness.dark ? const [Color(0xFF172B49), Color(0xFF101D32)] : const [Color(0xFFEAF2FF), Color(0xFFFFFFFF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(width: 46, height: 46, decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(14)), child: Icon(LucideIcons.chartNoAxesCombined, color: cs.primary, size: 23)),
+            const SizedBox(width: 11), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(account.name, style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 5), Row(children: [
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: live ? const Color(0xFF145C43) : const Color(0xFF174A8B), borderRadius: BorderRadius.circular(20)), child: Text(account.type, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800))),
+                const SizedBox(width: 6), Text('MT5 • Login ' + account.login, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
+              ]),
+            ])),
+          ]),
+          const SizedBox(height: 20), Row(children: [
+            Expanded(child: _balanceMetric(context, 'Balance', account.balance, LucideIcons.wallet)),
+            const SizedBox(width: 9), Expanded(child: _balanceMetric(context, 'Equity', account.equity, LucideIcons.chartNoAxesCombined)),
+          ]),
+        ]),
+      ),
+      const SizedBox(height: 16), Row(children: [
+        _action(context, LucideIcons.arrowDownToLine, 'Deposit', true, () => onSelectPage('Deposit')),
+        const SizedBox(width: 8), _action(context, LucideIcons.arrowUpFromLine, 'Withdraw', false, () => onSelectPage('Withdraw')),
+        const SizedBox(width: 8), _action(context, LucideIcons.arrowLeftRight, 'Transfer', false, () => onSelectPage('Internal Transfer')),
+      ]),
+      const SizedBox(height: 20), Text('Account information', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 9), Container(padding: const EdgeInsets.symmetric(horizontal: 13), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
+        _row(context, LucideIcons.hash, 'Login ID', account.login), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _row(context, LucideIcons.server, 'Platform', 'MetaTrader 5'), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _row(context, LucideIcons.gauge, 'Leverage', account.leverage), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _row(context, LucideIcons.wallet, 'Account type', account.type), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _row(context, LucideIcons.coins, 'Currency', 'USD'),
+      ])),
+      const SizedBox(height: 18), Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(LucideIcons.shieldCheck, color: cs.primary, size: 18), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Account security', style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w800)), const SizedBox(height: 4),
+          Text('Keep your trading credentials private. Never share your master password.', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, height: 1.5)),
+        ])),
+      ])),
+    ]);
+  }
+
+  Widget _balanceMetric(BuildContext context, String label, String value, IconData icon) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: .45), borderRadius: BorderRadius.circular(14)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, color: cs.primary, size: 16), const SizedBox(height: 8), Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
+      const SizedBox(height: 5), FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800))),
+    ]));
+  }
 }

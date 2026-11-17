@@ -193,7 +193,7 @@ class _ReferenceAccountCard extends StatelessWidget {
                 ])),
                 SizedBox(width: 78, height: 40, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
                 const SizedBox(width: 5),
-                Icon(selected ? LucideIcons.star : LucideIcons.star, color: selected ? gold : muted, size: 22),
+                Icon(selected ? Icons.star : Icons.star_border, color: selected ? gold : muted, size: 22),
               ]),
               const SizedBox(height: 12),
               Row(children: [

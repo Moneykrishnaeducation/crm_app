@@ -10,15 +10,14 @@ class PammPage extends StatefulWidget {
 }
 
 class _PammPool {
-  _PammPool(this.name, this.login, this.leverage, this.equity, this.share,
-      {this.managerBalance = 0, this.pnl = 0});
+  _PammPool(this.name, this.login, this.leverage, this.equity, this.share);
   final String name;
   final String login;
   final String leverage;
   final double equity;
   final double share;
-  final double managerBalance;
-  final double pnl;
+  final double managerBalance = 0;
+  final double pnl = 0;
 }
 
 class _PammInvestment {
@@ -98,14 +97,14 @@ class _PammPageState extends State<PammPage> {
             Row(children: [
               Expanded(child: _miniStat('POOL EQUITY', r'$0.00', LucideIcons.wallet, _blue)),
               const SizedBox(width: 8),
-              Expanded(child: _miniStat('MANAGED POOLS', _managed.length.toString() + ' live', LucideIcons.usersRound, const Color(0xFFF59E0B))),
+              Expanded(child: _miniStat('MANAGED POOLS', '${_managed.length} live', LucideIcons.usersRound, const Color(0xFFF59E0B))),
             ]),
           ])
         : Row(children: [
             _brandIcon(), const SizedBox(width: 12), SizedBox(width: 225, child: _brandTitle()),
             const SizedBox(width: 16), Expanded(child: _tabs(labels, false)),
             const SizedBox(width: 14), SizedBox(width: 170, child: _miniStat('POOL EQUITY', r'$0.00', LucideIcons.wallet, _blue)),
-            const SizedBox(width: 10), SizedBox(width: 170, child: _miniStat('MANAGED POOLS', _managed.length.toString() + ' live', LucideIcons.usersRound, const Color(0xFFF59E0B))),
+            const SizedBox(width: 10), SizedBox(width: 170, child: _miniStat('MANAGED POOLS', '${_managed.length} live', LucideIcons.usersRound, const Color(0xFFF59E0B))),
             const SizedBox(width: 10), _createButton(false),
           ]),
     );
@@ -207,7 +206,7 @@ class _PammPageState extends State<PammPage> {
         Divider(height: 1, color: _border),
         LayoutBuilder(builder: (context, c) {
           final metrics = [
-            _metric('Total ' + (managed ? 'pool' : 'invested') + ' equity', r'$0.00', 'Combined capital', 'USD', LucideIcons.wallet, _blue),
+            _metric('Total ${managed ? 'pool' : 'invested'} equity', r'$0.00', 'Combined capital', 'USD', LucideIcons.wallet, _blue),
             _metric(managed ? 'Managed pools' : 'Net profit / loss', managed ? _managed.length.toString() : '+\$0.00',
               managed ? 'Accepting deposits' : 'Active allocations', managed ? '1 active' : '1 pool', LucideIcons.trendingUp, _green),
             _metric('Allocation technology', 'Proportional', 'Automated percentage equity distribution', 'Execution MT5', LucideIcons.activity, _gold),
@@ -275,7 +274,7 @@ class _PammPageState extends State<PammPage> {
           _poolRows(pools, compact),
         Divider(height: 1, color: _border),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15), child: Row(children: [
-          Expanded(child: Text('Showing ' + ((_tab == 2 ? investments.length : pools.length).toString()) + ' records',
+          Expanded(child: Text('Showing ${_tab == 2 ? investments.length : pools.length} records',
             style: TextStyle(color: _muted, fontSize: 10, fontWeight: FontWeight.w600))),
           Text('1 / 1', style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w700)),
           const SizedBox(width: 10), Icon(LucideIcons.chevronRight, color: _muted, size: 17),
@@ -308,9 +307,11 @@ class _PammPageState extends State<PammPage> {
 
   Widget _poolRows(List<_PammPool> rows, bool compact) {
     if (rows.isEmpty) return _empty();
-    if (compact) return Padding(padding: const EdgeInsets.all(12), child: Column(children: [
-      for (final p in rows) _mobilePool(p),
-    ]));
+    if (compact) {
+      return Padding(padding: const EdgeInsets.all(12), child: Column(children: [
+        for (final p in rows) _mobilePool(p),
+      ]));
+    }
     final available = _tab == 1;
     final headers = available
       ? ['PAMM POOL', 'MT5 LOGIN', 'LEVERAGE', 'TOTAL POOL EQUITY', 'PROFIT SHARE', 'STATUS', 'ACTIONS']
@@ -330,7 +331,7 @@ class _PammPageState extends State<PammPage> {
             SizedBox(width: widths[4], child: available ? _share(p.share) : _bold(_money(p.pnl), color: _green)),
             SizedBox(width: widths[5], child: available ? _status() : _bold(_money(p.equity), color: _gold)),
             SizedBox(width: widths[6], child: available
-              ? Align(alignment: Alignment.centerLeft, child: _goldButton('Invest Now', () => _amountDialog('Invest in ' + p.name)))
+              ? Align(alignment: Alignment.centerLeft, child: _goldButton('Invest Now', () => _amountDialog('Invest in ${p.name}')))
               : _actions(p)),
           ]),
         ),
@@ -340,17 +341,19 @@ class _PammPageState extends State<PammPage> {
 
   Widget _investmentRows(List<_PammInvestment> rows, bool compact) {
     if (rows.isEmpty) return _empty();
-    if (compact) return Padding(padding: const EdgeInsets.all(12), child: Column(children: [
+    if (compact) {
+      return Padding(padding: const EdgeInsets.all(12), child: Column(children: [
       for (final p in rows) Container(margin: const EdgeInsets.only(bottom: 9), padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(13), border: Border.all(color: _border)),
         child: Column(children: [
           Row(children: [Expanded(child: _poolNameText(p.name)), _login(p.login)]),
           const SizedBox(height: 9), _labelValue('Manager', p.manager), _labelValue('Current value', _money(p.value)),
           _labelValue('P/L', _money(p.pnl)), _labelValue('Initial deposit', _money(p.deposit)),
-          _labelValue('Pool share', p.share.toStringAsFixed(2) + '%'),
+          _labelValue('Pool share', '${p.share.toStringAsFixed(2)}%'),
           Align(alignment: Alignment.centerRight, child: _actionsInvestment(p)),
         ])),
-    ]));
+      ]));
+    }
     final headers = ['INVESTMENT ACCOUNT', 'MANAGER', 'CURRENT VALUE', 'P/L', 'INITIAL DEPOSIT', 'POOL SHARE', 'ACTIONS'];
     final widths = [190.0, 155.0, 135.0, 105.0, 135.0, 115.0, 150.0];
     return SingleChildScrollView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(16, 22, 16, 22),
@@ -383,10 +386,10 @@ class _PammPageState extends State<PammPage> {
     child: Column(children: [
       Row(children: [Expanded(child: _poolName(p)), _login(p.login)]),
       const SizedBox(height: 9), _labelValue('Leverage', p.leverage),
-      _labelValue(_tab == 1 ? 'Profit share' : 'Manager balance', _tab == 1 ? p.share.toStringAsFixed(2) + '%' : _money(p.managerBalance)),
+      _labelValue(_tab == 1 ? 'Profit share' : 'Manager balance', _tab == 1 ? '${p.share.toStringAsFixed(2)}%' : _money(p.managerBalance)),
       const SizedBox(height: 8),
       Align(alignment: Alignment.centerRight, child: _tab == 1
-        ? _goldButton('Invest Now', () => _amountDialog('Invest in ' + p.name))
+        ? _goldButton('Invest Now', () => _amountDialog('Invest in ${p.name}'))
         : _actions(p)),
     ]));
 
@@ -412,7 +415,7 @@ class _PammPageState extends State<PammPage> {
   Widget _bold(String value, {Color? color}) => Text(value, style: TextStyle(color: color ?? _text, fontSize: 10.5, fontWeight: FontWeight.w800));
   Widget _share(double value) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(color: const Color(0xFFFFF7DF), borderRadius: BorderRadius.circular(7), border: Border.all(color: const Color(0xFFF5D77F))),
-    child: Text(value.toStringAsFixed(2) + '%', style: const TextStyle(color: Color(0xFF99620A), fontSize: 9, fontWeight: FontWeight.w800)));
+    child: Text('${value.toStringAsFixed(2)}%', style: const TextStyle(color: Color(0xFF99620A), fontSize: 9, fontWeight: FontWeight.w800)));
   Widget _status() => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(color: const Color(0xFFE9FBF4), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF9DEDD1))),
     child: const Text('● Open Pool', style: TextStyle(color: Color(0xFF008B68), fontSize: 9, fontWeight: FontWeight.w700)));
@@ -424,7 +427,7 @@ class _PammPageState extends State<PammPage> {
     child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)));
 
   Widget _actions(_PammPool p) => Row(mainAxisSize: MainAxisSize.min, children: [
-    _goldButton('Deposit', () => _amountDialog('Deposit to ' + p.name)), const SizedBox(width: 6),
+    _goldButton('Deposit', () => _amountDialog('Deposit to ${p.name}')), const SizedBox(width: 6),
     OutlinedButton(onPressed: () => _details(p.name, p.login), style: OutlinedButton.styleFrom(
       foregroundColor: _text, side: BorderSide(color: _border), padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
       minimumSize: const Size(0, 34), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))),
@@ -432,7 +435,7 @@ class _PammPageState extends State<PammPage> {
   ]);
 
   Widget _actionsInvestment(_PammInvestment p) => Row(mainAxisSize: MainAxisSize.min, children: [
-    _goldButton('Deposit', () => _amountDialog('Deposit to ' + p.name)), const SizedBox(width: 6),
+    _goldButton('Deposit', () => _amountDialog('Deposit to ${p.name}')), const SizedBox(width: 6),
     OutlinedButton(onPressed: () => _details(p.name, p.login), style: OutlinedButton.styleFrom(
       foregroundColor: _text, side: BorderSide(color: _border), padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
       minimumSize: const Size(0, 34), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))),
@@ -444,9 +447,9 @@ class _PammPageState extends State<PammPage> {
 
   Widget _empty() => Padding(padding: const EdgeInsets.all(28), child: Center(child: Text('No records found', style: TextStyle(color: _muted, fontSize: 12))));
 
-  String _money(double value) => '\$' + value.toStringAsFixed(2);
+  String _money(double value) => '\$${value.toStringAsFixed(2)}';
 
-  void _createPool() {
+  Future<void> _createPool() async {
     final name = TextEditingController();
     final share = TextEditingController(text: '20');
     final masterPassword = TextEditingController();
@@ -456,7 +459,8 @@ class _PammPageState extends State<PammPage> {
     var showMasterPassword = false;
     var showInvestorPassword = false;
 
-    showModalBottomSheet<bool>(
+    ModalRoute<dynamic>? sheetRoute;
+    await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: const Color(0x660B1730),
@@ -465,6 +469,7 @@ class _PammPageState extends State<PammPage> {
       isDismissible: true,
       enableDrag: true,
       builder: (sheetContext) {
+        sheetRoute ??= ModalRoute.of(sheetContext);
         final screenHeight = MediaQuery.sizeOf(sheetContext).height;
         final wide = MediaQuery.sizeOf(sheetContext).width >= 620;
 
@@ -612,7 +617,7 @@ class _PammPageState extends State<PammPage> {
               TextButton.icon(onPressed: toggle, icon: Icon(visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 12),
                 label: Text(visible ? 'Hide' : 'Reveal', style: const TextStyle(fontSize: 9))),
               TextButton.icon(onPressed: () {
-                controller.text = 'Pamm_' + DateTime.now().millisecondsSinceEpoch.toString().substring(8) + 'A1';
+                controller.text = 'Pamm_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}A1';
               }, icon: const Icon(LucideIcons.refreshCw, size: 12),
                 label: const Text('Regenerate', style: TextStyle(fontSize: 9))),
             ]),
@@ -620,14 +625,24 @@ class _PammPageState extends State<PammPage> {
         );
 
         return StatefulBuilder(builder: (sheetContext, setSheetState) {
-          return Align(
-            alignment: Alignment.bottomCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 980,
-                maxHeight: screenHeight * .82,
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(sheetContext).maybePop(),
+                ),
               ),
-              child: Container(
+              Align(
+                alignment: Alignment.bottomCenter,
+                heightFactor: 1,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 980,
+                    maxHeight: screenHeight * .82,
+                  ),
+                  child: Container(
                 decoration: BoxDecoration(
                   color: _card,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
@@ -680,7 +695,7 @@ class _PammPageState extends State<PammPage> {
                           if (wide)
                             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                fieldLabel('Performance fee', required: true, suffix: share.text + '%'),
+                                  fieldLabel('Performance fee', required: true, suffix: '${share.text}%'),
                                 TextFormField(
                                   controller: share,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -722,7 +737,7 @@ class _PammPageState extends State<PammPage> {
                                 ))).toList()),
                                 const SizedBox(height: 6),
                                 DropdownButtonFormField<String>(
-                                  value: leverage,
+                                  initialValue: leverage,
                                   isDense: true,
                                   decoration: inputDecoration('Custom leverage'),
                                   dropdownColor: _card,
@@ -821,17 +836,20 @@ class _PammPageState extends State<PammPage> {
                     ]),
                   ),
                 ]),
+                  ),
+                ),
               ),
-            ),
+            ],
           );
         });
       },
-    ).whenComplete(() {
-      name.dispose();
-      share.dispose();
-      masterPassword.dispose();
-      investorPassword.dispose();
-    });
+    );
+    final route = sheetRoute;
+    if (route != null) await route.completed;
+    name.dispose();
+    share.dispose();
+    masterPassword.dispose();
+    investorPassword.dispose();
   }
 
   Widget _dialogField(TextEditingController c, String hint, {bool number = false}) => TextField(

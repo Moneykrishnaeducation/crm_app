@@ -2,7 +2,7 @@ part of '../main.dart';
 
 const _mt5AndroidApkUrl =
     'https://download.terminal.free/cdn/web/metaquotes.software.corp/mt5/metatrader5.apk?utm_source=chatgpt.com&utm_campaign=install.metaquotes';
-const _metaQuotesDownloadUrl = 'https://www.metaquotes.com/en/download';
+const _vtindexPlatformUrl = 'https://client.vtindex.com/platform';
 
 class BrokerDownloadCenterPage extends StatelessWidget {
   const BrokerDownloadCenterPage({super.key});
@@ -129,7 +129,7 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                         children: [
                           _DownloadMetaChip(icon: LucideIcons.smartphone, label: 'Android'),
                           _DownloadMetaChip(icon: LucideIcons.package, label: 'APK installer'),
-                          _DownloadMetaChip(icon: LucideIcons.shieldCheck, label: 'MetaQuotes'),
+                          _DownloadMetaChip(icon: LucideIcons.shieldCheck, label: 'VTIndex platform'),
                         ],
                       ),
                       const SizedBox(height: 18),
@@ -199,9 +199,9 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
-                  onPressed: () => _openDownload(context, _metaQuotesDownloadUrl),
+                  onPressed: () => _openDownload(context, _vtindexPlatformUrl),
                   icon: const Icon(LucideIcons.externalLink, size: 16),
-                  label: const Text('Visit MetaQuotes official download page'),
+                  label: const Text('Open VTIndex Platform'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colors.onSurface,
                     side: BorderSide(color: border),
@@ -212,7 +212,7 @@ class BrokerDownloadCenterPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Center(child: Text(
-                  'MetaTrader 5 is developed by MetaQuotes Ltd.',
+                  'Access your trading platform through VTIndex.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: muted, fontSize: 9),
                 )),

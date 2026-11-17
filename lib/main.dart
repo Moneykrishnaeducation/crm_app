@@ -354,7 +354,7 @@ class _AppShellState extends State<AppShell> {
     final primaryIndex = _primaryTabIndex;
     return Scaffold(
       appBar: _AppHeader(
-        title: _selectedPage,
+        title: _selectedPage == 'Platform' ? 'Download Center' : _selectedPage,
         onBack: switch (_selectedPage) {
           'Profile' || 'Security Center' => () => setState(() => _selectedPage = 'More'),
           'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),

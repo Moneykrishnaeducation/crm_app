@@ -544,7 +544,8 @@ class _AppShellState extends State<AppShell> {
           'MAM Investor' ||
           'Available MAM' ||
           'MAM Available' ||
-          'Social Trading' => () => setState(() => _selectedPage = 'More'),
+          'Social Trading' ||
+          'PAMM Account' => () => setState(() => _selectedPage = 'More'),
           'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
           'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
           'Trade Report' => () => setState(() => _selectedPage = 'Transactions'),

@@ -318,6 +318,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
     final screen = MediaQuery.sizeOf(context);
     return SafeArea(
       top: false,
+      bottom: false,
       child: Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
@@ -418,7 +419,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
             )),
             Divider(height: 1, color: border),
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 13, 18, 16),
+              padding: EdgeInsets.fromLTRB(18, 13, 18, 16 + MediaQuery.viewPaddingOf(context).bottom),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 SizedBox(height: 48, child: FilledButton.icon(
                   onPressed: _createAccount,

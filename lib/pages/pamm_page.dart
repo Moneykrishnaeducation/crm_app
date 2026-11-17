@@ -1072,7 +1072,7 @@ class _PammPageState extends State<PammPage> {
                         decoration: amountDecoration(),
                       ),
                       const SizedBox(height: 6),
-                      Text('Minimum deposit: \\$10.00', style: TextStyle(color: modalMuted, fontSize: 9, fontWeight: FontWeight.w600)),
+                      Text(r'Minimum deposit: $10.00', style: TextStyle(color: modalMuted, fontSize: 9, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 17),
                       sectionLabel('Upload payment proof'),
                       InkWell(
@@ -1082,7 +1082,7 @@ class _PammPageState extends State<PammPage> {
                             if (selected != null) setModalState(() => proof = selected);
                           } catch (_) {
                             if (sheetContext.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
                                 const SnackBar(content: Text('Unable to open the image picker. Please try again.')),
                               );
                             }
@@ -1122,7 +1122,7 @@ class _PammPageState extends State<PammPage> {
                             final value = double.tryParse(amount.text.trim());
                             if (value == null || value < 10) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Enter a valid deposit amount of at least \\$10.00.')),
+                                const SnackBar(content: Text(r'Enter a valid deposit amount of at least $10.00.')),
                               );
                               return;
                             }

@@ -128,7 +128,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
               ),
             )),
           const SizedBox(height: 7),
-          Text('Combined demo balance  ${_demoAccounts.isEmpty ? '—' : '\$ ' + totalBalance.toStringAsFixed(2)}',
+          Text('Combined demo balance  ${_demoAccounts.isEmpty ? '—' : '\$ ${totalBalance.toStringAsFixed(2)}'}',
             textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
         ],
       ),

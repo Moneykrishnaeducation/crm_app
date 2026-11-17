@@ -300,8 +300,9 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                       ),
                   ],
                   onChanged: (index) {
-                    if (index != null)
+                    if (index != null) {
                       setState(() => _selectedPartnerIndex = index);
+                    }
                   },
                 ),
               ),
@@ -438,9 +439,10 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
 
   Future<void> copyText(String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
-    if (mounted)
+    if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('$label copied')));
+    }
   }
 
   Future<void> share(String platform) async {
@@ -2049,6 +2051,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       useSafeArea: true,
+      isDismissible: true,
+      enableDrag: true,
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
@@ -2056,7 +2060,10 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
         child: Align(
           alignment: Alignment.bottomCenter,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
+            constraints: BoxConstraints(
+              maxWidth: 980,
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * .88,
+            ),
             child: const _ClientRegistrationDialog(),
           ),
         ),
@@ -2479,7 +2486,6 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 760;
     return Container(
-      height: MediaQuery.sizeOf(context).height * .9,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
@@ -2493,6 +2499,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 10),
@@ -2553,7 +2560,8 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
             ),
           ),
           const Divider(height: 1, color: Color(0xFFE7ECF3)),
-          Expanded(
+          Flexible(
+            fit: FlexFit.loose,
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
@@ -2642,8 +2650,9 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
               alignment: Alignment.centerRight,
               child: FilledButton.icon(
                 onPressed: () {
-                  if (_formKey.currentState?.validate() ?? false)
+                  if (_formKey.currentState?.validate() ?? false) {
                     Navigator.of(context).pop(true);
+                  }
                 },
                 icon: const Icon(LucideIcons.userRoundPlus, size: 15),
                 label: const Text('Create Client Profile'),
@@ -2721,9 +2730,10 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
             firstDate: DateTime(1900),
             lastDate: DateTime.now(),
           );
-          if (selected != null)
+          if (selected != null) {
             _birthDate.text =
                 '${selected.day.toString().padLeft(2, '0')}-${selected.month.toString().padLeft(2, '0')}-${selected.year}';
+          }
         },
         style: const TextStyle(color: Color(0xFF22334D), fontSize: 11),
         decoration: _decoration('dd-mm-yyyy', LucideIcons.calendarDays),

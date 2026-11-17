@@ -5503,7 +5503,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
     }
   }
 
-  Widget _inputField({required String label, required TextEditingController controller}) {
+  Widget _inputField({required String label, required TextEditingController controller, TextInputType? keyboardType, TextCapitalization textCapitalization = TextCapitalization.none}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -5518,6 +5518,8 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           cursorColor: _profileBlue,
           style: const TextStyle(color: _profileText, fontSize: 14, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
@@ -5675,7 +5677,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
     );
   }
 
-  Widget _inputField({required String label, required TextEditingController controller}) {
+  Widget _inputField({required String label, required TextEditingController controller, TextInputType? keyboardType, TextCapitalization textCapitalization = TextCapitalization.none}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -5690,6 +5692,8 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           cursorColor: _profileBlue,
           style: const TextStyle(color: const Color(0xFF10264A), fontSize: 14),
           decoration: InputDecoration(

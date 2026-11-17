@@ -1121,7 +1121,10 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440),
+        constraints: BoxConstraints(
+          maxWidth: 440,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         child: SingleChildScrollView(
           child: Container(
           decoration: BoxDecoration(
@@ -1274,10 +1277,10 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: _goldLight,
+                            color: _blueLight,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Icon(LucideIcons.shieldCheck, color: _goldAccent, size: 14),
+                          child: const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 14),
                         ),
                         const SizedBox(width: 8),
                         const Expanded(

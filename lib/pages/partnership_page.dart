@@ -983,7 +983,8 @@ class _CommissionPill extends StatelessWidget {
 class _CommissionMetric extends StatelessWidget {
   const _CommissionMetric({required this.label, required this.value, required this.subtitle, required this.icon, required this.accent});
   final String label, value, subtitle;
-  final IconData icon, accent;
+  final IconData icon;
+  final Color accent;
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(13),

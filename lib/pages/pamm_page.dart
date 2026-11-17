@@ -123,7 +123,7 @@ class _PammPageState extends State<PammPage> {
   ]);
 
   Widget _tabs(List<String> labels, bool compact) {
-    final icons = [LucideIcons.chartNoAxesCombined, LucideIcons.chartColumn, LucideIcons.wallet];
+    final icons = [LucideIcons.activity, LucideIcons.trendingUp, LucideIcons.wallet];
     final counts = [_managed.length, _available.length, _investments.length];
     return Container(
       padding: const EdgeInsets.all(4),

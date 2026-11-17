@@ -293,6 +293,7 @@ class _AppShellState extends State<AppShell> {
             themeMode: widget.themeMode,
             onThemeModeChanged: widget.onThemeModeChanged,
           ),
+        'MAM Manager' => const BrokerMamManagerPage(),
         'Security Center' => SecurityCenterPage(
             onBack: () => setState(() => _selectedPage = 'More'),
             onSelectPage: _selectPage,

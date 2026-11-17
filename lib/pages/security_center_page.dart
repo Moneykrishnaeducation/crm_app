@@ -209,88 +209,40 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: _mobileCardDecoration(),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isNarrow = constraints.maxWidth < 460;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF1FA),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF174783)),
-                    ),
-                    child: const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Security & Devices',
-                          style: TextStyle(
-                            color: const Color(0xFF10264A),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Control sign-in protection and manage trusted devices.',
-                          style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isNarrow) ...[
-                    const SizedBox(width: 12),
-                    _buildRefreshDevicesButton(),
-                  ],
-                ],
-              ),
-              if (isNarrow) ...[
-                const SizedBox(height: 14),
-                _buildRefreshDevicesButton(),
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildRefreshDevicesButton() {
-    return InkWell(
-      onTap: () => _showSnack('Devices refreshed'),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFBFDBFE)),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(LucideIcons.refreshCw, size: 14, color: Color(0xFF62738E)),
-            SizedBox(width: 6),
-            Text(
-              'Refresh devices',
-              style: TextStyle(
-                color: Color(0xFF62738E),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _blueLight,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
-          ],
-        ),
+            child: const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 24),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Security & Devices',
+                  style: TextStyle(
+                    color: _textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Control sign-in protection and manage trusted devices.',
+                  style: TextStyle(color: _textSecondary, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

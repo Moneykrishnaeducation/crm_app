@@ -365,65 +365,50 @@ class _AppShellState extends State<AppShell> {
       body: SafeArea(
         top: false,
         bottom: false,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: RepaintBoundary(
-                child: LayoutBuilder(
-                  builder: (context, constraints) => Center(
-                    child: SizedBox(
-                      width: constraints.maxWidth.clamp(0.0, 1280.0),
-                      height: constraints.maxHeight,
-                      child: Stack(
-                        fit: StackFit.expand,
+        child: RepaintBoundary(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Center(
+              child: SizedBox(
+                width: constraints.maxWidth.clamp(0.0, 1280.0),
+                height: constraints.maxHeight,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Offstage(
+                      offstage: primaryIndex == -1,
+                      child: IndexedStack(
+                        index: primaryIndex < 0 ? 0 : primaryIndex,
                         children: [
-                          Offstage(
-                            offstage: primaryIndex == -1,
-                            child: IndexedStack(
-                              index: primaryIndex < 0 ? 0 : primaryIndex,
-                              children: [
-                                BrokerDashboardPage(
-                                  balanceVisible: _balanceVisible,
-                                  onToggleBalance: () => setState(
-                                    () => _balanceVisible = !_balanceVisible,
-                                  ),
-                                  onSelectPage: _selectPage,
-                                ),
-                                BrokerTransactionsPage(
-                                  accounts: _accounts,
-                                ),
-                                BrokerAccountsPage(
-                                  onSelectPage: _selectPage,
-                                  accounts: _accounts,
-                                  onAccountCreated: _addAccount,
-                                  onAccountSelected: _openAccount,
-                                ),
-                                BrokerMorePage(onSelectPage: _selectPage),
-                              ],
+                          BrokerDashboardPage(
+                            balanceVisible: _balanceVisible,
+                            onToggleBalance: () => setState(
+                              () => _balanceVisible = !_balanceVisible,
                             ),
+                            onSelectPage: _selectPage,
                           ),
-                          if (primaryIndex == -1)
-                            _buildSecondaryPage(_selectedPage),
+                          BrokerTransactionsPage(accounts: _accounts),
+                          BrokerAccountsPage(
+                            onSelectPage: _selectPage,
+                            accounts: _accounts,
+                            onAccountCreated: _addAccount,
+                            onAccountSelected: _openAccount,
+                          ),
+                          BrokerMorePage(onSelectPage: _selectPage),
                         ],
                       ),
                     ),
-                  ),
+                    if (primaryIndex == -1)
+                      _buildSecondaryPage(_selectedPage),
+                  ],
                 ),
               ),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: RepaintBoundary(
-                child: BrokerBottomNavigation(
-                  selectedPage: _selectedPage,
-                  onSelect: _selectPage,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+      bottomNavigationBar: BrokerBottomNavigation(
+        selectedPage: _selectedPage,
+        onSelect: _selectPage,
       ),
     );
   }

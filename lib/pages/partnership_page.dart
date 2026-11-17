@@ -314,52 +314,87 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
     final colors = _PartnershipColors.of(context);
     return Container(
       color: colors.canvas,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
-          return ListView(
-            padding: EdgeInsets.fromLTRB(wide ? 28 : 16, 20, wide ? 28 : 16, 110),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1160),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Hero Equity & IB Performance Card (matches Transaction UI hero style)
-                      _buildHeroCard(context, colors),
-                      const SizedBox(height: 16),
-                      // 2-Metric summary row
-                      Row(
-                        children: const [
-                          Expanded(
-                            child: _PartnershipStat(
-                              icon: LucideIcons.usersRound,
-                              label: 'Total clients',
-                              value: '2,458',
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: _PartnershipStat(
-                              icon: LucideIcons.coins,
-                              label: 'IB earnings',
-                              value: r'$4,820.00',
-                              gold: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Active Referral Tools Panel & Quick Shortcuts
-                      _buildToolsColumn(context, colors),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 112),
+        children: [
+          _PartnershipProfileCard(onTap: () {
+            Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => const BrokerClientTreePage(),
+            ));
+          }, colors: colors),
+          const SizedBox(height: 22),
+          _PartnershipSectionLabel(
+            'PARTNERSHIP OVERVIEW',
+            subtitle: 'Your network, performance and referral earnings',
+            colors: colors,
+          ),
+          const SizedBox(height: 9),
+          _buildHeroCard(context, colors),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _PartnershipStat(
+              icon: LucideIcons.usersRound,
+              label: 'Total clients',
+              value: '2,458',
+            )),
+            const SizedBox(width: 10),
+            Expanded(child: _PartnershipStat(
+              icon: LucideIcons.coins,
+              label: 'IB earnings',
+              value: r'$4,820.00',
+              gold: true,
+            )),
+          ]),
+          const SizedBox(height: 22),
+          _PartnershipSectionLabel(
+            'REFERRAL & INVITATIONS',
+            subtitle: 'Manage partner profiles, referral codes and QR materials',
+            colors: colors,
+          ),
+          const SizedBox(height: 9),
+          _buildToolsColumn(context, colors),
+          const SizedBox(height: 22),
+          _PartnershipSectionLabel(
+            'NETWORK MANAGEMENT',
+            subtitle: 'Access client hierarchy, payout records and commission tools',
+            colors: colors,
+          ),
+          const SizedBox(height: 9),
+          _PartnershipMenuGroup(colors: colors, children: [
+            _PartnershipShortcut(
+              icon: LucideIcons.usersRound,
+              label: 'Client list',
+              subtitle: 'View network hierarchy, downline tiers and accounts',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const BrokerClientTreePage(),
+              )),
+            ),
+            _PartnershipShortcut(
+              icon: LucideIcons.layers,
+              label: 'Commission history',
+              subtitle: 'Review withdrawal requests and trading commission activity',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const BrokerCommissionHistoryPage(),
+              )),
+            ),
+            _PartnershipShortcut(
+              icon: LucideIcons.qrCode,
+              label: 'Referral & QR studio',
+              subtitle: 'Create and share profile links and branded QR cards',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const BrokerReferralStudioPage(),
+              )),
+            ),
+            _PartnershipShortcut(
+              icon: LucideIcons.wallet,
+              label: 'Commission withdrawal',
+              subtitle: 'Transfer eligible IB commission to a live MT5 account',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const BrokerCommissionWithdrawalPage(),
+              )),
+            ),
+          ]),
+        ],
       ),
     );
   }
@@ -2296,6 +2331,120 @@ class _PartnerProfile {
   final bool primary;
 }
 
+
+class _PartnershipProfileCard extends StatelessWidget {
+  const _PartnershipProfileCard({required this.onTap, required this.colors});
+  final VoidCallback onTap;
+  final _PartnershipColors colors;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: colors.card,
+    borderRadius: BorderRadius.circular(18),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: colors.border),
+          boxShadow: [BoxShadow(
+            color: colors.cardShadow,
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          )],
+        ),
+        child: Row(children: [
+          Container(
+            width: 49,
+            height: 49,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(colors: [Color(0xFF244D80), Color(0xFF4979A9)]),
+            ),
+            child: const Center(child: Text('I', style: TextStyle(
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800,
+            ))),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Flexible(child: Text(
+                  'INR-DEVOP B',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800),
+                )),
+                const SizedBox(width: 5),
+                Icon(LucideIcons.badgeCheck, color: colors.gold, size: 15),
+              ]),
+              const SizedBox(height: 4),
+              Text('iyyanar@vtindex.com', style: TextStyle(color: colors.muted, fontSize: 10)),
+              const SizedBox(height: 6),
+              Text('View profile', style: TextStyle(color: colors.blue, fontSize: 10, fontWeight: FontWeight.w700)),
+            ],
+          )),
+          Icon(LucideIcons.chevronRight, color: colors.muted, size: 19),
+        ]),
+      ),
+    ),
+  );
+}
+
+class _PartnershipSectionLabel extends StatelessWidget {
+  const _PartnershipSectionLabel(this.label, {this.subtitle, required this.colors});
+  final String label;
+  final String? subtitle;
+  final _PartnershipColors colors;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: 2, bottom: 2),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(
+        color: colors.text,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+        letterSpacing: .8,
+      )),
+      if (subtitle != null) ...[
+        const SizedBox(height: 3),
+        Text(subtitle!, style: TextStyle(color: colors.muted, fontSize: 10)),
+      ],
+    ]),
+  );
+}
+
+class _PartnershipMenuGroup extends StatelessWidget {
+  const _PartnershipMenuGroup({required this.children, required this.colors});
+  final List<_PartnershipShortcut> children;
+  final _PartnershipColors colors;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 13),
+    decoration: BoxDecoration(
+      color: colors.card,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: colors.border),
+      boxShadow: [if (!colors.isDark) BoxShadow(
+        color: colors.cardShadow,
+        blurRadius: 10,
+        offset: const Offset(0, 3),
+      )],
+    ),
+    child: Column(children: [
+      for (var i = 0; i < children.length; i++) ...[
+        children[i],
+        if (i != children.length - 1)
+          Divider(height: 1, indent: 47, color: colors.border),
+      ],
+    ]),
+  );
+}
+
 class _PartnershipStat extends StatelessWidget {
   const _PartnershipStat({
     required this.icon,
@@ -2303,6 +2452,7 @@ class _PartnershipStat extends StatelessWidget {
     required this.value,
     this.gold = false,
   });
+
   final IconData icon;
   final String label;
   final String value;
@@ -2311,63 +2461,48 @@ class _PartnershipStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
-        boxShadow: [
-          BoxShadow(
-            color: colors.cardShadow,
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
+    final accent = gold ? colors.gold : colors.blue;
+    return Material(
+      color: colors.card,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.border),
+        ),
+        child: Row(children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 35,
+            height: 35,
             decoration: BoxDecoration(
-              color: (gold ? colors.gold : colors.blue).withValues(
-                alpha: .12,
-              ),
-              borderRadius: BorderRadius.circular(11),
+              color: accent.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              color: gold ? colors.gold : colors.blue,
-              size: 19,
-            ),
+            child: Icon(icon, color: accent, size: 16),
           ),
           const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(color: colors.muted, fontSize: 11),
-                ),
-                const SizedBox(height: 5),
-                FittedBox(
-                  alignment: Alignment.centerLeft,
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      color: colors.text,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(
+                color: colors.muted,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              )),
+              const SizedBox(height: 4),
+              FittedBox(
+                alignment: Alignment.centerLeft,
+                fit: BoxFit.scaleDown,
+                child: Text(value, style: TextStyle(
+                  color: colors.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                )),
+              ),
+            ],
+          )),
+        ]),
       ),
     );
   }
@@ -2380,6 +2515,7 @@ class _PartnershipShortcut extends StatelessWidget {
     this.subtitle,
     this.onTap,
   });
+
   final IconData icon;
   final String label;
   final String? subtitle;
@@ -2395,55 +2531,42 @@ class _PartnershipShortcut extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: colors.border),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: colors.blue.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(icon, color: colors.blue, size: 18),
+          child: Row(children: [
+            Container(
+              width: 35,
+              height: 35,
+              decoration: BoxDecoration(
+                color: colors.blue.withValues(alpha: .09),
+                borderRadius: BorderRadius.circular(11),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: colors.text,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        style: TextStyle(
-                          color: colors.muted,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Icon(
-                LucideIcons.chevronRight,
-                color: colors.muted,
-                size: 18,
-              ),
-            ],
-          ),
+              child: Icon(icon, color: colors.blue, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(
+                  color: colors.text,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                )),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 3),
+                  Text(subtitle!, style: TextStyle(
+                    color: colors.muted,
+                    fontSize: 9,
+                    height: 1.25,
+                  )),
+                ],
+              ],
+            )),
+            Icon(LucideIcons.chevronRight, color: colors.muted, size: 17),
+          ]),
         ),
       ),
     );

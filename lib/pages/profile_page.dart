@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 const _profileNavy = Color(0xFF10264A);
@@ -305,7 +306,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  void _showEditDetailsSheet() {
+  Future<void> _showEditDetailsSheet() async {
     final nameCtrl = TextEditingController(text: _name);
     final emailCtrl = TextEditingController(text: _email);
     final phoneCtrl = TextEditingController(text: _phone);
@@ -317,7 +318,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     final nationalityCtrl = TextEditingController(text: _nationality);
     final taxResidencyCtrl = TextEditingController(text: _taxResidency);
 
-    showModalBottomSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -447,6 +448,17 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         ),
       ),
     );
+
+    nameCtrl.dispose();
+    emailCtrl.dispose();
+    phoneCtrl.dispose();
+    locationCtrl.dispose();
+    addressCtrl.dispose();
+    occupationCtrl.dispose();
+    dobCtrl.dispose();
+    genderCtrl.dispose();
+    nationalityCtrl.dispose();
+    taxResidencyCtrl.dispose();
   }
 
   Widget _inputField({
@@ -2797,7 +2809,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               if (copyable) ...[
                 const SizedBox(width: 6),
                 GestureDetector(
-                  onTap: () => _showSnack('$label copied to clipboard'),
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: value));
+                    _showSnack('$label copied to clipboard');
+                  },
                   child: const Icon(LucideIcons.copy, size: 13, color: _profileBlue),
                 ),
               ],
@@ -5196,6 +5211,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                 const SizedBox(width: 6),
                 InkWell(
                   onTap: () {
+                    Clipboard.setData(ClipboardData(text: item.value));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${item.label} copied to clipboard'),

@@ -142,14 +142,32 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
-      builder: (_) => _CreateDemoAccountSheet(onCreate: (name, leverage, balance) {
-        final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
-        final formatted = String.fromCharCode(36) + balance.toStringAsFixed(2);
-          BrokerAccount(name, login, leverage, formatted, formatted, 'Demo MT5')));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Demo account preview $login added.')),
-        );
-      }),
+      builder: (_) => _CreateDemoAccountSheet(
+        onCreate: (name, leverage, balance) {
+          final login =
+              '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+          final formatted =
+              String.fromCharCode(36) + balance.toStringAsFixed(2);
+
+          setState(() {
+            _demoAccounts.insert(
+              0,
+              BrokerAccount(
+                name,
+                login,
+                leverage,
+                formatted,
+                formatted,
+                'Demo MT5',
+              ),
+            );
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Demo account preview $login added.')),
+          );
+        },
+      ),
     );
   }
 }

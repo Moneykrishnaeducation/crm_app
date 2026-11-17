@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_notch_toast/flutter_notch_toast.dart';
 import 'dart:math' as math;
 
 import 'package:image_picker/image_picker.dart';
@@ -652,16 +653,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-        backgroundColor: const Color(0xFF0F172A),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    toast.info(message, duration: const Duration(seconds: 2));
   }
 
   @override

@@ -1236,34 +1236,163 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   // ==========================================
   Widget _buildOverviewTab() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Profile Completion Card
-        _buildProfileCompletionCard(),
-        const SizedBox(height: 16),
-
-        // 2. Account Status Card
-        _buildAccountStatusCard(),
-        const SizedBox(height: 16),
-
-        // 3. Quick Actions Card
-        _buildQuickActionsCard(),
-        const SizedBox(height: 16),
-
-        // 4. Personal Information Card
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Account overview',
+                style: TextStyle(color: _profileNavy, fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(color: _profileGreenLight, borderRadius: BorderRadius.circular(20)),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.circleCheck, color: _profileGreen, size: 12),
+                  SizedBox(width: 5),
+                  Text('Active', style: TextStyle(color: _profileGreen, fontSize: 10, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildMobileCompletionSummary(),
+        const SizedBox(height: 22),
+        const Text('Quick actions', style: TextStyle(color: _profileNavy, fontSize: 16, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 11),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 2.45,
+          children: [
+            _mobileQuickAction(
+              icon: LucideIcons.userRound,
+              title: 'Edit details',
+              subtitle: 'Personal profile',
+              onTap: _showEditDetailsSheet,
+            ),
+            _mobileQuickAction(
+              icon: LucideIcons.fileCheck,
+              title: 'Verification',
+              subtitle: 'View KYC status',
+              onTap: () => setState(() => _selectedTabIndex = 2),
+            ),
+            _mobileQuickAction(
+              icon: LucideIcons.landmark,
+              title: 'Bank account',
+              subtitle: 'Payout details',
+              onTap: _showBankDetailsSheet,
+            ),
+            _mobileQuickAction(
+              icon: LucideIcons.wallet,
+              title: 'Crypto wallet',
+              subtitle: 'Wallet settings',
+              onTap: _showCryptoWalletSheet,
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
         _buildPersonalInformationCard(),
-        const SizedBox(height: 16),
-
-        // 5. Identity Verification Card
+        const SizedBox(height: 14),
         _buildIdentityVerificationCard(),
-        const SizedBox(height: 16),
-
-        // 6. Payment Methods Card
+        const SizedBox(height: 14),
         _buildPaymentMethodsCard(),
-        const SizedBox(height: 16),
-
-        // 7. Promo / Platform Journey Card
-        _buildJourneyPromoCard(),
       ],
+    );
+  }
+
+  Widget _buildMobileCompletionSummary() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _profileNavy,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: _profileShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Profile completion', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+              ),
+              Text('100%', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 17, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 11),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: const LinearProgressIndicator(
+              value: 1,
+              minHeight: 6,
+              backgroundColor: Color(0xFF526987),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF4C84A)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Row(
+            children: [
+              Icon(LucideIcons.shieldCheck, color: Color(0xFF9EDDB2), size: 15),
+              SizedBox(width: 7),
+              Expanded(child: Text('Your profile and verification are complete.', style: TextStyle(color: Color(0xFFD9E5F4), fontSize: 11, height: 1.3))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mobileQuickAction({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: _profileBorder),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: _profileBlueLight, borderRadius: BorderRadius.circular(11)),
+                child: Icon(icon, color: _profileBlue, size: 17),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _profileNavy, fontSize: 11, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 3),
+                    Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _profileMuted, fontSize: 9)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

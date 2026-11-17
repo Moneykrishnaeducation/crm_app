@@ -2476,7 +2476,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
             TextField(controller: share, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(suffixText: '%', hintText: '1 - 50%')),
             const SizedBox(height: 14),
             _sheetLabel('RISK PROFILE'),
-            Wrap(spacing: 7, children: ['Low', 'Medium', 'High'].map((v) => ChoiceChip(label: Text(v), selected: risk == v, onSelected: (_) => setSheet(() => risk = v)).copyWith()).toList()),
+            Wrap(spacing: 7, children: ['Low', 'Medium', 'High'].map((v) => ChoiceChip(label: Text(v), selected: risk == v, onSelected: (_) => setSheet(() => risk = v))).toList()),
             const SizedBox(height: 14),
             _sheetLabel('ACCOUNT LEVERAGE'),
             DropdownButtonFormField<String>(value: leverage, items: ['1:100','1:200','1:400','1:500'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setSheet(() => leverage = v ?? leverage)),

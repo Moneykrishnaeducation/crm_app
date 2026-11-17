@@ -681,6 +681,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   padding: const EdgeInsets.fromLTRB(18, 12, 18, 132),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
+                      _buildMobileProfileHeader(),
+                      const SizedBox(height: 18),
                       _buildProfilePageTitle(),
                       const SizedBox(height: 18),
                       _buildMobileSectionNavigation(),

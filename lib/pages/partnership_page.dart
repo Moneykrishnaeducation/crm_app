@@ -390,12 +390,12 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
               const SizedBox(height: 18),
               Divider(color: dark ? const Color(0xFF2A3A53) : _border, height: 1),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('CLIENT HIERARCHY', style: TextStyle(color: dark ? Colors.white : _navy, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .45)),
+                  Expanded(child: Text('CLIENT HIERARCHY', style: TextStyle(color: dark ? Colors.white : _navy, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .45))),
+                  const SizedBox(width: 8),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
                   OutlinedButton.icon(
                     onPressed: () => setState(() => _expanded = true),
                     icon: const Icon(LucideIcons.maximize2, size: 13),
@@ -408,13 +408,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                     label: const Text('Collapse all'),
                     style: _treeSmallButton(dark),
                   ),
-                  if (wide) const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: () => setState(() => _showAllReferralLinks = !_showAllReferralLinks),
-                    icon: const Icon(LucideIcons.network, size: 13),
-                    label: const Text('Org chart'),
-                    style: _treeSmallButton(dark),
-                  ),
+                  ]),
                 ],
               ),
               const SizedBox(height: 12),

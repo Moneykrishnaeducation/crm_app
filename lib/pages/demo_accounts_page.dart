@@ -7,9 +7,9 @@ class BrokerDemoAccountsPage extends StatefulWidget {
 }
 
 class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
-  String _filter = 'All Accounts';
-  String _query = '';
   final _searchController = TextEditingController();
+  final List<BrokerAccount> _demoAccounts = [];
+  String _query = '';
 
   @override
   void dispose() {
@@ -19,312 +19,1024 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    final cs = theme.colorScheme;
-    final muted = cs.onSurfaceVariant;
-    final border = theme.dividerColor;
-    final surface = cs.surface;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    const navy = Color(0xFF071629);
+    const panel = Color(0xFF101F34);
+    const gold = Color(0xFFFFC533);
+    const blue = Color(0xFF35A9F5);
+    final surface = dark ? panel : Colors.white;
+    final border = dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE);
+    final fg = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
+    final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF6F7F95);
+    final filtered = _demoAccounts.where((a) {
+      final q = _query.trim().toLowerCase();
+      return q.isEmpty || a.login.toLowerCase().contains(q) || a.name.toLowerCase().contains(q);
+    }).toList();
+    final totalBalance = _demoAccounts.fold<double>(0, (sum, a) =>
+        sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
 
     return Container(
-      color: theme.scaffoldBackgroundColor,
-      child: LayoutBuilder(builder: (context, constraints) {
-        final compact = constraints.maxWidth < 600;
-        final summaryColumns = constraints.maxWidth < 390 ? 1 : (compact ? 2 : 3);
-        return ListView(
-          padding: EdgeInsets.fromLTRB(compact ? 14 : 22, 14, compact ? 14 : 22, 116),
-          children: [
-            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('PRACTICE TRADING', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.15)),
-                const SizedBox(height: 5),
-                Text('Demo Accounts', style: TextStyle(color: cs.onSurface, fontSize: compact ? 24 : 28, height: 1.12, fontWeight: FontWeight.w800, letterSpacing: -.6)),
-                const SizedBox(height: 5),
-                Text('Explore the markets in a simulated MT5 environment.', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
-              ])),
-              Container(
-                padding: const EdgeInsets.all(11),
-                decoration: BoxDecoration(color: cs.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(15), border: Border.all(color: cs.primary.withValues(alpha: .16))),
-                child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 23),
-              ),
-            ]),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: border),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .10 : .025), blurRadius: 14, offset: const Offset(0, 5))],
-              ),
-              child: compact
-                  ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      _DemoIntroCopy(muted: muted, foreground: cs.onSurface),
-                      const SizedBox(height: 12),
-                      _CreateDemoButton(onPressed: () => _showCreateDialog(context), block: true),
-                    ])
-                  : Row(children: [
-                      Expanded(child: _DemoIntroCopy(muted: muted, foreground: cs.onSurface)),
-                      const SizedBox(width: 12),
-                      _CreateDemoButton(onPressed: () => _showCreateDialog(context)),
-                    ]),
-            ),
-            const SizedBox(height: 14),
-            LayoutBuilder(builder: (context, gridConstraints) {
-              final spacing = 9.0;
-              final width = (gridConstraints.maxWidth - spacing * (summaryColumns - 1)) / summaryColumns;
-              return Wrap(spacing: spacing, runSpacing: 9, children: [
-                SizedBox(width: width, child: const _DemoSummary(icon: LucideIcons.wallet, title: 'VIRTUAL BALANCE', value: r'$0.00', detail: 'Combined demo equity', tone: _DemoTone.blue)),
-                SizedBox(width: width, child: const _DemoSummary(icon: LucideIcons.activity, title: 'ACTIVE ACCOUNTS', value: '0', detail: 'Currently available', tone: _DemoTone.gold)),
-                SizedBox(width: width, child: const _DemoSummary(icon: LucideIcons.shieldCheck, title: 'TRADING MODE', value: 'Simulated', detail: 'No live funds at risk', tone: _DemoTone.neutral)),
-              ]);
-            }),
-            const SizedBox(height: 18),
-            Container(
-              decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: border)),
-              clipBehavior: Clip.antiAlias,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Your practice accounts', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 3),
-                    Text('Review and manage your virtual trading accounts.', style: TextStyle(color: muted, fontSize: 10)),
-                    const SizedBox(height: 13),
-                    if (compact) ...[
-                      _DemoSearch(controller: _searchController, onChanged: (value) => setState(() => _query = value)),
-                      const SizedBox(height: 10),
-                      _DemoFilters(filter: _filter, onSelect: (value) => setState(() => _filter = value)),
-                    ] else
-                      Row(children: [
-                        Expanded(child: _DemoFilters(filter: _filter, onSelect: (value) => setState(() => _filter = value))),
-                        const SizedBox(width: 12),
-                        SizedBox(width: 240, child: _DemoSearch(controller: _searchController, onChanged: (value) => setState(() => _query = value))),
-                      ]),
-                  ]),
-                ),
-                Divider(height: 1, color: border),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 30, 18, 30),
-                  child: Column(children: [
-                    Container(
-                      width: 66,
-                      height: 66,
-                      decoration: BoxDecoration(color: cs.primary.withValues(alpha: .08), shape: BoxShape.circle, border: Border.all(color: cs.primary.withValues(alpha: .13))),
-                      child: Icon(_query.isEmpty ? LucideIcons.chartNoAxesCombined : LucideIcons.searchX, color: cs.primary, size: 28),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(_query.isEmpty ? 'Your demo workspace is ready' : 'No matching demo accounts', textAlign: TextAlign.center, style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 6),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 330),
-                      child: Text(
-                        _query.isEmpty
-                            ? 'Create a virtual MT5 account to practise strategies and explore market conditions without using real funds.'
-                            : 'Try another account name or login ID, or clear your search to view all demo accounts.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: muted, fontSize: 11, height: 1.55),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_query.isNotEmpty)
-                      OutlinedButton.icon(
-                        onPressed: () { _searchController.clear(); setState(() => _query = ''); },
-                        icon: const Icon(LucideIcons.x, size: 15),
-                        label: const Text('Clear search'),
-                      )
-                    else
-                      _CreateDemoButton(onPressed: () => _showCreateDialog(context)),
-                    const SizedBox(height: 10),
-                    Text('Demo trading only · No real-money transactions', style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w500)),
-                  ]),
-                ),
+      color: dark ? navy : Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
+        children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('ACCOUNTS', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
+              const SizedBox(height: 5),
+              Text('Demo Accounts', style: TextStyle(color: fg, fontSize: 26, height: 1.12, fontWeight: FontWeight.w800, letterSpacing: -.65)),
+              const SizedBox(height: 5),
+              Text('Your simulated MT5 trading accounts', style: TextStyle(color: muted, fontSize: 12, height: 1.35)),
+            ])),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+              decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: border)),
+              child: Row(children: [
+                const Icon(LucideIcons.flaskConical, color: blue, size: 15),
+                const SizedBox(width: 6),
+                Text('${_demoAccounts.length} Demo', style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w800)),
               ]),
             ),
-          ],
-        );
-      }),
+          ]),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: _showCreateSheet,
+              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              icon: const Icon(LucideIcons.plusCircle, size: 18),
+              label: const Text('Create Demo Account', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _DemoMetric(icon: LucideIcons.wallet, label: 'VIRTUAL BALANCE',
+              value: r'$ ' + totalBalance.toStringAsFixed(2), surface: surface, border: border, fg: fg, muted: muted, accent: blue)),
+            const SizedBox(width: 9),
+            Expanded(child: _DemoMetric(icon: LucideIcons.flaskConical, label: 'DEMO ACCOUNTS',
+              value: '${_demoAccounts.length}', surface: surface, border: border, fg: fg, muted: muted, accent: gold)),
+          ]),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _searchController,
+            onChanged: (v) => setState(() => _query = v),
+            style: TextStyle(color: fg, fontSize: 12),
+            decoration: InputDecoration(
+              hintText: 'Search by account number, name...',
+              hintStyle: TextStyle(color: muted, fontSize: 11),
+              prefixIcon: Icon(LucideIcons.search, color: muted, size: 19),
+              filled: true, fillColor: surface, isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 13),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide(color: border)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: blue, width: 1.3)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (filtered.isEmpty)
+            Container(
+              padding: const EdgeInsets.fromLTRB(18, 30, 18, 30),
+              decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: border)),
+              child: Column(children: [
+                Container(width: 62, height: 62,
+                  decoration: BoxDecoration(color: blue.withValues(alpha: .10), shape: BoxShape.circle),
+                  child: Icon(_query.isEmpty ? LucideIcons.flaskConical : LucideIcons.searchX, color: blue, size: 27)),
+                const SizedBox(height: 13),
+                Text(_query.isEmpty ? 'No demo accounts yet' : 'No matching demo accounts',
+                  textAlign: TextAlign.center, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                Text(_query.isEmpty
+                    ? 'Create a virtual MT5 account to practise with a balance and leverage of your choice.'
+                    : 'Try another account name or login ID, or clear your search.',
+                  textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 11, height: 1.5)),
+                const SizedBox(height: 15),
+                if (_query.isEmpty)
+                  OutlinedButton.icon(onPressed: _showCreateSheet, icon: const Icon(LucideIcons.plus, size: 16),
+                    label: const Text('Create Demo Account'))
+                else
+                  OutlinedButton.icon(onPressed: () { _searchController.clear(); setState(() => _query = ''); },
+                    icon: const Icon(LucideIcons.x, size: 15), label: const Text('Clear search')),
+                const SizedBox(height: 8),
+                Text('Demo trading only · No real-money transactions', style: TextStyle(color: muted, fontSize: 9)),
+              ]),
+            )
+          else
+            ...filtered.map((account) => _ReferenceAccountCard(
+              account: account,
+              selected: false,
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Demo account ${account.login} selected.')),
+              ),
+            )),
+          const SizedBox(height: 7),
+          Text('Combined demo balance  ${_demoAccounts.isEmpty ? '—' : r'}',
+            textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+        ],
+      ),
     );
   }
 
-  void _showCreateDialog(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+  void _showCreateSheet() {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Container(
-        width: double.infinity,
-        padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.viewInsetsOf(sheetContext).bottom),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: cs.onSurfaceVariant.withValues(alpha: .4), borderRadius: BorderRadius.circular(8)))),
-          const SizedBox(height: 18),
-          Row(children: [
-            Container(width: 42, height: 42, decoration: BoxDecoration(color: cs.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(13)), child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 21)),
-            const SizedBox(width: 11),
-            Expanded(child: Text('Create demo account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800))),
-            IconButton(onPressed: () => Navigator.pop(sheetContext), icon: Icon(LucideIcons.x, color: cs.onSurfaceVariant)),
-          ]),
-          const SizedBox(height: 10),
-          Text('A demo account uses virtual funds for simulated trading. No deposit is required.', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, height: 1.5)),
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () {
-                Navigator.pop(sheetContext);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo account creation is not connected to the MT5 service yet.')));
-              },
-              style: FilledButton.styleFrom(backgroundColor: cs.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
-              child: const Text('Continue', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-            ),
-          ),
-        ]),
-      ),
+      barrierColor: Colors.black54,
+      builder: (_) => _CreateDemoAccountSheet(onCreate: (name, leverage, balance) {
+        final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+        final formatted = r'
+        setState(() => _demoAccounts.insert(0,
+          BrokerAccount(name, login, leverage, formatted, formatted, 'Demo MT5')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Demo account preview $login added.')),
+        );
+      }),
     );
   }
 }
 
-class _DemoIntroCopy extends StatelessWidget {
-  const _DemoIntroCopy({required this.muted, required this.foreground});
-  final Color muted, foreground;
-  @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text('Practise before you trade live', style: TextStyle(color: foreground, fontSize: 14, fontWeight: FontWeight.w800)),
-    const SizedBox(height: 4),
-    Text('Use a simulated account to get familiar with MT5 tools and market execution.', style: TextStyle(color: muted, fontSize: 10, height: 1.45)),
-  ]);
-}
-
-class _CreateDemoButton extends StatelessWidget {
-  const _CreateDemoButton({required this.onPressed, this.block = false});
-  final VoidCallback onPressed;
-  final bool block;
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: block ? double.infinity : null,
-      height: 44,
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        icon: const Icon(LucideIcons.plus, size: 17),
-        label: const Text('Create Demo Account', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-        style: FilledButton.styleFrom(backgroundColor: cs.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
-      ),
-    );
-  }
-}
-
-enum _DemoTone { blue, gold, neutral }
-
-class _DemoSummary extends StatelessWidget {
-  const _DemoSummary({required this.icon, required this.title, required this.value, required this.detail, required this.tone});
+class _DemoMetric extends StatelessWidget {
+  const _DemoMetric({required this.icon, required this.label, required this.value,
+    required this.surface, required this.border, required this.fg, required this.muted, required this.accent});
   final IconData icon;
-  final String title, value, detail;
-  final _DemoTone tone;
+  final String label, value;
+  final Color surface, border, fg, muted, accent;
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final color = switch (tone) {
-      _DemoTone.blue => cs.primary,
-      _DemoTone.gold => const Color(0xFFD5A52C),
-      _DemoTone.neutral => cs.onSurfaceVariant,
-    };
-    return Container(
-      constraints: const BoxConstraints(minHeight: 104),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 6),
-          Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .35))),
-        ]),
-        const SizedBox(height: 9),
-        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: cs.onSurface, fontSize: 19, fontWeight: FontWeight.w800))),
-        const SizedBox(height: 3),
-        Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, height: 1.35)),
-      ]),
-    );
-  }
-}
-
-class _DemoFilters extends StatelessWidget {
-  const _DemoFilters({required this.filter, required this.onSelect});
-  final String filter;
-  final ValueChanged<String> onSelect;
-  @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
     child: Row(children: [
-      _DemoFilter(label: 'All Accounts', selected: filter == 'All Accounts', onTap: () => onSelect('All Accounts')),
-      const SizedBox(width: 6),
-      _DemoFilter(label: 'Active', selected: filter == 'Active', onTap: () => onSelect('Active')),
-      const SizedBox(width: 6),
-      _DemoFilter(label: 'Suspended', selected: filter == 'Suspended', onTap: () => onSelect('Suspended')),
+      Icon(icon, color: accent, size: 18),
+      const SizedBox(width: 8),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .3)),
+        const SizedBox(height: 4),
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+          child: Text(value, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
+      ])),
     ]),
   );
 }
 
-class _DemoFilter extends StatelessWidget {
-  const _DemoFilter({required this.label, required this.selected, required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+class _CreateDemoAccountSheet extends StatefulWidget {
+  const _CreateDemoAccountSheet({required this.onCreate});
+  final void Function(String name, String leverage, double balance) onCreate;
+  @override
+  State<_CreateDemoAccountSheet> createState() => _CreateDemoAccountSheetState();
+}
+
+class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
+  final _nameController = TextEditingController();
+  final _balanceController = TextEditingController(text: '10000');
+  String _leverage = '1:500';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _balanceController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? cs.primary.withValues(alpha: .10) : Colors.transparent,
-          border: Border.all(color: selected ? cs.primary.withValues(alpha: .45) : Theme.of(context).dividerColor),
-          borderRadius: BorderRadius.circular(20),
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+    final screen = MediaQuery.sizeOf(context);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, -8))],
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(padding: const EdgeInsets.only(top: 10, bottom: 2),
+                  child: Container(width: 38, height: 4,
+                    decoration: BoxDecoration(color: muted.withValues(alpha: .45), borderRadius: BorderRadius.circular(10)))),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 12, 15),
+                  child: Row(children: [
+                    Container(width: 44, height: 44,
+                      decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)),
+                      child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 22)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Create Demo Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 3),
+                      Text('Set up your virtual MT5 trading account', style: TextStyle(color: muted, fontSize: 11)),
+                    ])),
+                    IconButton(tooltip: 'Close', onPressed: () => Navigator.pop(context),
+                      icon: Icon(LucideIcons.x, color: muted, size: 19)),
+                  ]),
+                ),
+                Divider(height: 1, color: border),
+                Flexible(child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _demoSectionHeading('ACCOUNT PROFILE', '01', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Account name', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _nameController,
+                      textCapitalization: TextCapitalization.words,
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter account name', LucideIcons.userRound, cs, border, muted, dark),
+                    ),
+                    const SizedBox(height: 18),
+                    _demoSectionHeading('TRADING CONFIGURATION', '02', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Leverage', cs),
+                    const SizedBox(height: 7),
+                    Row(children: [
+                      for (final value in const ['1:100', '1:200', '1:500'])
+                        Expanded(child: Padding(
+                          padding: EdgeInsets.only(right: value == '1:500' ? 0 : 8),
+                          child: InkWell(
+                            onTap: () => setState(() => _leverage = value),
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _leverage == value ? cs.primary.withValues(alpha: .10) : cs.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: _leverage == value ? cs.primary : border, width: _leverage == value ? 1.5 : 1),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(value, style: TextStyle(color: _leverage == value ? cs.primary : cs.onSurface, fontSize: 12, fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                        )),
+                    ]),
+                    const SizedBox(height: 16),
+                    _demoFieldLabel('Virtual balance (USD)', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _balanceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter starting balance', LucideIcons.wallet, cs, border, muted, dark).copyWith(prefixText: r'$ '),
+                    ),
+                  ]),
+                )),
+                Divider(height: 1, color: border),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 13, 18, 16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    SizedBox(height: 48, child: FilledButton.icon(
+                      onPressed: _createAccount,
+                      style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: const Color(0xFF142238), elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      icon: const Icon(LucideIcons.plus, size: 18),
+                      label: const Text('CREATE DEMO ACCOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                    )),
+                    const SizedBox(height: 9),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(LucideIcons.shieldCheck, color: muted, size: 12),
+                      const SizedBox(width: 5),
+                      Text('Virtual funds only · No deposit required', style: TextStyle(color: muted, fontSize: 9)),
+                    ]),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
         ),
-        child: Text(label, style: TextStyle(color: selected ? cs.primary : cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w700)),
       ),
+    );
+  }
+
+  Widget _demoSectionHeading(String title, String number, ColorScheme cs) => Row(children: [
+    Text(number, style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+    const SizedBox(width: 8),
+    Text(title, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+  ]);
+
+  Widget _demoFieldLabel(String value, ColorScheme cs) =>
+      Text(value, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700));
+
+  InputDecoration _demoInputDecoration(String hint, IconData icon, ColorScheme cs, Color border, Color muted, bool dark) =>
+      InputDecoration(
+        prefixIcon: Icon(icon, size: 17, color: muted),
+        hintText: hint,
+        hintStyle: TextStyle(color: muted, fontSize: 11),
+        filled: true,
+        fillColor: cs.surfaceContainerHighest.withValues(alpha: dark ? .45 : .55),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
+      );
+
+  void _createAccount() {
+    final name = _nameController.text.trim();
+    final balance = double.tryParse(_balanceController.text.trim());
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name to continue.')));
+      return;
+    }
+    if (balance == null || !balance.isFinite || balance <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid virtual balance greater than zero.')));
+      return;
+    }
+    Navigator.pop(context);
+    widget.onCreate(name, _leverage, balance);
+  }
+}
+ + totalBalance.toStringAsFixed(2)}',
+            textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (_) => _CreateDemoAccountSheet(onCreate: (name, leverage, balance) {
+        final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+        final formatted = '$' + balance.toStringAsFixed(2);
+        setState(() => _demoAccounts.insert(0,
+          BrokerAccount(name, login, leverage, formatted, formatted, 'Demo MT5')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Demo account preview $login added.')),
+        );
+      }),
     );
   }
 }
 
-class _DemoSearch extends StatelessWidget {
-  const _DemoSearch({required this.controller, required this.onChanged});
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
+class _DemoMetric extends StatelessWidget {
+  const _DemoMetric({required this.icon, required this.label, required this.value,
+    required this.surface, required this.border, required this.fg, required this.muted, required this.accent});
+  final IconData icon;
+  final String label, value;
+  final Color surface, border, fg, muted, accent;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
+    child: Row(children: [
+      Icon(icon, color: accent, size: 18),
+      const SizedBox(width: 8),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .3)),
+        const SizedBox(height: 4),
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+          child: Text(value, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
+      ])),
+    ]),
+  );
+}
+
+class _CreateDemoAccountSheet extends StatefulWidget {
+  const _CreateDemoAccountSheet({required this.onCreate});
+  final void Function(String name, String leverage, double balance) onCreate;
+  @override
+  State<_CreateDemoAccountSheet> createState() => _CreateDemoAccountSheetState();
+}
+
+class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
+  final _nameController = TextEditingController();
+  final _balanceController = TextEditingController(text: '10000');
+  String _leverage = '1:500';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _balanceController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final border = Theme.of(context).dividerColor;
-    return SizedBox(
-      height: 42,
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        style: TextStyle(color: cs.onSurface, fontSize: 11),
-        decoration: InputDecoration(
-          hintText: 'Search account ID or name',
-          hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 10),
-          prefixIcon: Icon(LucideIcons.search, color: cs.onSurfaceVariant, size: 17),
-          isDense: true,
-          filled: true,
-          fillColor: Theme.of(context).scaffoldBackgroundColor,
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary, width: 1.3)),
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+    final screen = MediaQuery.sizeOf(context);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, -8))],
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(padding: const EdgeInsets.only(top: 10, bottom: 2),
+                  child: Container(width: 38, height: 4,
+                    decoration: BoxDecoration(color: muted.withValues(alpha: .45), borderRadius: BorderRadius.circular(10)))),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 12, 15),
+                  child: Row(children: [
+                    Container(width: 44, height: 44,
+                      decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)),
+                      child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 22)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Create Demo Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 3),
+                      Text('Set up your virtual MT5 trading account', style: TextStyle(color: muted, fontSize: 11)),
+                    ])),
+                    IconButton(tooltip: 'Close', onPressed: () => Navigator.pop(context),
+                      icon: Icon(LucideIcons.x, color: muted, size: 19)),
+                  ]),
+                ),
+                Divider(height: 1, color: border),
+                Flexible(child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _demoSectionHeading('ACCOUNT PROFILE', '01', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Account name', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _nameController,
+                      textCapitalization: TextCapitalization.words,
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter account name', LucideIcons.userRound, cs, border, muted, dark),
+                    ),
+                    const SizedBox(height: 18),
+                    _demoSectionHeading('TRADING CONFIGURATION', '02', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Leverage', cs),
+                    const SizedBox(height: 7),
+                    Row(children: [
+                      for (final value in const ['1:100', '1:200', '1:500'])
+                        Expanded(child: Padding(
+                          padding: EdgeInsets.only(right: value == '1:500' ? 0 : 8),
+                          child: InkWell(
+                            onTap: () => setState(() => _leverage = value),
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _leverage == value ? cs.primary.withValues(alpha: .10) : cs.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: _leverage == value ? cs.primary : border, width: _leverage == value ? 1.5 : 1),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(value, style: TextStyle(color: _leverage == value ? cs.primary : cs.onSurface, fontSize: 12, fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                        )),
+                    ]),
+                    const SizedBox(height: 16),
+                    _demoFieldLabel('Virtual balance (USD)', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _balanceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter starting balance', LucideIcons.wallet, cs, border, muted, dark).copyWith(prefixText: '$ '),
+                    ),
+                  ]),
+                )),
+                Divider(height: 1, color: border),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 13, 18, 16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    SizedBox(height: 48, child: FilledButton.icon(
+                      onPressed: _createAccount,
+                      style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: const Color(0xFF142238), elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      icon: const Icon(LucideIcons.plus, size: 18),
+                      label: const Text('CREATE DEMO ACCOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                    )),
+                    const SizedBox(height: 9),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(LucideIcons.shieldCheck, color: muted, size: 12),
+                      const SizedBox(width: 5),
+                      Text('Virtual funds only · No deposit required', style: TextStyle(color: muted, fontSize: 9)),
+                    ]),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Widget _demoSectionHeading(String title, String number, ColorScheme cs) => Row(children: [
+    Text(number, style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+    const SizedBox(width: 8),
+    Text(title, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+  ]);
+
+  Widget _demoFieldLabel(String value, ColorScheme cs) =>
+      Text(value, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700));
+
+  InputDecoration _demoInputDecoration(String hint, IconData icon, ColorScheme cs, Color border, Color muted, bool dark) =>
+      InputDecoration(
+        prefixIcon: Icon(icon, size: 17, color: muted),
+        hintText: hint,
+        hintStyle: TextStyle(color: muted, fontSize: 11),
+        filled: true,
+        fillColor: cs.surfaceContainerHighest.withValues(alpha: dark ? .45 : .55),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
+      );
+
+  void _createAccount() {
+    final name = _nameController.text.trim();
+    final balance = double.tryParse(_balanceController.text.trim());
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name to continue.')));
+      return;
+    }
+    if (balance == null || !balance.isFinite || balance <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid virtual balance greater than zero.')));
+      return;
+    }
+    Navigator.pop(context);
+    widget.onCreate(name, _leverage, balance);
+  }
+}
+ + balance.toStringAsFixed(2);
+        setState(() => _demoAccounts.insert(0,
+          BrokerAccount(name, login, leverage, formatted, formatted, 'Demo MT5')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Demo account preview $login added.')),
+        );
+      }),
+    );
+  }
+}
+
+class _DemoMetric extends StatelessWidget {
+  const _DemoMetric({required this.icon, required this.label, required this.value,
+    required this.surface, required this.border, required this.fg, required this.muted, required this.accent});
+  final IconData icon;
+  final String label, value;
+  final Color surface, border, fg, muted, accent;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
+    child: Row(children: [
+      Icon(icon, color: accent, size: 18),
+      const SizedBox(width: 8),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .3)),
+        const SizedBox(height: 4),
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+          child: Text(value, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
+      ])),
+    ]),
+  );
+}
+
+class _CreateDemoAccountSheet extends StatefulWidget {
+  const _CreateDemoAccountSheet({required this.onCreate});
+  final void Function(String name, String leverage, double balance) onCreate;
+  @override
+  State<_CreateDemoAccountSheet> createState() => _CreateDemoAccountSheetState();
+}
+
+class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
+  final _nameController = TextEditingController();
+  final _balanceController = TextEditingController(text: '10000');
+  String _leverage = '1:500';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _balanceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+    final screen = MediaQuery.sizeOf(context);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, -8))],
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(padding: const EdgeInsets.only(top: 10, bottom: 2),
+                  child: Container(width: 38, height: 4,
+                    decoration: BoxDecoration(color: muted.withValues(alpha: .45), borderRadius: BorderRadius.circular(10)))),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 12, 15),
+                  child: Row(children: [
+                    Container(width: 44, height: 44,
+                      decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)),
+                      child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 22)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Create Demo Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 3),
+                      Text('Set up your virtual MT5 trading account', style: TextStyle(color: muted, fontSize: 11)),
+                    ])),
+                    IconButton(tooltip: 'Close', onPressed: () => Navigator.pop(context),
+                      icon: Icon(LucideIcons.x, color: muted, size: 19)),
+                  ]),
+                ),
+                Divider(height: 1, color: border),
+                Flexible(child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _demoSectionHeading('ACCOUNT PROFILE', '01', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Account name', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _nameController,
+                      textCapitalization: TextCapitalization.words,
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter account name', LucideIcons.userRound, cs, border, muted, dark),
+                    ),
+                    const SizedBox(height: 18),
+                    _demoSectionHeading('TRADING CONFIGURATION', '02', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Leverage', cs),
+                    const SizedBox(height: 7),
+                    Row(children: [
+                      for (final value in const ['1:100', '1:200', '1:500'])
+                        Expanded(child: Padding(
+                          padding: EdgeInsets.only(right: value == '1:500' ? 0 : 8),
+                          child: InkWell(
+                            onTap: () => setState(() => _leverage = value),
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _leverage == value ? cs.primary.withValues(alpha: .10) : cs.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: _leverage == value ? cs.primary : border, width: _leverage == value ? 1.5 : 1),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(value, style: TextStyle(color: _leverage == value ? cs.primary : cs.onSurface, fontSize: 12, fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                        )),
+                    ]),
+                    const SizedBox(height: 16),
+                    _demoFieldLabel('Virtual balance (USD)', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _balanceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter starting balance', LucideIcons.wallet, cs, border, muted, dark).copyWith(prefixText: '$ '),
+                    ),
+                  ]),
+                )),
+                Divider(height: 1, color: border),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 13, 18, 16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    SizedBox(height: 48, child: FilledButton.icon(
+                      onPressed: _createAccount,
+                      style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: const Color(0xFF142238), elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      icon: const Icon(LucideIcons.plus, size: 18),
+                      label: const Text('CREATE DEMO ACCOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                    )),
+                    const SizedBox(height: 9),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(LucideIcons.shieldCheck, color: muted, size: 12),
+                      const SizedBox(width: 5),
+                      Text('Virtual funds only · No deposit required', style: TextStyle(color: muted, fontSize: 9)),
+                    ]),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _demoSectionHeading(String title, String number, ColorScheme cs) => Row(children: [
+    Text(number, style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+    const SizedBox(width: 8),
+    Text(title, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+  ]);
+
+  Widget _demoFieldLabel(String value, ColorScheme cs) =>
+      Text(value, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700));
+
+  InputDecoration _demoInputDecoration(String hint, IconData icon, ColorScheme cs, Color border, Color muted, bool dark) =>
+      InputDecoration(
+        prefixIcon: Icon(icon, size: 17, color: muted),
+        hintText: hint,
+        hintStyle: TextStyle(color: muted, fontSize: 11),
+        filled: true,
+        fillColor: cs.surfaceContainerHighest.withValues(alpha: dark ? .45 : .55),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
+      );
+
+  void _createAccount() {
+    final name = _nameController.text.trim();
+    final balance = double.tryParse(_balanceController.text.trim());
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name to continue.')));
+      return;
+    }
+    if (balance == null || !balance.isFinite || balance <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid virtual balance greater than zero.')));
+      return;
+    }
+    Navigator.pop(context);
+    widget.onCreate(name, _leverage, balance);
+  }
+}
+ + totalBalance.toStringAsFixed(2)}',
+            textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (_) => _CreateDemoAccountSheet(onCreate: (name, leverage, balance) {
+        final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+        final formatted = '$' + balance.toStringAsFixed(2);
+        setState(() => _demoAccounts.insert(0,
+          BrokerAccount(name, login, leverage, formatted, formatted, 'Demo MT5')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Demo account preview $login added.')),
+        );
+      }),
+    );
+  }
+}
+
+class _DemoMetric extends StatelessWidget {
+  const _DemoMetric({required this.icon, required this.label, required this.value,
+    required this.surface, required this.border, required this.fg, required this.muted, required this.accent});
+  final IconData icon;
+  final String label, value;
+  final Color surface, border, fg, muted, accent;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
+    child: Row(children: [
+      Icon(icon, color: accent, size: 18),
+      const SizedBox(width: 8),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .3)),
+        const SizedBox(height: 4),
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+          child: Text(value, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
+      ])),
+    ]),
+  );
+}
+
+class _CreateDemoAccountSheet extends StatefulWidget {
+  const _CreateDemoAccountSheet({required this.onCreate});
+  final void Function(String name, String leverage, double balance) onCreate;
+  @override
+  State<_CreateDemoAccountSheet> createState() => _CreateDemoAccountSheetState();
+}
+
+class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
+  final _nameController = TextEditingController();
+  final _balanceController = TextEditingController(text: '10000');
+  String _leverage = '1:500';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _balanceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+    final screen = MediaQuery.sizeOf(context);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, -8))],
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(padding: const EdgeInsets.only(top: 10, bottom: 2),
+                  child: Container(width: 38, height: 4,
+                    decoration: BoxDecoration(color: muted.withValues(alpha: .45), borderRadius: BorderRadius.circular(10)))),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 12, 15),
+                  child: Row(children: [
+                    Container(width: 44, height: 44,
+                      decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)),
+                      child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 22)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Create Demo Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 3),
+                      Text('Set up your virtual MT5 trading account', style: TextStyle(color: muted, fontSize: 11)),
+                    ])),
+                    IconButton(tooltip: 'Close', onPressed: () => Navigator.pop(context),
+                      icon: Icon(LucideIcons.x, color: muted, size: 19)),
+                  ]),
+                ),
+                Divider(height: 1, color: border),
+                Flexible(child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _demoSectionHeading('ACCOUNT PROFILE', '01', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Account name', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _nameController,
+                      textCapitalization: TextCapitalization.words,
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter account name', LucideIcons.userRound, cs, border, muted, dark),
+                    ),
+                    const SizedBox(height: 18),
+                    _demoSectionHeading('TRADING CONFIGURATION', '02', cs),
+                    const SizedBox(height: 10),
+                    _demoFieldLabel('Leverage', cs),
+                    const SizedBox(height: 7),
+                    Row(children: [
+                      for (final value in const ['1:100', '1:200', '1:500'])
+                        Expanded(child: Padding(
+                          padding: EdgeInsets.only(right: value == '1:500' ? 0 : 8),
+                          child: InkWell(
+                            onTap: () => setState(() => _leverage = value),
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _leverage == value ? cs.primary.withValues(alpha: .10) : cs.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: _leverage == value ? cs.primary : border, width: _leverage == value ? 1.5 : 1),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(value, style: TextStyle(color: _leverage == value ? cs.primary : cs.onSurface, fontSize: 12, fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                        )),
+                    ]),
+                    const SizedBox(height: 16),
+                    _demoFieldLabel('Virtual balance (USD)', cs),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _balanceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                      style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                      decoration: _demoInputDecoration('Enter starting balance', LucideIcons.wallet, cs, border, muted, dark).copyWith(prefixText: '$ '),
+                    ),
+                  ]),
+                )),
+                Divider(height: 1, color: border),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 13, 18, 16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    SizedBox(height: 48, child: FilledButton.icon(
+                      onPressed: _createAccount,
+                      style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: const Color(0xFF142238), elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      icon: const Icon(LucideIcons.plus, size: 18),
+                      label: const Text('CREATE DEMO ACCOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                    )),
+                    const SizedBox(height: 9),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(LucideIcons.shieldCheck, color: muted, size: 12),
+                      const SizedBox(width: 5),
+                      Text('Virtual funds only · No deposit required', style: TextStyle(color: muted, fontSize: 9)),
+                    ]),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _demoSectionHeading(String title, String number, ColorScheme cs) => Row(children: [
+    Text(number, style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+    const SizedBox(width: 8),
+    Text(title, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+  ]);
+
+  Widget _demoFieldLabel(String value, ColorScheme cs) =>
+      Text(value, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700));
+
+  InputDecoration _demoInputDecoration(String hint, IconData icon, ColorScheme cs, Color border, Color muted, bool dark) =>
+      InputDecoration(
+        prefixIcon: Icon(icon, size: 17, color: muted),
+        hintText: hint,
+        hintStyle: TextStyle(color: muted, fontSize: 11),
+        filled: true,
+        fillColor: cs.surfaceContainerHighest.withValues(alpha: dark ? .45 : .55),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
+      );
+
+  void _createAccount() {
+    final name = _nameController.text.trim();
+    final balance = double.tryParse(_balanceController.text.trim());
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter an account name to continue.')));
+      return;
+    }
+    if (balance == null || !balance.isFinite || balance <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid virtual balance greater than zero.')));
+      return;
+    }
+    Navigator.pop(context);
+    widget.onCreate(name, _leverage, balance);
   }
 }

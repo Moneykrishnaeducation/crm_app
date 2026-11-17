@@ -506,10 +506,10 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   }
   Widget _metric(BuildContext context, String label, String value, IconData icon, {Color? valueColor}) {
     final cs = Theme.of(context).colorScheme;
-    return Expanded(child: Container(padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: .4), borderRadius: BorderRadius.circular(13)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Container(padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: .4), borderRadius: BorderRadius.circular(13)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Icon(icon, color: cs.primary, size: 15), const SizedBox(height: 8), Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
       const SizedBox(height: 4), FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: valueColor ?? cs.onSurface, fontSize: 15, fontWeight: FontWeight.w800))),
-    ])));
+    ]));
   }
   Widget _heading(BuildContext context, String title, String note) {
     final cs = Theme.of(context).colorScheme;
@@ -544,8 +544,8 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             ])),
           ]),
           const SizedBox(height: 16), Row(children: [
-            _metric(context, 'Balance', a.balance, LucideIcons.wallet),
-            const SizedBox(width: 8), _metric(context, 'Equity', a.equity, LucideIcons.chartNoAxesCombined, valueColor: const Color(0xFF20B981)),
+            Expanded(child: _metric(context, 'Balance', a.balance, LucideIcons.wallet)),
+            const SizedBox(width: 8), Expanded(child: _metric(context, 'Equity', a.equity, LucideIcons.chartNoAxesCombined, valueColor: const Color(0xFF20B981))),
           ]),
           const SizedBox(height: 8), _metric(context, 'Floating P/L', pnl == null ? 'Not synced' : _money(pnl), LucideIcons.activity, valueColor: pnl == null ? cs.onSurfaceVariant : pnl >= 0 ? const Color(0xFF20B981) : const Color(0xFFDC5B63)),
         ]),

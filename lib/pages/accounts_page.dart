@@ -185,8 +185,27 @@ class _AccountEmptyState extends StatelessWidget {
 }
 
 class BrokerAccount {
-  const BrokerAccount(this.name, this.login, this.leverage, this.balance, this.equity, this.type);
+  const BrokerAccount(this.name, this.login, this.leverage, this.balance, this.equity, this.type, {
+    this.server, this.currency = 'USD', this.floatingPnl,
+    this.equityHistory = const [], this.openPositions = const [], this.recentTrades = const [],
+  });
   final String name, login, leverage, balance, equity, type;
+  final String? server;
+  final String currency;
+  final double? floatingPnl;
+  final List<double> equityHistory;
+  final List<BrokerOpenPosition> openPositions;
+  final List<BrokerTradeRecord> recentTrades;
+}
+class BrokerOpenPosition {
+  const BrokerOpenPosition({required this.symbol, required this.side, required this.volume, required this.openPrice, required this.currentPrice, required this.profit});
+  final String symbol, side, volume, openPrice, currentPrice;
+  final double profit;
+}
+class BrokerTradeRecord {
+  const BrokerTradeRecord({required this.symbol, required this.side, required this.volume, required this.closedAt, required this.profit});
+  final String symbol, side, volume, closedAt;
+  final double profit;
 }
 
 class _OpenLiveAccountDialog extends StatefulWidget {
@@ -468,80 +487,154 @@ class _AccountTable extends StatelessWidget {
   ]);
 }
 
-class BrokerAccountDetailsPage extends StatelessWidget {
+class BrokerAccountDetailsPage extends StatefulWidget {
   const BrokerAccountDetailsPage({super.key, required this.account, required this.onBack, required this.onSelectPage});
   final BrokerAccount account; final VoidCallback onBack; final ValueChanged<String> onSelectPage;
-
-  Widget _row(BuildContext context, IconData icon, String label, String value) {
+  @override
+  State<BrokerAccountDetailsPage> createState() => _BrokerAccountDetailsPageState();
+}
+class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
+  String _tab = 'Positions';
+  String _money(double v) => '\${v < 0 ? '-' : ''}\${widget.account.currency} \${v.abs().toStringAsFixed(2)}';
+  Widget _empty(BuildContext context, IconData icon, String title, String message) {
     final cs = Theme.of(context).colorScheme;
-    return Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Row(children: [
-      Container(width: 34, height: 34, decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(10)), child: Icon(icon, size: 16, color: cs.primary)),
-      const SizedBox(width: 10), Expanded(child: Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11))),
-      Text(value, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700)),
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 10), child: Column(children: [
+      Container(width: 46, height: 46, decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(14)), child: Icon(icon, color: cs.primary)),
+      const SizedBox(height: 9), Text(title, style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 5), Text(message, textAlign: TextAlign.center, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, height: 1.5)),
     ]));
   }
-
-  Widget _action(BuildContext context, IconData icon, String label, bool primary, VoidCallback tap) {
+  Widget _metric(BuildContext context, String label, String value, IconData icon, {Color? valueColor}) {
     final cs = Theme.of(context).colorScheme;
-    return Expanded(child: SizedBox(height: 72, child: OutlinedButton(onPressed: tap,
-      style: OutlinedButton.styleFrom(backgroundColor: primary ? _brokerGold : cs.surface, foregroundColor: primary ? _brokerNavy : cs.onSurface, side: BorderSide(color: primary ? _brokerGold : Theme.of(context).dividerColor), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), padding: const EdgeInsets.symmetric(horizontal: 2)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 19), const SizedBox(height: 6), Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800))]),
-    )));
+    return Expanded(child: Container(padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: .4), borderRadius: BorderRadius.circular(13)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, color: cs.primary, size: 15), const SizedBox(height: 8), Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
+      const SizedBox(height: 4), FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: valueColor ?? cs.onSurface, fontSize: 15, fontWeight: FontWeight.w800))),
+    ])));
   }
-
+  Widget _heading(BuildContext context, String title, String note) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(children: [Expanded(child: Text(title, style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800))), Text(note, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9))]);
+  }
+  Widget _info(BuildContext context, IconData icon, String label, String value) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Row(children: [
+      Icon(icon, color: cs.primary, size: 16), const SizedBox(width: 10), Expanded(child: Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10))),
+      Flexible(child: Text(value, textAlign: TextAlign.end, overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w700))),
+    ]));
+  }
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme; final live = account.type == 'Live MT5';
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 120), children: [
-      Row(children: [IconButton(onPressed: onBack, icon: const Icon(LucideIcons.arrowLeft)), Expanded(child: Text('Account details', style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.w800))), IconButton(onPressed: () => onSelectPage('Trading Accounts'), icon: const Icon(LucideIcons.layoutGrid))]),
-      const SizedBox(height: 12),
-      Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(
-        gradient: LinearGradient(colors: Theme.of(context).brightness == Brightness.dark ? const [Color(0xFF172B49), Color(0xFF101D32)] : const [Color(0xFFEAF2FF), Color(0xFFFFFFFF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
+    final a = widget.account; final cs = Theme.of(context).colorScheme;
+    final pnl = a.floatingPnl; final hasChart = a.equityHistory.length > 1;
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 125), children: [
+      Row(children: [IconButton(onPressed: widget.onBack, icon: const Icon(LucideIcons.arrowLeft)), Expanded(child: Text('Account details', style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.w800))), IconButton(onPressed: () => widget.onSelectPage('Trading Accounts'), icon: const Icon(LucideIcons.layoutGrid))]),
+      const SizedBox(height: 10),
+      Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(
+        gradient: LinearGradient(colors: Theme.of(context).brightness == Brightness.dark ? const [Color(0xFF172B49), Color(0xFF101D32)] : const [Color(0xFFEAF2FF), Colors.white]),
+        borderRadius: BorderRadius.circular(19), border: Border.all(color: Theme.of(context).dividerColor)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Container(width: 46, height: 46, decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(14)), child: Icon(LucideIcons.chartNoAxesCombined, color: cs.primary, size: 23)),
-            const SizedBox(width: 11), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(account.name, style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 5), Row(children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: live ? const Color(0xFF145C43) : const Color(0xFF174A8B), borderRadius: BorderRadius.circular(20)), child: Text(account.type, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800))),
-                const SizedBox(width: 6), Text('MT5 • Login ' + account.login, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
+            Container(width: 43, height: 43, decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(13)), child: Icon(LucideIcons.chartNoAxesCombined, color: cs.primary, size: 21)),
+            const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(a.name, style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 5), Wrap(spacing: 7, children: [
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: a.type == 'Live MT5' ? const Color(0xFF145C43) : const Color(0xFF174A8B), borderRadius: BorderRadius.circular(20)), child: Text(a.type, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800))),
+                Text('MT5 • Login \${a.login}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
               ]),
             ])),
           ]),
-          const SizedBox(height: 20), Row(children: [
-            Expanded(child: _balanceMetric(context, 'Balance', account.balance, LucideIcons.wallet)),
-            const SizedBox(width: 9), Expanded(child: _balanceMetric(context, 'Equity', account.equity, LucideIcons.chartNoAxesCombined)),
+          const SizedBox(height: 16), Row(children: [
+            _metric(context, 'Balance', a.balance, LucideIcons.wallet),
+            const SizedBox(width: 8), _metric(context, 'Equity', a.equity, LucideIcons.chartNoAxesCombined, valueColor: const Color(0xFF20B981)),
           ]),
+          const SizedBox(height: 8), _metric(context, 'Floating P/L', pnl == null ? 'Not synced' : _money(pnl), LucideIcons.activity, valueColor: pnl == null ? cs.onSurfaceVariant : pnl >= 0 ? const Color(0xFF20B981) : const Color(0xFFDC5B63)),
         ]),
       ),
-      const SizedBox(height: 16), Row(children: [
-        _action(context, LucideIcons.arrowDownToLine, 'Deposit', true, () => onSelectPage('Deposit')),
-        const SizedBox(width: 8), _action(context, LucideIcons.arrowUpFromLine, 'Withdraw', false, () => onSelectPage('Withdraw')),
-        const SizedBox(width: 8), _action(context, LucideIcons.arrowLeftRight, 'Transfer', false, () => onSelectPage('Internal Transfer')),
+      const SizedBox(height: 14), Row(children: [
+        _action(context, LucideIcons.arrowDownToLine, 'Deposit', true, () => widget.onSelectPage('Deposit')),
+        const SizedBox(width: 7), _action(context, LucideIcons.arrowUpFromLine, 'Withdraw', false, () => widget.onSelectPage('Withdraw')),
+        const SizedBox(width: 7), _action(context, LucideIcons.arrowLeftRight, 'Transfer', false, () => widget.onSelectPage('Internal Transfer')),
       ]),
-      const SizedBox(height: 20), Text('Account information', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 9), Container(padding: const EdgeInsets.symmetric(horizontal: 13), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
-        _row(context, LucideIcons.hash, 'Login ID', account.login), Divider(height: 1, color: Theme.of(context).dividerColor),
-        _row(context, LucideIcons.server, 'Platform', 'MetaTrader 5'), Divider(height: 1, color: Theme.of(context).dividerColor),
-        _row(context, LucideIcons.gauge, 'Leverage', account.leverage), Divider(height: 1, color: Theme.of(context).dividerColor),
-        _row(context, LucideIcons.wallet, 'Account type', account.type), Divider(height: 1, color: Theme.of(context).dividerColor),
-        _row(context, LucideIcons.coins, 'Currency', 'USD'),
+      const SizedBox(height: 20), _heading(context, 'Performance', hasChart ? 'Equity history' : 'Awaiting data'),
+      const SizedBox(height: 8), Container(padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child:
+        hasChart ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Equity movement', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)), const SizedBox(height: 8),
+          SizedBox(height: 110, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: a.equityHistory, color: cs.primary, gridColor: Theme.of(context).dividerColor))),
+        ]) : _empty(context, LucideIcons.chartNoAxesCombined, 'Performance data not available', 'The equity chart will appear after MT5 equity history is connected. No performance values are estimated.'),
+      ),
+      const SizedBox(height: 20), _heading(context, 'Trading activity', '\${a.openPositions.length} open • \${a.recentTrades.length} closed'),
+      const SizedBox(height: 8), Container(padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
+        Row(children: [Expanded(child: _tabButton(context, 'Positions')), const SizedBox(width: 7), Expanded(child: _tabButton(context, 'History'))]),
+        const SizedBox(height: 7),
+        if (_tab == 'Positions')
+          if (a.openPositions.isEmpty) _empty(context, LucideIcons.activity, 'No open positions', 'Open MT5 positions will appear here when account synchronization is enabled.')
+          else ...a.openPositions.map((p) => _position(context, p))
+        else if (a.recentTrades.isEmpty)
+          _empty(context, LucideIcons.history, 'No trading history', 'Closed trades will appear here when MT5 deal history is available.')
+        else ...a.recentTrades.map((t) => _trade(context, t)),
       ])),
-      const SizedBox(height: 18), Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(LucideIcons.shieldCheck, color: cs.primary, size: 18), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Account security', style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w800)), const SizedBox(height: 4),
-          Text('Keep your trading credentials private. Never share your master password.', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, height: 1.5)),
-        ])),
+      const SizedBox(height: 20), _heading(context, 'Account information', ''),
+      const SizedBox(height: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 12), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(children: [
+        _info(context, LucideIcons.hash, 'Login ID', a.login), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _info(context, LucideIcons.server, 'Server', a.server ?? 'Not provided'), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _info(context, LucideIcons.monitor, 'Platform', 'MetaTrader 5'), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _info(context, LucideIcons.gauge, 'Leverage', a.leverage), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _info(context, LucideIcons.wallet, 'Account type', a.type), Divider(height: 1, color: Theme.of(context).dividerColor),
+        _info(context, LucideIcons.coins, 'Currency', a.currency),
+      ])),
+      const SizedBox(height: 14), Container(padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(15), border: Border.all(color: Theme.of(context).dividerColor)), child: Row(children: [
+        Icon(LucideIcons.shieldCheck, color: cs.primary, size: 18), const SizedBox(width: 9), Expanded(child: Text('Never share your master password or investor credentials.', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, height: 1.5))),
       ])),
     ]);
   }
-
-  Widget _balanceMetric(BuildContext context, String label, String value, IconData icon) {
+  Widget _action(BuildContext context, IconData icon, String label, bool primary, VoidCallback tap) {
     final cs = Theme.of(context).colorScheme;
-    return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: .45), borderRadius: BorderRadius.circular(14)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, color: cs.primary, size: 16), const SizedBox(height: 8), Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9)),
-      const SizedBox(height: 5), FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800))),
+    return Expanded(child: SizedBox(height: 68, child: OutlinedButton(onPressed: tap, style: OutlinedButton.styleFrom(backgroundColor: primary ? _brokerGold : cs.surface, foregroundColor: primary ? _brokerNavy : cs.onSurface, side: BorderSide(color: primary ? _brokerGold : Theme.of(context).dividerColor), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)), padding: const EdgeInsets.symmetric(horizontal: 2)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 18), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800))]))));
+  }
+  Widget _tabButton(BuildContext context, String label) {
+    final cs = Theme.of(context).colorScheme; final selected = _tab == label;
+    return InkWell(onTap: () => setState(() => _tab = label), borderRadius: BorderRadius.circular(9), child: AnimatedContainer(duration: const Duration(milliseconds: 150), padding: const EdgeInsets.symmetric(vertical: 9), decoration: BoxDecoration(color: selected ? cs.primaryContainer : Colors.transparent, borderRadius: BorderRadius.circular(9), border: Border.all(color: selected ? cs.primary.withValues(alpha: .25) : Theme.of(context).dividerColor)), child: Center(child: Text(label, style: TextStyle(color: selected ? cs.primary : cs.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w800)))));
+  }
+  Widget _position(BuildContext context, BrokerOpenPosition p) {
+    final cs = Theme.of(context).colorScheme; final color = p.profit >= 0 ? const Color(0xFF20B981) : const Color(0xFFDC5B63);
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 9), child: Row(children: [
+      Icon(p.side.toLowerCase() == 'buy' ? LucideIcons.trendingUp : LucideIcons.trendingDown, color: cs.primary, size: 18), const SizedBox(width: 9),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(p.symbol, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800)),
+        Text('\${p.side.toUpperCase()} • \${p.volume} lots', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 8)),
+        Text('\${p.openPrice} → \${p.currentPrice}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 8)),
+      ])), Text(_money(p.profit), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800)),
     ]));
   }
+  Widget _trade(BuildContext context, BrokerTradeRecord t) {
+    final cs = Theme.of(context).colorScheme; final color = t.profit >= 0 ? const Color(0xFF20B981) : const Color(0xFFDC5B63);
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 9), child: Row(children: [
+      Icon(LucideIcons.history, color: cs.primary, size: 18), const SizedBox(width: 9),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(t.symbol, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800)),
+        Text('\${t.side.toUpperCase()} • \${t.volume} lots • \${t.closedAt}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 8)),
+      ])), Text(_money(t.profit), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800)),
+    ]));
+  }
+}
+class _EquityHistoryPainter extends CustomPainter {
+  const _EquityHistoryPainter({required this.values, required this.color, required this.gridColor});
+  final List<double> values; final Color color, gridColor;
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || size.isEmpty) return;
+    final minV = values.reduce(math.min); final maxV = values.reduce(math.max);
+    final range = (maxV - minV).abs() < .000001 ? 1.0 : maxV - minV;
+    final rect = Rect.fromLTWH(0, 4, size.width, size.height - 8);
+    final grid = Paint()..color = gridColor..strokeWidth = 1;
+    for (var i = 0; i < 4; i++) { final y = rect.top + rect.height * i / 3; canvas.drawLine(Offset(0, y), Offset(size.width, y), grid); }
+    final path = Path();
+    for (var i = 0; i < values.length; i++) {
+      final x = rect.width * i / (values.length - 1); final y = rect.bottom - ((values[i] - minV) / range) * rect.height;
+      if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
+    }
+    canvas.drawPath(path, Paint()..color = color..strokeWidth = 2.4..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+  }
+  @override
+  bool shouldRepaint(covariant _EquityHistoryPainter old) => old.values != values || old.color != color || old.gridColor != gridColor;
 }

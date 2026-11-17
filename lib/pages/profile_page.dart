@@ -678,13 +678,15 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 132),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
+                      _buildProfilePageTitle(),
+                      const SizedBox(height: 16),
                       _buildMobileProfileHeader(),
                       const SizedBox(height: 18),
                       _buildMobileSectionNavigation(),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 20),
                       if (_selectedTabIndex == 0)
                         _buildOverviewTab()
                       else if (_selectedTabIndex == 1)
@@ -704,140 +706,149 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
+  Widget _buildProfilePageTitle() {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('MY PROFILE', style: TextStyle(
+                color: _c.accentBlue, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+              const SizedBox(height: 4),
+              Text('Account & identity', style: TextStyle(
+                color: _c.text, fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: -.7)),
+            ],
+          ),
+        ),
+        Material(
+          color: _c.card,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+            side: BorderSide(color: _c.border),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(13),
+            onTap: _showEditDetailsSheet,
+            child: Padding(
+              padding: const EdgeInsets.all(11),
+              child: Icon(LucideIcons.settings2, color: _c.text, size: 19),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // Native-app profile identity header. Keeps the existing avatar/banner actions.
   Widget _buildMobileProfileHeader() {
     return Container(
       decoration: BoxDecoration(
-        color: _c.card,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [Color(0xFF0B1D38), Color(0xFF153D70), Color(0xFF1B548A)],
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _c.border),
-        boxShadow: _isDark ? null : _profileShadow,
+        boxShadow: const [BoxShadow(color: Color(0x2410264A), blurRadius: 22, offset: Offset(0, 9))],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Stack(
         children: [
-          SizedBox(
-            height: 176,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (_bannerImagePath != null)
-                  Image.file(File(_bannerImagePath!), fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => CustomPaint(painter: CelestialBannerPainter(theme: _bannerTheme)))
-                else
-                  CustomPaint(painter: CelestialBannerPainter(theme: _bannerTheme)),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [const Color(0xFF071A35).withValues(alpha: .08), const Color(0xFF071A35).withValues(alpha: .82)],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 14, right: 14,
-                  child: _profileHeaderAction(
-                    icon: LucideIcons.image,
-                    label: 'Cover',
-                    onTap: _showChangeBannerSheet,
-                  ),
-                ),
-                Positioned(
-                  left: 18, bottom: 16,
-                  child: Row(children: [
-                    Container(
-                      width: 82, height: 82,
-                      decoration: BoxDecoration(
-                        color: _avatarBg,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _c.card, width: 4),
-                        boxShadow: const [BoxShadow(color: Color(0x44000000), blurRadius: 14, offset: Offset(0, 4))],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: _profileImagePath != null
-                        ? Image.file(File(_profileImagePath!), fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _profileInitial())
-                        : _profileInitial(),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('VTINDEX CLIENT', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-                      const SizedBox(height: 5),
-                      Text(_name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 3),
-                      Text(_email, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.white.withValues(alpha: .78), fontSize: 10.5)),
-                    ]),
-                  ]),
-                ),
-                Positioned(
-                  left: 75, bottom: 15,
-                  child: Material(
-                    color: _profileBlue, shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: _showChangePhotoSheet,
-                      child: const SizedBox(width: 29, height: 29, child: Icon(LucideIcons.camera, color: Colors.white, size: 14)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          Positioned(right: -36, top: -54,
+            child: Container(width: 170, height: 170,
+              decoration: BoxDecoration(shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: .07), width: 24)))),
+          Positioned(right: 24, bottom: -78,
+            child: Container(width: 180, height: 180,
+              decoration: BoxDecoration(shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFF4C84A).withValues(alpha: .12), width: 1.5)))),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Expanded(child: Row(children: [
-                  Flexible(child: Text(_name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -.25))),
-                  const SizedBox(width: 5),
-                  const Icon(LucideIcons.badgeCheck, color: _profileGold, size: 16),
-                ])),
-                OutlinedButton.icon(
-                  onPressed: _showEditDetailsSheet,
-                  icon: const Icon(LucideIcons.pencil, size: 13),
-                  label: const Text('Edit profile'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _c.accentBlue,
-                    side: BorderSide(color: _c.blueBorder),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-                    textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                const Expanded(child: Text('CLIENT PROFILE', style: TextStyle(
+                  color: Color(0xFFFFD76A), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.4))),
+                _profileHeaderAction(icon: LucideIcons.image, label: 'Cover', onTap: _showChangeBannerSheet),
+              ]),
+              const SizedBox(height: 20),
+              Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                Stack(clipBehavior: Clip.none, children: [
+                  Container(
+                    width: 82, height: 82,
+                    decoration: BoxDecoration(
+                      color: _avatarBg, shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _profileImagePath != null
+                      ? Image.file(File(_profileImagePath!), fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _profileInitial())
+                      : _profileInitial(),
                   ),
-                ),
+                  Positioned(right: -2, bottom: -2,
+                    child: Material(
+                      color: const Color(0xFFF4C84A), shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(), onTap: _showChangePhotoSheet,
+                        child: const SizedBox(width: 28, height: 28,
+                          child: Icon(LucideIcons.camera, size: 14, color: Color(0xFF10264A))),
+                      ),
+                    )),
+                ]),
+                const SizedBox(width: 15),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Flexible(child: Text(_name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.1, fontWeight: FontWeight.w900))),
+                    const SizedBox(width: 5),
+                    const Icon(LucideIcons.badgeCheck, color: Color(0xFFFFD76A), size: 17),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(_email, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white.withValues(alpha: .76), fontSize: 10.5)),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .11),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: .16)),
+                    ),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(LucideIcons.shieldCheck, color: Color(0xFFFFD76A), size: 11),
+                      SizedBox(width: 5),
+                      Text('Client account', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                    ]),
+                  ),
+                ])),
               ]),
-              const SizedBox(height: 4),
+              const SizedBox(height: 18),
+              Container(height: 1, color: Colors.white.withValues(alpha: .13)),
+              const SizedBox(height: 13),
               Row(children: [
-                Icon(LucideIcons.shieldCheck, color: _profileGreen, size: 13),
-                const SizedBox(width: 5),
-                Text('Client profile', style: TextStyle(color: _c.muted, fontSize: 10.5, fontWeight: FontWeight.w600)),
-                const SizedBox(width: 8),
-                Container(width: 3, height: 3, decoration: BoxDecoration(color: _c.muted, shape: BoxShape.circle)),
-                const SizedBox(width: 8),
-                Text('VT Index', style: TextStyle(color: _c.muted, fontSize: 10.5)),
-              ]),
-              const SizedBox(height: 15),
-              Row(children: [
-                Expanded(child: _profileIdentityTile(LucideIcons.mail, 'EMAIL ADDRESS', _email)),
-                const SizedBox(width: 9),
-                Expanded(child: _profileIdentityTile(LucideIcons.phone, 'PHONE NUMBER', _phone)),
-              ]),
-              const SizedBox(height: 10),
-              Row(children: [
-                Expanded(child: _profileIdentityTile(LucideIcons.layers, 'ACCOUNT LEVEL', 'Tier 3')),
-                const SizedBox(width: 9),
-                Expanded(child: _profileIdentityTile(LucideIcons.checkCircle, 'PROFILE STATUS', 'Complete')),
+                Expanded(child: _profileHeroMetric(LucideIcons.phone, 'PHONE', _phone)),
+                Container(width: 1, height: 30, color: Colors.white.withValues(alpha: .15)),
+                const SizedBox(width: 12),
+                Expanded(child: _profileHeroMetric(LucideIcons.mapPin, 'LOCATION', _location)),
               ]),
             ]),
           ),
         ],
       ),
     );
+  }
+
+  Widget _profileHeroMetric(IconData icon, String label, String value) {
+    return Row(children: [
+      Icon(icon, color: const Color(0xFFFFD76A), size: 15),
+      const SizedBox(width: 8),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: .58), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .7)),
+        const SizedBox(height: 3),
+        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+      ])),
+    ]);
   }
 
   Widget _profileInitial() => Center(child: Text(_name.isNotEmpty ? _name[0].toUpperCase() : 'U',
@@ -973,40 +984,33 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     const tabs = [
       (icon: LucideIcons.layoutDashboard, label: 'Overview'),
       (icon: LucideIcons.userRound, label: 'Personal'),
-      (icon: LucideIcons.shieldCheck, label: 'KYC'),
+      (icon: LucideIcons.shieldCheck, label: 'Verification'),
       (icon: LucideIcons.wallet, label: 'Payments'),
     ];
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(17),
+        color: _c.card, borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _c.border),
-        boxShadow: _isDark ? null : _profileShadow,
       ),
       child: Row(children: [
         for (var i = 0; i < tabs.length; i++)
-          Expanded(child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+          Expanded(child: GestureDetector(
             onTap: () => setState(() => _selectedTabIndex = i),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 1),
               decoration: BoxDecoration(
-                color: _selectedTabIndex == i ? _c.blueLight : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _selectedTabIndex == i ? _c.blueBorder : Colors.transparent),
+                color: _selectedTabIndex == i ? _c.navy : Colors.transparent,
+                borderRadius: BorderRadius.circular(11),
               ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(tabs[i].icon, size: 17, color: _selectedTabIndex == i ? _c.accentBlue : _c.muted),
+                Icon(tabs[i].icon, size: 16,
+                  color: _selectedTabIndex == i ? const Color(0xFFFFD76A) : _c.muted),
                 const SizedBox(height: 5),
                 Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 9, fontWeight: _selectedTabIndex == i ? FontWeight.w800 : FontWeight.w600,
-                    color: _selectedTabIndex == i ? _c.accentBlue : _c.muted)),
-                const SizedBox(height: 4),
-                AnimatedContainer(duration: const Duration(milliseconds: 200),
-                  width: _selectedTabIndex == i ? 16 : 4, height: 2.5,
-                  decoration: BoxDecoration(color: _selectedTabIndex == i ? _profileGold : Colors.transparent, borderRadius: BorderRadius.circular(4))),
+                  style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800,
+                    color: _selectedTabIndex == i ? Colors.white : _c.muted)),
               ]),
             ),
           )),
@@ -1019,51 +1023,48 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   // TAB 1: OVERVIEW TAB
   // ==========================================
   Widget _buildOverviewTab() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Account overview', style: TextStyle(color: _c.text, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -.3)),
-            const SizedBox(height: 3),
-            Text('Your profile, verification and payout details', style: TextStyle(color: _c.muted, fontSize: 10.5)),
-          ])),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(color: _c.greenLight, borderRadius: BorderRadius.circular(20), border: Border.all(color: _c.greenBorder)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.circleCheck, color: _profileGreen, size: 12),
-              SizedBox(width: 5),
-              Text('Active', style: TextStyle(color: _profileGreen, fontSize: 10, fontWeight: FontWeight.w800)),
-            ]),
-          ),
-        ]),
-        const SizedBox(height: 14),
-        _buildMobileCompletionSummary(),
-        const SizedBox(height: 22),
-        Row(children: [
-          Expanded(child: Text('Quick actions', style: TextStyle(color: _c.text, fontSize: 15, fontWeight: FontWeight.w800))),
-          Text('SHORTCUTS', style: TextStyle(color: _c.muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .9)),
-        ]),
-        const SizedBox(height: 11),
-        GridView.count(
-          crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.25,
-          children: [
-            _mobileQuickAction(icon: LucideIcons.userRound, title: 'Edit details', subtitle: 'Personal profile', onTap: _showEditDetailsSheet),
-            _mobileQuickAction(icon: LucideIcons.shieldCheck, title: 'Verification', subtitle: 'View KYC status', onTap: () => setState(() => _selectedTabIndex = 2)),
-            _mobileQuickAction(icon: LucideIcons.landmark, title: 'Bank account', subtitle: 'Payout details', onTap: _showBankDetailsSheet),
-            _mobileQuickAction(icon: LucideIcons.wallet, title: 'Crypto wallet', subtitle: 'Wallet settings', onTap: _showCryptoWalletSheet),
-          ],
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Account snapshot', style: TextStyle(color: _c.text, fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: -.35)),
+          const SizedBox(height: 3),
+          Text('A quick view of your client profile', style: TextStyle(color: _c.muted, fontSize: 10.5)),
+        ])),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: _c.blueLight, borderRadius: BorderRadius.circular(20), border: Border.all(color: _c.blueBorder)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(LucideIcons.circleCheck, color: _c.accentBlue, size: 12),
+            const SizedBox(width: 5),
+            Text('Active', style: TextStyle(color: _c.accentBlue, fontSize: 10, fontWeight: FontWeight.w800)),
+          ]),
         ),
-        const SizedBox(height: 22),
-        _buildPersonalInformationCard(),
-        const SizedBox(height: 14),
-        _buildIdentityVerificationCard(),
-        const SizedBox(height: 14),
-        _buildPaymentMethodsCard(),
-      ],
-    );
+      ]),
+      const SizedBox(height: 14),
+      _buildMobileCompletionSummary(),
+      const SizedBox(height: 22),
+      Row(children: [
+        Expanded(child: Text('Manage your account', style: TextStyle(color: _c.text, fontSize: 15, fontWeight: FontWeight.w900))),
+        Text('QUICK ACCESS', style: TextStyle(color: _c.muted, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+      ]),
+      const SizedBox(height: 11),
+      GridView.count(
+        crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.1,
+        children: [
+          _mobileQuickAction(icon: LucideIcons.userRoundPen, title: 'Personal details', subtitle: 'Edit your information', onTap: () => setState(() => _selectedTabIndex = 1)),
+          _mobileQuickAction(icon: LucideIcons.fileCheck2, title: 'Verification', subtitle: 'Identity and address', onTap: () => setState(() => _selectedTabIndex = 2)),
+          _mobileQuickAction(icon: LucideIcons.landmark, title: 'Bank account', subtitle: 'Manage payout details', onTap: _showBankDetailsSheet),
+          _mobileQuickAction(icon: LucideIcons.wallet, title: 'Crypto wallet', subtitle: 'Manage wallet details', onTap: _showCryptoWalletSheet),
+        ],
+      ),
+      const SizedBox(height: 22),
+      _buildPersonalInformationCard(),
+      const SizedBox(height: 14),
+      _buildIdentityVerificationCard(),
+      const SizedBox(height: 14),
+      _buildPaymentMethodsCard(),
+    ]);
   }
 
   Widget _buildMobileCompletionSummary() {

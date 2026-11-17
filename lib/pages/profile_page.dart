@@ -2274,7 +2274,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             iconColor: _profileBlue,
             iconBg: _profileBlueLight,
             title: 'Bank Account',
-            subtitle: '****3456',
+            subtitle: _maskedBankAccountNumber,
             onTap: _showBankDetailsSheet,
           ),
           const SizedBox(height: 10),
@@ -2283,7 +2283,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             iconColor: _profileGold,
             iconBg: _profileGoldLight,
             title: 'Crypto Wallet',
-            subtitle: 'UNANG · 123456789asd',
+            subtitle: '$_cryptoCurrency · $_shortWalletAddress',
             onTap: _showCryptoWalletSheet,
           ),
         ],
@@ -2607,7 +2607,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _profileBlue,
-                  foregroundColor: const Color(0xFF10264A),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 1,
                 ),
@@ -5628,7 +5628,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1D4ED8),
-                      foregroundColor: const Color(0xFF10264A),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 1,

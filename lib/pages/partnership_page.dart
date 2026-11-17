@@ -9,6 +9,15 @@ const _partnershipMuted = Color(0xFF738197);
 const _partnershipBorder = Color(0xFFE5EAF1);
 const _partnershipCanvas = Color(0xFFF6F8FB);
 
+const _partnerProfiles = <_PartnerProfile>[
+  _PartnerProfile(name: 'Gold', code: 'X0RCGYVH7A', clients: 0),
+  _PartnerProfile(name: 'Gold-80', code: 'UENYAZWK4', clients: 0),
+  _PartnerProfile(name: 'Test', code: '4Z7G7TKF4J', clients: 0, primary: true),
+  _PartnerProfile(name: 'test', code: 'IQ57TSDY38', clients: 0),
+  _PartnerProfile(name: 'crm', code: '9BSFFEGGTL', clients: 0),
+  _PartnerProfile(name: 'test3', code: '6F81L1IUK5', clients: 0),
+];
+
 class BrokerPartnershipPage extends StatefulWidget {
   const BrokerPartnershipPage({super.key});
 
@@ -17,14 +26,7 @@ class BrokerPartnershipPage extends StatefulWidget {
 }
 
 class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
-  static const _partners = <_PartnerProfile>[
-    _PartnerProfile(name: 'Gold', code: 'X0RCGYVH7A', clients: 0),
-    _PartnerProfile(name: 'Gold-80', code: 'UENYAZWK4', clients: 0),
-    _PartnerProfile(name: 'Test', code: '4Z7G7TKF4J', clients: 0, primary: true),
-    _PartnerProfile(name: 'test', code: 'IQ57TSDY38', clients: 0),
-    _PartnerProfile(name: 'crm', code: '9BSFFEGGTL', clients: 0),
-    _PartnerProfile(name: 'test3', code: '6F81L1IUK5', clients: 0),
-  ];
+  static const _partners = _partnerProfiles;
 
   int _selectedPartnerIndex = 2;
   _PartnerProfile get _selectedPartner => _partners[_selectedPartnerIndex];
@@ -334,6 +336,19 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     super.dispose();
   }
 
+  Future<void> _showAddClientDialog() async {
+    final created = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _ClientRegistrationDialog(),
+    );
+    if (created == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Client profile created.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final query = _query.trim().toLowerCase();
@@ -356,6 +371,16 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       backgroundColor: page,
       appBar: AppBar(
         title: const Text('Client list'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: FilledButton.icon(
+              onPressed: _showAddClientDialog,
+              icon: const Icon(LucideIcons.userRoundPlus, size: 16),
+              label: const Text('Add client'),
+            ),
+          ),
+        ],
         leading: IconButton(
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).maybePop(),
@@ -531,6 +556,248 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     visualDensity: VisualDensity.compact,
+  );
+}
+
+class _ClientRegistrationDialog extends StatefulWidget {
+  const _ClientRegistrationDialog();
+
+  @override
+  State<_ClientRegistrationDialog> createState() => _ClientRegistrationDialogState();
+}
+
+class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _phone = TextEditingController();
+  final _birthDate = TextEditingController();
+  String? _country;
+  late int _partnerIndex;
+  bool _primary = true;
+
+  static const _countries = [
+    'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Canada',
+    'India', 'Malaysia', 'Singapore', 'United Arab Emirates', 'United Kingdom',
+    'United States',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _partnerIndex = _partnerProfiles.indexWhere((partner) => partner.primary);
+    if (_partnerIndex < 0) _partnerIndex = 0;
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _email.dispose();
+    _phone.dispose();
+    _birthDate.dispose();
+    super.dispose();
+  }
+
+  void _reset() {
+    _formKey.currentState?.reset();
+    _name.clear();
+    _email.clear();
+    _phone.clear();
+    _birthDate.clear();
+    setState(() {
+      _country = null;
+      _partnerIndex = _partnerProfiles.indexWhere((partner) => partner.primary);
+      if (_partnerIndex < 0) _partnerIndex = 0;
+      _primary = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 760;
+    return Dialog(
+      insetPadding: const EdgeInsets.all(12),
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 980, maxHeight: MediaQuery.sizeOf(context).height * .92),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 14, 12),
+            child: Row(children: [
+              _iconBadge(LucideIcons.userRound),
+              const SizedBox(width: 11),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('PARTNER NETWORK ONBOARDING', style: TextStyle(color: Color(0xFF4565FF), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .4)),
+                SizedBox(height: 3),
+                Text('Client Registration Information', style: TextStyle(color: Color(0xFF17243A), fontSize: 16, fontWeight: FontWeight.w800)),
+                SizedBox(height: 2),
+                Text('Fill out the required information to register a new client profile.', style: TextStyle(color: Color(0xFF8090AA), fontSize: 10)),
+              ])),
+              TextButton.icon(onPressed: _reset, icon: const Icon(LucideIcons.rotateCcw, size: 13), label: const Text('Reset')),
+            ]),
+          ),
+          const Divider(height: 1, color: Color(0xFFE7ECF3)),
+          Expanded(child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                _section('1', 'PERSONAL IDENTITY', LucideIcons.userRound),
+                const SizedBox(height: 11),
+                _responsive(compact, [
+                  _textField(_name, 'FULL NAME', 'e.g. Johnathan Miller', LucideIcons.userRound, required: true),
+                  _birthDateField(),
+                ]),
+                const SizedBox(height: 5),
+                const Text('Enter the legal name as it appears on your identification documents.', style: TextStyle(color: Color(0xFF8998AE), fontSize: 9)),
+                const SizedBox(height: 17),
+                _section('2', 'CONTACT & TERRITORY', LucideIcons.phone),
+                const SizedBox(height: 11),
+                _responsive(compact, [
+                  _textField(_email, 'EMAIL ADDRESS', 'client@company.com', LucideIcons.mail, required: true, email: true),
+                  _textField(_phone, 'PHONE NUMBER', '+1 (555) 234-5678', LucideIcons.phone, required: true),
+                  _countryField(),
+                ]),
+                const SizedBox(height: 5),
+                const Text('Trading reports and updates will be sent to this address.', style: TextStyle(color: Color(0xFF8998AE), fontSize: 9)),
+                const SizedBox(height: 17),
+                _section('3', 'IB REFERRAL ALLOCATION', LucideIcons.link),
+                const SizedBox(height: 11),
+                _partnerField(),
+                CheckboxListTile(
+                  value: _primary,
+                  onChanged: (value) => setState(() {
+                    _primary = value ?? false;
+                    if (_primary) {
+                      final primaryIndex = _partnerProfiles.indexWhere((partner) => partner.primary);
+                      if (primaryIndex >= 0) _partnerIndex = primaryIndex;
+                    }
+                  }),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Primary referral profile is selected by default.', style: TextStyle(color: Color(0xFF4565FF), fontSize: 10)),
+                ),
+              ]),
+            ),
+          )),
+          const Divider(height: 1, color: Color(0xFFE7ECF3)),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Align(alignment: Alignment.centerRight, child: FilledButton.icon(
+              onPressed: () { if (_formKey.currentState?.validate() ?? false) Navigator.of(context).pop(true); },
+              icon: const Icon(LucideIcons.userRoundPlus, size: 15),
+              label: const Text('Create Client Profile'),
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4057F5), foregroundColor: Colors.white),
+            )),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _responsive(bool compact, List<Widget> fields) => compact
+      ? Column(children: [for (var i = 0; i < fields.length; i++) ...[if (i > 0) const SizedBox(height: 12), fields[i]]])
+      : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [for (var i = 0; i < fields.length; i++) ...[if (i > 0) const SizedBox(width: 12), Expanded(child: fields[i])]]);
+
+  Widget _textField(TextEditingController controller, String label, String hint, IconData icon, {bool required = false, bool email = false}) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    _fieldLabel(label, required: required),
+    const SizedBox(height: 5),
+    TextFormField(
+      controller: controller,
+      keyboardType: email ? TextInputType.emailAddress : TextInputType.text,
+      validator: required ? (value) => (value == null || value.trim().isEmpty) ? 'Required' : (email && !value.contains('@') ? 'Enter a valid email' : null) : null,
+      style: const TextStyle(color: Color(0xFF22334D), fontSize: 11),
+      decoration: _decoration(hint, icon),
+    ),
+  ]);
+
+  Widget _birthDateField() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    _fieldLabel('DATE OF BIRTH', suffix: '(optional)'),
+    const SizedBox(height: 5),
+    TextFormField(
+      controller: _birthDate,
+      readOnly: true,
+      onTap: () async {
+        final selected = await showDatePicker(context: context, initialDate: DateTime(1995), firstDate: DateTime(1900), lastDate: DateTime.now());
+        if (selected != null) _birthDate.text = '${selected.day.toString().padLeft(2, '0')}-${selected.month.toString().padLeft(2, '0')}-${selected.year}';
+      },
+      style: const TextStyle(color: Color(0xFF22334D), fontSize: 11),
+      decoration: _decoration('dd-mm-yyyy', LucideIcons.calendarDays),
+    ),
+    const SizedBox(height: 5),
+    const Text('Client must be 18+ to register in trading account.', style: TextStyle(color: Color(0xFF8998AE), fontSize: 9)),
+  ]);
+
+  Widget _countryField() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    _fieldLabel('COUNTRY / REGION', required: true),
+    const SizedBox(height: 5),
+    DropdownButtonFormField<String>(
+      value: _country,
+      isExpanded: true,
+      validator: (value) => value == null ? 'Select a country' : null,
+      decoration: _decoration('Search and select country', LucideIcons.globe),
+      items: [for (final country in _countries) DropdownMenuItem(value: country, child: Text(country, overflow: TextOverflow.ellipsis))],
+      onChanged: (value) => setState(() => _country = value),
+    ),
+  ]);
+
+  Widget _partnerField() {
+    final partner = _partnerProfiles[_partnerIndex];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(11), border: Border.all(color: const Color(0xFFDCE4EF))),
+      child: Row(children: [
+        _iconBadge(LucideIcons.userRound),
+        const SizedBox(width: 9),
+        Expanded(child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+          value: _partnerIndex,
+          isExpanded: true,
+          items: [for (var i = 0; i < _partnerProfiles.length; i++) DropdownMenuItem(value: i, child: Text('${_partnerProfiles[i].name}  ${_partnerProfiles[i].primary ? 'PRIMARY  ' : ''}${_partnerProfiles[i].code}  ·  ${_partnerProfiles[i].clients} clients', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Color(0xFF25344A))))],
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() {
+              _partnerIndex = value;
+              _primary = _partnerProfiles[value].primary;
+            });
+          },
+        ))),
+        const SizedBox(width: 8),
+        Text(partner.primary ? '✓ Assigned' : 'Assigned', style: const TextStyle(color: Color(0xFF0BAE7A), fontSize: 9, fontWeight: FontWeight.w700)),
+      ]),
+    );
+  }
+
+  Widget _section(String number, String title, IconData icon) => Row(children: [
+    _iconBadge(icon),
+    const SizedBox(width: 10),
+    Container(width: 16, height: 16, alignment: Alignment.center, decoration: BoxDecoration(color: const Color(0xFF4057F5), borderRadius: BorderRadius.circular(4)), child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800))),
+    const SizedBox(width: 7),
+    Text(title, style: const TextStyle(color: Color(0xFF1D2B42), fontSize: 10, fontWeight: FontWeight.w800)),
+  ]);
+
+  Widget _iconBadge(IconData icon) => Container(width: 30, height: 30, alignment: Alignment.center, decoration: const BoxDecoration(color: Color(0xFFF0F4FF), shape: BoxShape.circle), child: Icon(icon, color: const Color(0xFF4057F5), size: 15));
+
+  Widget _fieldLabel(String label, {bool required = false, String? suffix}) => Row(children: [
+    Expanded(child: Text(label, style: const TextStyle(color: Color(0xFF33425A), fontSize: 8, fontWeight: FontWeight.w800))),
+    if (required) const Text('*', style: TextStyle(color: Color(0xFFFF5366), fontSize: 10, fontWeight: FontWeight.w800)),
+    if (suffix != null) Text(suffix, style: const TextStyle(color: Color(0xFF8998AE), fontSize: 8)),
+  ]);
+
+  InputDecoration _decoration(String hint, IconData icon) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0xFF9AA9BE), fontSize: 10),
+    prefixIcon: Icon(icon, color: const Color(0xFF8A9AB3), size: 14),
+    isDense: true,
+    filled: true,
+    fillColor: const Color(0xFFFBFCFE),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFDCE4EF))),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF5870FF))),
+    errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFDA5969))),
+    focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFDA5969))),
   );
 }
 

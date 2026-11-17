@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_notch_toast/flutter_notch_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -440,8 +441,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
   Future<void> copyText(String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$label copied')));
+      toast.success('$label copied');
     }
   }
 
@@ -529,14 +529,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                         ),
                         if (wide)
                           FilledButton.icon(
-                            onPressed: () => ScaffoldMessenger.of(context)
-                                .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Open Client List to add a client.',
-                                    ),
-                                  ),
-                                ),
+                            onPressed: () => showAppToast('Open Client List to add a client.', type: NotchToastType.info),
                             icon: const Icon(LucideIcons.userPlus, size: 14),
                             label: const Text('Add Client'),
                           ),
@@ -982,9 +975,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('PDF export is not yet connected.')),
-            ),
+            onPressed: () => showAppToast('PDF export is not yet connected.', type: NotchToastType.info),
             icon: const Icon(LucideIcons.download, size: 14),
             label: const Text(
               'DOWNLOAD PDF CARD',
@@ -1753,13 +1744,7 @@ class _BrokerCommissionWithdrawalPageState
             ),
             FilledButton.icon(
               onPressed: canSubmit
-                  ? () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Payout submission requires the commission withdrawal API.',
-                        ),
-                      ),
-                    )
+                  ? () => showAppToast('Payout submission requires the commission withdrawal API.', type: NotchToastType.warning)
                   : null,
               icon: const Icon(LucideIcons.arrowRight, size: 15),
               label: const Text(

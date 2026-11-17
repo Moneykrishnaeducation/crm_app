@@ -771,18 +771,36 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
+          // Keep the cover visible while retaining enough contrast for profile text.
           if (_bannerImagePath != null)
             Positioned.fill(
               child: Image.file(
                 File(_bannerImagePath!),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.expand(),
+                alignment: Alignment.center,
+                gaplessPlayback: true,
+                errorBuilder: (context, error, stackTrace) {
+                  debugPrint('Profile cover image render error: $error');
+                  return const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF0B1D38),
+                          Color(0xFF153D70),
+                          Color(0xFF1B548A),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           if (_bannerImagePath != null)
-            Positioned.fill(
+            const Positioned.fill(
               child: ColoredBox(
-                color: Color(0x990B1D38),
+                color: Color(0x330B1D38),
               ),
             ),
           Positioned(

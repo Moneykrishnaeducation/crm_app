@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 
 class PammPage extends StatefulWidget {
   const PammPage({super.key, this.onBack});
@@ -857,6 +858,330 @@ class _PammPageState extends State<PammPage> {
     style: TextStyle(color: _text, fontSize: 12),
     decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: _muted, fontSize: 11), filled: true, fillColor: _surface,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _border))));
+
+  void _depositDialog(String accountName) {
+    final amount = TextEditingController();
+    final picker = ImagePicker();
+    var method = 0;
+    XFile? proof;
+    var submitting = false;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x9907132D),
+      builder: (sheetContext) {
+        final screen = MediaQuery.sizeOf(sheetContext);
+        final compact = screen.width < 600;
+        final maxHeight = screen.height * .94;
+        return StatefulBuilder(builder: (sheetContext, setModalState) {
+          final isDark = _dark;
+          final modalText = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF14265A);
+          final modalMuted = isDark ? const Color(0xFF9AABC4) : const Color(0xFF6D7F9D);
+          final modalCard = _card;
+          final modalBorder = _border;
+
+          InputDecoration amountDecoration() => InputDecoration(
+            hintText: '0.00',
+            hintStyle: TextStyle(color: modalMuted, fontSize: 15, fontWeight: FontWeight.w700),
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(left: 14, right: 10),
+              child: Icon(Icons.attach_money_rounded, color: Color(0xFF1D348A), size: 20),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 42),
+            filled: true,
+            fillColor: modalCard,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide(color: modalBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(color: _blue, width: 1.4),
+            ),
+          );
+
+          Widget sectionLabel(String text) => Padding(
+            padding: const EdgeInsets.only(bottom: 9),
+            child: Text(text.toUpperCase(), style: TextStyle(
+              color: modalText, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .25,
+            )),
+          );
+
+          Widget paymentTab(int index, IconData icon, String title, String subtitle) {
+            final selected = method == index;
+            return Expanded(child: InkWell(
+              onTap: () => setModalState(() => method = index),
+              borderRadius: BorderRadius.circular(13),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 170),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: compact ? 12 : 15),
+                decoration: BoxDecoration(
+                  gradient: selected ? const LinearGradient(
+                    colors: [Color(0xFF293FE1), Color(0xFF3569F6)],
+                  ) : null,
+                  color: selected ? null : modalCard,
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: selected ? _blue : modalBorder, width: selected ? 1.3 : 1),
+                  boxShadow: selected ? [BoxShadow(
+                    color: _blue.withValues(alpha: .18), blurRadius: 12, offset: const Offset(0, 5),
+                  )] : null,
+                ),
+                child: Column(children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(icon, size: 15, color: selected ? Colors.white : modalText),
+                    const SizedBox(width: 7),
+                    Text(title, style: TextStyle(
+                      color: selected ? Colors.white : modalText, fontSize: 11, fontWeight: FontWeight.w800,
+                    )),
+                  ]),
+                  const SizedBox(height: 5),
+                  Text(subtitle, style: TextStyle(
+                    color: selected ? Colors.white.withValues(alpha: .85) : modalMuted, fontSize: 9, fontWeight: FontWeight.w600,
+                  )),
+                ]),
+              ),
+            ));
+          }
+
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 780, maxHeight: maxHeight),
+              child: Container(
+                margin: EdgeInsets.fromLTRB(compact ? 7 : 14, 0, compact ? 7 : 14, compact ? 5 : 12),
+                decoration: BoxDecoration(
+                  color: modalCard,
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: modalBorder),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .2), blurRadius: 28, offset: const Offset(0, 10))],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    padding: EdgeInsets.fromLTRB(compact ? 16 : 22, compact ? 15 : 20, 12, 17),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft, end: Alignment.bottomRight,
+                        colors: [Color(0xFF1B328D), Color(0xFF315FEA), Color(0xFF356DF5)],
+                      ),
+                    ),
+                    child: Stack(children: [
+                      Positioned(right: -32, bottom: -66, child: Container(
+                        width: 170, height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: .055),
+                        ),
+                      )),
+                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          Container(
+                            width: 44, height: 44,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: .13),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white.withValues(alpha: .28)),
+                            ),
+                            child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            const Text('Deposit Funds', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                            const SizedBox(height: 4),
+                            Text('Add funds to your PAMM account using your preferred payment method.',
+                              style: TextStyle(color: Colors.white.withValues(alpha: .88), fontSize: 10, height: 1.35)),
+                          ])),
+                          IconButton(
+                            tooltip: 'Close',
+                            onPressed: () => Navigator.pop(sheetContext),
+                            icon: const Icon(Icons.close_rounded, color: Colors.white, size: 19),
+                          ),
+                        ]),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF071D57).withValues(alpha: .72),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: .2)),
+                          ),
+                          child: Wrap(spacing: 9, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                            const Icon(Icons.check_circle_outline, color: Color(0xFF2BE3B2), size: 13),
+                            Text('Account:  $accountName', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                            const Text('|', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                            const Icon(Icons.shield_outlined, color: Color(0xFF8DEED5), size: 13),
+                            const Text('Secure request', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                          ]),
+                        ),
+                      ]),
+                    ]),
+                  ),
+                  Flexible(child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(compact ? 14 : 20, 16, compact ? 14 : 20, 12),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: isDark ? _surface : const Color(0xFFF7F9FE),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: modalBorder),
+                        ),
+                        child: Row(children: [
+                          paymentTab(0, Icons.currency_bitcoin_rounded, 'USDT', 'Crypto payment'),
+                          const SizedBox(width: 6),
+                          paymentTab(1, Icons.account_balance_outlined, 'MANUAL', 'Bank transfer'),
+                        ]),
+                      ),
+                      const SizedBox(height: 15),
+                      Container(
+                        padding: const EdgeInsets.all(13),
+                        decoration: BoxDecoration(
+                          color: isDark ? _surface : const Color(0xFFF3F7FF),
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(color: const Color(0xFFD7E4FF), style: BorderStyle.solid),
+                        ),
+                        child: Row(children: [
+                          Container(
+                            width: 34, height: 34,
+                            decoration: BoxDecoration(color: modalCard, borderRadius: BorderRadius.circular(10)),
+                            child: Icon(Icons.info_outline_rounded, color: _blue, size: 19),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('PAYMENT INSTRUCTIONS', style: TextStyle(color: modalText, fontSize: 10, fontWeight: FontWeight.w900)),
+                            const SizedBox(height: 5),
+                            Text(
+                              method == 0
+                                ? 'Send USDT using the TRC20 network and upload your transaction screenshot for verification.'
+                                : 'Contact Live Support for official bank details before transferring, then upload your payment proof.',
+                              style: TextStyle(color: modalMuted, fontSize: 10, height: 1.4),
+                            ),
+                          ])),
+                        ]),
+                      ),
+                      const SizedBox(height: 17),
+                      sectionLabel('Deposit amount (USD)'),
+                      TextField(
+                        controller: amount,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        style: TextStyle(color: modalText, fontSize: 15, fontWeight: FontWeight.w800),
+                        decoration: amountDecoration(),
+                      ),
+                      const SizedBox(height: 6),
+                      Text('Minimum deposit: $10.00', style: TextStyle(color: modalMuted, fontSize: 9, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 17),
+                      sectionLabel('Upload payment proof'),
+                      InkWell(
+                        onTap: () async {
+                          try {
+                            final selected = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+                            if (selected != null) setModalState(() => proof = selected);
+                          } catch (_) {
+                            if (sheetContext.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Unable to open the image picker. Please try again.')),
+                              );
+                            }
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(13),
+                        child: Container(
+                          padding: const EdgeInsets.all(13),
+                          decoration: BoxDecoration(
+                            color: isDark ? _surface : const Color(0xFFF8FAFD),
+                            borderRadius: BorderRadius.circular(13),
+                            border: Border.all(color: modalBorder, style: BorderStyle.solid),
+                          ),
+                          child: Row(children: [
+                            Container(
+                              width: 38, height: 38,
+                              decoration: BoxDecoration(color: const Color(0xFFE2ECFF), borderRadius: BorderRadius.circular(11)),
+                              child: const Icon(Icons.cloud_upload_outlined, color: _blue, size: 21),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(proof?.name ?? 'Choose transaction proof', maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: modalText, fontSize: 11, fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 4),
+                              Text(proof == null ? 'JPG or PNG · Tap to browse' : 'Selected · Tap to change file',
+                                style: TextStyle(color: modalMuted, fontSize: 9)),
+                            ])),
+                            Text('Browse', style: TextStyle(color: _blue, fontSize: 9, fontWeight: FontWeight.w900)),
+                          ]),
+                        ),
+                      ),
+                      const SizedBox(height: 17),
+                      SizedBox(
+                        height: 45,
+                        child: FilledButton.icon(
+                          onPressed: submitting ? null : () {
+                            final value = double.tryParse(amount.text.trim());
+                            if (value == null || value < 10) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Enter a valid deposit amount of at least $10.00.')),
+                              );
+                              return;
+                            }
+                            if (proof == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please upload your payment proof.')),
+                              );
+                              return;
+                            }
+                            setModalState(() => submitting = true);
+                            Navigator.pop(sheetContext);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Deposit UI preview only. Connect the payment API to submit this request.')),
+                            );
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _blue,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: _blue.withValues(alpha: .45),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                          label: const Text('SUBMIT DEPOSIT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: .2)),
+                        ),
+                      ),
+                    ]),
+                  )),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 13 : 20, vertical: 12),
+                    decoration: BoxDecoration(border: Border(top: BorderSide(color: modalBorder))),
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      runSpacing: 8,
+                      spacing: 12,
+                      children: [
+                        _depositFooterItem(Icons.verified_user_outlined, 'Secure payments', const Color(0xFF3478FF)),
+                        _depositFooterItem(Icons.schedule_rounded, 'Verification required', const Color(0xFFFF9800)),
+                        _depositFooterItem(Icons.layers_outlined, 'PAMM funding', const Color(0xFF3478FF)),
+                      ],
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+          );
+        });
+      },
+    ).whenComplete(amount.dispose);
+  }
+
+  Widget _depositFooterItem(IconData icon, String label, Color color) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, color: color, size: 14),
+      const SizedBox(width: 6),
+      Text(label, style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w700)),
+    ],
+  );
 
   void _amountDialog(String title) {
     final amount = TextEditingController();

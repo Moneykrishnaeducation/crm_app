@@ -94,10 +94,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
           children: [
-            // Top Mobile Navigation Bar
-            _buildTopNavBar(),
-            const SizedBox(height: 16),
-
             // Header Card: "Security & Devices"
             _buildSecurityHeaderCard(),
             const SizedBox(height: 16),

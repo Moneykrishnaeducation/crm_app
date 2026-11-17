@@ -14,15 +14,11 @@ class BrokerDownloadCenterPage extends StatelessWidget {
         mode: LaunchMode.externalApplication,
       );
       if (!opened && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open this link. Please try again.')),
-        );
+        showAppToast('Unable to open this link. Please try again.', type: NotchToastType.error);
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open this link. Check your connection and try again.')),
-        );
+        showAppToast('Unable to open this link. Check your connection and try again.', type: NotchToastType.error);
       }
     }
   }

@@ -20,14 +20,17 @@ class BrokerDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     color: Theme.of(context).scaffoldBackgroundColor,
-    child: SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 580),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
           const SizedBox(
             width: 0,
             height: 0,
@@ -51,7 +54,9 @@ class BrokerDashboardPage extends StatelessWidget {
         ],
       ),
     ),
-  );
+  ),
+),
+);
 }
 
 class _BrokerBalance extends StatelessWidget {
@@ -350,12 +355,12 @@ class _DualFeatureCards extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      Text(
                         'EURUSD',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: _brokerMuted,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -435,12 +440,12 @@ class _DualFeatureCards extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 3),
-                  const Text(
+                  Text(
                     'Invite one friend',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: _brokerMuted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -505,12 +510,12 @@ class _MarketInsightsBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                const Text(
+                Text(
                   'Stay informed with the latest market news and insights.',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: _brokerMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.25,
                   ),
                 ),
@@ -673,7 +678,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
                         fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                         color: active
                             ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF))
-                            : _brokerMuted,
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -686,13 +691,13 @@ class _MarketsSectionState extends State<_MarketsSection> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
-            children: const [
+            children: [
               Text(
                 'Product / Change',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: _brokerMuted,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               Spacer(),
@@ -704,7 +709,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: _brokerMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -717,7 +722,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: _brokerMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -728,13 +733,13 @@ class _MarketsSectionState extends State<_MarketsSection> {
         const Divider(height: 1, thickness: 0.8, color: _border),
         ..._buildQuotesForTab(context),
         const SizedBox(height: 22),
-        const Center(
+        Center(
           child: Text(
             'No more data',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: _brokerMuted,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -970,10 +975,10 @@ class _MarketQuoteRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     time,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
-                      color: _brokerMuted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -3505,6 +3510,7 @@ class BrokerBottomNavigation extends StatelessWidget {
   final ValueChanged<String> onSelect;
 
   void _showQuickActions(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     HapticFeedback.mediumImpact();
     showModalBottomSheet<void>(
       context: context,
@@ -3516,9 +3522,9 @@ class BrokerBottomNavigation extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFFE2E8F1), width: 1.2),
+            border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x1A10264B),
@@ -3536,7 +3542,7 @@ class BrokerBottomNavigation extends StatelessWidget {
                   width: 44,
                   height: 4.5,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD6DFEB),
+                    color: Theme.of(context).dividerColor,
                     borderRadius: BorderRadius.circular(4),
                     boxShadow: const [
                       BoxShadow(
@@ -3549,10 +3555,10 @@ class BrokerBottomNavigation extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Quick actions',
                 style: TextStyle(
-                  color: Color(0xFF10264B),
+                  color: scheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.2,
@@ -3777,6 +3783,9 @@ class _QuickActionRowState extends State<_QuickActionRow> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final isActive = _isPressed || _isHovered;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -3798,13 +3807,13 @@ class _QuickActionRowState extends State<_QuickActionRow> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isActive
-                  ? const Color(0xFFF2F6FC)
-                  : const Color(0xFFF8FAFD),
+                  ? (isDark ? const Color(0xFF223656) : const Color(0xFFF2F6FC))
+                  : (isDark ? const Color(0xFF1A283E) : const Color(0xFFF8FAFD)),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isActive
-                    ? const Color(0xFFB9CEE9)
-                    : const Color(0xFFE7EDF5),
+                color: isDark
+                    ? const Color(0xFF334B6E)
+                    : (isActive ? const Color(0xFFB9CEE9) : const Color(0xFFE7EDF5)),
                 width: 1,
               ),
               boxShadow: isActive
@@ -3856,8 +3865,8 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                     children: [
                       Text(
                         widget.title,
-                        style: const TextStyle(
-                          color: Color(0xFF10264B),
+                        style: TextStyle(
+                          color: scheme.onSurface,
                           fontSize: 14.5,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.1,
@@ -3867,8 +3876,8 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                         const SizedBox(height: 2),
                         Text(
                           widget.subtitle!,
-                          style: const TextStyle(
-                            color: Color(0xFF71809A),
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
                             fontSize: 11.5,
                             fontWeight: FontWeight.w400,
                           ),
@@ -3884,7 +3893,7 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                     LucideIcons.chevronRight,
                     color: isActive
                         ? const Color(0xFF174A8B)
-                        : const Color(0xFF9AA9BC),
+                        : scheme.onSurfaceVariant,
                     size: 18,
                   ),
                 ),
@@ -4050,44 +4059,50 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
-        children: [
-          _buildSocialTradingHeader(),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 132,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              children: [
-                SizedBox(width: 176, child: _buildSummaryCard(
-                  title: 'TOTAL BALANCE', value: '\$0.00', suffix: 'USD',
-                  caption: 'Master capital', icon: LucideIcons.wallet,
-                  tint: const Color(0xFFEAF2FF), accent: const Color(0xFF2563EB),
-                )),
-                const SizedBox(width: 10),
-                SizedBox(width: 176, child: _buildSummaryCard(
-                  title: 'ACTIVE NODES', value: '$_activeCount', suffix: 'Live',
-                  caption: 'Currently active', icon: LucideIcons.activity,
-                  tint: const Color(0xFFE9FBF4), accent: const Color(0xFF059669),
-                )),
-                const SizedBox(width: 10),
-                SizedBox(width: 176, child: _buildSummaryCard(
-                  title: 'MASTER NODES', value: '${_masters.length}', suffix: 'MAM',
-                  caption: 'Total accounts', icon: LucideIcons.usersRound,
-                  tint: const Color(0xFFFFF7E6), accent: const Color(0xFFB7791F),
-                )),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 580),
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
+            children: [
+              _buildSocialTradingHeader(),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 132,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    SizedBox(width: 176, child: _buildSummaryCard(
+                      title: 'TOTAL BALANCE', value: '\$0.00', suffix: 'USD',
+                      caption: 'Master capital', icon: LucideIcons.wallet,
+                      tint: dark ? const Color(0xFF1E2E48) : const Color(0xFFEAF2FF), accent: const Color(0xFF2563EB),
+                    )),
+                    const SizedBox(width: 10),
+                    SizedBox(width: 176, child: _buildSummaryCard(
+                      title: 'ACTIVE NODES', value: '$_activeCount', suffix: 'Live',
+                      caption: 'Currently active', icon: LucideIcons.activity,
+                      tint: dark ? const Color(0xFF132D28) : const Color(0xFFE9FBF4), accent: const Color(0xFF059669),
+                    )),
+                    const SizedBox(width: 10),
+                    SizedBox(width: 176, child: _buildSummaryCard(
+                      title: 'MASTER NODES', value: '${_masters.length}', suffix: 'MAM',
+                      caption: 'Total accounts', icon: LucideIcons.usersRound,
+                      tint: dark ? const Color(0xFF2D2619) : const Color(0xFFFFF7E6), accent: const Color(0xFFB7791F),
+                    )),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_showGuide) ...[
+                _buildGuideCard(),
+                const SizedBox(height: 16),
               ],
-            ),
+              _buildMasterList(dark),
+            ],
           ),
-          const SizedBox(height: 16),
-          if (_showGuide) ...[
-            _buildGuideCard(),
-            const SizedBox(height: 16),
-          ],
-          _buildMasterList(dark),
-        ],
+        ),
       ),
     );
   }
@@ -4107,10 +4122,10 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
           child: const Icon(LucideIcons.usersRound, color: Colors.white, size: 21),
         ),
         const SizedBox(width: 11),
-        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Social Trading', style: TextStyle(color: Color(0xFF10264B), fontSize: 16, fontWeight: FontWeight.w800)),
-          SizedBox(height: 3),
-          Text('Manage MAM accounts and investments.', style: TextStyle(color: Color(0xFF536987), fontSize: 10.5)),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Social Trading', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 3),
+          Text('Manage MAM accounts and investments.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10.5)),
         ])),
       ]),
       const SizedBox(height: 12),
@@ -4124,20 +4139,23 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     ]),
   );
 
-  Widget _headerAction(String label, IconData icon, VoidCallback action, {bool primary = false, bool gold = false}) => SizedBox(
-    height: 38,
-    child: FilledButton.icon(
-      onPressed: action,
-      icon: Icon(icon, size: 14),
-      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
-      style: FilledButton.styleFrom(
-        backgroundColor: gold ? const Color(0xFFEAB308) : primary ? const Color(0xFF2563EB) : Colors.white,
-        foregroundColor: gold || primary ? Colors.white : const Color(0xFF17345D),
-        padding: const EdgeInsets.symmetric(horizontal: 7),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11), side: BorderSide(color: primary || gold ? Colors.transparent : const Color(0xFFBFDBFE))),
+  Widget _headerAction(String label, IconData icon, VoidCallback action, {bool primary = false, bool gold = false}) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      height: 38,
+      child: FilledButton.icon(
+        onPressed: action,
+        icon: Icon(icon, size: 14),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+        style: FilledButton.styleFrom(
+          backgroundColor: gold ? const Color(0xFFEAB308) : primary ? const Color(0xFF2563EB) : (dark ? const Color(0xFF1E2E48) : Colors.white),
+          foregroundColor: gold || primary ? Colors.white : (dark ? Colors.white : const Color(0xFF17345D)),
+          padding: const EdgeInsets.symmetric(horizontal: 7),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11), side: BorderSide(color: primary || gold ? Colors.transparent : (dark ? const Color(0xFF2A3A53) : const Color(0xFFBFDBFE)))),
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _buildSummaryCard({required String title, required String value, required String suffix, required String caption, required IconData icon, required Color tint, required Color accent}) => Container(
     padding: const EdgeInsets.all(16),
@@ -4168,7 +4186,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: Text('Understanding MAM Accounts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800))),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(20)), child: const Text('PRO FEATURE', style: TextStyle(color: Color(0xFFB7791F), fontSize: 8, fontWeight: FontWeight.w800))),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D2619) : const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(20)), child: const Text('PRO FEATURE', style: TextStyle(color: Color(0xFFB7791F), fontSize: 8, fontWeight: FontWeight.w800))),
       ]),
       const SizedBox(height: 5),
       Text('Multi-Account Management execution architecture', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
@@ -4180,7 +4198,7 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
   );
 
   Widget _guideRow(IconData icon, String title, String body) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFEAF2FF), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: const Color(0xFF2563EB), size: 16)),
+    Container(width: 32, height: 32, decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E2E48) : const Color(0xFFEAF2FF), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: const Color(0xFF2563EB), size: 16)),
     const SizedBox(width: 10),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11, fontWeight: FontWeight.w800)),
@@ -4219,10 +4237,10 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
         ),
       ),
       const SizedBox(height: 14),
-      Row(children: const [
-        Expanded(flex: 4, child: Text('MASTER', style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
-        Expanded(flex: 3, child: Text('LOGIN ID', style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
-        Expanded(flex: 2, child: Text('SHARE', textAlign: TextAlign.end, style: TextStyle(color: Color(0xFF647A99), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
+      Row(children: [
+        Expanded(flex: 4, child: Text('MASTER', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
+        Expanded(flex: 3, child: Text('LOGIN ID', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
+        Expanded(flex: 2, child: Text('SHARE', textAlign: TextAlign.end, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .5))),
       ]),
       Divider(height: 16, color: Theme.of(context).dividerColor),
       if (_visibleMasters.isEmpty)
@@ -4234,16 +4252,17 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
 
   Widget _filterChip(String label, int count) {
     final selected = _filter == label;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () => setState(() => _filter = label),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-        decoration: BoxDecoration(color: selected ? const Color(0xFF1E4295) : const Color(0xFFF0F4F9), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: selected ? const Color(0xFF1E4295) : (isDark ? const Color(0xFF1E2E48) : const Color(0xFFF0F4F9)), borderRadius: BorderRadius.circular(12)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(label, style: TextStyle(color: selected ? Colors.white : const Color(0xFF425875), fontSize: 10, fontWeight: FontWeight.w800)),
+          Text(label, style: TextStyle(color: selected ? Colors.white : (isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF425875)), fontSize: 10, fontWeight: FontWeight.w800)),
           const SizedBox(width: 6),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2), decoration: BoxDecoration(color: selected ? Colors.white24 : const Color(0xFFDDE5EF), borderRadius: BorderRadius.circular(8)), child: Text('$count', style: TextStyle(color: selected ? Colors.white : const Color(0xFF425875), fontSize: 9, fontWeight: FontWeight.w800))),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2), decoration: BoxDecoration(color: selected ? Colors.white24 : (isDark ? const Color(0xFF334B6E) : const Color(0xFFDDE5EF)), borderRadius: BorderRadius.circular(8)), child: Text('$count', style: TextStyle(color: selected ? Colors.white : (isDark ? Theme.of(context).colorScheme.onSurface : const Color(0xFF425875)), fontSize: 9, fontWeight: FontWeight.w800))),
         ]),
       ),
     );
@@ -4288,21 +4307,28 @@ class _BrokerMamManagerPageState extends State<BrokerMamManagerPage> {
     ),
   );
 
-  Widget _masterStatusBadge(String status) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-    decoration: BoxDecoration(
-      color: status == 'Active' ? const Color(0xFFE9FBF4) : const Color(0xFFFFECEC),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      status,
-      style: TextStyle(
-        color: status == 'Active' ? const Color(0xFF059669) : const Color(0xFFDC4444),
-        fontSize: 9,
-        fontWeight: FontWeight.w800,
+  Widget _masterStatusBadge(String status) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: status == 'Active'
+            ? (isDark ? const Color(0xFF132D28) : const Color(0xFFE9FBF4))
+            : (isDark ? const Color(0xFF3B2028) : const Color(0xFFFFECEC)),
+        borderRadius: BorderRadius.circular(20),
       ),
-    ),
-  );
+      child: Text(
+        status,
+        style: TextStyle(
+          color: status == 'Active'
+              ? const Color(0xFF059669)
+              : const Color(0xFFDC4444),
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
 
   Widget _miniMetric(String label, String value) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4)),
@@ -4381,7 +4407,7 @@ class _CreateMamSheetState extends State<_CreateMamSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFD3DCE8), borderRadius: BorderRadius.circular(4)))),
+              Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(4)))),
               const SizedBox(height: 16),
               Row(children: [
                 const Icon(LucideIcons.usersRound, color: Color(0xFF2563EB), size: 22),
@@ -4389,7 +4415,7 @@ class _CreateMamSheetState extends State<_CreateMamSheet> {
                 const Expanded(child: Text('Establish Master MAM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
                 IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.x)),
               ]),
-              const Text('Live MT5 Engine  •  Direct STP Allocation', style: TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+              Text('Live MT5 Engine  •  Direct STP Allocation', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
               const SizedBox(height: 18),
               _label('MASTER STRATEGY NAME'),
               TextField(controller: _nameController, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(hintText: 'e.g. Apex Global Alpha Pool')),
@@ -4444,7 +4470,7 @@ class _CreateMamSheetState extends State<_CreateMamSheet> {
 
   Widget _label(String value) => Padding(
     padding: const EdgeInsets.only(bottom: 7),
-    child: Text(value, style: const TextStyle(color: Color(0xFF17345D), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .55)),
+    child: Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .55)),
   );
 
   void _submit() {
@@ -4504,9 +4530,9 @@ class _MamMasterDetailsPageState extends State<_MamMasterDetailsPage> {
         Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [Expanded(child: Text(m.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800))), _statusBadge(m.status)]),
           const SizedBox(height: 7),
-          Text('LOGIN ID  ${m.login}', style: const TextStyle(color: Color(0xFF71809A), fontSize: 10)),
+          Text('LOGIN ID  ${m.login}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
           const SizedBox(height: 16),
-          const Text('NET AVAILABLE BALANCE', style: TextStyle(color: Color(0xFF71809A), fontSize: 9, fontWeight: FontWeight.w800)),
+          Text('NET AVAILABLE BALANCE', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800)),
           const Text('\$0.00 USD', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -4547,17 +4573,38 @@ class _MamMasterDetailsPageState extends State<_MamMasterDetailsPage> {
           label: Text(m.status == 'Active' ? 'Pause Master Node' : 'Activate Master Node'),
         ),
         const SizedBox(height: 8),
-        const Text('Demo UI only — balances, credentials, orders and settlements are placeholders until backend integration.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF71809A), fontSize: 9)),
+        Text('Demo UI only — balances, credentials, orders and settlements are placeholders until backend integration.', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9)),
       ]),
     );
   }
 
-  Widget _statusBadge(String status) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: status == 'Active' ? const Color(0xFFE9FBF4) : const Color(0xFFFFECEC), borderRadius: BorderRadius.circular(20)), child: Text(status, style: TextStyle(color: status == 'Active' ? const Color(0xFF059669) : const Color(0xFFDC4444), fontSize: 9, fontWeight: FontWeight.w800)));
+  Widget _statusBadge(String status) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: status == 'Active'
+            ? (isDark ? const Color(0xFF132D28) : const Color(0xFFE9FBF4))
+            : (isDark ? const Color(0xFF3B2028) : const Color(0xFFFFECEC)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: status == 'Active'
+              ? const Color(0xFF059669)
+              : const Color(0xFFDC4444),
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
   Widget _detailAction(String label, IconData icon, VoidCallback action) => OutlinedButton.icon(onPressed: action, icon: Icon(icon, size: 14), label: Text(label, style: const TextStyle(fontSize: 10)));
   Widget _detailSection(BuildContext context, String title, IconData icon, List<Widget> children) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(children: [Icon(icon, color: const Color(0xFF2563EB), size: 17), const SizedBox(width: 8), Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800))]),
     const SizedBox(height: 9), const Divider(height: 1), ...children,
   ]));
-  Widget _detailLine(String label, String value) => Padding(padding: const EdgeInsets.only(top: 10), child: Row(children: [Expanded(child: Text(label, style: const TextStyle(color: Color(0xFF71809A), fontSize: 10))), Text(value, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700))]));
+  Widget _detailLine(String label, String value) => Padding(padding: const EdgeInsets.only(top: 10), child: Row(children: [Expanded(child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10))), Text(value, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700))]));
   void _message(BuildContext context, String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }

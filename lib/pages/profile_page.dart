@@ -15,15 +15,12 @@ const _profileMuted = Color(0xFF62738E);
 const _profileBlue = Color(0xFF0875F5);
 const _profileGold = Color(0xFFF4C84A);
 const _profileGreen = Color(0xFF16A34A);
-const _profileBg = Color(0xFFF8FAFC);
 const _profileCard = _profilePanel;
 const _profileText = _profileNavy;
 const _profileTextSecondary = _profileMuted;
 const _profileBlueDark = Color(0xFF174A8B);
 const _profileBlueLight = Color(0xFFEAF2FC);
-const _profileBlueBorder = Color(0xFFD3E2F8);
 const _profileGoldLight = Color(0xFFFFF7E3);
-const _profileGoldBorder = Color(0xFFF0DFAF);
 const _profileGreenLight = Color(0xFFEAF7EF);
 const _profileGreenBorder = Color(0xFFCBE9D4);
 const _profileShadow = [
@@ -40,6 +37,63 @@ const _profileSheetShadow = [
     offset: Offset(0, -5),
   ),
 ];
+
+class _ProfileColors {
+  const _ProfileColors({
+    required this.isDark,
+    required this.text,
+    required this.muted,
+    required this.card,
+    required this.border,
+    required this.subCard,
+    required this.subBorder,
+    required this.blueLight,
+    required this.blueBorder,
+    required this.greenLight,
+    required this.greenBorder,
+    required this.goldLight,
+    required this.goldBorder,
+    required this.navy,
+    required this.accentBlue,
+  });
+
+  final bool isDark;
+  final Color text;
+  final Color muted;
+  final Color card;
+  final Color border;
+  final Color subCard;
+  final Color subBorder;
+  final Color blueLight;
+  final Color blueBorder;
+  final Color greenLight;
+  final Color greenBorder;
+  final Color goldLight;
+  final Color goldBorder;
+  final Color navy;
+  final Color accentBlue;
+
+  factory _ProfileColors.of(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return _ProfileColors(
+      isDark: isDark,
+      text: isDark ? const Color(0xFFF2F5FA) : const Color(0xFF10264A),
+      muted: isDark ? const Color(0xFF94A3B8) : const Color(0xFF62738E),
+      card: isDark ? const Color(0xFF17243A) : Colors.white,
+      border: isDark ? const Color(0xFF2A3A53) : const Color(0xFFDCE5F1),
+      subCard: isDark ? const Color(0xFF132238) : const Color(0xFFF8FAFC),
+      subBorder: isDark ? const Color(0xFF2A3A53) : const Color(0xFFEAF1FA),
+      blueLight: isDark ? const Color(0xFF1E2E48) : const Color(0xFFEAF2FC),
+      blueBorder: isDark ? const Color(0xFF2A3A53) : const Color(0xFFD3E2F8),
+      greenLight: isDark ? const Color(0xFF132D28) : const Color(0xFFEAF7EF),
+      greenBorder: isDark ? const Color(0xFF1B4D3E) : const Color(0xFFCBE9D4),
+      goldLight: isDark ? const Color(0xFF2D2619) : const Color(0xFFFFF7E3),
+      goldBorder: isDark ? const Color(0xFF4A3E20) : const Color(0xFFF0DFAF),
+      navy: isDark ? const Color(0xFF1E3A5F) : const Color(0xFF10264A),
+      accentBlue: isDark ? const Color(0xFF60A5FA) : _profileBlue,
+    );
+  }
+}
 
 class BrokerProfilePage extends StatefulWidget {
   const BrokerProfilePage({
@@ -87,6 +141,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _cryptoCurrency = 'UNANG';
   String _cryptoNetwork = 'TRON (TRC20)';
   final String _cryptoStatus = 'Connected';
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  _ProfileColors get _c => _ProfileColors.of(context);
 
   @override
   void initState() {
@@ -169,9 +226,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: const BoxDecoration(
-          color: _profileCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: _c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
           boxShadow: _profileSheetShadow,
         ),
         child: Column(
@@ -269,9 +327,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: const BoxDecoration(
-          color: _profileCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: _c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
           boxShadow: _profileSheetShadow,
         ),
         child: Column(
@@ -308,8 +367,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: _profileBlueLight,
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(LucideIcons.camera, color: _profileBlue, size: 20),
@@ -417,9 +476,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             maxHeight: MediaQuery.of(ctx).size.height * 0.85,
           ),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          decoration: const BoxDecoration(
-            color: _profileCard,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: _c.border, width: 1.5)),
             boxShadow: _profileSheetShadow,
           ),
           child: Column(
@@ -562,7 +622,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.w600),
+          style: TextStyle(color: _profileMuted, fontSize: 12, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         TextField(
@@ -571,16 +631,16 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
           cursorColor: _profileBlue,
-          style: const TextStyle(color: _profileText, fontSize: 13, fontWeight: FontWeight.w500),
+          style: TextStyle(color: _profileText, fontSize: 13, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
+            fillColor: _isDark ? const Color(0xFF101D31) : const Color(0xFFF8FAFC),
             prefixIcon: Icon(icon, color: _profileBlue, size: 18),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+              borderSide: BorderSide(color: _profileBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -608,74 +668,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // This profile experience is intentionally phone-only.
-        // Do not introduce tablet or desktop breakpoints/layout variants.
-        if (constraints.maxWidth > 600) {
-          return Container(
-            color: _profileBg,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    color: _profileBlueLight,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: const Icon(
-                    LucideIcons.smartphone,
-                    color: _profileBlue,
-                    size: 34,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'Mobile experience only',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _profileNavy,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'This profile is designed exclusively for mobile phone screens.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _profileMuted,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                OutlinedButton.icon(
-                  onPressed: widget.onBack,
-                  icon: const Icon(LucideIcons.arrowLeft, size: 16),
-                  label: const Text('Go back'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _profileBlue,
-                    side: const BorderSide(color: _profileBlueBorder),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: SafeArea(
-            top: false,
-            bottom: false,
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 580),
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
@@ -701,8 +701,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -710,10 +710,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   Widget _buildMobileProfileHeader() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _c.card,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _profileBorder),
-        boxShadow: _profileShadow,
+        border: Border.all(color: _c.border),
+        boxShadow: _isDark ? null : _profileShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -749,22 +749,22 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   top: 14,
                   right: 14,
                   child: Material(
-                    color: Colors.white.withValues(alpha: 0.82),
+                    color: _isDark ? const Color(0xFF1E2E48) : Colors.white.withValues(alpha: 0.82),
                     borderRadius: BorderRadius.circular(24),
                     child: InkWell(
                       onTap: _showChangeBannerSheet,
                       borderRadius: BorderRadius.circular(24),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.image, color: _profileNavy, size: 14),
-                            SizedBox(width: 6),
+                            Icon(LucideIcons.image, color: _c.text, size: 14),
+                            const SizedBox(width: 6),
                             Text(
                               'Edit cover',
                               style: TextStyle(
-                                color: _profileNavy,
+                                color: _c.text,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -787,8 +787,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                         decoration: BoxDecoration(
                           color: _avatarBg,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 5),
-                          boxShadow: _profileShadow,
+                          border: Border.all(color: _c.card, width: 5),
+                          boxShadow: _isDark ? null : _profileShadow,
                         ),
                         alignment: Alignment.center,
                         clipBehavior: Clip.antiAlias,
@@ -857,8 +857,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                             _name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: _profileNavy,
+                            style: TextStyle(
+                              color: _c.text,
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.3,
@@ -875,7 +875,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: _profileGreenLight,
+                              color: _c.greenLight,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
@@ -897,8 +897,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                       icon: const Icon(LucideIcons.pencil, size: 14),
                       label: const Text('Edit profile'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: _profileBlue,
-                        side: const BorderSide(color: _profileBlueBorder),
+                        foregroundColor: _c.accentBlue,
+                        side: BorderSide(color: _c.blueBorder),
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -912,10 +912,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   ],
                 ),
                 const SizedBox(height: 5),
-                const Text(
+                Text(
                   'Client account  ·  VT Index',
                   style: TextStyle(
-                    color: _profileMuted,
+                    color: _c.muted,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -927,9 +927,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: _profileBlueLight.withValues(alpha: 0.72),
+                    color: _c.blueLight.withValues(alpha: _isDark ? 0.35 : 0.72),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _profileBlueBorder),
+                    border: Border.all(color: _c.blueBorder),
                   ),
                   child: Row(
                     children: [
@@ -943,7 +943,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                         width: 1,
                         height: 30,
                         margin: const EdgeInsets.symmetric(horizontal: 8),
-                        color: _profileBlueBorder,
+                        color: _c.blueBorder,
                       ),
                       Expanded(
                         child: _profileContactItem(
@@ -995,8 +995,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _profileNavy,
+            style: TextStyle(
+              color: _c.text,
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
             ),
@@ -1006,23 +1006,13 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  Widget _mobileContactLine(IconData icon, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 15, color: _profileBlue),
-        const SizedBox(width: 9),
-        Expanded(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _profileMuted, fontSize: 12, fontWeight: FontWeight.w500))),
-      ],
-    );
-  }
-
   Widget _mobileMetric(String label, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
       decoration: BoxDecoration(
-        color: _profileBlueLight.withValues(alpha: 0.55),
+        color: _c.blueLight.withValues(alpha: _isDark ? 0.35 : 0.55),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: _profileBlueBorder),
+        border: Border.all(color: _c.blueBorder),
       ),
       child: Stack(
         children: [
@@ -1038,32 +1028,25 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _profileMuted,
-                        fontSize: 8,
+                      style: TextStyle(
+                        color: _c.muted,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.35,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _profileNavy,
-                        fontSize: 13,
+                      style: TextStyle(
+                        color: _c.text,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 3),
-              const Icon(
-                LucideIcons.chevronRight,
-                color: _profileNavy,
-                size: 16,
               ),
             ],
           ),
@@ -1101,7 +1084,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: Material(
-                  color: _selectedTabIndex == i ? _profileNavy : Colors.transparent,
+                  color: _selectedTabIndex == i ? _c.navy : Colors.transparent,
                   borderRadius: BorderRadius.circular(11),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(11),
@@ -1111,13 +1094,13 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(tabs[i].icon, size: 17, color: _selectedTabIndex == i ? Colors.white : _profileMuted),
+                          Icon(tabs[i].icon, size: 17, color: _selectedTabIndex == i ? Colors.white : _c.muted),
                           const SizedBox(height: 5),
                           Text(
                             tabs[i].label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 9, fontWeight: _selectedTabIndex == i ? FontWeight.w700 : FontWeight.w500, color: _selectedTabIndex == i ? Colors.white : _profileMuted),
+                            style: TextStyle(fontSize: 9, fontWeight: _selectedTabIndex == i ? FontWeight.w700 : FontWeight.w500, color: _selectedTabIndex == i ? Colors.white : _c.muted),
                           ),
                         ],
                       ),
@@ -1131,395 +1114,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  Widget _buildHeroBannerCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: _profileCard,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _profileBorder, width: 1.2),
-        boxShadow: _profileShadow,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Scenic / Cosmic Banner
-              SizedBox(
-                height: 125,
-                width: double.infinity,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CustomPaint(
-                      painter: CelestialBannerPainter(theme: _bannerTheme),
-                    ),
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: InkWell(
-                        onTap: _showChangeBannerSheet,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              width: 1.1,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(LucideIcons.camera, color: Colors.white, size: 14),
-                              SizedBox(width: 6),
-                              Text(
-                                'Change banner',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Profile Details on Pure White Card Surface
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 52, 18, 18),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isNarrow = constraints.maxWidth < 420;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Name Row with gold checkmark and Verified Pill Chip
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            Text(
-                              _name,
-                              style: const TextStyle(
-                                color: _profileText,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                            const Icon(
-                              LucideIcons.badgeCheck,
-                              color: _profileGold,
-                              size: 20,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: _profileGoldLight,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: _profileGoldBorder),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 3,
-                                    backgroundColor: _profileGold,
-                                  ),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    'Verified',
-                                    style: TextStyle(
-                                      color: _profileGold,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-
-                        // Subtitle: "Client   VT Index"
-                        const Text(
-                          'Client   VT Index',
-                          style: TextStyle(
-                            color: _profileTextSecondary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Clean modern contact chips
-                        if (isNarrow) ...[
-                          _glassChip(LucideIcons.mail, _email),
-                          const SizedBox(height: 6),
-                          _glassChip(LucideIcons.phone, _phone),
-                          const SizedBox(height: 6),
-                          _glassChip(LucideIcons.mapPin, _location),
-                        ] else ...[
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _glassChip(LucideIcons.mail, _email),
-                              _glassChip(LucideIcons.phone, _phone),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          _glassChip(LucideIcons.mapPin, _location),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          // Avatar positioned overlapping banner by 45px
-          Positioned(
-            top: 80,
-            left: 18,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _avatarBg,
-                    border: Border.all(color: Colors.white, width: 3.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1F0F172A),
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      _name.isNotEmpty ? _name[0].toUpperCase() : 'I',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                // Camera Edit Badge at bottom-right of avatar
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: GestureDetector(
-                    onTap: _showChangePhotoSheet,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B), // Amber
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x26000000),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          LucideIcons.camera,
-                          size: 13,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _glassChip(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _profileBorder,
-          width: 1.0,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: _profileBlue, size: 13),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF334155),
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabsBar() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEAF1FA)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const tabWidth = 132.0;
-          const tabGap = 4.0;
-          final tabs = [
-            _tabButton(
-              index: 0,
-              icon: LucideIcons.layoutGrid,
-              label: 'Overview',
-            ),
-            _tabButton(
-              index: 1,
-              icon: LucideIcons.userRound,
-              label: 'Personal Details',
-            ),
-            _tabButton(
-              index: 2,
-              icon: LucideIcons.shieldCheck,
-              label: 'Verification',
-            ),
-            _tabButton(
-              index: 3,
-              icon: LucideIcons.creditCard,
-              label: 'Payment Methods',
-            ),
-          ];
-
-          final requiredWidth =
-              tabs.length * tabWidth + (tabs.length - 1) * tabGap;
-          if (constraints.maxWidth >= requiredWidth) {
-            return Row(
-              children: [
-                for (var i = 0; i < tabs.length; i++) ...[
-                  if (i > 0) const SizedBox(width: tabGap),
-                  Expanded(child: tabs[i]),
-                ],
-              ],
-            );
-          }
-
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (var i = 0; i < tabs.length; i++) ...[
-                  if (i > 0) const SizedBox(width: tabGap),
-                  SizedBox(width: tabWidth, child: tabs[i]),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _tabButton({
-    required int index,
-    required IconData icon,
-    required String label,
-  }) {
-    final active = _selectedTabIndex == index;
-    return InkWell(
-      onTap: () => setState(() => _selectedTabIndex = index),
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        decoration: BoxDecoration(
-          color: active ? const Color(0xFFF7F9FC) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: active
-              ? Border.all(color: _profileBlueBorder, width: 1.2)
-              : Border.all(color: Colors.transparent),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 15,
-                  color: active ? const Color(0xFF10264A) : _profileMuted,
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: active ? const Color(0xFF10264A) : _profileMuted,
-                      fontSize: 11,
-                      fontWeight: active ? FontWeight.bold : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Container(
-              width: 22,
-              height: 2.5,
-              decoration: BoxDecoration(
-                color: active ? _profileGold : Colors.transparent,
-                borderRadius: BorderRadius.circular(1.5),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ==========================================
   // TAB 1: OVERVIEW TAB
@@ -1530,15 +1124,19 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Account overview',
-                style: TextStyle(color: _profileNavy, fontSize: 18, fontWeight: FontWeight.w800),
+                style: TextStyle(color: _c.text, fontSize: 18, fontWeight: FontWeight.w800),
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-              decoration: BoxDecoration(color: _profileGreenLight, borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(
+                color: _c.greenLight,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _c.greenBorder),
+              ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1553,7 +1151,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         const SizedBox(height: 12),
         _buildMobileCompletionSummary(),
         const SizedBox(height: 22),
-        const Text('Quick actions', style: TextStyle(color: _profileNavy, fontSize: 16, fontWeight: FontWeight.w800)),
+        Text('Quick actions', style: TextStyle(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
         const SizedBox(height: 11),
         GridView.count(
           crossAxisCount: 2,
@@ -1603,16 +1201,17 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _profileNavy,
+        color: _c.navy,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: _profileShadow,
+        border: Border.all(color: _c.border),
+        boxShadow: _isDark ? null : _profileShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text('Profile completion', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
               ),
               Text('100%', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 17, fontWeight: FontWeight.w800)),
@@ -1648,7 +1247,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.white,
+      color: _c.card,
       borderRadius: BorderRadius.circular(15),
       child: InkWell(
         onTap: onTap,
@@ -1657,14 +1256,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: _profileBorder),
+            border: Border.all(color: _c.border),
           ),
           child: Row(
             children: [
               Container(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(color: _profileBlueLight, borderRadius: BorderRadius.circular(11)),
+                decoration: BoxDecoration(color: _c.blueLight, borderRadius: BorderRadius.circular(11)),
                 child: Icon(icon, color: _profileBlue, size: 17),
               ),
               const SizedBox(width: 9),
@@ -1673,9 +1272,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _profileNavy, fontSize: 11, fontWeight: FontWeight.w700)),
+                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _c.text, fontSize: 11, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 3),
-                    Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _profileMuted, fontSize: 9)),
+                    Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _c.muted, fontSize: 9)),
                   ],
                 ),
               ),
@@ -1686,454 +1285,24 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  // Card 1: Profile Completion Card
-  Widget _buildProfileCompletionCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _profileCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder),
-        boxShadow: _profileShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Profile Completion',
-                  style: TextStyle(
-                    color: const Color(0xFF10264A),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _profileGreenLight,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _profileGreenBorder),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.circleCheck, color: _profileGreen, size: 12),
-                    SizedBox(width: 4),
-                    Text(
-                      '100% COMPLETE',
-                      style: TextStyle(
-                        color: _profileGreen,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
 
-          // Gauge & text explanation
-          Row(
-            children: [
-              // Circular 100% progress gauge in gold/amber
-              SizedBox(
-                width: 78,
-                height: 78,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const SizedBox(
-                      width: 78,
-                      height: 78,
-                      child: CircularProgressIndicator(
-                        value: 1.0,
-                        strokeWidth: 8,
-                        strokeCap: StrokeCap.round,
-                        backgroundColor: Color(0xFFFEF3C7),
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4A838)),
-                      ),
-                    ),
-                    const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '100%',
-                          style: TextStyle(
-                            color: Color(0xFFD4A838),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(
-                          'VERIFIED',
-                          style: TextStyle(
-                            color: _profileTextSecondary,
-                            fontSize: 7,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Account Fully Unlocked',
-                      style: TextStyle(
-                        color: const Color(0xFF10264A),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Your profile, contact details, identity and settlement methods are fully verified. All Tier-3 trading, deposits and withdrawals are active.',
-                      style: TextStyle(
-                        color: _profileTextSecondary,
-                        fontSize: 11,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: Color(0xFFDCE5F1), thickness: 0.8),
-          const SizedBox(height: 12),
-
-          // 4 Checklist items with green circular checkmarks
-          _completionItem(
-            title: 'Personal Information',
-            subtitle: 'Full name, email & verified contact phone number',
-          ),
-          const SizedBox(height: 10),
-          _completionItem(
-            title: 'Identity Verification',
-            subtitle: 'Government issued ID document approved',
-          ),
-          const SizedBox(height: 10),
-          _completionItem(
-            title: 'Address Verification',
-            subtitle: 'Residential address proof confirmed',
-          ),
-          const SizedBox(height: 10),
-          _completionItem(
-            title: 'Payment Methods',
-            subtitle: 'Settlement bank account linked & authorized',
-          ),
-          const SizedBox(height: 16),
-
-          // Bottom button: [✓] Profile Completed
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: _profileBorder),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: const Color(0xFFF8FAFC),
-              ),
-              onPressed: () => _showSnack('Profile is 100% complete and verified'),
-              icon: const Icon(LucideIcons.check, size: 16, color: _profileGreen),
-              label: const Text(
-                'Profile Completed',
-                style: TextStyle(
-                  color: const Color(0xFF10264A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Card 2: Account Status Card
-  Widget _buildAccountStatusCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _profileCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder),
-        boxShadow: _profileShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Account Status',
-            style: TextStyle(
-              color: const Color(0xFF10264A),
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Concentric green circle badge with shield-check icon
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: _profileGreenLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _profileGreenBorder,
-                    width: 1.5,
-                  ),
-                ),
-                padding: const EdgeInsets.all(6),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: _profileGreen,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      LucideIcons.shieldCheck,
-                      color: const Color(0xFF10264A),
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Verified Account',
-                      style: TextStyle(
-                        color: const Color(0xFF10264A),
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Your account is verified and ready to access all available features.',
-                      style: TextStyle(
-                        color: _profileTextSecondary,
-                        fontSize: 11.5,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: _profileGreenLight,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _profileGreenBorder,
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(LucideIcons.check, size: 13, color: _profileGreen),
-                          SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              'All verifications completed',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: _profileGreen,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Card 3: Quick Actions Card
-  Widget _buildQuickActionsCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _profileCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder),
-        boxShadow: _profileShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    color: const Color(0xFF10264A),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: _profileBlueLight,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _profileBlueBorder),
-                ),
-                child: const Icon(LucideIcons.lock, size: 14, color: _profileBlue),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _actionTile(
-            icon: LucideIcons.penLine,
-            iconColor: _profileBlue,
-            iconBg: _profileBlueLight,
-            title: 'Edit Profile',
-            subtitle: 'Continue profile setup',
-            onTap: _showEditDetailsSheet,
-          ),
-          const SizedBox(height: 10),
-          _actionTile(
-            icon: LucideIcons.fileUp,
-            iconColor: _profileBlue,
-            iconBg: _profileBlueLight,
-            title: 'Upload Documents',
-            subtitle: 'Manage KYC documents',
-            onTap: () => setState(() => _selectedTabIndex = 2),
-          ),
-          const SizedBox(height: 10),
-          _actionTile(
-            icon: LucideIcons.landmark,
-            iconColor: _profileBlue,
-            iconBg: _profileBlueLight,
-            title: 'Bank Details',
-            subtitle: 'Manage bank account',
-            onTap: _showBankDetailsSheet,
-          ),
-          const SizedBox(height: 10),
-          _actionTile(
-            icon: LucideIcons.wallet,
-            iconColor: _profileGold,
-            iconBg: _profileGoldLight,
-            title: 'Crypto Wallet',
-            subtitle: 'Manage crypto wallet',
-            onTap: _showCryptoWalletSheet,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionTile({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBg,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F9FC),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFDCE5F1)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: const Color(0xFF10264A),
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: _profileTextSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(LucideIcons.chevronRight, size: 16, color: _profileMuted),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Card 4: Personal Information Card
+  // Personal Information Card
   Widget _buildPersonalInformationCard() {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _profileCard,
+        color: _c.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder),
-        boxShadow: _profileShadow,
+        border: Border.all(color: _c.border),
+        boxShadow: _c.isDark ? null : _profileShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Personal Information',
             style: TextStyle(
-              color: const Color(0xFF10264A),
+              color: _c.text,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -2144,35 +1313,35 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             label: 'Full name',
             value: _name,
           ),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(
             icon: LucideIcons.mail,
             label: 'Email address',
             value: _email,
           ),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(
             icon: LucideIcons.phone,
             label: 'Phone number',
             value: _phone,
           ),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(
             icon: LucideIcons.calendar,
             label: 'Date of birth',
             value: _dob,
           ),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(icon: LucideIcons.usersRound, label: 'Gender', value: _gender),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(icon: LucideIcons.flag, label: 'Nationality', value: _nationality),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(icon: LucideIcons.mapPin, label: 'Address', value: _address),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(icon: LucideIcons.briefcase, label: 'Occupation', value: _occupation),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(icon: LucideIcons.mapPin, label: 'City & Country', value: _location),
-          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          Divider(color: _c.border, height: 18, thickness: 0.8),
           _personalInfoRow(icon: LucideIcons.landmark, label: 'Tax Residency', value: _taxResidency),
         ],
       ),
@@ -2190,7 +1359,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _profileBlueLight,
+            color: _c.blueLight,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: _profileBlue, size: 16),
@@ -2202,16 +1371,16 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: _profileTextSecondary,
+                style: TextStyle(
+                  color: _c.muted,
                   fontSize: 11,
                 ),
               ),
               const SizedBox(height: 3),
               Text(
                 value,
-                style: const TextStyle(
-                  color: const Color(0xFF10264A),
+                style: TextStyle(
+                  color: _c.text,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   height: 1.3,
@@ -2224,26 +1393,26 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  // Card 5: Identity Verification Card
+  // Identity Verification Card
   Widget _buildIdentityVerificationCard() {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _profileCard,
+        color: _c.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder),
-        boxShadow: _profileShadow,
+        border: Border.all(color: _c.border),
+        boxShadow: _c.isDark ? null : _profileShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Identity Verification',
                   style: TextStyle(
-                    color: const Color(0xFF10264A),
+                    color: _c.text,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2256,14 +1425,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
-                    color: _profileBlueLight,
+                    color: _c.blueLight,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _profileBlueBorder),
+                    border: Border.all(color: _c.blueBorder),
                   ),
-                  child: const Text(
+                  child: Text(
                     'View all',
                     style: TextStyle(
-                      color: _profileBlueDark,
+                      color: _c.isDark ? _c.accentBlue : _profileBlueDark,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -2294,16 +1463,16 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FC),
+        color: _c.subCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFDCE5F1)),
+        border: Border.all(color: _c.subBorder),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: _profileBlueLight,
+              color: _c.blueLight,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: _profileBlue, size: 18),
@@ -2312,8 +1481,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: const Color(0xFF10264A),
+              style: TextStyle(
+                color: _c.text,
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -2322,10 +1491,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: _profileGreenLight,
+              color: _c.greenLight,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: _profileGreenBorder,
+                color: _c.greenBorder,
               ),
             ),
             child: const Row(
@@ -2349,14 +1518,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  // Card 6: Payment Methods Card
+  // Payment Methods Card
   Widget _buildPaymentMethodsCard() {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _profileCard,
+        color: _c.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder),
+        border: Border.all(color: _c.border),
         boxShadow: _profileShadow,
       ),
       child: Column(
@@ -2364,11 +1533,11 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Payment Methods',
                   style: TextStyle(
-                    color: const Color(0xFF10264A),
+                    color: _c.text,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2381,9 +1550,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
-                    color: _profileBlueLight,
+                    color: _c.blueLight,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _profileBlueBorder),
+                    border: Border.all(color: _c.blueBorder),
                   ),
                   child: const Text(
                     'Manage',
@@ -2400,8 +1569,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           const SizedBox(height: 14),
           _paymentMethodTile(
             icon: LucideIcons.landmark,
-            iconColor: _profileBlue,
-            iconBg: _profileBlueLight,
+            iconColor: _ProfileColors.of(context).accentBlue,
+            iconBg: _c.blueLight,
             title: 'Bank Account',
             subtitle: _maskedBankAccountNumber,
             onTap: _showBankDetailsSheet,
@@ -2410,7 +1579,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           _paymentMethodTile(
             icon: LucideIcons.wallet,
             iconColor: _profileGold,
-            iconBg: _profileGoldLight,
+            iconBg: _c.goldLight,
             title: 'Crypto Wallet',
             subtitle: '$_cryptoCurrency · $_shortWalletAddress',
             onTap: _showCryptoWalletSheet,
@@ -2434,9 +1603,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F9FC),
+          color: _c.subCard,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFDCE5F1)),
+          border: Border.all(color: _c.subBorder),
         ),
         child: Row(
           children: [
@@ -2455,8 +1624,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: const Color(0xFF10264A),
+                    style: TextStyle(
+                      color: _c.text,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2464,8 +1633,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: _profileTextSecondary,
+                    style: TextStyle(
+                      color: _c.muted,
                       fontSize: 11,
                     ),
                   ),
@@ -2475,10 +1644,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: _profileGreenLight,
+                color: _c.greenLight,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _profileGreenBorder,
+                  color: _c.greenBorder,
                 ),
               ),
               child: const Text(
@@ -2491,89 +1660,13 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(LucideIcons.arrowUpRight, size: 16, color: _profileMuted),
+            Icon(LucideIcons.arrowUpRight, size: 16, color: _c.muted),
           ],
         ),
       ),
     );
   }
 
-  // Card 7: Promo / Platform Journey Card
-  Widget _buildJourneyPromoCard() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF93C5FD)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x191D4ED8),
-            blurRadius: 16,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          const Positioned.fill(
-            child: CustomPaint(
-              painter: PromoOrbitPainter(),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Your Journey with VT Index',
-                  style: TextStyle(
-                    color: const Color(0xFF10264A),
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Smarter Trading   Secure Investments   Global Opportunities',
-                  style: TextStyle(
-                    color: Color(0xFFDBEAFE),
-                    fontSize: 11.5,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _profileNavy,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 2,
-                  ),
-                  onPressed: () {
-                    widget.onSelectPage('Trading Accounts');
-                    _showSnack('Exploring VT Index platform features');
-                  },
-                  icon: const Icon(LucideIcons.arrowUpRight, size: 15, color: Color(0xFF1E3A8A)),
-                  label: const Text(
-                    'Explore platform',
-                    style: TextStyle(
-                      color: Color(0xFF1E3A8A),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   String get _maskedBankAccountNumber => _bankAccountNumber.length <= 4
       ? _bankAccountNumber
@@ -2590,10 +1683,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
+        decoration: BoxDecoration(
+          color: _c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2604,7 +1697,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0x2410264A),
+                  color: _c.muted.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2613,10 +1706,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Bank Account Details',
                   style: TextStyle(
-                    color: const Color(0xFF10264A),
+                    color: _c.text,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2624,9 +1717,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: _profileGreenLight,
+                    color: _c.greenLight,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _profileGreenBorder),
+                    border: Border.all(color: _c.greenBorder),
                   ),
                   child: const Text(
                     'Active',
@@ -2636,9 +1729,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Linked bank account for fiat deposits and withdrawals.',
-              style: TextStyle(color: _profileTextSecondary, fontSize: 12),
+              style: TextStyle(color: _c.muted, fontSize: 12),
             ),
             const SizedBox(height: 18),
             _infoRow('Bank Name', _bankName),
@@ -2675,10 +1768,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
+        decoration: BoxDecoration(
+          color: _c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2689,7 +1782,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0x2410264A),
+                  color: _c.muted.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2698,10 +1791,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Crypto Wallet Details',
                   style: TextStyle(
-                    color: const Color(0xFF10264A),
+                    color: _c.text,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2709,9 +1802,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: _profileGreenLight,
+                    color: _c.greenLight,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _profileGreenBorder),
+                    border: Border.all(color: _c.greenBorder),
                   ),
                   child: const Text(
                     'Active',
@@ -2721,9 +1814,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Authorized wallet address for direct USDT / crypto settlements.',
-              style: TextStyle(color: _profileTextSecondary, fontSize: 12),
+              style: TextStyle(color: _c.muted, fontSize: 12),
             ),
             const SizedBox(height: 18),
             _infoRow('Network', '$_cryptoNetwork / $_cryptoCurrency'),
@@ -2757,10 +1850,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
+        decoration: BoxDecoration(
+          color: _c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2771,40 +1864,40 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0x2410264A),
+                  color: _c.muted.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Manage Payment Methods',
               style: TextStyle(
-                color: const Color(0xFF10264A),
+                color: _c.text,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Add, update, or remove bank accounts and crypto wallets.',
-              style: TextStyle(color: _profileTextSecondary, fontSize: 12),
+              style: TextStyle(color: _c.muted, fontSize: 12),
             ),
             const SizedBox(height: 18),
             Material(
-              color: _profileCard,
+              color: _c.card,
               child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: _profileBlueLight,
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(LucideIcons.landmark, color: _profileBlue, size: 20),
               ),
-              title: const Text('Manage Bank Accounts', style: TextStyle(color: const Color(0xFF10264A), fontSize: 14, fontWeight: FontWeight.w600)),
-              subtitle: Text('$_bankName • $_maskedBankAccountNumber (Primary)', style: const TextStyle(color: _profileMuted, fontSize: 11)),
-              trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
+              title: Text('Manage Bank Accounts', style: TextStyle(color: _c.text, fontSize: 14, fontWeight: FontWeight.w600)),
+              subtitle: Text('$_bankName • $_maskedBankAccountNumber (Primary)', style: TextStyle(color: _c.muted, fontSize: 11)),
+              trailing: Icon(LucideIcons.chevronRight, color: _c.muted, size: 18),
               onTap: () {
                 Navigator.pop(ctx);
                 _showBankDetailsSheet();
@@ -2812,7 +1905,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             )
             ),
             Material(
-              color: _profileCard,
+              color: _c.card,
               child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
@@ -2822,9 +1915,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 ),
                 child: const Icon(LucideIcons.wallet, color: _profileGold, size: 20),
               ),
-              title: const Text('Manage Crypto Wallets', style: TextStyle(color: const Color(0xFF10264A), fontSize: 14, fontWeight: FontWeight.w600)),
-              subtitle: Text('$_cryptoCurrency · $_shortWalletAddress', style: const TextStyle(color: _profileMuted, fontSize: 11)),
-              trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
+              title: Text('Manage Crypto Wallets', style: TextStyle(color: _c.text, fontSize: 14, fontWeight: FontWeight.w600)),
+              subtitle: Text('$_cryptoCurrency · $_shortWalletAddress', style: TextStyle(color: _c.muted, fontSize: 11)),
+              trailing: Icon(LucideIcons.chevronRight, color: _c.muted, size: 18),
               onTap: () {
                 Navigator.pop(ctx);
                 _showCryptoWalletSheet();
@@ -2837,16 +1930,16 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               height: 46,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: _profileBlue),
+                  side: BorderSide(color: _c.blueBorder),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: _profileBlueLight,
+                  backgroundColor: _c.blueLight,
                 ),
                 onPressed: () {
                   Navigator.pop(ctx);
                   _showSnack('Add new payment method window opened');
                 },
-                icon: const Icon(LucideIcons.plus, size: 18, color: _profileBlue),
-                label: const Text('Add Payment Method', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
+                icon: Icon(LucideIcons.plus, size: 18, color: _c.accentBlue),
+                label: Text('Add Payment Method', style: TextStyle(color: _c.text, fontSize: 13)),
               ),
             ),
           ],
@@ -2870,8 +1963,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: const Color(0xFF10264A),
+                style: TextStyle(
+                  color: _c.text,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -2914,7 +2007,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: _profileTextSecondary, fontSize: 12),
+              style: TextStyle(color: _c.muted, fontSize: 12),
             ),
           ),
           const SizedBox(width: 8),
@@ -2924,7 +2017,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               Text(
                 value,
                 style: TextStyle(
-                  color: accentColor ?? const Color(0xFF10264A),
+                  color: accentColor ?? _c.text,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -2953,9 +2046,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _profileCard,
+        color: _c.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileBorder),
+        border: Border.all(color: _c.border),
         boxShadow: _profileShadow,
       ),
       child: Column(
@@ -2967,11 +2060,11 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Personal Information',
                       style: TextStyle(
-                        color: const Color(0xFF10264A),
+                        color: _c.text,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -2979,7 +2072,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     SizedBox(height: 2),
                     Text(
                       'Identity data verified against official documents',
-                      style: TextStyle(color: _profileTextSecondary, fontSize: 11),
+                      style: TextStyle(color: _c.muted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -2987,7 +2080,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF113876),
+                  backgroundColor: _c.navy,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(
@@ -3005,7 +2098,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(color: Color(0xFFDCE5F1), thickness: 0.8),
+          Divider(color: _c.border, thickness: 0.8),
           const SizedBox(height: 6),
 
           _detailCardRow(LucideIcons.user, 'Full Legal Name', _name),
@@ -3028,9 +2121,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: _c.subCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEAF1FA)),
+        border: Border.all(color: _c.subBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3038,7 +2131,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           Container(
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: _profileBlueLight,
+              color: _c.blueLight,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: _profileBlue, size: 16),
@@ -3050,13 +2143,13 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: _profileTextSecondary, fontSize: 11),
+                  style: TextStyle(color: _c.muted, fontSize: 11),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: const Color(0xFF10264A),
+                  style: TextStyle(
+                    color: _c.text,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -3068,7 +2161,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: _profileGreenLight,
+                color: _c.greenLight,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Row(
@@ -3268,18 +2361,19 @@ class _VerificationTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 1. Header Section
         Center(
           child: Column(
-            children: const [
+            children: [
               Text(
                 'Verification Documents',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: const Color(0xFF10264A),
+                  color: c.text,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.2,
@@ -3306,9 +2400,9 @@ class _VerificationTabView extends StatelessWidget {
               badgeLabel: 'IDENTITY PROOF',
               subtitle: 'Aadhaar, PAN, passport or driving licence',
               icon: LucideIcons.idCard,
-              iconBgColor: const Color(0xFFF7F9FC),
+              iconBgColor: c.blueLight,
               iconColor: const Color(0xFF4988E8),
-              badgeTagColor: const Color(0xFF4988E8),
+              badgeTagColor: c.isDark ? c.accentBlue : const Color(0xFF4988E8),
               isIdentity: true,
               onViewDocument: () => onViewDocument('Identity Verification'),
             ),
@@ -3317,9 +2411,9 @@ class _VerificationTabView extends StatelessWidget {
               badgeLabel: 'ADDRESS PROOF',
               subtitle: 'Bank statement or utility bill',
               icon: LucideIcons.house,
-              iconBgColor: const Color(0xFFF3E8FF),
+              iconBgColor: c.goldLight,
               iconColor: const Color(0xFF7C3AED),
-              badgeTagColor: _profileBlueDark,
+              badgeTagColor: c.isDark ? c.accentBlue : _profileBlueDark,
               isIdentity: false,
               onViewDocument: () => onViewDocument('Address Verification'),
             ),
@@ -3328,19 +2422,20 @@ class _VerificationTabView extends StatelessWidget {
         const SizedBox(height: 16),
 
         // 4. Security / Privacy Footer Card
-        _buildSecurityPrivacyFooter(),
+        _buildSecurityPrivacyFooter(context),
       ],
     );
   }
 
-  Widget _buildSecurityPrivacyFooter() {
+  Widget _buildSecurityPrivacyFooter(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _profileCard,
+        color: c.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _profileBorder, width: 1.2),
+        border: Border.all(color: c.border, width: 1.2),
         boxShadow: _profileShadow,
       ),
       child: LayoutBuilder(
@@ -3349,14 +2444,14 @@ class _VerificationTabView extends StatelessWidget {
           final badge = Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: _profileBlueLight,
+              color: c.blueLight,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _profileBlueBorder),
+              border: Border.all(color: c.blueBorder),
             ),
-            child: const Text(
+            child: Text(
               'Secure document access',
               style: TextStyle(
-                color: _profileBlueDark,
+                color: c.isDark ? c.accentBlue : _profileBlueDark,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -3372,20 +2467,24 @@ class _VerificationTabView extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7F9FC),
+                      color: c.blueLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(LucideIcons.lock, color: _profileBlue, size: 18),
+                    child: Icon(
+                      LucideIcons.lock,
+                      color: c.accentBlue,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'Your documents stay protected.',
                           style: TextStyle(
-                            color: const Color(0xFF10264A),
+                            color: c.text,
                             fontSize: 12.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -3394,7 +2493,7 @@ class _VerificationTabView extends StatelessWidget {
                         Text(
                           'You must verify your CRM password before viewing a document.',
                           style: TextStyle(
-                            color: Color(0xFF62738E),
+                            color: c.muted,
                             fontSize: 12,
                             height: 1.4,
                           ),
@@ -3451,13 +2550,14 @@ class _VerificationDocCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _profileBorder),
-        boxShadow: _profileShadow,
+        border: Border.all(color: c.border),
+        boxShadow: c.isDark ? null : _profileShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3502,8 +2602,8 @@ class _VerificationDocCard extends StatelessWidget {
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _profileNavy,
+            style: TextStyle(
+              color: c.text,
               fontSize: 13,
               height: 1.2,
               fontWeight: FontWeight.w800,
@@ -3527,8 +2627,8 @@ class _VerificationDocCard extends StatelessWidget {
               subtitle,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _profileMuted,
+              style: TextStyle(
+                color: c.muted,
                 fontSize: 11,
                 height: 1.35,
               ),
@@ -3538,11 +2638,11 @@ class _VerificationDocCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
             decoration: BoxDecoration(
-              color: _profileBg,
+              color: c.subCard,
               borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: _profileBorder),
+              border: Border.all(color: c.border),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(LucideIcons.fileText, size: 16, color: _profileBlue),
@@ -3552,7 +2652,7 @@ class _VerificationDocCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: _profileMuted,
+                    color: c.muted,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -3560,7 +2660,7 @@ class _VerificationDocCard extends StatelessWidget {
                 Text(
                   'PDF / IMAGE',
                   style: TextStyle(
-                    color: _profileBlueDark,
+                    color: c.isDark ? c.accentBlue : _profileBlueDark,
                     fontSize: 8,
                     fontWeight: FontWeight.w800,
                   ),
@@ -3577,13 +2677,13 @@ class _VerificationDocCard extends StatelessWidget {
                 size: 14,
               ),
               const SizedBox(width: 5),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Verification complete',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: _profileNavy,
+                    color: c.text,
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                   ),
@@ -3597,8 +2697,8 @@ class _VerificationDocCard extends StatelessWidget {
             child: OutlinedButton(
               onPressed: onViewDocument,
               style: OutlinedButton.styleFrom(
-                foregroundColor: _profileBlueDark,
-                side: const BorderSide(color: _profileBlueBorder),
+                foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
+                side: BorderSide(color: c.blueBorder),
                 padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
                 minimumSize: const Size(0, 34),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -3654,12 +2754,13 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
         ? 'Name & Date of Birth matched with profile'
         : 'Name & Complete Profile Address matched';
 
+    final c = _ProfileColors.of(context);
     return Container(
       padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF7F9FC),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color(0xFFEAF1FA), width: 1.5)),
+      decoration: BoxDecoration(
+        color: c.subCard,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: c.subBorder, width: 1.5)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -3672,7 +2773,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                 width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
+                  color: c.muted.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -3685,12 +2786,12 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isIdentity ? const Color(0xFFF7F9FC) : const Color(0xFF221752),
+                    color: isIdentity ? c.blueLight : c.goldLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     isIdentity ? LucideIcons.idCard : LucideIcons.house,
-                    color: isIdentity ? _profileBlue : const Color(0xFF7C3AED),
+                    color: isIdentity ? c.accentBlue : const Color(0xFF7C3AED),
                     size: 20,
                   ),
                 ),
@@ -3701,16 +2802,16 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                     children: [
                       Text(
                         docTitle,
-                        style: const TextStyle(
-                          color: const Color(0xFF10264A),
+                        style: TextStyle(
+                          color: c.text,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         docBadge,
-                        style: const TextStyle(
-                          color: _profileBlueDark,
+                        style: TextStyle(
+                          color: c.isDark ? c.accentBlue : _profileBlueDark,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -3721,9 +2822,9 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _profileGreenLight,
+                    color: c.greenLight,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _profileGreenBorder),
+                    border: Border.all(color: c.greenBorder),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -3751,7 +2852,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, color: Color(0xFF62738E), size: 20),
+                  icon: Icon(LucideIcons.x, color: c.muted, size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -3763,10 +2864,10 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F9FC),
+                color: c.card,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: _passwordVerified ? const Color(0xFF1B6A41) : const Color(0xFFDCE5F1),
+                  color: _passwordVerified ? c.greenBorder : c.border,
                 ),
               ),
               child: Column(
@@ -3777,17 +2878,13 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: _passwordVerified
-                              ? const Color(0xFF0C3925)
-                              : const Color(0xFFF7F9FC),
+                          color: _passwordVerified ? c.greenLight : c.blueLight,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           _passwordVerified ? LucideIcons.shieldCheck : LucideIcons.lock,
                           size: 16,
-                          color: _passwordVerified
-                              ? _profileGreen
-                              : _profileBlue,
+                          color: _passwordVerified ? _profileGreen : c.accentBlue,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -3804,17 +2901,13 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _passwordVerified
-                              ? _profileGreenLight
-                              : _profileBorder,
+                          color: _passwordVerified ? c.greenLight : c.blueLight,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           _passwordVerified ? 'Verified' : 'Required',
                           style: TextStyle(
-                            color: _passwordVerified
-                                ? const Color(0xFF22C55E)
-                                : const Color(0xFF62738E),
+                            color: _passwordVerified ? _profileGreen : c.muted,
                             fontSize: 10.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -3827,8 +2920,8 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                     _passwordVerified
                         ? 'Your CRM identity password was successfully verified. Full document decrypt key active for this session.'
                         : 'Confirm your CRM password to decrypt and view confidential document files.',
-                    style: const TextStyle(
-                      color: Color(0xFF62738E),
+                    style: TextStyle(
+                      color: c.muted,
                       fontSize: 11.5,
                       height: 1.35,
                     ),
@@ -3841,22 +2934,22 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                           child: TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            style: const TextStyle(color: const Color(0xFF10264A), fontSize: 13),
+                            style: TextStyle(color: c.text, fontSize: 13),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: const Color(0xFFF7F9FC),
+                              fillColor: c.subCard,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               hintText: 'Enter CRM password',
-                              hintStyle: const TextStyle(color: _profileMuted, fontSize: 12),
+                              hintStyle: TextStyle(color: c.muted, fontSize: 12),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: Color(0xFFDCE5F1)),
+                                borderSide: BorderSide(color: c.border),
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
                                   size: 16,
-                                  color: const Color(0xFF62738E),
+                                  color: c.muted,
                                 ),
                                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                               ),
@@ -3867,11 +2960,12 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                         ElevatedButton(
                           onPressed: () => setState(() => _passwordVerified = true),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _profileBlue,
+                            backgroundColor: c.accentBlue,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          child: const Text('Verify', style: TextStyle(color: const Color(0xFF10264A), fontSize: 12)),
+                          child: const Text('Verify', style: TextStyle(fontSize: 12)),
                         ),
                       ],
                     ),
@@ -3882,10 +2976,10 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
             const SizedBox(height: 16),
 
             // Document Details & Metadata
-            const Text(
+            Text(
               'Document Details & Metadata',
               style: TextStyle(
-                color: const Color(0xFF10264A),
+                color: c.text,
                 fontSize: 13.5,
                 fontWeight: FontWeight.bold,
               ),
@@ -3895,20 +2989,20 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F9FC),
+                color: c.card,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _profileBorder),
+                border: Border.all(color: c.border),
               ),
               child: Column(
                 children: [
                   _metaRow('Document Type', docTypeDetail),
-                  const Divider(color: Color(0xFFF7F9FC), height: 16),
+                  Divider(color: c.border, height: 16),
                   _metaRow('Document Number', docRef),
-                  const Divider(color: Color(0xFFF7F9FC), height: 16),
+                  Divider(color: c.border, height: 16),
                   _metaRow('AI Matching Score', docScore),
-                  const Divider(color: Color(0xFFF7F9FC), height: 16),
+                  Divider(color: c.border, height: 16),
                   _metaRow('Comparison Result', docComparison),
-                  const Divider(color: Color(0xFFF7F9FC), height: 16),
+                  Divider(color: c.border, height: 16),
                   _metaRow('Storage Vault', 'AES-256 Protected & Tamper Sealed'),
                 ],
               ),
@@ -3920,9 +3014,9 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: c.subCard,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _profileBorder),
+                border: Border.all(color: c.border),
               ),
               child: Column(
                 children: [
@@ -3933,23 +3027,23 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                         children: [
                           Icon(
                             isIdentity ? LucideIcons.idCard : LucideIcons.fileSpreadsheet,
-                            color: _profileBlue,
+                            color: c.accentBlue,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             isIdentity ? 'identity_document_verified.pdf' : 'address_statement_verified.pdf',
-                            style: const TextStyle(
-                              color: _profileText,
+                            style: TextStyle(
+                              color: c.text,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      const Text(
+                      Text(
                         '1.8 MB',
-                        style: TextStyle(color: Color(0xFF62738E), fontSize: 11),
+                        style: TextStyle(color: c.muted, fontSize: 11),
                       ),
                     ],
                   ),
@@ -3958,20 +3052,20 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
                     height: 90,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7F9FC),
+                      color: c.card,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFEAF1FA)),
+                      border: Border.all(color: c.border),
                     ),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(LucideIcons.shieldCheck, color: _profileGreen, size: 26),
-                          SizedBox(height: 6),
+                        children: [
+                          const Icon(LucideIcons.shieldCheck, color: _profileGreen, size: 26),
+                          const SizedBox(height: 6),
                           Text(
                             'CONFIDENTIAL • VERIFIED BY CRM SYSTEM',
                             style: TextStyle(
-                              color: _profileBlueDark,
+                              color: c.isDark ? c.accentBlue : _profileBlueDark,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.1,
@@ -3992,9 +3086,9 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF7F9FC),
-                  foregroundColor: const Color(0xFF10264A),
-                  side: const BorderSide(color: Color(0xFFDCE5F1)),
+                  backgroundColor: c.blueLight,
+                  foregroundColor: c.text,
+                  side: BorderSide(color: c.border),
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 1,
@@ -4009,21 +3103,22 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
   }
 
   Widget _metaRow(String label, String value) {
+    final c = _ProfileColors.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFF62738E), fontSize: 11.5),
+          style: TextStyle(color: c.muted, fontSize: 11.5),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: const Color(0xFF10264A),
+            style: TextStyle(
+              color: c.text,
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
             ),
@@ -4051,22 +3146,23 @@ class _BannerOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF103670) : const Color(0xFFF4F7FC),
+          color: selected ? c.navy : c.subCard,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? _profileGold : const Color(0xFFDCE5F1),
+            color: selected ? _profileGold : c.border,
             width: selected ? 1.5 : 1.0,
           ),
         ),
         child: Row(
           children: [
-            Icon(icon, color: selected ? _profileBlue : _profileTextSecondary, size: 18),
+            Icon(icon, color: selected ? c.accentBlue : c.muted, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -4075,20 +3171,20 @@ class _BannerOptionTile extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: const Color(0xFF10264A),
+                      color: c.text,
                       fontSize: 12.5,
                       fontWeight: selected ? FontWeight.bold : FontWeight.w600,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(color: _profileTextSecondary, fontSize: 10.5),
+                    style: TextStyle(color: c.muted, fontSize: 10.5),
                   ),
                 ],
               ),
             ),
             if (selected)
-              const Icon(LucideIcons.circleCheck, color: _profileBlue, size: 18),
+              Icon(LucideIcons.circleCheck, color: c.accentBlue, size: 18),
           ],
         ),
       ),
@@ -4096,67 +3192,6 @@ class _BannerOptionTile extends StatelessWidget {
   }
 }
 
-/// Custom painter rendering a celestial / mountain landscape banner.
-class _ProfileCoverPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bounds = Offset.zero & size;
-    final background = Paint()
-      ..shader = const LinearGradient(
-        colors: [
-          Color(0xFFEAF3FF),
-          Color(0xFFBBD9FF),
-          Color(0xFF4C9AF5),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(bounds);
-    canvas.drawRect(bounds, background);
-
-    final paleWave = Path()
-      ..moveTo(0, size.height * 0.58)
-      ..cubicTo(
-        size.width * 0.18, size.height * 0.10,
-        size.width * 0.34, size.height * 0.88,
-        size.width * 0.57, size.height * 0.48,
-      )
-      ..cubicTo(
-        size.width * 0.76, size.height * 0.12,
-        size.width * 0.84, size.height * 0.02,
-        size.width, size.height * 0.22,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(
-      paleWave,
-      Paint()..color = Colors.white.withValues(alpha: 0.48),
-    );
-
-    final whiteWave = Path()
-      ..moveTo(0, size.height * 0.78)
-      ..cubicTo(
-        size.width * 0.22, size.height * 0.40,
-        size.width * 0.40, size.height * 0.98,
-        size.width * 0.62, size.height * 0.62,
-      )
-      ..cubicTo(
-        size.width * 0.80, size.height * 0.34,
-        size.width * 0.90, size.height * 0.46,
-        size.width, size.height * 0.66,
-      )
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(
-      whiteWave,
-      Paint()..color = Colors.white.withValues(alpha: 0.62),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class CelestialBannerPainter extends CustomPainter {
   const CelestialBannerPainter({required this.theme});
@@ -4389,14 +3424,15 @@ class _PaymentMethodsTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'Payment Methods',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: _profileNavy,
+            color: c.text,
             fontSize: 22,
             fontWeight: FontWeight.bold,
             letterSpacing: -0.2,
@@ -4416,23 +3452,24 @@ class _PaymentMethodsTabView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _buildSecurityFooter(),
+        _buildSecurityFooter(context),
       ],
     );
   }
 
   Widget _buildBankCard(BuildContext context) {
     return _paymentGridCard(
+      context,
       icon: LucideIcons.landmark,
       iconColor: _profileBlue,
       title: 'Bank Account',
       status: bankStatus,
       description: 'Bank-based withdrawals and payouts',
       details: [
-        _paymentGridDetail('Bank', bankName),
-        _paymentGridDetail('Account', bankAccountNumber),
-        _paymentGridDetail('IFSC', bankIfscCode),
-        _paymentGridDetail('Branch', bankBranch),
+        _paymentGridDetail(context, 'Bank', bankName),
+        _paymentGridDetail(context, 'Account', bankAccountNumber),
+        _paymentGridDetail(context, 'IFSC', bankIfscCode),
+        _paymentGridDetail(context, 'Branch', bankBranch),
       ],
       onView: onViewBankDetails,
       onEdit: onEditBankDetails,
@@ -4442,15 +3479,16 @@ class _PaymentMethodsTabView extends StatelessWidget {
 
   Widget _buildCryptoCard(BuildContext context) {
     return _paymentGridCard(
+      context,
       icon: LucideIcons.wallet,
       iconColor: _profileGold,
       title: 'Crypto Wallet',
       status: cryptoStatus,
       description: 'Digital asset withdrawal destination',
       details: [
-        _paymentGridDetail('Wallet', cryptoWalletAddress),
-        _paymentGridDetail('Currency', cryptoCurrency),
-        _paymentGridDetail('Network', cryptoNetwork),
+        _paymentGridDetail(context, 'Wallet', cryptoWalletAddress),
+        _paymentGridDetail(context, 'Currency', cryptoCurrency),
+        _paymentGridDetail(context, 'Network', cryptoNetwork),
       ],
       onView: onViewCryptoDetails,
       onEdit: onEditCryptoDetails,
@@ -4458,7 +3496,8 @@ class _PaymentMethodsTabView extends StatelessWidget {
     );
   }
 
-  Widget _paymentGridCard({
+  Widget _paymentGridCard(
+    BuildContext context, {
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -4469,12 +3508,13 @@ class _PaymentMethodsTabView extends StatelessWidget {
     required VoidCallback onEdit,
     required ValueChanged<String> onMenu,
   }) {
+    final c = _ProfileColors.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _profileBorder),
+        border: Border.all(color: c.border),
         boxShadow: _profileShadow,
       ),
       child: Column(
@@ -4486,13 +3526,13 @@ class _PaymentMethodsTabView extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: _profileBlueLight,
+                  color: c.blueLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: iconColor, size: 18),
               ),
               const Spacer(),
-              _buildEllipsisMenu(onMenu),
+              _buildEllipsisMenu(context, onMenu),
             ],
           ),
           const SizedBox(height: 10),
@@ -4500,22 +3540,22 @@ class _PaymentMethodsTabView extends StatelessWidget {
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _profileNavy,
+            style: TextStyle(
+              color: c.text,
               fontSize: 13,
               height: 1.2,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 5),
-          _connectedBadge(status),
+          _connectedBadge(context, status),
           const SizedBox(height: 8),
           Text(
             description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _profileMuted,
+            style: TextStyle(
+              color: c.muted,
               fontSize: 10,
               height: 1.3,
             ),
@@ -4532,8 +3572,8 @@ class _PaymentMethodsTabView extends StatelessWidget {
             child: OutlinedButton(
               onPressed: onView,
               style: OutlinedButton.styleFrom(
-                foregroundColor: _profileBlueDark,
-                side: const BorderSide(color: _profileBlueBorder),
+                foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
+                side: BorderSide(color: c.blueBorder),
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 minimumSize: const Size(0, 32),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -4576,7 +3616,8 @@ class _PaymentMethodsTabView extends StatelessWidget {
     );
   }
 
-  Widget _paymentGridDetail(String label, String value) {
+  Widget _paymentGridDetail(BuildContext context, String label, String value) {
+    final c = _ProfileColors.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: Column(
@@ -4584,8 +3625,8 @@ class _PaymentMethodsTabView extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: _profileMuted,
+            style: TextStyle(
+              color: c.muted,
               fontSize: 9,
               fontWeight: FontWeight.w600,
             ),
@@ -4595,8 +3636,8 @@ class _PaymentMethodsTabView extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _profileNavy,
+            style: TextStyle(
+              color: c.text,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
@@ -4606,14 +3647,15 @@ class _PaymentMethodsTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildSecurityFooter() {
+  Widget _buildSecurityFooter(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _profileCard,
+        color: c.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _profileBorder, width: 1.2),
+        border: Border.all(color: c.border, width: 1.2),
         boxShadow: _profileShadow,
       ),
       child: Row(
@@ -4622,13 +3664,13 @@ class _PaymentMethodsTabView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F9FC),
+              color: c.subCard,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _profileBlueBorder),
+              border: Border.all(color: c.blueBorder),
             ),
-            child: const Icon(
+            child: Icon(
               LucideIcons.shieldCheck,
-              color: _profileBlue,
+              color: c.accentBlue,
               size: 20,
             ),
           ),
@@ -4636,20 +3678,20 @@ class _PaymentMethodsTabView extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Keep your destinations up to date.',
                   style: TextStyle(
-                    color: const Color(0xFF10264A),
+                    color: c.text,
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Always double-check account and wallet details before saving changes.',
                   style: TextStyle(
-                    color: Color(0xFF62738E),
+                    color: c.muted,
                     fontSize: 11.5,
                     height: 1.35,
                   ),
@@ -4662,13 +3704,14 @@ class _PaymentMethodsTabView extends StatelessWidget {
     );
   }
 
-  Widget _connectedBadge(String status) {
+  Widget _connectedBadge(BuildContext context, String status) {
+    final c = _ProfileColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
       decoration: BoxDecoration(
-        color: _profileGreenLight,
+        color: c.greenLight,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _profileGreenBorder),
+        border: Border.all(color: c.greenBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -4695,44 +3738,61 @@ class _PaymentMethodsTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildEllipsisMenu(ValueChanged<String> onAction) {
+  Widget _buildEllipsisMenu(BuildContext context, ValueChanged<String> onAction) {
     return PopupMenuButton<String>(
-      icon: const Icon(LucideIcons.ellipsis, color: Color(0xFF62738E), size: 20),
+      icon: Icon(
+        LucideIcons.ellipsis,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        size: 20,
+      ),
       tooltip: 'Options',
-      color: const Color(0xFFF7F9FC),
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFDCE5F1)),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       onSelected: onAction,
       itemBuilder: (context) => [
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'primary',
           child: Row(
             children: [
-              Icon(LucideIcons.star, size: 16, color: Color(0xFFF4C84A)),
-              SizedBox(width: 10),
-              Text('Set as primary', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
+              const Icon(LucideIcons.star, size: 16, color: Color(0xFFF4C84A)),
+              const SizedBox(width: 10),
+              Text(
+                'Set as primary',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
+              ),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'refresh',
           child: Row(
             children: [
-              Icon(LucideIcons.refreshCw, size: 16, color: Color(0xFF4988E8)),
-              SizedBox(width: 10),
-              Text('Refresh status', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
+              const Icon(LucideIcons.refreshCw, size: 16, color: Color(0xFF4988E8)),
+              const SizedBox(width: 10),
+              Text(
+                'Refresh status',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
+              ),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'copy',
           child: Row(
             children: [
-              Icon(LucideIcons.copy, size: 16, color: Color(0xFF62738E)),
-              SizedBox(width: 10),
-              Text('Copy details', style: TextStyle(color: const Color(0xFF10264A), fontSize: 13)),
+              Icon(
+                LucideIcons.copy,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Copy details',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
+              ),
             ],
           ),
         ),
@@ -4740,374 +3800,9 @@ class _PaymentMethodsTabView extends StatelessWidget {
     );
   }
 
-  Widget _detailRow({required String label, required String value}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF62738E),
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: const Color(0xFF10264A),
-              fontSize: 13.5,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _actionButtons({
-    required VoidCallback onView,
-    required VoidCallback onEdit,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 450;
-        final viewBtn = OutlinedButton.icon(
-          onPressed: onView,
-          icon: const Icon(LucideIcons.eye, color: _profileBlue, size: 16),
-          label: const Text(
-            'View Details',
-            style: TextStyle(
-              color: _profileBlue,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          style: OutlinedButton.styleFrom(
-            backgroundColor: const Color(0xFFF7F9FC),
-            side: const BorderSide(color: Color(0xFFEAF1FA)),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-
-        final editBtn = ElevatedButton.icon(
-          onPressed: onEdit,
-          icon: const Icon(LucideIcons.penLine, color: Colors.white, size: 16),
-          label: const Text(
-            'Edit Details',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1D4ED8),
-            foregroundColor: Colors.white,
-            elevation: 1.5,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-
-        if (isNarrow) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              viewBtn,
-              const SizedBox(height: 10),
-              editBtn,
-            ],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(child: viewBtn),
-            const SizedBox(width: 12),
-            Expanded(child: editBtn),
-          ],
-        );
-      },
-    );
-  }
 }
 
-// ------------------------------------------
-// 3D/ISOMETRIC GRAPHIC ELEMENTS
-// ------------------------------------------
-
-class _IsometricBankGraphic extends StatelessWidget {
-  const _IsometricBankGraphic();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 72,
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFEFF6FF),
-            Color(0xFFDBEAFE),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: const Color(0xFFEAF1FA), width: 1.1),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0F2563EB),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: CustomPaint(
-        painter: _IsometricBankPainter(),
-      ),
-    );
-  }
-}
-
-class _IsometricBankPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // Pediment / Roof 3D
-    final frontPediment = Path()
-      ..moveTo(w * 0.48, h * 0.12)
-      ..lineTo(w * 0.18, h * 0.40)
-      ..lineTo(w * 0.78, h * 0.40)
-      ..close();
-
-    final pedimentPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-
-    canvas.drawPath(frontPediment, pedimentPaint);
-
-    // Roof isometric side facet (depth)
-    final roofDepth = Path()
-      ..moveTo(w * 0.48, h * 0.12)
-      ..lineTo(w * 0.64, h * 0.04)
-      ..lineTo(w * 0.90, h * 0.32)
-      ..lineTo(w * 0.78, h * 0.40)
-      ..close();
-
-    final depthPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF3B82F6), Color(0xFF1E40AF)],
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-
-    canvas.drawPath(roofDepth, depthPaint);
-
-    // Architrave (eaves bar)
-    final architrave = RRect.fromRectAndRadius(
-      Rect.fromLTWH(w * 0.14, h * 0.40, w * 0.68, h * 0.08),
-      const Radius.circular(2),
-    );
-    final eavePaint = Paint()..color = const Color(0xFF60A5FA);
-    canvas.drawRRect(architrave, eavePaint);
-
-    // 3 Classical Columns / Pillars
-    final pillarPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF93C5FD), Color(0xFF1D4ED8)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-
-    final colW = w * 0.10;
-    final colH = h * 0.28;
-    final colY = h * 0.48;
-
-    // Column 1
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.20, colY, colW, colH), const Radius.circular(1.5)),
-      pillarPaint,
-    );
-    // Column 2
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.43, colY, colW, colH), const Radius.circular(1.5)),
-      pillarPaint,
-    );
-    // Column 3
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.66, colY, colW, colH), const Radius.circular(1.5)),
-      pillarPaint,
-    );
-
-    // Plinth / Foundation Base
-    final plinth = RRect.fromRectAndRadius(
-      Rect.fromLTWH(w * 0.12, h * 0.76, w * 0.72, h * 0.10),
-      const Radius.circular(2),
-    );
-    final plinthPaint = Paint()..color = const Color(0xFF1E3A8A);
-    canvas.drawRRect(plinth, plinthPaint);
-
-    // Golden accent dot on pediment
-    final goldPaint = Paint()..color = const Color(0xFFF59E0B);
-    canvas.drawCircle(Offset(w * 0.48, h * 0.28), 2.5, goldPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _IsometricCryptoGraphic extends StatelessWidget {
-  const _IsometricCryptoGraphic();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 72,
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFFFBEB),
-            Color(0xFFFEF3C7),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: _profileGoldBorder, width: 1.1),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0FD97706),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          // Isometric rotated crypto card
-          Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.002)
-              ..rotateZ(-0.15)
-              ..rotateX(0.1),
-            child: Container(
-              width: 48,
-              height: 30,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFF93C5FD), width: 1),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x26000000),
-                    blurRadius: 4,
-                    offset: Offset(1, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Metallic gold chip
-                  Container(
-                    width: 7,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFCD34D),
-                      borderRadius: BorderRadius.circular(1),
-                    ),
-                  ),
-                  // Abstract card stripes
-                  Row(
-                    children: [
-                      Container(
-                        width: 14,
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFBFDBFE),
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Container(
-                        width: 8,
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF60A5FA),
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Overlapping glowing gold coin badge peeking at bottom right
-          Positioned(
-            right: 6,
-            bottom: 6,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFDE68A), Color(0xFFD97706)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(color: const Color(0xFFFEF3C7), width: 1.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(
-                  LucideIcons.coins,
-                  size: 11,
-                  color: Color(0xFF78350F),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ------------------------------------------
 // PAYMENT METHOD MODALS
@@ -5148,12 +3843,13 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: c.border, width: 1.5)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -5165,7 +3861,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
               width: 44,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0x2410264A),
+                color: c.muted.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -5191,8 +3887,8 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: const Color(0xFF10264A),
+                      style: TextStyle(
+                        color: c.text,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -5200,8 +3896,8 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: Color(0xFF62738E),
+                      style: TextStyle(
+                        color: c.muted,
                         fontSize: 12,
                       ),
                     ),
@@ -5246,15 +3942,15 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F9FC),
+              color: c.subCard,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFF7F9FC)),
+              border: Border.all(color: c.subBorder),
             ),
             child: Column(
               children: [
                 for (var i = 0; i < details.length; i++) ...[
                   if (i > 0)
-                    const Divider(color: Color(0xFFF7F9FC), height: 16, thickness: 1),
+                    Divider(color: c.subBorder, height: 16, thickness: 1),
                   _modalDetailRow(context, details[i]),
                 ],
               ],
@@ -5268,19 +3964,19 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFEAF1FA)),
+                    side: BorderSide(color: c.border),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: const Color(0xFF10264A), fontWeight: FontWeight.bold)),
+                  child: Text('Close', style: TextStyle(color: c.text, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1D4ED8),
+                    backgroundColor: c.accentBlue,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -5299,6 +3995,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
   }
 
   Widget _modalDetailRow(BuildContext context, _PaymentDetailItem item) {
+    final c = _ProfileColors.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -5306,8 +4003,8 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
           flex: 2,
           child: Text(
             item.label,
-            style: const TextStyle(
-              color: Color(0xFF62738E),
+            style: TextStyle(
+              color: c.muted,
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
             ),
@@ -5323,8 +4020,8 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                 child: Text(
                   item.value,
                   textAlign: TextAlign.end,
-                  style: const TextStyle(
-                    color: const Color(0xFF10264A),
+                  style: TextStyle(
+                    color: c.text,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -5338,20 +4035,20 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${item.label} copied to clipboard'),
-                        backgroundColor: const Color(0xFFFFFFFF),
+                        backgroundColor: Theme.of(context).colorScheme.inverseSurface,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
-                          side: const BorderSide(color: Color(0xFFDCE5F1)),
+                          side: BorderSide(color: Theme.of(context).dividerColor),
                         ),
                         duration: const Duration(seconds: 2),
                       ),
                     );
                   },
                   borderRadius: BorderRadius.circular(6),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(LucideIcons.copy, size: 14, color: _profileBlue),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(LucideIcons.copy, size: 14, color: c.accentBlue),
                   ),
                 ),
               ],
@@ -5413,15 +4110,17 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
 
   @override
   Widget build(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.9,
         ),
-        decoration: const BoxDecoration(
-          color: _profileCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: c.border, width: 1.5)),
           boxShadow: _profileSheetShadow,
         ),
         clipBehavior: Clip.antiAlias,
@@ -5488,24 +4187,24 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: _profileBlueLight,
+                            color: c.blueLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             LucideIcons.landmark,
-                            color: _profileBlue,
+                            color: c.accentBlue,
                             size: 22,
                           ),
                         ),
                         const SizedBox(width: 14),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Bank account information',
                                 style: TextStyle(
-                                  color: _profileText,
+                                  color: c.text,
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -5514,7 +4213,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                               Text(
                                 'Enter the account details you want to use for payouts.',
                                 style: TextStyle(
-                                  color: _profileTextSecondary,
+                                  color: c.muted,
                                   fontSize: 12,
                                   height: 1.3,
                                 ),
@@ -5525,7 +4224,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Divider(color: _profileBorder, thickness: 1, height: 1),
+                    Divider(color: c.border, thickness: 1, height: 1),
                     const SizedBox(height: 16),
 
                     // 4 Form Input Fields
@@ -5544,19 +4243,19 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: _profileBlueLight,
+                        color: c.blueLight,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _profileBlueBorder, width: 1),
+                        border: Border.all(color: c.blueBorder, width: 1),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(LucideIcons.shieldCheck, color: _profileBlue, size: 18),
-                          SizedBox(width: 10),
+                          Icon(LucideIcons.shieldCheck, color: c.accentBlue, size: 18),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Check your bank details carefully before saving.',
                               style: TextStyle(
-                                color: _profileBlueDark,
+                                color: c.isDark ? c.accentBlue : _profileBlueDark,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -5621,13 +4320,14 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
   }
 
   Widget _inputField({required String label, required TextEditingController controller, TextInputType? keyboardType, TextCapitalization textCapitalization = TextCapitalization.none}) {
+    final c = _ProfileColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF475569),
+          style: TextStyle(
+            color: c.muted,
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
           ),
@@ -5637,24 +4337,24 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
-          cursorColor: _profileBlue,
-          style: const TextStyle(color: _profileText, fontSize: 14, fontWeight: FontWeight.w500),
+          cursorColor: c.accentBlue,
+          style: TextStyle(color: c.text, fontSize: 14, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: _profileBg,
+            fillColor: c.subCard,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+              borderSide: BorderSide(color: c.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+              borderSide: BorderSide(color: c.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: _profileBlue, width: 1.5),
+              borderSide: BorderSide(color: c.accentBlue, width: 1.5),
             ),
           ),
         ),
@@ -5703,6 +4403,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
 
   @override
   Widget build(BuildContext context) {
+    final c = _ProfileColors.of(context);
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -5710,10 +4411,10 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
         20,
         MediaQuery.of(context).viewInsets.bottom + 28,
       ),
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color(0xFFDCE5F1), width: 1.5)),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: c.border, width: 1.5)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -5725,24 +4426,24 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                 width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0x2410264A),
+                  color: c.muted.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Edit Crypto Wallet',
               style: TextStyle(
-                color: const Color(0xFF10264A),
+                color: c.text,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Update your cryptocurrency destination address and currency.',
-              style: TextStyle(color: Color(0xFF62738E), fontSize: 12),
+              style: TextStyle(color: c.muted, fontSize: 12),
             ),
             const SizedBox(height: 18),
             _inputField(label: 'Wallet Address', controller: _addressController),
@@ -5756,19 +4457,19 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFEAF1FA)),
+                      side: BorderSide(color: c.border),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel', style: TextStyle(color: const Color(0xFF10264A), fontWeight: FontWeight.bold)),
+                    child: Text('Cancel', style: TextStyle(color: c.text, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1D4ED8),
+                      backgroundColor: c.accentBlue,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -5795,13 +4496,14 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
   }
 
   Widget _inputField({required String label, required TextEditingController controller, TextInputType? keyboardType, TextCapitalization textCapitalization = TextCapitalization.none}) {
+    final c = _ProfileColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF62738E),
+          style: TextStyle(
+            color: c.muted,
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
           ),
@@ -5811,24 +4513,24 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
-          cursorColor: _profileBlue,
-          style: const TextStyle(color: const Color(0xFF10264A), fontSize: 14),
+          cursorColor: c.accentBlue,
+          style: TextStyle(color: c.text, fontSize: 14),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: const Color(0xFFF7F9FC),
+            fillColor: c.subCard,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFF7F9FC)),
+              borderSide: BorderSide(color: c.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFF7F9FC)),
+              borderSide: BorderSide(color: c.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: _profileBlue, width: 1.5),
+              borderSide: BorderSide(color: c.accentBlue, width: 1.5),
             ),
           ),
         ),

@@ -561,8 +561,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      _buildTopNavBar(),
-                      const SizedBox(height: 18),
                       _buildMobileProfileHeader(),
                       const SizedBox(height: 22),
                       _buildMobileSectionNavigation(),
@@ -817,92 +815,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTopNavBar() {
-    return Row(
-      children: [
-        InkWell(
-          onTap: widget.onBack,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              color: _profileCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _profileBorder),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x080F172A),
-                  blurRadius: 6,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(LucideIcons.arrowLeft, color: _profileText, size: 16),
-                SizedBox(width: 6),
-                Text(
-                  'Back',
-                  style: TextStyle(
-                    color: _profileText,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'My Profile',
-                style: TextStyle(
-                  color: _profileText,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Account settings, verification & preferences',
-                style: TextStyle(color: _profileTextSecondary, fontSize: 11),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: _profileGoldLight,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _profileGoldBorder, width: 1.2),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.shieldCheck, color: _profileGold, size: 14),
-              SizedBox(width: 4),
-              Text(
-                'Tier 3',
-                style: TextStyle(
-                  color: _profileGold,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

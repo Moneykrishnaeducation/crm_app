@@ -57,9 +57,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _email = 'iyyanar@vtindex.com';
   String _phone = '7894561235';
   String _location = 'kattu edaiyar, india';
-  final String _dob = '24 Aug 2003';
-  final String _gender = 'Male';
-  final String _nationality = 'Indian (IN)';
+  String _dob = '24 Aug 2003';
+  String _gender = 'Male';
+  String _nationality = 'Indian (IN)';
+  String _taxResidency = 'India (PAN: *****8921J)';
   String _address = 'No 3 south street kattu edaiyar villupuram, kattu edaiyar, tamil nadu, india, 605751';
   String _occupation = 'Software Engineer';
   Color _avatarBg = const Color(0xFF5E9422); // Olive-green
@@ -70,12 +71,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _bankAccountNumber = '789456123456';
   String _bankIfscCode = 'IDIB000R101D';
   String _bankBranch = 'Kallakurichi';
-  final String _bankHolder = 'INR-DEVOP B';
+  String _bankHolder = 'INR-DEVOP B';
   final String _bankStatus = 'Connected';
 
   String _cryptoWalletAddress = '123456789asdfghjklrgq094i50i3i45kjdfjweir099iwe9f';
   String _cryptoCurrency = 'UNANG';
-  final String _cryptoNetwork = 'TRON (TRC20)';
+  String _cryptoNetwork = 'TRON (TRC20)';
   final String _cryptoStatus = 'Connected';
 
   void _showChangeBannerSheet() {
@@ -311,6 +312,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     final locationCtrl = TextEditingController(text: _location);
     final addressCtrl = TextEditingController(text: _address);
     final occupationCtrl = TextEditingController(text: _occupation);
+    final dobCtrl = TextEditingController(text: _dob);
+    final genderCtrl = TextEditingController(text: _gender);
+    final nationalityCtrl = TextEditingController(text: _nationality);
+    final taxResidencyCtrl = TextEditingController(text: _taxResidency);
 
     showModalBottomSheet<void>(
       context: context,
@@ -375,11 +380,19 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     const SizedBox(height: 12),
                     _inputField(controller: phoneCtrl, label: 'Phone Number', icon: LucideIcons.phone),
                     const SizedBox(height: 12),
+                    _inputField(controller: dobCtrl, label: 'Date of Birth', icon: LucideIcons.calendar),
+                    const SizedBox(height: 12),
+                    _inputField(controller: genderCtrl, label: 'Gender', icon: LucideIcons.userRound),
+                    const SizedBox(height: 12),
+                    _inputField(controller: nationalityCtrl, label: 'Nationality', icon: LucideIcons.globe),
+                    const SizedBox(height: 12),
                     _inputField(controller: locationCtrl, label: 'City & Country', icon: LucideIcons.mapPin),
                     const SizedBox(height: 12),
                     _inputField(controller: addressCtrl, label: 'Residential Address', icon: LucideIcons.home, maxLines: 2),
                     const SizedBox(height: 12),
                     _inputField(controller: occupationCtrl, label: 'Occupation', icon: LucideIcons.briefcase),
+                    const SizedBox(height: 12),
+                    _inputField(controller: taxResidencyCtrl, label: 'Tax Residency', icon: LucideIcons.landmark),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -416,6 +429,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                           _location = locationCtrl.text.trim().isEmpty ? _location : locationCtrl.text.trim();
                           _address = addressCtrl.text.trim().isEmpty ? _address : addressCtrl.text.trim();
                           _occupation = occupationCtrl.text.trim().isEmpty ? _occupation : occupationCtrl.text.trim();
+                          _dob = dobCtrl.text.trim().isEmpty ? _dob : dobCtrl.text.trim();
+                          _gender = genderCtrl.text.trim().isEmpty ? _gender : genderCtrl.text.trim();
+                          _nationality = nationalityCtrl.text.trim().isEmpty ? _nationality : nationalityCtrl.text.trim();
+                          _taxResidency = taxResidencyCtrl.text.trim().isEmpty ? _taxResidency : taxResidencyCtrl.text.trim();
                         });
                         Navigator.pop(ctx);
                         _showSnack('Personal details updated successfully');
@@ -449,6 +466,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         TextField(
           controller: controller,
           maxLines: maxLines,
+          cursorColor: _profileBlue,
           style: const TextStyle(color: _profileText, fontSize: 13, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             isDense: true,
@@ -2018,11 +2036,15 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             value: _dob,
           ),
           const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
-          _personalInfoRow(
-            icon: LucideIcons.mapPin,
-            label: 'Address',
-            value: _address,
-          ),
+          _personalInfoRow(icon: LucideIcons.usersRound, label: 'Gender', value: _gender),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          _personalInfoRow(icon: LucideIcons.flag, label: 'Nationality', value: _nationality),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          _personalInfoRow(icon: LucideIcons.mapPin, label: 'Address', value: _address),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          _personalInfoRow(icon: LucideIcons.briefcase, label: 'Occupation', value: _occupation),
+          const Divider(color: Color(0xFFEAF1FA), height: 18, thickness: 0.8),
+          _personalInfoRow(icon: LucideIcons.mapPin, label: 'City & Country', value: _location),
         ],
       ),
     );
@@ -2394,8 +2416,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10264A),
-                    foregroundColor: const Color(0xFF031438),
+                    backgroundColor: _profileNavy,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -2423,6 +2445,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       ),
     );
   }
+
+  String get _maskedBankAccountNumber => _bankAccountNumber.length <= 4
+      ? _bankAccountNumber
+      : '•••• ${_bankAccountNumber.substring(_bankAccountNumber.length - 4)}';
+
+  String get _shortWalletAddress => _cryptoWalletAddress.length <= 18
+      ? _cryptoWalletAddress
+      : '${_cryptoWalletAddress.substring(0, 8)}…${_cryptoWalletAddress.substring(_cryptoWalletAddress.length - 6)}';
 
   void _showBankDetailsSheet() {
     showModalBottomSheet<void>(
@@ -2482,10 +2512,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               style: TextStyle(color: _profileTextSecondary, fontSize: 12),
             ),
             const SizedBox(height: 18),
-            _infoRow('Bank Name', 'State Bank of India (SBI)'),
-            _infoRow('Account Number', '****3456', copyable: true),
-            _infoRow('Account Holder', _name),
-            _infoRow('IFSC / Routing Code', 'SBIN0001234', copyable: true),
+            _infoRow('Bank Name', _bankName),
+            _infoRow('Account Number', _maskedBankAccountNumber, copyable: true),
+            _infoRow('Account Holder', _bankHolder),
+            _infoRow('IFSC / Routing Code', _bankIfscCode, copyable: true),
             _infoRow('Branch Name', _bankBranch),
             _infoRow('Currency', 'INR (₹)'),
             const SizedBox(height: 18),
@@ -2495,7 +2525,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _profileBlue,
-                  foregroundColor: const Color(0xFF10264A),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 1,
                 ),
@@ -2567,8 +2597,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               style: TextStyle(color: _profileTextSecondary, fontSize: 12),
             ),
             const SizedBox(height: 18),
-            _infoRow('Network', 'TRON (TRC20) / UNANG'),
-            _infoRow('Wallet Address', 'UNANG · 123456789asd', copyable: true),
+            _infoRow('Network', '$_cryptoNetwork / $_cryptoCurrency'),
+            _infoRow('Wallet Address', _shortWalletAddress, copyable: true),
             _infoRow('Whitelist Status', 'Whitelisted & Verified', accentColor: _profileGreen),
             const SizedBox(height: 18),
             SizedBox(
@@ -2642,7 +2672,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: const Icon(LucideIcons.landmark, color: _profileBlue, size: 20),
               ),
               title: const Text('Manage Bank Accounts', style: TextStyle(color: const Color(0xFF10264A), fontSize: 14, fontWeight: FontWeight.w600)),
-              subtitle: const Text('SBI • ****3456 (Primary)', style: TextStyle(color: _profileMuted, fontSize: 11)),
+              subtitle: Text('$_bankName • $_maskedBankAccountNumber (Primary)', style: const TextStyle(color: _profileMuted, fontSize: 11)),
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
                 Navigator.pop(ctx);
@@ -2659,7 +2689,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 child: const Icon(LucideIcons.wallet, color: _profileGold, size: 20),
               ),
               title: const Text('Manage Crypto Wallets', style: TextStyle(color: const Color(0xFF10264A), fontSize: 14, fontWeight: FontWeight.w600)),
-              subtitle: const Text('UNANG · 123456789asd', style: TextStyle(color: _profileMuted, fontSize: 11)),
+              subtitle: Text('$_cryptoCurrency · $_shortWalletAddress', style: const TextStyle(color: _profileMuted, fontSize: 11)),
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
                 Navigator.pop(ctx);
@@ -2820,7 +2850,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF113876),
-                  foregroundColor: const Color(0xFF10264A),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -2849,7 +2879,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           _detailCardRow(LucideIcons.home, 'Residential Address', _address),
           _detailCardRow(LucideIcons.mapPin, 'City & Country', _location),
           _detailCardRow(LucideIcons.briefcase, 'Occupation', _occupation),
-          _detailCardRow(LucideIcons.landmark, 'Tax Residency', 'India (PAN: *****8921J)'),
+          _detailCardRow(LucideIcons.landmark, 'Tax Residency', _taxResidency),
         ],
       ),
     );
@@ -3051,12 +3081,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         currentAccountNumber: _bankAccountNumber,
         currentIfscCode: _bankIfscCode,
         currentBranchName: _bankBranch,
-        onSave: (name, accNum, ifsc, branch) {
+        currentAccountHolder: _bankHolder,
+        onSave: (name, accNum, ifsc, branch, holder) {
           setState(() {
             _bankName = name;
             _bankAccountNumber = accNum;
             _bankIfscCode = ifsc;
             _bankBranch = branch;
+            _bankHolder = holder;
           });
           _showSnack('Bank details updated successfully');
         },
@@ -3072,10 +3104,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       builder: (context) => _EditCryptoDestinationModal(
         currentWalletAddress: _cryptoWalletAddress,
         currentCurrency: _cryptoCurrency,
-        onSave: (address, currency) {
+        currentNetwork: _cryptoNetwork,
+        onSave: (address, currency, network) {
           setState(() {
             _cryptoWalletAddress = address;
             _cryptoCurrency = currency;
+            _cryptoNetwork = network;
           });
           _showSnack('Crypto wallet updated successfully');
         },
@@ -4628,18 +4662,18 @@ class _PaymentMethodsTabView extends StatelessWidget {
 
         final editBtn = ElevatedButton.icon(
           onPressed: onEdit,
-          icon: const Icon(LucideIcons.penLine, color: const Color(0xFF10264A), size: 16),
+          icon: const Icon(LucideIcons.penLine, color: Colors.white, size: 16),
           label: const Text(
             'Edit Details',
             style: TextStyle(
-              color: const Color(0xFF10264A),
+              color: Colors.white,
               fontSize: 13,
               fontWeight: FontWeight.bold,
             ),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1D4ED8),
-            foregroundColor: const Color(0xFF10264A),
+            foregroundColor: Colors.white,
             elevation: 1.5,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
             shape: RoundedRectangleBorder(
@@ -5109,7 +5143,7 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1D4ED8),
-                    foregroundColor: const Color(0xFF10264A),
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 1,
@@ -5196,6 +5230,7 @@ class _EditBankDestinationModal extends StatefulWidget {
     required this.currentAccountNumber,
     required this.currentIfscCode,
     required this.currentBranchName,
+    required this.currentAccountHolder,
     required this.onSave,
   });
 
@@ -5203,7 +5238,8 @@ class _EditBankDestinationModal extends StatefulWidget {
   final String currentAccountNumber;
   final String currentIfscCode;
   final String currentBranchName;
-  final void Function(String name, String accNum, String ifsc, String branch) onSave;
+  final String currentAccountHolder;
+  final void Function(String name, String accNum, String ifsc, String branch, String holder) onSave;
 
   @override
   State<_EditBankDestinationModal> createState() => _EditBankDestinationModalState();
@@ -5214,6 +5250,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
   late final TextEditingController _accountController;
   late final TextEditingController _ifscController;
   late final TextEditingController _branchController;
+  late final TextEditingController _holderController;
 
   @override
   void initState() {
@@ -5222,6 +5259,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
     _accountController = TextEditingController(text: widget.currentAccountNumber);
     _ifscController = TextEditingController(text: widget.currentIfscCode);
     _branchController = TextEditingController(text: widget.currentBranchName);
+    _holderController = TextEditingController(text: widget.currentAccountHolder);
   }
 
   @override
@@ -5230,6 +5268,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
     _accountController.dispose();
     _ifscController.dispose();
     _branchController.dispose();
+    _holderController.dispose();
     super.dispose();
   }
 
@@ -5255,7 +5294,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: const BoxDecoration(
-                color: Color(0xFF1D4ED8),
+                color: _profileNavy,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -5263,7 +5302,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                   const Text(
                     'Bank Details',
                     style: TextStyle(
-                      color: const Color(0xFF10264A),
+                      color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -5285,7 +5324,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                       child: const Center(
                         child: Icon(
                           LucideIcons.x,
-                          color: const Color(0xFF10264A),
+                          color: Colors.white,
                           size: 18,
                         ),
                       ),
@@ -5353,6 +5392,8 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                     // 4 Form Input Fields
                     _inputField(label: 'Bank name', controller: _nameController),
                     const SizedBox(height: 14),
+                    _inputField(label: 'Account holder name', controller: _holderController),
+                    const SizedBox(height: 14),
                     _inputField(label: 'Account number', controller: _accountController),
                     const SizedBox(height: 14),
                     _inputField(label: 'IFSC code', controller: _ifscController),
@@ -5393,8 +5434,8 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                       height: 48,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF143878),
-                          foregroundColor: const Color(0xFF10264A),
+                          backgroundColor: _profileBlue,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -5409,11 +5450,11 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF10264A),
+                                color: Colors.white,
                               ),
                             ),
                             SizedBox(width: 8),
-                            Icon(LucideIcons.arrowUpRight, size: 16, color: const Color(0xFF10264A)),
+                            Icon(LucideIcons.arrowUpRight, size: 16, color: Colors.white),
                           ],
                         ),
                       ),
@@ -5433,8 +5474,9 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
     final acc = _accountController.text.trim();
     final ifsc = _ifscController.text.trim();
     final branch = _branchController.text.trim();
-    if (name.isNotEmpty && acc.isNotEmpty && ifsc.isNotEmpty && branch.isNotEmpty) {
-      widget.onSave(name, acc, ifsc, branch);
+    final holder = _holderController.text.trim();
+    if (name.isNotEmpty && acc.isNotEmpty && ifsc.isNotEmpty && branch.isNotEmpty && holder.isNotEmpty) {
+      widget.onSave(name, acc, ifsc, branch, holder);
       Navigator.pop(context);
     }
   }
@@ -5454,11 +5496,12 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          cursorColor: _profileBlue,
           style: const TextStyle(color: _profileText, fontSize: 14, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: const Color(0xFF10264A),
+            fillColor: _profileBg,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -5483,12 +5526,14 @@ class _EditCryptoDestinationModal extends StatefulWidget {
   const _EditCryptoDestinationModal({
     required this.currentWalletAddress,
     required this.currentCurrency,
+    required this.currentNetwork,
     required this.onSave,
   });
 
   final String currentWalletAddress;
   final String currentCurrency;
-  final void Function(String address, String currency) onSave;
+  final String currentNetwork;
+  final void Function(String address, String currency, String network) onSave;
 
   @override
   State<_EditCryptoDestinationModal> createState() => _EditCryptoDestinationModalState();
@@ -5497,18 +5542,21 @@ class _EditCryptoDestinationModal extends StatefulWidget {
 class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal> {
   late final TextEditingController _addressController;
   late final TextEditingController _currencyController;
+  late final TextEditingController _networkController;
 
   @override
   void initState() {
     super.initState();
     _addressController = TextEditingController(text: widget.currentWalletAddress);
     _currencyController = TextEditingController(text: widget.currentCurrency);
+    _networkController = TextEditingController(text: widget.currentNetwork);
   }
 
   @override
   void dispose() {
     _addressController.dispose();
     _currencyController.dispose();
+    _networkController.dispose();
     super.dispose();
   }
 
@@ -5559,6 +5607,8 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
             _inputField(label: 'Wallet Address', controller: _addressController),
             const SizedBox(height: 12),
             _inputField(label: 'Currency', controller: _currencyController),
+            const SizedBox(height: 12),
+            _inputField(label: 'Network', controller: _networkController),
             const SizedBox(height: 22),
             Row(
               children: [
@@ -5586,8 +5636,9 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                     onPressed: () {
                       final addr = _addressController.text.trim();
                       final curr = _currencyController.text.trim();
-                      if (addr.isNotEmpty && curr.isNotEmpty) {
-                        widget.onSave(addr, curr);
+                      final network = _networkController.text.trim();
+                      if (addr.isNotEmpty && curr.isNotEmpty && network.isNotEmpty) {
+                        widget.onSave(addr, curr, network);
                         Navigator.pop(context);
                       }
                     },
@@ -5617,6 +5668,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          cursorColor: _profileBlue,
           style: const TextStyle(color: const Color(0xFF10264A), fontSize: 14),
           decoration: InputDecoration(
             isDense: true,

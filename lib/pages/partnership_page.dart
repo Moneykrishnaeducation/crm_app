@@ -529,7 +529,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                         ),
                         if (wide)
                           FilledButton.icon(
-                            onPressed: () => showAppToast('Open Client List to add a client.', type: NotchToastType.info),
+                            onPressed: () => toast.info('Open Client List to add a client.'),
                             icon: const Icon(LucideIcons.userPlus, size: 14),
                             label: const Text('Add Client'),
                           ),
@@ -975,7 +975,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: () => showAppToast('PDF export is not yet connected.', type: NotchToastType.info),
+            onPressed: () => toast.info('PDF export is not yet connected.'),
             icon: const Icon(LucideIcons.download, size: 14),
             label: const Text(
               'DOWNLOAD PDF CARD',
@@ -1744,7 +1744,7 @@ class _BrokerCommissionWithdrawalPageState
             ),
             FilledButton.icon(
               onPressed: canSubmit
-                  ? () => showAppToast('Payout submission requires the commission withdrawal API.', type: NotchToastType.warning)
+                  ? () => toast.warning('Payout submission requires the commission withdrawal API.')
                   : null,
               icon: const Icon(LucideIcons.arrowRight, size: 15),
               label: const Text(

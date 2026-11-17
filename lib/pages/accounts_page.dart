@@ -132,7 +132,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
             label: const Text('Open New Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
           )),
           const SizedBox(height: 7),
-          Text('Combined balance  ${all.isEmpty ? '—' : '\}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+          Text('Combined balance  ${all.isEmpty ? '—' : String.fromCharCode(36) + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
         ],
       ),
     );

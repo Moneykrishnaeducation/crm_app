@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_notch_toast/flutter_notch_toast.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 const _securityNavy = Color(0xFF10264A);
@@ -67,19 +68,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.inverseSurface,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    toast.info(message, duration: const Duration(seconds: 2));
   }
 
   @override

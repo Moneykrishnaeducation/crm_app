@@ -245,9 +245,13 @@ class _AppShellState extends State<AppShell> {
 
   void _selectPage(String page) {
     if (page == 'Open Account') {
-      showDialog<void>(
+      showModalBottomSheet<void>(
         context: context,
-        builder: (_) => _OpenLiveAccountDialog(onCreated: _addAccount),
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black54,
+        builder: (_) => _OpenLiveAccountSheet(onCreated: _addAccount),
       );
       return;
     }

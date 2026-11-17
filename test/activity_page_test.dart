@@ -41,12 +41,14 @@ void main() {
       await tester.pumpWidget(buildTestableWidget());
       await tester.pumpAndSettle();
 
-      // Verify Account Selector Bar
+      // Verify Account Selector Bar top header icons are NOT present
+      expect(find.byIcon(LucideIcons.bell), findsNothing);
+      expect(find.byIcon(LucideIcons.headset), findsNothing);
+      expect(find.text('99+'), findsNothing);
+
+      // Verify Account Selector Chip inside Hero Equity & Balance Card
       expect(find.text('V Tamizharasan'), findsOneWidget);
       expect(find.text('Live | 52132132'), findsOneWidget);
-      expect(find.byIcon(LucideIcons.bell), findsOneWidget);
-      expect(find.text('99+'), findsOneWidget);
-      expect(find.byIcon(LucideIcons.headset), findsOneWidget);
 
       // Verify Hero Equity & Balance Card
       expect(find.text('Equity'), findsOneWidget);

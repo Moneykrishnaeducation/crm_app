@@ -46,7 +46,7 @@ class BrokerMorePage extends StatelessWidget {
             const SizedBox(height: 20),
             const _MoreSectionLabel('COPY TRADING', subtitle: 'Tools and services for copy trading'),
             _MoreMenuGroup(children: [
-              _MoreMenuRow(icon: LucideIcons.briefcaseBusiness, title: 'MAM Manager', subtitle: 'Manage your managed accounts', onTap: () => onSelectPage('Transactions')),
+              _MoreMenuRow(icon: LucideIcons.briefcaseBusiness, title: 'MAM Manager', subtitle: 'Manage your managed accounts', onTap: () => onSelectPage('MAM Manager')),
               _MoreMenuRow(icon: LucideIcons.usersRound, title: 'MAM Investor', subtitle: 'Explore managed investment accounts', onTap: () => onSelectPage('Partnership')),
               _MoreMenuRow(icon: LucideIcons.wallet, title: 'Available MAM', subtitle: 'View available managed accounts', onTap: () => onSelectPage('Transactions'), showDivider: false),
             ]),

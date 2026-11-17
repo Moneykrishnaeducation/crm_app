@@ -682,8 +682,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _buildProfilePageTitle(),
-                      const SizedBox(height: 16),
-                      _buildMobileProfileHeader(),
                       const SizedBox(height: 18),
                       _buildMobileSectionNavigation(),
                       const SizedBox(height: 20),

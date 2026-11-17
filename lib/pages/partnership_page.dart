@@ -663,7 +663,7 @@ class _TreePill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
     decoration: BoxDecoration(color: color.withValues(alpha: .09), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: .22))),
-    child: Text(label, style: TextStyle(color: dark && color == _muted ? const Color(0xFFCFD8E7) : color, fontSize: 8, fontWeight: FontWeight.w700)),
+    child: Text(label, style: TextStyle(color: dark ? const Color(0xFFCFD8E7) : color, fontSize: 8, fontWeight: FontWeight.w700)),
   );
 }
 

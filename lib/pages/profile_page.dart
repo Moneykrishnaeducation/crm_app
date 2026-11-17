@@ -2731,6 +2731,7 @@ class _VerificationDocCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = _ProfileColors.of(context);
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: c.card,
@@ -2797,61 +2798,57 @@ class _VerificationDocCard extends StatelessWidget {
               letterSpacing: 0.4,
             ),
           ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            badgeLabel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: badgeTagColor,
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-            ),
-          ),
           const SizedBox(height: 9),
           Text(
             subtitle,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: c.muted,
-                fontSize: 11,
-                height: 1.35,
-              ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: c.muted,
+              fontSize: 11,
+              height: 1.35,
             ),
           ),
+          const SizedBox(height: 10),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
             decoration: BoxDecoration(
               color: c.subCard,
               borderRadius: BorderRadius.circular(9),
               border: Border.all(color: c.border),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Icon(LucideIcons.fileText, size: 16, color: _profileBlue),
-                SizedBox(height: 5),
-                Text(
-                  'Document file',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: c.muted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                Icon(LucideIcons.fileText, size: 17, color: _profileBlue),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Document file',
+                        style: TextStyle(
+                          color: c.muted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'PDF / IMAGE',
+                        style: TextStyle(
+                          color: c.isDark ? c.accentBlue : _profileBlueDark,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  'PDF / IMAGE',
-                  style: TextStyle(
-                    color: c.isDark ? c.accentBlue : _profileBlueDark,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
-                  ),
+                const Icon(
+                  LucideIcons.shieldCheck,
+                  color: _profileGreen,
+                  size: 17,
                 ),
               ],
             ),
@@ -2868,11 +2865,11 @@ class _VerificationDocCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Verification complete',
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: c.text,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -2888,7 +2885,7 @@ class _VerificationDocCard extends StatelessWidget {
                 foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
                 side: BorderSide(color: c.blueBorder),
                 padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
-                minimumSize: const Size(0, 34),
+                minimumSize: const Size(0, 38),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(9),
@@ -2898,7 +2895,7 @@ class _VerificationDocCard extends StatelessWidget {
                 'View document',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
               ),
             ),
           ),

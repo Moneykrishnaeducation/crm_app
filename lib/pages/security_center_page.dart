@@ -1109,15 +1109,8 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
   }
 
   void _handleVerify() {
-    if (_passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your CRM password to continue.')),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password verification is not connected yet.')),
-    );
+    // Temporary UI-only flow. Replace with backend password verification later.
+    Navigator.of(context).pop(true);
   }
 
   @override

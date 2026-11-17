@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_notch_toast/flutter_notch_toast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -688,16 +689,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     setState(() {
       inv.isMirroringActive = !inv.isMirroringActive;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          inv.isMirroringActive
-              ? 'Trade copying resumed for ${inv.poolName}'
-              : 'Trade copying paused for ${inv.poolName}',
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    toast.info(inv.isMirroringActive ? 'Trade copying resumed for ${inv.poolName}' : 'Trade copying paused for ${inv.poolName}');
   }
 
   void _confirmDetach(MamInvestmentSubscription inv) {
@@ -725,12 +717,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               setState(() {
                 _investments.removeWhere((item) => item.id == inv.id);
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Successfully detached from ${inv.poolName}'),
-                  backgroundColor: _c.red,
-                ),
-              );
+              toast.success('Successfully detached from ${inv.poolName}');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: _c.red,

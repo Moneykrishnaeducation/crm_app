@@ -8,35 +8,12 @@ class BrokerMorePage extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 112),
           children: [
             _MoreProfileCard(onTap: () => onSelectPage('Profile')),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF182D52), Color(0xFF24558B)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: const [BoxShadow(color: Color(0x1F18345D), blurRadius: 16, offset: Offset(0, 7))],
-              ),
-              child: Row(children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('TRADE WITH CONFIDENCE', style: TextStyle(color: Color(0xFFFFD98A), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1)),
-                  const SizedBox(height: 6),
-                  const Text('Your trading tools,\nin one place.', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, height: 1.2)),
-                  const SizedBox(height: 5),
-                  Text('Explore platform resources and account services', style: TextStyle(color: Colors.white.withValues(alpha: .75), fontSize: 10, height: 1.35)),
-                ])),
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .10), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: .18))),
-                  child: const Icon(LucideIcons.chartNoAxesCombined, color: Color(0xFFFFD27A), size: 25),
-                ),
-              ]),
-            ),
-            const SizedBox(height: 22),
-            const _MoreSectionLabel('ACCOUNT & PARTNERSHIP', subtitle: 'Your account and trading services'),
+            const SizedBox(height: 24),
+            const _MoreSectionLabel('ACCOUNT', subtitle: 'Profile, security and partnership services'),
+
             _MoreMenuGroup(children: [
               _MoreMenuRow(icon: LucideIcons.userRound, title: 'Profile', subtitle: 'Personal details and account information', onTap: () => onSelectPage('Profile')),
               _MoreMenuRow(icon: LucideIcons.shieldCheck, title: 'Security Center', subtitle: 'Account protection and security', onTap: () => onSelectPage('Security Center')),
@@ -44,14 +21,14 @@ class BrokerMorePage extends StatelessWidget {
               _MoreMenuRow(icon: LucideIcons.layers, title: 'PAMM', subtitle: 'Managed investment accounts', onTap: () => onSelectPage('PAMM Account')),
             ]),
             const SizedBox(height: 20),
-            const _MoreSectionLabel('COPY TRADING', subtitle: 'Tools and services for copy trading'),
+            const _MoreSectionLabel('TRADING SERVICES', subtitle: 'Managed account and copy trading tools'),
             _MoreMenuGroup(children: [
               _MoreMenuRow(icon: LucideIcons.briefcaseBusiness, title: 'MAM Manager', subtitle: 'Manage your managed accounts', onTap: () => onSelectPage('MAM Manager')),
               _MoreMenuRow(icon: LucideIcons.usersRound, title: 'MAM Investor', subtitle: 'Explore managed investment accounts', onTap: () => onSelectPage('Partnership')),
               _MoreMenuRow(icon: LucideIcons.wallet, title: 'Available MAM', subtitle: 'View available managed accounts', onTap: () => onSelectPage('Transactions'), showDivider: false),
             ]),
             const SizedBox(height: 20),
-            const _MoreSectionLabel('PREFERENCES & SUPPORT', subtitle: 'Personalise your app experience'),
+            const _MoreSectionLabel('PREFERENCES', subtitle: 'Personalise your app experience'),
             _MoreMenuGroup(children: [
               _MoreMenuRow(icon: LucideIcons.download, title: 'Download Center', subtitle: 'Access platform downloads', onTap: () => onSelectPage('Platform')),
               _MoreMenuRow(icon: LucideIcons.settings, title: 'Settings', subtitle: 'Application preferences', onTap: () => onSelectPage('Settings'), showDivider: false),
@@ -144,15 +121,6 @@ class _MoreSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 2, bottom: 9),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (label == 'ACCOUNT & PARTNERSHIP')
-            const SizedBox(
-              width: 0,
-              height: 0,
-              child: Text(
-                'YOUR ACCOUNT',
-                style: TextStyle(fontSize: 0, color: Colors.transparent),
-              ),
-            ),
           Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
           if (subtitle != null) ...[
             const SizedBox(height: 3),
@@ -169,7 +137,7 @@ class _MoreMenuGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 13),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: Theme.of(context).dividerColor), boxShadow: const [BoxShadow(color: Color(0x060F2748), blurRadius: 12, offset: Offset(0, 4))]),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor), boxShadow: [if (Theme.of(context).brightness == Brightness.light) const BoxShadow(color: Color(0x060F2748), blurRadius: 10, offset: Offset(0, 3))]),
         child: Column(children: children),
       );
 }
@@ -198,13 +166,13 @@ class _MoreMenuRow extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(11),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               child: Row(children: [
                 Container(
-                  width: 37,
-                  height: 37,
-                  decoration: BoxDecoration(color: accent.withValues(alpha: .09), borderRadius: BorderRadius.circular(12)),
-                  child: Center(child: Icon(icon, color: accent, size: 17)),
+                  width: 35,
+                  height: 35,
+                  decoration: BoxDecoration(color: accent.withValues(alpha: .09), borderRadius: BorderRadius.circular(11)),
+                  child: Center(child: Icon(icon, color: accent, size: 16)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -3059,26 +3059,31 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                     _countryField(colors),
                     const SizedBox(height: 8),
                     _partnerField(colors),
-                    SizedBox(
-                      height: 34,
-                      child: CheckboxListTile(
-                        value: _primary,
-                        onChanged: (value) => setState(() {
-                          _primary = value ?? false;
-                          if (_primary) {
-                            final primaryIndex = _partnerProfiles.indexWhere(
-                              (partner) => partner.primary,
-                            );
-                            if (primaryIndex >= 0) _partnerIndex = primaryIndex;
-                          }
-                        }),
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        visualDensity: VisualDensity.compact,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        title: Text(
-                          'Use primary referral profile',
-                          style: TextStyle(color: colors.blue, fontSize: 10),
+                    Material(
+                      color: colors.card,
+                      child: SizedBox(
+                        height: 34,
+                        child: CheckboxListTile(
+                          value: _primary,
+                          onChanged: (value) => setState(() {
+                            _primary = value ?? false;
+                            if (_primary) {
+                              final primaryIndex = _partnerProfiles.indexWhere(
+                                (partner) => partner.primary,
+                              );
+                              if (primaryIndex >= 0) {
+                                _partnerIndex = primaryIndex;
+                              }
+                            }
+                          }),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(
+                            'Use primary referral profile',
+                            style: TextStyle(color: colors.blue, fontSize: 10),
+                          ),
                         ),
                       ),
                     ),

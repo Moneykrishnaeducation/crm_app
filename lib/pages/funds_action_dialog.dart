@@ -459,9 +459,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Choose a transaction proof file.')),
-              );
+              showAppToast('Choose a transaction proof file.', type: NotchToastType.warning);
             },
             icon: const Icon(LucideIcons.cloudUpload, size: 16),
             label: const Text('Upload transaction proof (JPG, PNG or PDF)'),
@@ -1158,26 +1156,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   void _submit(BuildContext context, bool withdrawal) {
     if (_amount.text.isEmpty ||
         (withdrawal && (double.tryParse(_amount.text) ?? 0) < 10)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            withdrawal
-                ? 'Enter a withdrawal amount of at least \$10.'
-                : 'Enter an amount to continue.',
-          ),
-        ),
-      );
+      showAppToast(withdrawal ? 'Enter a withdrawal amount of at least \$10.' : 'Enter an amount to continue.', type: NotchToastType.warning);
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          withdrawal
-              ? 'Withdrawal request is ready for review.'
-              : 'Deposit request is ready for processing.',
-        ),
-      ),
-    );
+    showAppToast(withdrawal ? 'Withdrawal request is ready for review.' : 'Deposit request is ready for processing.', type: NotchToastType.success);
   }
 
   String _formatAmount(int value) => value >= 100000

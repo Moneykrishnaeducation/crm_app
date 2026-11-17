@@ -5336,10 +5336,10 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10264A).withValues(alpha: 0.08),
+                        color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: const Color(0xFF10264A).withValues(alpha: 0.18),
+                          color: Colors.white.withValues(alpha: 0.45),
                           width: 1.2,
                         ),
                       ),

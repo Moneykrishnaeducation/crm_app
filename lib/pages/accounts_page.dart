@@ -121,7 +121,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
           else
             ...filtered.map((account) => _ReferenceAccountCard(
               account: account,
-              selected: false,
+              selected: all.isNotEmpty && account.login == all.first.login,
               onTap: () => widget.onAccountSelected(account),
             )),
           const SizedBox(height: 5),

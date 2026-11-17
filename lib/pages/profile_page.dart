@@ -886,7 +886,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                             _name,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: compact ? 16 : 18,
                               height: 1.1,

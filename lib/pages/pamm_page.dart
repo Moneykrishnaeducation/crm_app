@@ -239,76 +239,13 @@ class _PammPageState extends State<PammPage> {
     ],
   );
 
-  Widget _buildCreatePammBanner() => Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(16),
-      gradient: LinearGradient(
-        colors: [
-          const Color(0xFFF59E0B).withValues(alpha: _dark ? 0.45 : 0.6),
-          const Color(0xFF2563EB).withValues(alpha: _dark ? 0.55 : 0.7),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: _blue.withValues(alpha: _dark ? 0.25 : 0.1),
-          blurRadius: 10,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    padding: const EdgeInsets.all(1.2),
-    child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(15),
-        gradient: LinearGradient(
-          colors: [_card, _dark ? const Color(0xFF131F33) : const Color(0xFFF8FAFC)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Row(children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(LucideIcons.layers, color: Colors.white, size: 22),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Create PAMM Pool', style: GoogleFonts.inter(
-              color: _text, fontSize: 15, fontWeight: FontWeight.w800,
-            )),
-            const SizedBox(height: 3),
-            Text('Configure pool settings, profit share and investor access',
-              style: GoogleFonts.inter(color: _muted, fontSize: 11, height: 1.3)),
-          ],
-        )),
-        const SizedBox(width: 8),
-        FilledButton(
-          onPressed: _createPool,
-          style: FilledButton.styleFrom(
-            backgroundColor: _blue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-          ),
-          child: const Text('Create', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
-        ),
-      ]),
-    ),
+  Widget _buildCreatePammBanner() => _featureBanner(
+    icon: LucideIcons.layers,
+    title: 'Create PAMM Pool',
+    tag: 'PAMM MANAGER',
+    subtitle: 'Set allocation rules, configure profit share and accept investor capital.',
+    actionLabel: 'Create PAMM Pool',
+    onAction: _createPool,
   );
 
   Widget _snapshot() {

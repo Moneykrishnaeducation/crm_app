@@ -143,7 +143,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
         tooltip: 'Notifications',
         onPressed: () {
-          showAppToast('Notifications (99+ unread).', type: NotchToastType.info);
+          showAppMessage('Notifications (99+ unread).');
         },
         icon: Stack(
           clipBehavior: Clip.none,
@@ -193,7 +193,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         const _LiveBadge(),
         IconButton(
           onPressed: () {
-            showAppToast('No new notifications.', type: NotchToastType.info);
+            showAppMessage('No new notifications.');
           },
           tooltip: 'Notifications',
           icon: const Icon(LucideIcons.bell, color: _muted, size: 21),
@@ -280,7 +280,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
                 trailing: const Icon(LucideIcons.chevronRight, size: 18),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  showAppToast('Starting Live Chat...', type: NotchToastType.info);
+                  showAppMessage('Starting Live Chat...');
                 },
               ),
               ListTile(
@@ -293,7 +293,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
                 trailing: const Icon(LucideIcons.chevronRight, size: 18),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  showAppToast('Support ticket created.', type: NotchToastType.success);
+                  showAppMessage('Support ticket created.');
                 },
               ),
             ],

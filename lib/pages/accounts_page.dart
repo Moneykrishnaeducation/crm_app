@@ -469,13 +469,13 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   void _createAccount() {
     final accountName = _nameController.text.trim();
     if (accountName.isEmpty) {
-      showAppToast('Enter an account name to continue.', type: NotchToastType.warning);
+      showAppMessage('Enter an account name to continue.');
       return;
     }
     final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
     widget.onCreated(BrokerAccount(accountName, login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
     Navigator.pop(context);
-    showAppToast('Live account preview $login added.', type: NotchToastType.success);
+    showAppMessage('Live account preview $login added.');
   }
 }
 
@@ -603,7 +603,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               tooltip: 'Copy account login',
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: a.login));
-                showAppToast('Account login copied.', type: NotchToastType.success);
+                showAppMessage('Account login copied.');
               },
               icon: Icon(LucideIcons.share2, color: fg, size: 20),
             ),
@@ -646,16 +646,18 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             ]),
           ),
           const SizedBox(height: 12),
-          Row(children: [
-            action(LucideIcons.arrowDown, 'Deposit', true, () => widget.onSelectPage('Deposit')),
-            const SizedBox(width: 8),
-            action(LucideIcons.arrowUp, 'Withdraw', false, () => widget.onSelectPage('Withdraw')),
-            const SizedBox(width: 8),
-            action(LucideIcons.arrowLeftRight, 'Transfer', false, () => widget.onSelectPage('Internal Transfer')),
-            const SizedBox(width: 8),
-            action(LucideIcons.settings, 'Settings', false, () => widget.onSelectPage('Settings')),
-          ]),
-          const SizedBox(height: 14),
+          if (a.type == 'Live MT5') ...[
+            Row(children: [
+              action(LucideIcons.arrowDown, 'Deposit', true, () => widget.onSelectPage('Deposit')),
+              const SizedBox(width: 8),
+              action(LucideIcons.arrowUp, 'Withdraw', false, () => widget.onSelectPage('Withdraw')),
+              const SizedBox(width: 8),
+              action(LucideIcons.arrowLeftRight, 'Transfer', false, () => widget.onSelectPage('Internal Transfer')),
+              const SizedBox(width: 8),
+              action(LucideIcons.settings, 'Settings', false, () => widget.onSelectPage('Settings')),
+            ]),
+            const SizedBox(height: 14),
+          ],
           Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')])),
           const SizedBox(height: 10),
           if (_tab == 'Overview') ...[

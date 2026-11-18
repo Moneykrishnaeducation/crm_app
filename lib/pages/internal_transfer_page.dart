@@ -8,16 +8,14 @@ class BrokerInternalTransferPage extends StatefulWidget {
 
 class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage> {
   static const _accountIds = ['3315', '3311', '3312', '3327'];
+  static const double _availableBalance = 0;
   String _source = '3315';
   String _destination = '3312';
   final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-  static const double _available = 0;
 
   @override
   void dispose() {
     _amountController.dispose();
-    _noteController.dispose();
     super.dispose();
   }
 
@@ -27,104 +25,297 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   }
 
   void _swapAccounts() => setState(() {
-    final previous = _source;
+    final oldSource = _source;
     _source = _destination;
-    _destination = previous;
+    _destination = oldSource;
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: Theme.of(context).scaffoldBackgroundColor,
-    child: LayoutBuilder(builder: (context, constraints) {
-      final wide = constraints.maxWidth >= 680;
-      final amount = double.tryParse(_amountController.text) ?? 0;
-      return ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 110), children: [
-        Row(children: [
-          Container(width: 40, height: 40, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor)), child: const Icon(LucideIcons.arrowLeftRight, color: _brokerBlue, size: 23)),
-          const SizedBox(width: 10),
-          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Internal Transfer', style: TextStyle(color: _brokerNavy, fontSize: 19, fontWeight: FontWeight.w700)), SizedBox(height: 3), Text('Move funds between your verified MT5 live trading accounts.', style: TextStyle(color: _brokerMuted, fontSize: 9))])),
-          IconButton(onPressed: () => _showGuidelines(context), tooltip: 'Transfer guidelines', icon: const Icon(LucideIcons.info, color: _brokerMuted)),
-        ]),
-        const SizedBox(height: 18),
-        Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 920), child: Container(
-          padding: EdgeInsets.all(wide ? 20 : 14),
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor), boxShadow: const [BoxShadow(color: Color(0x30000000), blurRadius: 18, offset: Offset(0, 8))]),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            if (wide)
-              Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Expanded(child: _TransferAccountPicker(label: 'TRANSFER FROM (SOURCE)', value: _source, accountIds: _accountIds, onChanged: (value) => setState(() => _source = value))),
-                Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: IconButton(onPressed: _swapAccounts, style: IconButton.styleFrom(backgroundColor: const Color(0xFFFFFFFF), side: const BorderSide(color: Color(0xFFE2E8F1))), icon: const Icon(LucideIcons.arrowLeftRight, color: _brokerBlue))),
-                Expanded(child: _TransferAccountPicker(label: 'TRANSFER TO (DESTINATION)', value: _destination, accountIds: _accountIds, onChanged: (value) => setState(() => _destination = value))),
-              ])
-            else ...[
-              _TransferAccountPicker(label: 'TRANSFER FROM (SOURCE)', value: _source, accountIds: _accountIds, onChanged: (value) => setState(() => _source = value)),
-              Align(alignment: Alignment.center, child: IconButton(onPressed: _swapAccounts, style: IconButton.styleFrom(backgroundColor: const Color(0xFFFFFFFF), side: const BorderSide(color: Color(0xFFE2E8F1))), icon: const Icon(LucideIcons.arrowUpDown, color: _brokerBlue))),
-              _TransferAccountPicker(label: 'TRANSFER TO (DESTINATION)', value: _destination, accountIds: _accountIds, onChanged: (value) => setState(() => _destination = value)),
-            ],
-            const SizedBox(height: 18),
-            Divider(color: Theme.of(context).dividerColor),
-            const SizedBox(height: 14),
-            Row(children: [const Expanded(child: Text('TRANSFER AMOUNT (USD)', style: TextStyle(color: _brokerMuted, fontSize: 9, fontWeight: FontWeight.w700))), Text('Available:  ', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9)), const Text('\$0.00', style: TextStyle(color: _brokerNavy, fontSize: 9, fontWeight: FontWeight.w700)), TextButton(onPressed: () => _setAmount(_available), child: const Text('MAX', style: TextStyle(color: _brokerGold, fontSize: 9, fontWeight: FontWeight.w700)))]),
-            TextField(controller: _amountController, onChanged: (_) => setState(() {}), keyboardType: const TextInputType.numberWithOptions(decimal: true), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w700), decoration: InputDecoration(prefixText: '\$ ', prefixStyle: const TextStyle(color: _brokerGold, fontSize: 21, fontWeight: FontWeight.w700), hintText: '0.00', hintStyle: const TextStyle(color: Color(0xFF6F7FA8)), filled: true, fillColor: Theme.of(context).colorScheme.surface, contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: const BorderSide(color: Color(0xFFE2E8F1))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: const BorderSide(color: _brokerBlue)))),
-            const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              const Text('Quick Fill:', style: TextStyle(color: _brokerMuted, fontSize: 8)),
-              for (final percent in [25, 50, 75, 100]) _TransferChip(label: percent == 100 ? '100% (Max)' : '$percent%', onTap: () => _setAmount(_available * percent / 100)),
-              Container(width: 1, height: 17, color: Theme.of(context).dividerColor),
-              for (final value in [50, 100, 500, 1000]) _TransferChip(label: '+\$$value', onTap: () => _setAmount(amount + value)),
-            ]),
-            const SizedBox(height: 18),
-            const Text('TRANSFER NOTE / REFERENCE (OPTIONAL)', style: TextStyle(color: _brokerMuted, fontSize: 9, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 7),
-            TextField(controller: _noteController, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11), decoration: InputDecoration(prefixIcon: const Icon(LucideIcons.messageCircle, size: 15, color: _brokerMuted), hintText: 'e.g. Funding, rebalance portfolio', hintStyle: const TextStyle(color: Color(0xFF7B88AD), fontSize: 10), isDense: true, filled: true, fillColor: Theme.of(context).colorScheme.surface, contentPadding: const EdgeInsets.symmetric(vertical: 12), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: Color(0xFFE2E8F1))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: const BorderSide(color: _brokerBlue)))),
-            const SizedBox(height: 18),
-            Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, runSpacing: 12, children: [
-              const Row(mainAxisSize: MainAxisSize.min, children: [Icon(LucideIcons.shieldCheck, color: Color(0xFF10D6B2), size: 14), SizedBox(width: 6), Text('Encrypted transfer protocol', style: TextStyle(color: _brokerMuted, fontSize: 9))]),
-              FilledButton.icon(onPressed: _submitTransfer, style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: _brokerNavy, padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), icon: const Icon(LucideIcons.arrowRight, size: 16), label: const Text('TRANSFER FUNDS NOW', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800))),
-            ]),
-          ]),
-        ))),
-      ]);
-    }),
-  );
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final muted = colors.onSurfaceVariant;
+    final dark = theme.brightness == Brightness.dark;
+    final width = MediaQuery.sizeOf(context).width;
+    final compact = MediaQuery.sizeOf(context).height < 720;
+    final horizontalAccounts = width >= 360;
+    final horizontalPadding = width < 360 ? 12.0 : 16.0;
 
-  void _submitTransfer() {
-    final amount = double.tryParse(_amountController.text) ?? 0;
-    final message = _source == _destination
-        ? 'Choose two different accounts.'
-        : amount <= 0
-            ? 'Enter an amount greater than zero.'
-            : amount > _available
-                ? 'Insufficient available balance.'
-                : 'Transfer submitted.';
-    showAppToast(message, type: message == 'Transfer submitted.' ? NotchToastType.success : NotchToastType.error);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The bottom navigation is layered over the page. Reserve space for it
+        // so the transfer action remains visible without making this page scroll.
+        final usableHeight = (constraints.maxHeight - 104).clamp(0.0, constraints.maxHeight);
+        return SizedBox(
+          height: constraints.maxHeight,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(horizontalPadding, compact ? 8 : 14, horizontalPadding, 104),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 760, maxHeight: usableHeight),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(children: [
+                      Container(
+                        width: compact ? 40 : 44,
+                        height: compact ? 40 : 44,
+                        decoration: BoxDecoration(color: colors.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(14)),
+                        child: Icon(LucideIcons.arrowLeftRight, color: colors.primary, size: 21),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Internal Transfer', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -.4)),
+                        Text('Move funds between live trading accounts', maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+                      ])),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        tooltip: 'Transfer information',
+                        onPressed: () => _showGuidelines(context),
+                        icon: Icon(LucideIcons.info, color: muted, size: 20),
+                      ),
+                    ]),
+                    SizedBox(height: compact ? 10 : 16),
+                    Container(
+                        padding: EdgeInsets.all(compact ? 13 : 17),
+                        decoration: BoxDecoration(
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: theme.dividerColor),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .14 : .035), blurRadius: 18, offset: const Offset(0, 6))],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(children: [
+                              Expanded(child: Text('TRANSFER DETAILS', style: theme.textTheme.labelMedium?.copyWith(color: muted, fontWeight: FontWeight.w800, letterSpacing: .9))),
+                              _StatusPill(label: 'MT5 LIVE', color: colors.primary),
+                            ]),
+                            SizedBox(height: compact ? 12 : 16),
+                            if (horizontalAccounts)
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(child: _TransferAccountPicker(label: 'FROM', value: _source, accountIds: _accountIds, onChanged: (v) => setState(() => _source = v), compact: true)),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                                    child: _SwapButton(onPressed: _swapAccounts, icon: LucideIcons.arrowLeftRight, compact: true),
+                                  ),
+                                  Expanded(child: _TransferAccountPicker(label: 'TO', value: _destination, accountIds: _accountIds, onChanged: (v) => setState(() => _destination = v), compact: true)),
+                                ],
+                              )
+                            else ...[
+                              _TransferAccountPicker(label: 'FROM ACCOUNT', value: _source, accountIds: _accountIds, onChanged: (v) => setState(() => _source = v), compact: true),
+                              Align(
+                                alignment: Alignment.center,
+                                child: SizedBox(
+                                  height: 30,
+                                  child: _SwapButton(onPressed: _swapAccounts, icon: LucideIcons.arrowDownUp, compact: true),
+                                ),
+                              ),
+                              _TransferAccountPicker(label: 'TO ACCOUNT', value: _destination, accountIds: _accountIds, onChanged: (v) => setState(() => _destination = v), compact: true),
+                            ],
+                            SizedBox(height: compact ? 12 : 16),
+                            Divider(color: theme.dividerColor, height: 1),
+                            SizedBox(height: compact ? 12 : 16),
+                            Row(children: [
+                              Expanded(child: Text('Transfer amount', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
+                              Text('USD', style: theme.textTheme.labelSmall?.copyWith(color: muted, fontWeight: FontWeight.w800, letterSpacing: .8)),
+                            ]),
+                            const SizedBox(height: 7),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: dark ? colors.surfaceContainerHighest.withValues(alpha: .4) : colors.surfaceContainerLowest,
+                                border: Border.all(color: theme.dividerColor),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: TextField(
+                                controller: _amountController,
+                                onChanged: (_) => setState(() {}),
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -.6),
+                                decoration: InputDecoration(
+                                  prefixText: '\$ ',
+                                  prefixStyle: theme.textTheme.titleLarge?.copyWith(color: const Color(0xFFD69B16), fontWeight: FontWeight.w800),
+                                  hintText: '0.00',
+                                  hintStyle: theme.textTheme.headlineSmall?.copyWith(color: muted.withValues(alpha: .55), fontWeight: FontWeight.w700),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Row(children: [
+                              Icon(LucideIcons.wallet, size: 14, color: muted),
+                              const SizedBox(width: 5),
+                              Expanded(child: Text('Available balance', style: theme.textTheme.bodySmall?.copyWith(color: muted))),
+                              Text('\$' + _availableBalance.toStringAsFixed(2), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                              const SizedBox(width: 4),
+                              SizedBox(
+                                height: 30,
+                                child: TextButton(
+                                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), visualDensity: VisualDensity.compact),
+                                  onPressed: _availableBalance > 0 ? () => _setAmount(_availableBalance) : null,
+                                  child: const Text('MAX'),
+                                ),
+                              ),
+                            ]),
+                            SizedBox(height: compact ? 14 : 18),
+                            Container(
+                              padding: EdgeInsets.all(compact ? 9 : 11),
+                              decoration: BoxDecoration(
+                                color: colors.primary.withValues(alpha: .065),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: colors.primary.withValues(alpha: .16)),
+                              ),
+                              child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                Icon(LucideIcons.info, size: 16, color: colors.primary),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(
+                                  'Check both account numbers and the amount. Only eligible live accounts can receive transfers.',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.25),
+                                )),
+                              ]),
+                            ),
+                            SizedBox(height: compact ? 10 : 14),
+                            SizedBox(
+                              height: compact ? 46 : 50,
+                              child: FilledButton.icon(
+                                onPressed: _submitTransfer,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFFC533),
+                                  foregroundColor: const Color(0xFF10213A),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  elevation: 0,
+                                ),
+                                icon: const Icon(LucideIcons.arrowRight, size: 18),
+                                label: const Text('REVIEW TRANSFER', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: .5)),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ),
+                    SizedBox(height: compact ? 5 : 8),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(LucideIcons.shieldCheck, size: 14, color: muted),
+                      const SizedBox(width: 6),
+                      Text('Secure account-to-account transfer', style: theme.textTheme.labelSmall?.copyWith(color: muted)),
+                    ]),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  void _showGuidelines(BuildContext context) => showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: _brokerPanel,
-          title: const Text('Transfer Guidelines', style: TextStyle(color: _brokerNavy)),
-          content: const Text('Transfers are available between verified live trading accounts. Check the source balance and destination account before submitting.', style: TextStyle(color: _brokerMuted)),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got it'))],
-        ),
-      );
+  void _submitTransfer() {
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    if (_source == _destination) {
+      showAppMessage('Select two different trading accounts.');
+    } else if (amount <= 0) {
+      showAppMessage('Enter a transfer amount greater than zero.');
+    } else if (amount > _availableBalance) {
+      showAppMessage('Insufficient available balance.');
+    } else {
+      showAppMessage('Transfer service is not connected yet. No funds have been moved.');
+    }
+  }
+
+  void _showGuidelines(BuildContext context) {
+    final theme = Theme.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.colorScheme.surface,
+        title: const Text('Transfer guidelines'),
+        content: const Text('Transfers are intended for eligible live MT5 accounts. Verify the source account, destination account and available balance before confirming.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close'))],
+      ),
+    );
+  }
 }
 
 class _TransferAccountPicker extends StatelessWidget {
-  const _TransferAccountPicker({required this.label, required this.value, required this.accountIds, required this.onChanged});
-  final String label, value; final List<String> accountIds; final ValueChanged<String> onChanged;
+  const _TransferAccountPicker({required this.label, required this.value, required this.accountIds, required this.onChanged, this.compact = false});
+  final String label;
+  final String value;
+  final List<String> accountIds;
+  final ValueChanged<String> onChanged;
+  final bool compact;
+
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-    Row(children: [Expanded(child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w700))), Text('Bal: \$0.00', style: const TextStyle(color: _brokerGold, fontSize: 9, fontWeight: FontWeight.w700))]),
-    const SizedBox(height: 7),
-    Container(padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(13), border: Border.all(color: Theme.of(context).dividerColor)), child: Row(children: [const Icon(LucideIcons.wallet, color: _brokerBlue, size: 17), const SizedBox(width: 8), Expanded(child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: value, isExpanded: true, dropdownColor: _brokerPanel, iconEnabledColor: _brokerMuted, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11), items: accountIds.map((id) => DropdownMenuItem(value: id, child: Text('$id   KRSNA-USD-B'))).toList(), onChanged: (next) { if (next != null) onChanged(next); }))),])),
-  ]);
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final muted = colors.onSurfaceVariant;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text(label, style: theme.textTheme.labelSmall?.copyWith(color: muted, fontWeight: FontWeight.w800, letterSpacing: .7)),
+      SizedBox(height: compact ? 5 : 8),
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12, vertical: compact ? 1 : 3),
+        decoration: BoxDecoration(color: colors.surfaceContainerLowest, borderRadius: BorderRadius.circular(15), border: Border.all(color: theme.dividerColor)),
+        child: Row(children: [
+          Container(width: compact ? 29 : 36, height: compact ? 29 : 36, decoration: BoxDecoration(color: colors.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(11)), child: Icon(LucideIcons.walletCards, color: colors.primary, size: 18)),
+          SizedBox(width: compact ? 6 : 10),
+          Expanded(child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+            value: value,
+            isExpanded: true,
+            isDense: compact,
+            dropdownColor: colors.surface,
+            iconEnabledColor: muted,
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+            items: accountIds.map((id) => DropdownMenuItem(value: id, child: Text('MT5 · ' + id, maxLines: 1, overflow: TextOverflow.clip))).toList(),
+            onChanged: (next) { if (next != null) onChanged(next); },
+          ))),
+        ]),
+      ),
+      const SizedBox(height: 5),
+      if (!compact) Text('USD account  ·  Balance data unavailable', style: theme.textTheme.labelSmall?.copyWith(color: muted, fontSize: 10)),
+    ]);
+  }
 }
 
-class _TransferChip extends StatelessWidget {
-  const _TransferChip({required this.label, required this.onTap});
-  final String label; final VoidCallback onTap;
+class _SwapButton extends StatelessWidget {
+  const _SwapButton({required this.onPressed, required this.icon, this.compact = false});
+  final VoidCallback onPressed;
+  final IconData icon;
+  final bool compact;
+
   @override
-  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14), border: Border.all(color: Theme.of(context).dividerColor)), child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.w600))));
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return IconButton.filledTonal(
+      constraints: compact ? const BoxConstraints.tightFor(width: 34, height: 34) : null,
+      padding: compact ? EdgeInsets.zero : null,
+      visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
+      onPressed: onPressed,
+      tooltip: 'Swap accounts',
+      style: IconButton.styleFrom(
+        backgroundColor: colors.primary.withValues(alpha: .10),
+        foregroundColor: colors.primary,
+        side: BorderSide(color: colors.primary.withValues(alpha: .18)),
+      ),
+      icon: Icon(icon, size: 19),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(color: color.withValues(alpha: .10), borderRadius: BorderRadius.circular(30), border: Border.all(color: color.withValues(alpha: .22))),
+    child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w800, letterSpacing: .6)),
+  );
 }

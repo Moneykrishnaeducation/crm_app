@@ -119,7 +119,7 @@ class _PortfolioPanel extends StatelessWidget {
                   if (!compact)
                     IconButton(
                       onPressed: () {
-                        showAppToast('Portfolio is up to date.', type: NotchToastType.success);
+                        showAppMessage('Portfolio is up to date.');
                       },
                       tooltip: 'Refresh',
                       visualDensity: VisualDensity.compact,

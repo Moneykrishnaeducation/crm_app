@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_notch_toast/flutter_notch_toast.dart';
+import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -1078,7 +1078,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
     setState(() {
       master.status = master.status == 'Active' ? 'Paused' : 'Active';
     });
-    toast.success('Master node #${master.login} marked as ${master.status}');
+    showAppMessage('Master node #${master.login} marked as ${master.status}');
   }
 
   void _openMasterDetails(MamMasterAccount master) {
@@ -1101,7 +1101,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
           setState(() {
             _masters.insert(0, newMaster);
           });
-          toast.success('MAM Master Node "${newMaster.name}" created successfully!');
+          showAppMessage('MAM Master Node "${newMaster.name}" created successfully!');
         },
       ),
     );

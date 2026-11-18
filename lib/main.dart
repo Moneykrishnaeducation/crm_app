@@ -3,7 +3,8 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_notch_toast/flutter_notch_toast.dart';
+import 'app_notifications.dart';
+export 'app_notifications.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -39,34 +40,6 @@ const _border = Color(0xFFE2E8F1);
 const _muted = Color(0xFF71809A);
 const _blue = Color(0xFF174A8B);
 const _gold = Color(0xFFD8A82E);
-
-/// Central VTIndex notification API. Use these helpers instead of SnackBars.
-void showAppToast(String message, {NotchToastType type = NotchToastType.info}) {
-  switch (type) {
-    case NotchToastType.success:
-      toast.success(message);
-    case NotchToastType.error:
-      toast.error(message);
-    case NotchToastType.warning:
-      toast.warning(message);
-    case NotchToastType.info:
-      toast.info(message);
-    case NotchToastType.loading:
-      toast.loading(message);
-    default:
-      toast(message);
-  }
-}
-
-String showAppLoadingToast(String message) => toast.loading(message);
-
-void updateAppToast(String id, String message, {NotchToastType type = NotchToastType.info}) {
-  toast.update(id, title: message, type: type);
-}
-
-void dismissAppToast(String id) => toast.dismiss(id);
-
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -164,21 +137,11 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'VTIndex',
+      scaffoldMessengerKey: appScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: _lightTheme,
       darkTheme: _darkTheme,
       themeMode: _themeMode,
-      builder: (context, child) => NotchToaster(
-        position: NotchPosition.topCenter,
-        mode: NotchMode.attached,
-        animation: NotchAnimationPreset.fluid,
-        style: const NotchToastStyle(
-          backgroundColor: Color(0xFF071629),
-          foregroundColor: Colors.white,
-          notchRadius: 18,
-        ),
-        child: child!,
-      ),
       home: _AppEntry(
         themeMode: _themeMode,
         onThemeModeChanged: _setThemeMode,
@@ -326,6 +289,7 @@ class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
 class _AppShellState extends State<AppShell> {
   String _selectedPage = 'Dashboard';
   BrokerAccount? _selectedAccount;
+  String _accountDetailsReturnPage = 'Trading Accounts';
   bool _balanceVisible = true;
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
@@ -374,6 +338,15 @@ class _AppShellState extends State<AppShell> {
   void _openAccount(BrokerAccount account) {
     setState(() {
       _selectedAccount = account;
+      _accountDetailsReturnPage = 'Trading Accounts';
+      _selectedPage = 'Account Details';
+    });
+  }
+
+  void _openDemoAccount(BrokerAccount account) {
+    setState(() {
+      _selectedAccount = account;
+      _accountDetailsReturnPage = 'Demo Accounts';
       _selectedPage = 'Account Details';
     });
   }
@@ -447,11 +420,12 @@ class _AppShellState extends State<AppShell> {
           ),
         'Internal Transfer' => const BrokerInternalTransferPage(),
         'Demo Accounts' => BrokerDemoAccountsPage(
-            onOpenTradingAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onAccountSelected: _openDemoAccount,
           ),
         'Account Details' when _selectedAccount != null => BrokerAccountDetailsPage(
             account: _selectedAccount!,
-            onBack: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onBack: () => setState(() => _selectedPage = _accountDetailsReturnPage),
             onSelectPage: _selectPage,
           ),
         'Profile' => BrokerProfilePage(

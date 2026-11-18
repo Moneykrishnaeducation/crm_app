@@ -974,9 +974,11 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
       await AppNotificationCenter.instance.startLiveUpdate(
         id: 7777,
         title: 'XAUUSD BUY 0.10 — Running Live',
-        body: 'Floating P&L: +\$45.20 · Entry: 2,351.20',
+        body: 'Floating P&L: <font color="#10B981"><b>+\$45.20</b></font> · Entry: 2,351.20',
         subText: 'LIVE',
-        shortText: '+\$45.20',
+        shortText: 'XAU ▲ +\$45.20',
+        colorHex: '#10B981',
+        iconType: 'trade',
         usesChronometer: true,
       );
       showAppMessage('Native Live Update started! Check your phone status bar.');
@@ -992,9 +994,11 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
         await AppNotificationCenter.instance.updateLiveUpdate(
           id: 7777,
           title: 'XAUUSD BUY 0.10 — Running Live',
-          body: 'Floating P&L: +\$$pnl · Entry: 2,351.20',
+          body: 'Floating P&L: <font color="#10B981"><b>+\$$pnl</b></font> · Entry: 2,351.20',
           subText: 'LIVE',
-          shortText: '+\$$pnl',
+          shortText: 'XAU ▲ +\$$pnl',
+          colorHex: '#10B981',
+          iconType: 'trade',
         );
       });
     }
@@ -1393,9 +1397,20 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                       : const Color(0xFF1658C9).withValues(alpha: 0.12);
 
                                   return InkWell(
-                                    onTap: () {
+                                    onTap: () async {
                                       AppNotificationCenter.instance.markAsRead(item.id);
-                                      showAppMessage('Viewing: ${item.title}');
+                                      final short = AppNotificationCenter.instance.generatePillShortText(item.title, item.body, item.category);
+                                      final color = AppNotificationCenter.instance.generatePillColorHex(item.title, item.body, item.isGold, item.category);
+                                      await AppNotificationCenter.instance.startLiveUpdate(
+                                        id: 7777,
+                                        title: item.title,
+                                        body: item.body,
+                                        subText: item.category.toUpperCase(),
+                                        shortText: short,
+                                        colorHex: color,
+                                        iconType: item.category == 'Trading' ? 'trade' : 'vt',
+                                      );
+                                      showAppMessage('Viewing: ${item.title} (Loaded to OS Live Update)');
                                     },
                                     borderRadius: BorderRadius.circular(14),
                                     child: Container(

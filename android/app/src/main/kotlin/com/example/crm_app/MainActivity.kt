@@ -22,24 +22,16 @@ class MainActivity : FlutterActivity() {
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
-                "startLiveUpdate" -> {
+                "startLiveUpdate", "updateLiveUpdate" -> {
                     val id = call.argument<Int>("id") ?: 7777
                     val title = call.argument<String>("title") ?: "VT Index Live"
                     val body = call.argument<String>("body") ?: "Live update active"
                     val subText = call.argument<String>("subText") ?: "LIVE"
                     val shortText = call.argument<String>("shortText") ?: "LIVE"
+                    val colorHex = call.argument<String>("colorHex") ?: "#10B981"
+                    val iconType = call.argument<String>("iconType") ?: "trade"
 
-                    postPromotedNotification(id, title, body, subText, shortText)
-                    result.success(true)
-                }
-                "updateLiveUpdate" -> {
-                    val id = call.argument<Int>("id") ?: 7777
-                    val title = call.argument<String>("title") ?: "VT Index Live"
-                    val body = call.argument<String>("body") ?: "Live update active"
-                    val subText = call.argument<String>("subText") ?: "LIVE"
-                    val shortText = call.argument<String>("shortText") ?: "LIVE"
-
-                    postPromotedNotification(id, title, body, subText, shortText)
+                    postPromotedNotification(id, title, body, subText, shortText, colorHex, iconType)
                     result.success(true)
                 }
                 "stopLiveUpdate" -> {
@@ -73,19 +65,46 @@ class MainActivity : FlutterActivity() {
         title: String,
         body: String,
         subText: String,
-        shortText: String
+        shortText: String,
+        colorHex: String?,
+        iconType: String?
     ) {
+        val iconRes = if (iconType == "vt") R.drawable.ic_stat_vt else R.drawable.ic_stat_live
+
+        val colorInt = try {
+            if (!colorHex.isNullOrEmpty()) android.graphics.Color.parseColor(colorHex)
+            else android.graphics.Color.parseColor("#10B981")
+        } catch (e: Exception) {
+            android.graphics.Color.parseColor("#10B981")
+        }
+
+        val largeIcon = try {
+            android.graphics.BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+        } catch (e: Exception) {
+            null
+        }
+
         val builder = NotificationCompat.Builder(this, LIVE_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(iconRes)
             .setContentTitle(title)
-            .setContentText(body)
             .setSubText(subText)
+            .setColor(colorInt)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(true)
             .setUsesChronometer(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setPriority(NotificationCompat.PRIORITY_MAX)
+
+        if (largeIcon != null) {
+            builder.setLargeIcon(largeIcon)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            builder.setContentText(android.text.Html.fromHtml(body, android.text.Html.FROM_HTML_MODE_LEGACY))
+        } else {
+            builder.setContentText(body)
+        }
 
         // Android 16/17 + Moto Live Updates Promoted Ongoing Request
         builder.extras.putBoolean("android.requestPromotedOngoing", true)

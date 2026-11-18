@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_notch_toast/flutter_notch_toast.dart';
+import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -821,7 +821,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     setState(() {
       inv.isMirroringActive = !inv.isMirroringActive;
     });
-    toast.info(inv.isMirroringActive
+    showAppMessage(inv.isMirroringActive
         ? 'Trade copying resumed for ${inv.poolName}'
         : 'Trade copying paused for ${inv.poolName}');
   }
@@ -854,7 +854,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               setState(() {
                 _investments.removeWhere((item) => item.id == inv.id);
               });
-              toast.success('Successfully detached from ${inv.poolName}');
+              showAppMessage('Successfully detached from ${inv.poolName}');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: _c.red,

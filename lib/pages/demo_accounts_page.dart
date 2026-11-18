@@ -5,10 +5,12 @@ class BrokerDemoAccountsPage extends StatefulWidget {
     super.key,
     VoidCallback? onOpenLiveAccounts,
     VoidCallback? onOpenTradingAccounts,
+    required this.onAccountSelected,
   })  : onOpenLiveAccounts = onOpenLiveAccounts ?? onOpenTradingAccounts ?? _noop;
 
   static void _noop() {}
   final VoidCallback onOpenLiveAccounts;
+  final ValueChanged<BrokerAccount> onAccountSelected;
   @override
   State<BrokerDemoAccountsPage> createState() => _BrokerDemoAccountsPageState();
 }
@@ -154,7 +156,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
             ...filtered.map((account) => _ReferenceAccountCard(
               account: account,
               selected: false,
-              onTap: () => showAppMessage(('Demo account ${account.login} selected.'),
+              onTap: () => widget.onAccountSelected(account),
             )),
           // // const SizedBox(height: 7),
           // Text('Combined demo balance  ${_demoAccounts.isEmpty ? '—' : '\$ ${totalBalance.toStringAsFixed(2)}'}',
@@ -188,6 +190,9 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
                 formatted,
                 formatted,
                 'Demo MT5',
+                server: 'VTIndex-Demo',
+                currency: 'USD',
+                floatingPnl: 0.0,
               ),
             );
           });

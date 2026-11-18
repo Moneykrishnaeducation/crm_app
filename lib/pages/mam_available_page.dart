@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import '../widgets/mam_modals.dart';
 
 // -----------------------------------------------------------------------------
 // DYNAMIC THEME COLORS HELPER
@@ -685,7 +686,10 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
       riskLevel = 3;
     }
 
-    return Container(
+    return InkWell(
+      onTap: () => _openManagerProfileModal(pool),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -945,6 +949,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -1002,26 +1007,37 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
     );
   }
 
-  void _openInvestModal(AvailableMamPool pool) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _InvestInMamModal(
-        pool: pool,
-        colors: _c,
-        onConfirmed: (allocatedAmount) {
-          setState(() {
-            pool.copiersCount += 1;
-            pool.totalAum += allocatedAmount;
-          });
-          if (widget.onJoinedPool != null) {
-            widget.onJoinedPool!(pool);
-          }
-          showAppMessage('Successfully invested \$${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!');
-        },
-      ),
+  void _openManagerProfileModal(AvailableMamPool pool) {
+    final data = MamManagerProfileData.fromPool(pool);
+    showManagerPerformanceProfileModal(
+      context,
+      manager: data,
+      onInvestTap: () {
+        Navigator.pop(context);
+        _openPasswordInvestModal(pool, data);
+      },
     );
+  }
+
+  void _openPasswordInvestModal(AvailableMamPool pool, MamManagerProfileData data) {
+    showInvestInManagerModal(
+      context,
+      manager: data,
+      onConfirmed: (password) {
+        final allocatedAmount = 1000.0;
+        setState(() {
+          pool.copiersCount += 1;
+          pool.totalAum += allocatedAmount;
+        });
+        if (widget.onJoinedPool != null) {
+          widget.onJoinedPool!(pool);
+        }
+      },
+    );
+  }
+
+  void _openInvestModal(AvailableMamPool pool) {
+    _openManagerProfileModal(pool);
   }
 }
 

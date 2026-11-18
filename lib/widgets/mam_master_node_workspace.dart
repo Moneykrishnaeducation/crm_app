@@ -1461,41 +1461,8 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     final statusBorder = isActive ? c.greenBorder : c.redBorder;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // Back Button (min height 44)
-        SizedBox(
-          height: 44,
-          child: InkWell(
-            onTap: widget.onBack,
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: c.card,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: c.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.arrowLeft, size: 16, color: c.text),
-                  const SizedBox(width: 6),
-                  Text(
-                    'BACK TO ALL MASTERS',
-                    style: GoogleFonts.inter(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      color: c.text,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
         // Right-side Status Badge
         Container(
           height: 44,

@@ -3,6 +3,10 @@ import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../widgets/mam_master_node_workspace.dart';
+import '../widgets/mam_modals.dart';
+
+export '../widgets/mam_master_node_workspace.dart' show MamMasterAccount;
+export '../widgets/mam_modals.dart';
 
 // -----------------------------------------------------------------------------
 // DYNAMIC THEME COLORS HELPER
@@ -461,25 +465,34 @@ class _MamPageState extends State<MamPage> {
   @override
   Widget build(BuildContext context) {
     if (_selectedMasterDetail != null) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SafeArea(
-          child: MamMasterNodeWorkspace(
-            master: _selectedMasterDetail!,
-            onBack: () {
-              setState(() {
-                _selectedMasterDetail = null;
-              });
-            },
-            onUpdate: (updatedMaster) {
-              setState(() {
-                _selectedMasterDetail = updatedMaster;
-                final idx = _masters.indexWhere((m) => m.login == updatedMaster.login);
-                if (idx != -1) {
-                  _masters[idx] = updatedMaster;
-                }
-              });
-            },
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          setState(() {
+            _selectedMasterDetail = null;
+          });
+        },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: SafeArea(
+            child: MamMasterNodeWorkspace(
+              master: _selectedMasterDetail!,
+              onBack: () {
+                setState(() {
+                  _selectedMasterDetail = null;
+                });
+              },
+              onUpdate: (updatedMaster) {
+                setState(() {
+                  _selectedMasterDetail = updatedMaster;
+                  final idx = _masters.indexWhere((m) => m.login == updatedMaster.login);
+                  if (idx != -1) {
+                    _masters[idx] = updatedMaster;
+                  }
+                });
+              },
+            ),
           ),
         ),
       );
@@ -1436,19 +1449,13 @@ class _MamPageState extends State<MamPage> {
   }
 
   void _openCreateMasterSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _CreateMamMasterSheet(
-        colors: _c,
-        onCreated: (newMaster) {
-          setState(() {
-            _masters.insert(0, newMaster);
-          });
-          showAppMessage('MAM Master Account "${newMaster.name}" created successfully!');
-        },
-      ),
+    showEstablishMasterMamSheet(
+      context,
+      onCreated: (newMaster) {
+        setState(() {
+          _masters.insert(0, newMaster);
+        });
+      },
     );
   }
 
@@ -2111,7 +2118,10 @@ class _MamPageState extends State<MamPage> {
       riskLevel = 3;
     }
 
-    return Container(
+    return InkWell(
+      onTap: () => _openManagerProfileModal(pool),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -2369,42 +2379,53 @@ class _MamPageState extends State<MamPage> {
           ),
         ],
       ),
+    ),
+    );
+  }
+
+  void _openManagerProfileModal(AvailableMamPool pool) {
+    final data = MamManagerProfileData.fromPool(pool);
+    showManagerPerformanceProfileModal(
+      context,
+      manager: data,
+      onInvestTap: () {
+        Navigator.pop(context);
+        _openPasswordInvestModal(pool, data);
+      },
+    );
+  }
+
+  void _openPasswordInvestModal(AvailableMamPool pool, MamManagerProfileData data) {
+    showInvestInManagerModal(
+      context,
+      manager: data,
+      onConfirmed: (password) {
+        final allocatedAmount = 1000.0;
+        final newSub = MamInvestmentSubscription(
+          id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
+          poolName: pool.name,
+          managerLogin: data.login,
+          initialCapital: allocatedAmount,
+          currentEquity: allocatedAmount,
+          unrealizedPnl: 0.0,
+          allocationMethod: 'Direct STP',
+          feePercentage: pool.performanceFee,
+          joinedDate: 'Today',
+          isMirroringActive: true,
+          riskLevel: pool.riskScore,
+        );
+        setState(() {
+          pool.copiersCount += 1;
+          pool.totalAum += allocatedAmount;
+          _investments.insert(0, newSub);
+          _tab = 1; // Switch to Tab 1 to see the newly joined pool!
+        });
+      },
     );
   }
 
   void _openInvestModal(AvailableMamPool pool) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _InvestInMamModal(
-        pool: pool,
-        colors: _c,
-        onConfirmed: (allocatedAmount, selectedAccount, allocationMethod) {
-          final newSub = MamInvestmentSubscription(
-            id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
-            poolName: pool.name,
-            managerLogin:
-                '88${(DateTime.now().millisecondsSinceEpoch % 100000).toString().padLeft(5, '0')}',
-            initialCapital: allocatedAmount,
-            currentEquity: allocatedAmount,
-            unrealizedPnl: 0.0,
-            allocationMethod: allocationMethod,
-            feePercentage: pool.performanceFee,
-            joinedDate: 'Today',
-            isMirroringActive: true,
-            riskLevel: pool.riskScore,
-          );
-          setState(() {
-            pool.copiersCount += 1;
-            pool.totalAum += allocatedAmount;
-            _investments.insert(0, newSub);
-            _tab = 1; // Switch to Tab 1 to see the newly joined pool!
-          });
-          showAppMessage('Successfully invested \$${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!');
-        },
-      ),
-    );
+    _openManagerProfileModal(pool);
   }
 }
 

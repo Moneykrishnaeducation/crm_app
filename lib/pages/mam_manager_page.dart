@@ -3,6 +3,9 @@ import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../widgets/mam_master_node_workspace.dart';
+import '../widgets/mam_modals.dart';
+
+export '../widgets/mam_master_node_workspace.dart' show MamMasterAccount;
 
 // -----------------------------------------------------------------------------
 // DYNAMIC THEME COLORS HELPER
@@ -261,25 +264,34 @@ class _MamManagerPageState extends State<MamManagerPage> {
   @override
   Widget build(BuildContext context) {
     if (_selectedMasterDetail != null) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SafeArea(
-          child: MamMasterNodeWorkspace(
-            master: _selectedMasterDetail!,
-            onBack: () {
-              setState(() {
-                _selectedMasterDetail = null;
-              });
-            },
-            onUpdate: (updatedMaster) {
-              setState(() {
-                _selectedMasterDetail = updatedMaster;
-                final idx = _masters.indexWhere((m) => m.login == updatedMaster.login);
-                if (idx != -1) {
-                  _masters[idx] = updatedMaster;
-                }
-              });
-            },
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          setState(() {
+            _selectedMasterDetail = null;
+          });
+        },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: SafeArea(
+            child: MamMasterNodeWorkspace(
+              master: _selectedMasterDetail!,
+              onBack: () {
+                setState(() {
+                  _selectedMasterDetail = null;
+                });
+              },
+              onUpdate: (updatedMaster) {
+                setState(() {
+                  _selectedMasterDetail = updatedMaster;
+                  final idx = _masters.indexWhere((m) => m.login == updatedMaster.login);
+                  if (idx != -1) {
+                    _masters[idx] = updatedMaster;
+                  }
+                });
+              },
+            ),
           ),
         ),
       );
@@ -1112,19 +1124,13 @@ class _MamManagerPageState extends State<MamManagerPage> {
   }
 
   void _openCreateMasterSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _CreateMamMasterSheet(
-        colors: _c,
-        onCreated: (newMaster) {
-          setState(() {
-            _masters.insert(0, newMaster);
-          });
-          showAppMessage('MAM Master Account "${newMaster.name}" created successfully!');
-        },
-      ),
+    showEstablishMasterMamSheet(
+      context,
+      onCreated: (newMaster) {
+        setState(() {
+          _masters.insert(0, newMaster);
+        });
+      },
     );
   }
 }

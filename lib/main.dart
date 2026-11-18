@@ -291,6 +291,7 @@ class _AppShellState extends State<AppShell> {
   BrokerAccount? _selectedAccount;
   String _accountDetailsReturnPage = 'Trading Accounts';
   bool _balanceVisible = true;
+  final Map<String, List<ActivityFundTransaction>> _appFundTransactions = {};
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
     BrokerAccount(
@@ -458,6 +459,41 @@ class _AppShellState extends State<AppShell> {
                     recentTrades: toAcc.recentTrades,
                   );
                 }
+
+                // Record transfer in activity funds tab
+                final now = DateTime.now();
+                final timeStr = 'Today, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                final txId = 'trx-${now.millisecondsSinceEpoch % 1000000}';
+
+                _appFundTransactions.putIfAbsent(fromLogin, () => []).insert(
+                  0,
+                  ActivityFundTransaction(
+                    id: '$txId-out',
+                    isDeposit: false,
+                    method: 'Internal Transfer',
+                    amount: amount,
+                    date: timeStr,
+                    status: 'Completed',
+                    sourceLogin: fromLogin,
+                    destinationLogin: toLogin,
+                    isTransfer: true,
+                  ),
+                );
+
+                _appFundTransactions.putIfAbsent(toLogin, () => []).insert(
+                  0,
+                  ActivityFundTransaction(
+                    id: '$txId-in',
+                    isDeposit: true,
+                    method: 'Internal Transfer',
+                    amount: amount,
+                    date: timeStr,
+                    status: 'Completed',
+                    sourceLogin: fromLogin,
+                    destinationLogin: toLogin,
+                    isTransfer: true,
+                  ),
+                );
               });
             },
           ),
@@ -607,7 +643,10 @@ class _AppShellState extends State<AppShell> {
                                 _buildPrimaryTabLayer(
                                   index: 1,
                                   activeIndex: primaryIndex,
-                                  child: BrokerTransactionsPage(accounts: _accounts),
+                                  child: BrokerTransactionsPage(
+                                    accounts: _accounts,
+                                    externalFundTransactions: _appFundTransactions,
+                                  ),
                                 ),
                                 _buildPrimaryTabLayer(
                                   index: 2,

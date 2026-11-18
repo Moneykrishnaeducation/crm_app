@@ -276,5 +276,36 @@ void main() {
       expect(find.text('Equity'), findsOneWidget);
       expect(find.text('Open 2'), findsOneWidget);
     });
+
+    testWidgets('internal transfer records load in Funds tab and filter by Transfers chip', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(buildTestableWidget());
+      await tester.pumpAndSettle();
+
+      // Switch to Funds Tab
+      await tester.tap(find.text('Funds'));
+      await tester.pumpAndSettle();
+
+      // Under 'All', internal transfer record is visible
+      expect(find.text('Transfers'), findsOneWidget);
+      expect(find.text('Transfer In'), findsOneWidget);
+      expect(find.text('INTERNAL'), findsOneWidget);
+      expect(find.text('+\$850.00'), findsOneWidget);
+      expect(find.textContaining('From #3315'), findsOneWidget);
+
+      // Tap 'Transfers' filter chip
+      await tester.tap(find.text('Transfers'));
+      await tester.pumpAndSettle();
+
+      // Only internal transfers remain visible
+      expect(find.text('Transfer In'), findsOneWidget);
+      expect(find.text('+\$850.00'), findsOneWidget);
+      expect(find.text('+\$5000.00'), findsNothing);
+      expect(find.text('-\$1200.00'), findsNothing);
+    });
   });
 }

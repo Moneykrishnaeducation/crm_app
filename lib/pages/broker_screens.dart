@@ -1,10 +1,8 @@
 part of '../main.dart';
 
 const _brokerNavy = Color(0xFF10264B);
-const _brokerPanel = Colors.white;
 const _brokerBlue = Color(0xFF174A8B);
 const _brokerGold = Color(0xFFD8A82E);
-const _brokerMuted = Color(0xFF71809A);
 
 class BrokerDashboardPage extends StatelessWidget {
   const BrokerDashboardPage({
@@ -1455,6 +1453,9 @@ class ActivityFundTransaction {
     required this.amount,
     required this.date,
     required this.status,
+    this.sourceLogin,
+    this.destinationLogin,
+    this.isTransfer = false,
   });
 
   final String id;
@@ -1463,6 +1464,9 @@ class ActivityFundTransaction {
   final double amount;
   final String date;
   final String status;
+  final String? sourceLogin;
+  final String? destinationLogin;
+  final bool isTransfer;
 }
 
 class BrokerTransactionsPage extends StatefulWidget {
@@ -1471,11 +1475,13 @@ class BrokerTransactionsPage extends StatefulWidget {
     this.accounts,
     this.selectedAccountLogin,
     this.onAccountChanged,
+    this.externalFundTransactions,
   });
 
   final List<BrokerAccount>? accounts;
   final String? selectedAccountLogin;
   final ValueChanged<String>? onAccountChanged;
+  final Map<String, List<ActivityFundTransaction>>? externalFundTransactions;
 
   @override
   State<BrokerTransactionsPage> createState() => _BrokerTransactionsPageState();
@@ -1605,6 +1611,17 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     _accountFunds = {
       '52132132': [
         const ActivityFundTransaction(
+          id: 'tx-104',
+          isDeposit: true,
+          method: 'Internal Transfer',
+          amount: 850.00,
+          date: '2026-11-17 11:20',
+          status: 'Completed',
+          sourceLogin: '3315',
+          destinationLogin: '52132132',
+          isTransfer: true,
+        ),
+        const ActivityFundTransaction(
           id: 'tx-101',
           isDeposit: true,
           method: 'Bank Transfer',
@@ -1629,7 +1646,30 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
           status: 'Completed',
         ),
       ],
-      '3315': [],
+      '3315': [
+        const ActivityFundTransaction(
+          id: 'tx-301',
+          isDeposit: false,
+          method: 'Internal Transfer',
+          amount: 850.00,
+          date: '2026-11-17 11:20',
+          status: 'Completed',
+          sourceLogin: '3315',
+          destinationLogin: '52132132',
+          isTransfer: true,
+        ),
+        const ActivityFundTransaction(
+          id: 'tx-302',
+          isDeposit: true,
+          method: 'Internal Transfer',
+          amount: 500.00,
+          date: '2026-11-16 16:45',
+          status: 'Completed',
+          sourceLogin: '3312',
+          destinationLogin: '3315',
+          isTransfer: true,
+        ),
+      ],
       '3311': [
         const ActivityFundTransaction(
           id: 'tx-201',
@@ -1640,7 +1680,19 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
           status: 'Completed',
         ),
       ],
-      '3312': [],
+      '3312': [
+        const ActivityFundTransaction(
+          id: 'tx-401',
+          isDeposit: false,
+          method: 'Internal Transfer',
+          amount: 500.00,
+          date: '2026-11-16 16:45',
+          status: 'Completed',
+          sourceLogin: '3312',
+          destinationLogin: '3315',
+          isTransfer: true,
+        ),
+      ],
       '3327': [],
     };
 
@@ -1651,6 +1703,21 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       '3312': 1100.00,
       '3327': 0.00,
     };
+
+    _mergeExternalFunds();
+  }
+
+  void _mergeExternalFunds() {
+    if (widget.externalFundTransactions != null) {
+      widget.externalFundTransactions!.forEach((login, list) {
+        final current = _accountFunds.putIfAbsent(login, () => []);
+        for (final tx in list) {
+          if (!current.any((e) => e.id == tx.id)) {
+            current.insert(0, tx);
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -1660,6 +1727,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         widget.selectedAccountLogin != _selectedLogin) {
       setState(() => _selectedLogin = widget.selectedAccountLogin!);
     }
+    _mergeExternalFunds();
   }
 
   List<BrokerAccount> get _allAccounts {
@@ -3095,12 +3163,13 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   Widget _buildFundsTab(BuildContext context, bool isDark) {
     final allFunds = _currentFunds;
     final filteredFunds = switch (_fundsFilter) {
-      'Deposits' => allFunds.where((f) => f.isDeposit).toList(),
-      'Withdrawals' => allFunds.where((f) => !f.isDeposit).toList(),
+      'Deposits' => allFunds.where((f) => f.isDeposit && !f.isTransfer && f.method != 'Internal Transfer').toList(),
+      'Withdrawals' => allFunds.where((f) => !f.isDeposit && !f.isTransfer && f.method != 'Internal Transfer').toList(),
+      'Transfers' => allFunds.where((f) => f.isTransfer || f.method == 'Internal Transfer').toList(),
       _ => allFunds,
     };
 
-    final filterOptions = ['All', 'Deposits', 'Withdrawals'];
+    final filterOptions = ['All', 'Deposits', 'Withdrawals', 'Transfers'];
 
     return Column(
       children: [
@@ -3135,7 +3204,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                             color: _fundsFilter == filter
                                 ? Colors.white
                                 : Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -3156,6 +3225,38 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
             itemCount: filteredFunds.length,
             itemBuilder: (context, index) {
               final tx = filteredFunds[index];
+              final isTransfer = tx.isTransfer || tx.method == 'Internal Transfer';
+              final title = isTransfer
+                  ? (tx.isDeposit ? 'Transfer In' : 'Transfer Out')
+                  : (tx.isDeposit ? 'Deposit' : 'Withdrawal');
+
+              String subtitle;
+              if (isTransfer) {
+                if (tx.isDeposit && tx.sourceLogin != null) {
+                  subtitle = 'From #${tx.sourceLogin} • ${tx.date}';
+                } else if (!tx.isDeposit && tx.destinationLogin != null) {
+                  subtitle = 'To #${tx.destinationLogin} • ${tx.date}';
+                } else {
+                  subtitle = 'Internal Transfer • ${tx.date}';
+                }
+              } else {
+                subtitle = '${tx.method} • ${tx.date}';
+              }
+
+              final icon = isTransfer
+                  ? LucideIcons.arrowLeftRight
+                  : (tx.isDeposit ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight);
+
+              final iconColor = isTransfer
+                  ? const Color(0xFF1658C9)
+                  : (tx.isDeposit ? const Color(0xFF10B981) : const Color(0xFFD97706));
+
+              final iconBg = isTransfer
+                  ? const Color(0xFF1658C9).withValues(alpha: 0.12)
+                  : (tx.isDeposit
+                      ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                      : const Color(0xFFF59E0B).withValues(alpha: 0.12));
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
@@ -3172,14 +3273,12 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: tx.isDeposit
-                            ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                            : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                        color: iconBg,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        tx.isDeposit ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight,
-                        color: tx.isDeposit ? const Color(0xFF10B981) : const Color(0xFFD97706),
+                        icon,
+                        color: iconColor,
                         size: 20,
                       ),
                     ),
@@ -3188,17 +3287,40 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            tx.isDeposit ? 'Deposit' : 'Withdrawal',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                title,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (isTransfer) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1658C9).withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'INTERNAL',
+                                    style: TextStyle(
+                                      color: Color(0xFF1658C9),
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: .4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            '${tx.method} • ${tx.date}',
+                            subtitle,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 11,

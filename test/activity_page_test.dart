@@ -11,6 +11,7 @@ void main() {
     Brightness brightness = Brightness.light,
   }) {
     return MaterialApp(
+      scaffoldMessengerKey: appScaffoldMessengerKey,
       theme: ThemeData(
         brightness: brightness,
         scaffoldBackgroundColor: brightness == Brightness.dark

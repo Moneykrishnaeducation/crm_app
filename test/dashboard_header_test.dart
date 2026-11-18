@@ -29,21 +29,29 @@ void main() {
     // 2. Dashboard components:
     // Hero Balance Card
     expect(find.text('Total Balance'), findsOneWidget);
-    expect(find.text('\$125,800.00'), findsOneWidget);
-    expect(find.byIcon(LucideIcons.eye), findsOneWidget);
+    expect(find.text(r'$125,800.00'), findsOneWidget);
+    final dashboardEye = find.descendant(
+      of: find.byType(BrokerDashboardPage),
+      matching: find.byIcon(LucideIcons.eye),
+    );
+    expect(dashboardEye, findsOneWidget);
     expect(find.textContaining('Position Total P&L:'), findsOneWidget);
 
     // Toggle balance eye
-    await tester.tap(find.byIcon(LucideIcons.eye));
+    await tester.tap(dashboardEye);
     await tester.pumpAndSettle();
     expect(find.text('••••••••'), findsOneWidget);
     expect(find.textContaining('****** USD'), findsOneWidget);
-    expect(find.byIcon(LucideIcons.eyeOff), findsOneWidget);
+    final dashboardEyeOff = find.descendant(
+      of: find.byType(BrokerDashboardPage),
+      matching: find.byIcon(LucideIcons.eyeOff),
+    );
+    expect(dashboardEyeOff, findsOneWidget);
 
     // Toggle back
-    await tester.tap(find.byIcon(LucideIcons.eyeOff));
+    await tester.tap(dashboardEyeOff);
     await tester.pumpAndSettle();
-    expect(find.text('\$125,800.00'), findsOneWidget);
+    expect(find.text(r'$125,800.00'), findsOneWidget);
 
     // 4 Quick Actions
     expect(find.text('Deposit'), findsWidgets);
@@ -73,7 +81,7 @@ void main() {
     // Tap on Metals filter pill
     await tester.tap(find.text('Metals'));
     await tester.pumpAndSettle();
-    expect(find.text('XAUUSD'), findsOneWidget);
+    expect(find.descendant(of: find.byType(BrokerDashboardPage), matching: find.text('XAUUSD')), findsOneWidget);
     expect(find.text('XAGUSD'), findsOneWidget);
 
     // 3. Customer support modal bottom sheet

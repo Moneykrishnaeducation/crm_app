@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_notch_toast/flutter_notch_toast.dart';
+import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -1235,7 +1235,7 @@ class _MamPageState extends State<MamPage> {
     setState(() {
       master.status = master.status == 'Active' ? 'Paused' : 'Active';
     });
-    toast.success('Master node #${master.login} marked as ${master.status}');
+    showAppMessage('Master node #${master.login} marked as ${master.status}');
   }
 
   void _openMasterDetails(MamMasterAccount master) {
@@ -1258,7 +1258,7 @@ class _MamPageState extends State<MamPage> {
           setState(() {
             _masters.insert(0, newMaster);
           });
-          toast.success('MAM Master Node "${newMaster.name}" created successfully!');
+          showAppMessage('MAM Master Node "${newMaster.name}" created successfully!');
         },
       ),
     );
@@ -1595,11 +1595,9 @@ class _MamPageState extends State<MamPage> {
                       setState(() {
                         item.isMirroringActive = !item.isMirroringActive;
                       });
-                      toast.success(
-                        item.isMirroringActive
+                      showAppMessage(item.isMirroringActive
                             ? 'Resumed mirroring for ${item.poolName}'
-                            : 'Paused mirroring for ${item.poolName}',
-                      );
+                            : 'Paused mirroring for ${item.poolName}');
                     },
                     icon: Icon(
                       item.isMirroringActive ? LucideIcons.pause : LucideIcons.play,
@@ -1681,7 +1679,7 @@ class _MamPageState extends State<MamPage> {
               setState(() {
                 _investments.removeWhere((i) => i.id == item.id);
               });
-              toast.success('Detached successfully from ${item.poolName}');
+              showAppMessage('Detached successfully from ${item.poolName}');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: _c.red,
@@ -2104,9 +2102,7 @@ class _MamPageState extends State<MamPage> {
             _investments.insert(0, newSub);
             _tab = 1; // Switch to Tab 1 to see the newly joined pool!
           });
-          toast.success(
-            'Successfully invested \$${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!',
-          );
+          showAppMessage('Successfully invested \$${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!');
         },
       ),
     );

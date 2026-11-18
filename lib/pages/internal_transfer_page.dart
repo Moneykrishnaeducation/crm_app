@@ -97,7 +97,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
             : amount > _available
                 ? 'Insufficient available balance.'
                 : 'Transfer submitted.';
-    showAppToast(message, type: message == 'Transfer submitted.' ? NotchToastType.success : NotchToastType.error);
+    showAppMessage(message);
   }
 
   void _showGuidelines(BuildContext context) => showDialog<void>(

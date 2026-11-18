@@ -112,6 +112,55 @@ class AvailableMamPool {
 }
 
 // -----------------------------------------------------------------------------
+// VISUAL RISK GAUGE METER (3-BAR SEGMENTED)
+// -----------------------------------------------------------------------------
+class _RiskMeter extends StatelessWidget {
+  const _RiskMeter({
+    required this.level,
+    this.barWidth = 3.0,
+    this.barSpacing = 2.0,
+  });
+
+  final int level; // 1 = Low, 2 = Med, 3 = High
+  final double barWidth;
+  final double barSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    Color activeColor;
+    if (level <= 1) {
+      activeColor = const Color(0xFF10B981);
+    } else if (level == 2) {
+      activeColor = const Color(0xFFF59E0B);
+    } else {
+      activeColor = const Color(0xFFEF4444);
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final heights = [5.5, 8.5, 11.5];
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (int i = 0; i < 3; i++)
+          Container(
+            width: barWidth,
+            height: heights[i],
+            margin: EdgeInsets.only(right: i < 2 ? barSpacing : 0),
+            decoration: BoxDecoration(
+              color: i < level
+                  ? activeColor
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
 // MAM AVAILABLE PAGE
 // -----------------------------------------------------------------------------
 class MamAvailablePage extends StatefulWidget {
@@ -621,27 +670,38 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   Widget _buildPoolCard(AvailableMamPool pool) {
     Color riskColor;
     String riskLabel;
+    int riskLevel = 1;
     if (pool.riskScore <= 3) {
       riskColor = _c.green;
       riskLabel = 'Low Risk';
+      riskLevel = 1;
     } else if (pool.riskScore <= 6) {
       riskColor = _c.gold;
       riskLabel = 'Med Risk';
+      riskLevel = 2;
     } else {
       riskColor = _c.red;
       riskLabel = 'High Risk';
+      riskLevel = 3;
     }
 
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _c.card,
+            _c.isDark ? const Color(0xFF131F33) : const Color(0xFFFBFDFF),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _c.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? 0.2 : 0.03),
-            blurRadius: 6,
+            color: Colors.black.withValues(alpha: _c.isDark ? 0.25 : 0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -649,30 +709,68 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: Avatar, Info, Status Badges
+          // Top row: Avatar with Gradient Border & Verified Badge, Info, Risk Badge
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [_c.blue, _c.navy],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Text(
-                    pool.name.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [_c.blue, _c.navy],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _c.blue.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _c.card,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        pool.name.substring(0, pool.name.length >= 2 ? 2 : 1).toUpperCase(),
+                        style: GoogleFonts.inter(
+                          color: _c.blue,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  if (pool.isVerified)
+                    Positioned(
+                      right: -1,
+                      bottom: -1,
+                      child: Container(
+                        padding: const EdgeInsets.all(1.5),
+                        decoration: BoxDecoration(
+                          color: _c.card,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2563EB),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(LucideIcons.check, size: 8, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -709,21 +807,29 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                 decoration: BoxDecoration(
                   color: riskColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: riskColor.withValues(alpha: 0.3)),
                 ),
-                child: Text(
-                  riskLabel,
-                  style: TextStyle(
-                    color: riskColor,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _RiskMeter(level: riskLevel),
+                    const SizedBox(width: 5),
+                    Text(
+                      riskLabel,
+                      style: GoogleFonts.inter(
+                        color: riskColor,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -843,19 +949,31 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   }
 
   Widget _microStat(String label, String value, {Color? valueColor, IconData? icon}) {
+    final tintColor = valueColor ?? _c.blue;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 11, color: _c.muted),
-                const SizedBox(width: 4),
-              ],
-              Flexible(
-                child: Text(
+          if (icon != null) ...[
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: tintColor.withValues(alpha: _c.isDark ? 0.16 : 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 13, color: tintColor),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -865,18 +983,18 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              color: valueColor ?? _c.text,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
+                const SizedBox(height: 1.5),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: valueColor ?? _c.text,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -931,15 +1049,40 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
   double _drawdownGuard = 15.0;
 
   @override
+  void initState() {
+    super.initState();
+    _amountController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     _amountController.dispose();
     super.dispose();
+  }
+
+  void _addQuickAmount(double delta) {
+    final cur = double.tryParse(_amountController.text.trim()) ?? 0.0;
+    final next = (cur + delta).clamp(100.0, 1000000.0);
+    setState(() {
+      _amountController.text = next.toStringAsFixed(0);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final c = widget.colors;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final currentAmt = double.tryParse(_amountController.text.trim()) ?? widget.pool.minDeposit;
+    final grossGain = currentAmt * (widget.pool.monthlyRoi / 100);
+    final feeAmount = grossGain * (widget.pool.performanceFee / 100);
+    final netGain = grossGain - feeAmount;
+    final maxLoss = currentAmt * (_drawdownGuard / 100);
+    final stopEquity = (currentAmt - maxLoss).clamp(0.0, double.infinity);
+    final guardColor = _drawdownGuard <= 15
+        ? c.green
+        : (_drawdownGuard <= 25 ? c.gold : c.red);
 
     return Container(
       padding: EdgeInsets.fromLTRB(16, 14, 16, 20 + bottomInset),
@@ -1056,13 +1199,15 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
               ),
             ),
             const SizedBox(height: 8),
+
+            // Quick-select amount chips: +$500, +$1,000, +$2,500, +$5,000
             Row(
               children: [
-                for (final amt in [500, 1000, 2500, 5000])
+                for (final delta in [500.0, 1000.0, 2500.0, 5000.0])
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: InkWell(
-                      onTap: () => setState(() => _amountController.text = amt.toString()),
+                      onTap: () => _addQuickAmount(delta),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         constraints: const BoxConstraints(minHeight: 32),
@@ -1070,14 +1215,14 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                         decoration: BoxDecoration(
                           color: c.subCard,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: c.border),
+                          border: Border.all(color: c.blue.withValues(alpha: 0.35)),
                         ),
                         child: Text(
-                          '\$$amt',
+                          '+\$${delta >= 1000 ? '${(delta / 1000).toStringAsFixed(delta % 1000 == 0 ? 0 : 1)}k' : delta.toInt()}',
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: c.text,
+                            fontWeight: FontWeight.w700,
+                            color: c.blue,
                           ),
                         ),
                       ),
@@ -1085,7 +1230,89 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                   ),
               ],
             ),
+            const SizedBox(height: 12),
+
+            // Live Dynamic Projected Yield Display
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: c.isDark
+                      ? [const Color(0xFF132D28), const Color(0xFF0F2420)]
+                      : [const Color(0xFFECFDF5), const Color(0xFFE6F9F0)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: c.green.withValues(alpha: 0.35)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(LucideIcons.sparkles, size: 14, color: c.green),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Live Projected Yield Preview',
+                            style: GoogleFonts.inter(
+                              color: c.green,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: c.green.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '+${widget.pool.monthlyRoi.toStringAsFixed(1)}% Past 30D',
+                          style: GoogleFonts.inter(
+                            color: c.green,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '+\$${netGain.toStringAsFixed(2)}',
+                        style: GoogleFonts.inter(
+                          color: c.green,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Est. Monthly Gain (net of ${widget.pool.performanceFee.toStringAsFixed(0)}% fee)',
+                          style: TextStyle(
+                            color: c.muted,
+                            fontSize: 10.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 14),
+
+            // Drawdown Guard Threshold
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1096,7 +1323,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                 Text(
                   '${_drawdownGuard.toInt()}%',
                   style: GoogleFonts.inter(
-                    color: c.red,
+                    color: guardColor,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1108,11 +1335,67 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
               min: 5,
               max: 30,
               divisions: 5,
-              activeColor: c.red,
+              activeColor: guardColor,
               inactiveColor: c.border,
               onChanged: (val) => setState(() => _drawdownGuard = val),
             ),
+            const SizedBox(height: 6),
+
+            // Color-coded Drawdown Guard Cutoff Indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: c.subCard,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: guardColor.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.shieldCheck, size: 16, color: guardColor),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Capital Protected: \$${stopEquity.toStringAsFixed(2)}',
+                              style: GoogleFonts.inter(
+                                color: c.text,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              'Max Buffer: -\$${maxLoss.toStringAsFixed(2)}',
+                              style: GoogleFonts.inter(
+                                color: guardColor,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            value: (100 - _drawdownGuard) / 100,
+                            backgroundColor: guardColor.withValues(alpha: 0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(guardColor),
+                            minHeight: 4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 10),
+
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

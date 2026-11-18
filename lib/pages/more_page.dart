@@ -342,119 +342,197 @@ class _MoreMenuRow extends StatelessWidget {
   );
 }
 
-class LogoutBottomSheet extends StatelessWidget {
+class LogoutBottomSheet extends StatefulWidget {
   const LogoutBottomSheet({super.key, required this.onConfirm});
   final VoidCallback onConfirm;
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    top: false,
-    child: Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).dividerColor),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000817),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              width: 38,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD5DCE7),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFFF5867).withValues(alpha: .09),
-            ),
-            child: const Center(
-              child: Icon(
-                LucideIcons.logOut,
-                color: Color(0xFFD64545),
-                size: 25,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Log Out',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Are you sure you want to log out of your account? You will need to enter your credentials to sign back in.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF344766),
-                    side: const BorderSide(color: Color(0xFFDCE3ED)),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+  State<LogoutBottomSheet> createState() => _LogoutBottomSheetState();
+}
+
+class _LogoutBottomSheetState extends State<LogoutBottomSheet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: FadeTransition(
+              opacity: _animCtrl,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.18),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: _animCtrl,
+                    curve: Curves.easeOutCubic,
                   ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                child: Container(
+                  width: double.infinity,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                    border: Border.all(color: border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: dark ? 0.35 : 0.12),
+                        blurRadius: 30,
+                        offset: const Offset(0, -8),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      20,
+                      10,
+                      20,
+                      18 + MediaQuery.viewPaddingOf(context).bottom,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 38,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: muted.withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFEF4444).withValues(alpha: dark ? 0.16 : 0.10),
+                            border: Border.all(
+                              color: const Color(0xFFEF4444).withValues(alpha: dark ? 0.35 : 0.22),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFFEF4444).withValues(alpha: dark ? 0.22 : 0.14),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  LucideIcons.logOut,
+                                  color: Color(0xFFEF4444),
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Log Out',
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Are you sure you want to log out of your account? You will need to enter your credentials to sign back in.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: muted,
+                            fontSize: 12.5,
+                            height: 1.45,
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: cs.onSurface,
+                                  side: BorderSide(color: border),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: widget.onConfirm,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFFDC2626),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                icon: const Icon(LucideIcons.logOut, size: 16),
+                                label: const Text(
+                                  'Log Out',
+                                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onConfirm,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFD64545),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  icon: const Icon(LucideIcons.logOut, size: 15),
-                  label: const Text(
-                    'Log Out',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

@@ -114,7 +114,7 @@ void main() {
         'Withdraw funds': 'Withdraw',
         'Open live account': 'Open Account',
         'Internal transfer': 'Internal Transfer',
-        'Create demo account': 'Demo Accounts',
+        'Create demo account': 'Create Demo Account',
       };
 
       for (final entry in actions.entries) {
@@ -281,6 +281,91 @@ void main() {
 
       final backdropFilter = tester.widget<BackdropFilter>(find.byType(BackdropFilter));
       expect(backdropFilter.filter, isNotNull);
+    });
+
+    testWidgets('quick actions bottom popup renders animated header, badge, and close button', (tester) async {
+      await tester.pumpWidget(
+        _buildNavBarHarness(
+          selectedPage: 'Dashboard',
+          onSelect: (_) {},
+        ),
+      );
+
+      // Tap + button to open quick actions
+      await tester.tap(find.byIcon(LucideIcons.plus));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quick actions'), findsOneWidget);
+      expect(find.text('5 ACTIONS'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.sparkles), findsOneWidget);
+      expect(find.byTooltip('Close'), findsOneWidget);
+
+      // Verify category badges
+      expect(find.text('FUNDS'), findsNWidgets(2));
+      expect(find.text('LIVE TRADING'), findsOneWidget);
+      expect(find.text('TRANSFER'), findsOneWidget);
+      expect(find.text('DEMO TRADING'), findsOneWidget);
+
+      // Tap close button dismisses popup
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+      expect(find.text('Quick actions'), findsNothing);
+    });
+
+    testWidgets('quick actions "Create demo account" opens demo account creation popup in AppShell', (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: AppShell(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open quick actions popup via center +
+      await tester.tap(find.byIcon(LucideIcons.plus).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quick actions'), findsOneWidget);
+      expect(find.text('Create demo account'), findsOneWidget);
+
+      // Tap 'Create demo account'
+      await tester.tap(find.text('Create demo account'));
+      await tester.pumpAndSettle();
+
+      // Verify the demo account creation popup is displayed
+      expect(find.text('Create Demo Account'), findsOneWidget);
+      expect(find.text('Configure your virtual MT5 practice account'), findsOneWidget);
+      expect(find.text('ACCOUNT PROFILE'), findsOneWidget);
+      expect(find.text('TRADING CONFIGURATION'), findsOneWidget);
+      expect(find.text('CREATE DEMO ACCOUNT'), findsOneWidget);
+
+      // Fill in demo account name
+      final nameField = find.byWidgetPredicate(
+        (w) => w is TextField && (w.decoration?.hintText?.contains('Enter account name') ?? false),
+      );
+      expect(nameField, findsOneWidget);
+      await tester.enterText(nameField, 'Scalper Alpha');
+      await tester.pumpAndSettle();
+
+      // Enter virtual balance
+      final balanceField = find.byWidgetPredicate(
+        (w) => w is TextField && (w.decoration?.hintText?.contains('Enter starting balance') ?? false),
+      );
+      expect(balanceField, findsOneWidget);
+      await tester.enterText(balanceField, '50000');
+      await tester.pumpAndSettle();
+
+      // Tap 'CREATE DEMO ACCOUNT' button
+      await tester.tap(find.text('CREATE DEMO ACCOUNT'));
+      await tester.pumpAndSettle();
+
+      // Verify popup is dismissed and we remain on the current page
+      expect(find.text('Create Demo Account'), findsNothing);
+      expect(find.text('Quick actions'), findsNothing);
     });
   });
 }

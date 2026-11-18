@@ -6,20 +6,39 @@ class BrokerDemoAccountsPage extends StatefulWidget {
     VoidCallback? onOpenLiveAccounts,
     VoidCallback? onOpenTradingAccounts,
     this.onAccountSelected = _noopAccount,
+    this.accounts,
+    this.onAccountCreated,
   })  : onOpenLiveAccounts = onOpenLiveAccounts ?? onOpenTradingAccounts ?? _noop;
 
   static void _noop() {}
   static void _noopAccount(BrokerAccount account) {}
   final VoidCallback onOpenLiveAccounts;
   final ValueChanged<BrokerAccount> onAccountSelected;
+  final List<BrokerAccount>? accounts;
+  final ValueChanged<BrokerAccount>? onAccountCreated;
   @override
   State<BrokerDemoAccountsPage> createState() => _BrokerDemoAccountsPageState();
 }
 
 class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
   final _searchController = TextEditingController();
-  final List<BrokerAccount> _demoAccounts = [];
+  final List<BrokerAccount> _localDemoAccounts = [
+    BrokerAccount(
+      'Demo Standard',
+      '3498102',
+      '1:500',
+      r'$10,000.00',
+      r'$10,000.00',
+      'Demo MT5 Standard',
+      server: 'VTIndex-Demo',
+      currency: 'USD',
+      floatingPnl: 0.0,
+    ),
+  ];
   String _query = '';
+
+  List<BrokerAccount> get _effectiveAccounts =>
+      widget.accounts ?? _localDemoAccounts;
 
   @override
   void dispose() {
@@ -38,11 +57,12 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
     final border = dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE);
     final fg = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
     final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF6F7F95);
-    final filtered = _demoAccounts.where((a) {
+    final accounts = _effectiveAccounts;
+    final filtered = accounts.where((a) {
       final q = _query.trim().toLowerCase();
       return q.isEmpty || a.login.toLowerCase().contains(q) || a.name.toLowerCase().contains(q);
     }).toList();
-    final totalBalance = _demoAccounts.fold<double>(0, (sum, a) =>
+    final totalBalance = accounts.fold<double>(0, (sum, a) =>
         sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
 
     return Container(
@@ -63,7 +83,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
               child: Row(children: [
                 const Icon(LucideIcons.flaskConical, color: blue, size: 15),
                 const SizedBox(width: 6),
-                Text('${_demoAccounts.length} Demo', style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w800)),
+                Text('${_effectiveAccounts.length} Demo', style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w800)),
               ]),
             ),
           ]),
@@ -108,7 +128,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
               value: r'$ ' + totalBalance.toStringAsFixed(2), surface: surface, border: border, fg: fg, muted: muted, accent: blue)),
             const SizedBox(width: 9),
             Expanded(child: _DemoMetric(icon: LucideIcons.flaskConical, label: 'DEMO ACCOUNTS',
-              value: '${_demoAccounts.length}', surface: surface, border: border, fg: fg, muted: muted, accent: gold)),
+              value: '${_effectiveAccounts.length}', surface: surface, border: border, fg: fg, muted: muted, accent: gold)),
           ]),
           const SizedBox(height: 12),
           TextField(
@@ -172,30 +192,15 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
       builder: (_) => _CreateDemoAccountSheet(
-        onCreate: (name, leverage, balance) {
-          final login =
-              '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
-          final formatted =
-              String.fromCharCode(36) + balance.toStringAsFixed(2);
-
-          setState(() {
-            _demoAccounts.insert(
-              0,
-              BrokerAccount(
-                name,
-                login,
-                leverage,
-                formatted,
-                formatted,
-                'Demo MT5',
-                server: 'VTIndex-Demo',
-                currency: 'USD',
-                floatingPnl: 0.0,
-              ),
-            );
-          });
-
-          showAppMessage(('Demo account preview $login added.'));
+        onCreated: (newAccount) {
+          if (widget.onAccountCreated != null) {
+            widget.onAccountCreated!(newAccount);
+          } else {
+            setState(() {
+              _localDemoAccounts.insert(0, newAccount);
+            });
+            showAppMessage('Demo account ${newAccount.login} created successfully.');
+          }
         },
       ),
     );
@@ -228,8 +233,9 @@ class _DemoMetric extends StatelessWidget {
 }
 
 class _CreateDemoAccountSheet extends StatefulWidget {
-  const _CreateDemoAccountSheet({required this.onCreate});
-  final void Function(String name, String leverage, double balance) onCreate;
+  const _CreateDemoAccountSheet({required this.onCreated});
+  final ValueChanged<BrokerAccount> onCreated;
+
   @override
   State<_CreateDemoAccountSheet> createState() => _CreateDemoAccountSheetState();
 }
@@ -273,23 +279,34 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .34 : .12), blurRadius: 30, offset: const Offset(0, -8))],
               ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Padding(padding: const EdgeInsets.only(top: 10, bottom: 2),
-                  child: Container(width: 38, height: 4,
-                    decoration: BoxDecoration(color: muted.withValues(alpha: .45), borderRadius: BorderRadius.circular(10)))),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 2),
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(color: muted.withValues(alpha: .45), borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(18, 12, 12, 15),
                   child: Row(children: [
-                    Container(width: 44, height: 44,
+                    Container(
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)),
-                      child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 22)),
+                      child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 22),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Create Demo Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 3),
-                      Text('Set up your virtual MT5 trading account', style: TextStyle(color: muted, fontSize: 11)),
+                      Text('Configure your virtual MT5 practice account', style: TextStyle(color: muted, fontSize: 11)),
                     ])),
-                    IconButton(tooltip: 'Close', onPressed: () => Navigator.pop(context),
-                      icon: Icon(LucideIcons.x, color: muted, size: 19)),
+                    IconButton(
+                      tooltip: 'Close',
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(LucideIcons.x, color: muted, size: 19),
+                    ),
                   ]),
                 ),
                 Divider(height: 1, color: border),
@@ -304,7 +321,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                       controller: _nameController,
                       textCapitalization: TextCapitalization.words,
                       style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
-                      decoration: _demoInputDecoration('Enter account name', LucideIcons.userRound, cs, border, muted, dark),
+                      decoration: _demoInputDecoration('Enter account name (e.g. Practice Pro)', LucideIcons.userRound, cs, border, muted, dark),
                     ),
                     const SizedBox(height: 18),
                     _demoSectionHeading('TRADING CONFIGURATION', '02', cs),
@@ -324,10 +341,20 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                               decoration: BoxDecoration(
                                 color: _leverage == value ? cs.primary.withValues(alpha: .10) : cs.surface,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: _leverage == value ? cs.primary : border, width: _leverage == value ? 1.5 : 1),
+                                border: Border.all(
+                                  color: _leverage == value ? cs.primary : border,
+                                  width: _leverage == value ? 1.5 : 1,
+                                ),
                               ),
                               alignment: Alignment.center,
-                              child: Text(value, style: TextStyle(color: _leverage == value ? cs.primary : cs.onSurface, fontSize: 12, fontWeight: FontWeight.w800)),
+                              child: Text(
+                                value,
+                                style: TextStyle(
+                                  color: _leverage == value ? cs.primary : cs.onSurface,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                             ),
                           ),
                         )),
@@ -350,8 +377,12 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     SizedBox(height: 48, child: FilledButton.icon(
                       onPressed: _createAccount,
-                      style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: const Color(0xFF142238), elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _brokerGold,
+                        foregroundColor: const Color(0xFF142238),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
                       icon: const Icon(LucideIcons.plus, size: 18),
                       label: const Text('CREATE DEMO ACCOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                     )),
@@ -359,7 +390,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(LucideIcons.shieldCheck, color: muted, size: 12),
                       const SizedBox(width: 5),
-                      Text('Virtual funds only · No deposit required', style: TextStyle(color: muted, fontSize: 9)),
+                      Text('Virtual practice funds only · Zero real financial risk', style: TextStyle(color: muted, fontSize: 9)),
                     ]),
                   ]),
                 ),
@@ -397,14 +428,27 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
     final name = _nameController.text.trim();
     final balance = double.tryParse(_balanceController.text.trim());
     if (name.isEmpty) {
-      showAppMessage(('Enter an account name to continue.'));
+      showAppMessage('Enter an account name to continue.');
       return;
     }
     if (balance == null || !balance.isFinite || balance <= 0) {
-      showAppMessage(('Enter a valid virtual balance greater than zero.'));
+      showAppMessage('Enter a valid virtual balance greater than zero.');
       return;
     }
+    final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+    final formatted = '\$${balance.toStringAsFixed(2)}';
+    final newAccount = BrokerAccount(
+      name,
+      login,
+      _leverage,
+      formatted,
+      formatted,
+      'Demo MT5',
+      server: 'VTIndex-Demo',
+      currency: 'USD',
+      floatingPnl: 0.0,
+    );
     Navigator.pop(context);
-    widget.onCreate(name, _leverage, balance);
+    widget.onCreated(newAccount);
   }
 }

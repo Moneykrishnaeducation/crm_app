@@ -3606,109 +3606,17 @@ class BrokerBottomNavigation extends StatelessWidget {
   final ValueChanged<String> onSelect;
 
   void _showQuickActions(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     HapticFeedback.mediumImpact();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A10264B),
-                blurRadius: 28,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4.5,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).dividerColor,
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33389BFF),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Quick actions',
-                style: TextStyle(
-                  color: scheme.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _QuickActionRow(
-                icon: LucideIcons.wallet,
-                title: 'Deposit funds',
-                subtitle: 'Add money to your account',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  onSelect('Deposit');
-                },
-              ),
-              _QuickActionRow(
-                icon: LucideIcons.arrowUpRight,
-                title: 'Withdraw funds',
-                subtitle: 'Transfer funds to your bank',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  onSelect('Withdraw');
-                },
-              ),
-              _QuickActionRow(
-                icon: LucideIcons.userRoundPlus,
-                title: 'Open live account',
-                subtitle: 'Start trading with real capital',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  onSelect('Open Account');
-                },
-              ),
-              _QuickActionRow(
-                icon: LucideIcons.arrowLeftRight,
-                title: 'Internal transfer',
-                subtitle: 'Move balance between accounts',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  onSelect('Internal Transfer');
-                },
-              ),
-              _QuickActionRow(
-                icon: LucideIcons.monitor,
-                title: 'Create demo account',
-                subtitle: 'Practice strategies risk-free',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  onSelect('Demo Accounts');
-                },
-              ),
-            ],
-          ),
-        ),
+      barrierColor: Colors.black.withValues(alpha: 0.54),
+      builder: (sheetContext) => _AnimatedQuickActionsSheet(
+        onSelect: (action) {
+          Navigator.pop(sheetContext);
+          onSelect(action);
+        },
       ),
     );
   }
@@ -3732,7 +3640,7 @@ class BrokerBottomNavigation extends StatelessWidget {
             child: Container(
               margin: EdgeInsets.fromLTRB(horizontalMargin, 2, horizontalMargin, 10),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.10),
@@ -3742,14 +3650,14 @@ class BrokerBottomNavigation extends StatelessWidget {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(28),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                   child: Container(
                     padding: EdgeInsets.fromLTRB(navPadding, 6, navPadding, 6),
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xEA0E1A2E) : const Color(0xEAFFFFFF),
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: isDark ? const Color(0x33475569) : const Color(0x66CBD5E1),
                         width: 1.1,
@@ -3775,7 +3683,7 @@ class BrokerBottomNavigation extends StatelessWidget {
                           height: 54,
                           child: Center(
                             child: Transform.translate(
-                              offset: const Offset(0, -7),
+                              offset: const Offset(0, -9),
                               child: _CenterQuickActionButton(
                                 onTap: () => _showQuickActions(context),
                               ),
@@ -3801,6 +3709,257 @@ class BrokerBottomNavigation extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionData {
+  const _QuickActionData({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.category,
+    required this.target,
+    required this.gradient,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String category;
+  final String target;
+  final List<Color> gradient;
+}
+
+class _AnimatedQuickActionsSheet extends StatefulWidget {
+  const _AnimatedQuickActionsSheet({required this.onSelect});
+  final ValueChanged<String> onSelect;
+
+  @override
+  State<_AnimatedQuickActionsSheet> createState() => _AnimatedQuickActionsSheetState();
+}
+
+class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
+    final border = isDark ? const Color(0xFF243B5A) : const Color(0xFFE2E8F0);
+    final surface = isDark ? const Color(0xF40D1B2E) : const Color(0xF8FFFFFF);
+    final muted = scheme.onSurfaceVariant;
+
+    final actions = const [
+      _QuickActionData(
+        icon: LucideIcons.wallet,
+        title: 'Deposit funds',
+        subtitle: 'Add money to your account',
+        category: 'FUNDS',
+        target: 'Deposit',
+        gradient: [Color(0xFF10B981), Color(0xFF059669)],
+      ),
+      _QuickActionData(
+        icon: LucideIcons.arrowUpRight,
+        title: 'Withdraw funds',
+        subtitle: 'Transfer funds to your bank',
+        category: 'FUNDS',
+        target: 'Withdraw',
+        gradient: [Color(0xFFF59E0B), Color(0xFFD97706)],
+      ),
+      _QuickActionData(
+        icon: LucideIcons.userRoundPlus,
+        title: 'Open live account',
+        subtitle: 'Start trading with real capital',
+        category: 'LIVE TRADING',
+        target: 'Open Account',
+        gradient: [Color(0xFF1658C9), Color(0xFF0E3E91)],
+      ),
+      _QuickActionData(
+        icon: LucideIcons.arrowLeftRight,
+        title: 'Internal transfer',
+        subtitle: 'Move balance between accounts',
+        category: 'TRANSFER',
+        target: 'Internal Transfer',
+        gradient: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+      ),
+      _QuickActionData(
+        icon: LucideIcons.monitor,
+        title: 'Create demo account',
+        subtitle: 'Practice strategies risk-free',
+        category: 'DEMO TRADING',
+        target: 'Create Demo Account',
+        gradient: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+      ),
+    ];
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border.all(color: border, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+                    blurRadius: 30,
+                    offset: const Offset(0, -8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      18,
+                      10,
+                      18,
+                      16 + MediaQuery.viewPaddingOf(context).bottom,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 38,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: muted.withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: scheme.primary.withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Icon(LucideIcons.sparkles, color: scheme.primary, size: 22),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Quick actions',
+                                        style: TextStyle(
+                                          color: scheme.onSurface,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: scheme.primary.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '5 ACTIONS',
+                                          style: TextStyle(
+                                            color: scheme.primary,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Instant operations for trading and funds',
+                                    style: TextStyle(color: muted, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Close',
+                              onPressed: () => Navigator.pop(context),
+                              icon: Icon(LucideIcons.x, color: muted, size: 19),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Divider(height: 1, color: border),
+                        const SizedBox(height: 4),
+                        for (int i = 0; i < actions.length; i++)
+                          _buildAnimatedRow(i, actions[i]),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedRow(int index, _QuickActionData data) {
+    final start = (0.07 * index).clamp(0.0, 1.0);
+    final end = (0.45 + 0.11 * index).clamp(0.0, 1.0);
+    final curve = CurvedAnimation(
+      parent: _animCtrl,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+    );
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.22),
+        end: Offset.zero,
+      ).animate(curve),
+      child: FadeTransition(
+        opacity: curve,
+        child: _QuickActionRow(
+          icon: data.icon,
+          title: data.title,
+          subtitle: data.subtitle,
+          category: data.category,
+          gradientColors: data.gradient,
+          onTap: () => widget.onSelect(data.target),
         ),
       ),
     );
@@ -3862,11 +4021,15 @@ class _QuickActionRow extends StatefulWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.category,
+    this.gradientColors,
     required this.onTap,
   });
   final IconData icon;
   final String title;
   final String? subtitle;
+  final String? category;
+  final List<Color>? gradientColors;
   final VoidCallback onTap;
 
   @override
@@ -3883,6 +4046,19 @@ class _QuickActionRowState extends State<_QuickActionRow> {
     final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final isActive = _isPressed || _isHovered;
+    final defaultGradients = isActive
+        ? const [Color(0x44389BFF), Color(0x280875F5)]
+        : const [Color(0x260875F5), Color(0x1A0875F5)];
+    final iconGradient = widget.gradientColors != null
+        ? [
+            widget.gradientColors!.first.withValues(alpha: isActive ? 0.35 : 0.20),
+            widget.gradientColors!.last.withValues(alpha: isActive ? 0.22 : 0.12),
+          ]
+        : defaultGradients;
+    final iconColor = widget.gradientColors != null
+        ? (isDark ? widget.gradientColors!.first : const Color(0xFF1658C9))
+        : (isActive ? const Color(0xFF174A8B) : const Color(0xFF5279A9));
+
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: MouseRegion(
@@ -3897,103 +4073,137 @@ class _QuickActionRowState extends State<_QuickActionRow> {
             HapticFeedback.lightImpact();
             widget.onTap();
           },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
+          child: AnimatedScale(
+            scale: _isPressed ? 0.98 : 1.0,
+            duration: const Duration(milliseconds: 140),
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? (isDark ? const Color(0xFF223656) : const Color(0xFFF2F6FC))
-                  : (isDark ? const Color(0xFF1A283E) : const Color(0xFFF8FAFD)),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark
-                    ? const Color(0xFF334B6E)
-                    : (isActive ? const Color(0xFFB9CEE9) : const Color(0xFFE7EDF5)),
-                width: 1,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? (isDark ? const Color(0xFF223656) : const Color(0xFFF2F6FC))
+                    : (isDark ? const Color(0xFF1A283E) : const Color(0xFFF8FAFD)),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? (isActive ? const Color(0xFF4B72A4) : const Color(0xFF334B6E))
+                      : (isActive ? const Color(0xFFB9CEE9) : const Color(0xFFE7EDF5)),
+                  width: 1,
+                ),
+                boxShadow: isActive
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x220875F5),
+                          blurRadius: 10,
+                          offset: Offset(0, 3),
+                        ),
+                      ]
+                    : null,
               ),
-              boxShadow: isActive
-                  ? const [
-                      BoxShadow(
-                        color: Color(0x220875F5),
-                        blurRadius: 10,
-                        offset: Offset(0, 3),
+              child: Row(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: iconGradient,
                       ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isActive
-                          ? const [Color(0x44389BFF), Color(0x280875F5)]
-                          : const [Color(0x260875F5), Color(0x1A0875F5)],
+                      border: Border.all(
+                        color: widget.gradientColors != null
+                            ? widget.gradientColors!.first.withValues(alpha: isActive ? 0.55 : 0.3)
+                            : (isActive ? const Color(0x665CABFF) : const Color(0x334B96FF)),
+                        width: 1.1,
+                      ),
                     ),
-                    border: Border.all(
-                      color: isActive
-                          ? const Color(0x665CABFF)
-                          : const Color(0x334B96FF),
-                      width: 1,
+                    child: Center(
+                      child: Icon(
+                        widget.icon,
+                        color: iconColor,
+                        size: 20,
+                      ),
                     ),
                   ),
-                  child: Center(
-                    child: Icon(
-                      widget.icon,
-                      color: isActive
-                          ? const Color(0xFF174A8B)
-                          : const Color(0xFF5279A9),
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.title,
-                        style: TextStyle(
-                          color: scheme.onSurface,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.1,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                widget.title,
+                                style: TextStyle(
+                                  color: scheme.onSurface,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.1,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (widget.category != null) ...[
+                              const SizedBox(width: 7),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: (widget.gradientColors?.first ?? const Color(0xFF1658C9))
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  widget.category!,
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? (widget.gradientColors?.first ?? const Color(0xFF8CCBFF))
+                                        : const Color(0xFF1658C9),
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ),
-                      if (widget.subtitle != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.subtitle!,
-                          style: TextStyle(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w400,
+                        if (widget.subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.subtitle!,
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                AnimatedSlide(
-                  offset: isActive ? const Offset(0.08, 0) : Offset.zero,
-                  duration: const Duration(milliseconds: 180),
-                  child: Icon(
-                    LucideIcons.chevronRight,
-                    color: isActive
-                        ? const Color(0xFF174A8B)
-                        : scheme.onSurfaceVariant,
-                    size: 18,
+                  const SizedBox(width: 8),
+                  AnimatedSlide(
+                    offset: isActive ? const Offset(0.08, 0) : Offset.zero,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(
+                      LucideIcons.chevronRight,
+                      color: isActive
+                          ? const Color(0xFF1658C9)
+                          : scheme.onSurfaceVariant,
+                      size: 18,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

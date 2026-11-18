@@ -339,6 +339,36 @@ class _AppShellState extends State<AppShell> {
   void _addAccount(BrokerAccount account) =>
       setState(() => _accounts.insert(0, account));
 
+  final List<BrokerAccount> _demoAccounts = [
+    BrokerAccount(
+      'Demo Standard',
+      '3498102',
+      '1:500',
+      r'$10,000.00',
+      r'$10,000.00',
+      'Demo MT5 Standard',
+      server: 'VTIndex-Demo',
+      currency: 'USD',
+      floatingPnl: 0.0,
+    ),
+    BrokerAccount(
+      'Demo ECN Pro',
+      '3481940',
+      '1:200',
+      r'$25,000.00',
+      r'$25,180.40',
+      'Demo MT5 ECN',
+      server: 'VTIndex-Demo',
+      currency: 'USD',
+      floatingPnl: 180.40,
+    ),
+  ];
+
+  void _addDemoAccount(BrokerAccount account) {
+    setState(() => _demoAccounts.insert(0, account));
+    showAppMessage('Demo account ${account.login} created successfully.');
+  }
+
   void _openAccount(BrokerAccount account) {
     setState(() {
       _selectedAccount = account;
@@ -364,6 +394,17 @@ class _AppShellState extends State<AppShell> {
         backgroundColor: Colors.transparent,
         barrierColor: Colors.black54,
         builder: (_) => _OpenLiveAccountSheet(onCreated: _addAccount),
+      );
+      return;
+    }
+    if (page == 'Create Demo Account' || page == 'Open Demo Account') {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black54,
+        builder: (_) => _CreateDemoAccountSheet(onCreated: _addDemoAccount),
       );
       return;
     }
@@ -501,6 +542,8 @@ class _AppShellState extends State<AppShell> {
             },
           ),
         'Demo Accounts' => BrokerDemoAccountsPage(
+            accounts: _demoAccounts,
+            onAccountCreated: _addDemoAccount,
             onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
             onAccountSelected: _openDemoAccount,
           ),

@@ -97,20 +97,24 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setModalState) {
           final colors = _PartnershipColors.of(sheetContext);
           final partner = _partners[modalPartnerIndex];
           final referralUrl = 'https://client.vtindex.com/?ref=${partner.code}';
           return SafeArea(
+            top: false,
+            bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: EdgeInsets.zero,
               child: Container(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
                 decoration: BoxDecoration(
                   color: colors.card,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
                   border: Border.all(color: colors.border),
                   boxShadow: [
                     BoxShadow(

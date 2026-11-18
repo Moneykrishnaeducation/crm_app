@@ -89,7 +89,7 @@ class _PammPageState extends State<PammPage> {
       margin: EdgeInsets.fromLTRB(compact ? 10 : 14, 8, compact ? 10 : 14, 0),
       padding: EdgeInsets.all(compact ? 10 : 14),
       decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFBFD5FF))),
+        ),
       child: compact
         ? Column(children: [
             Row(children: [_brandIcon(), const SizedBox(width: 10), Expanded(child: _brandTitle()), _createButton(true)]),
@@ -966,11 +966,10 @@ class _PammPageState extends State<PammPage> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: 780, maxHeight: maxHeight),
                   child: Container(
-                margin: EdgeInsets.fromLTRB(compact ? 7 : 14, 0, compact ? 7 : 14, compact ? 5 : 12),
+                margin: EdgeInsets.zero,
                 decoration: BoxDecoration(
                   color: modalCard,
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: modalBorder),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .2), blurRadius: 28, offset: const Offset(0, 10))],
                 ),
                 clipBehavior: Clip.antiAlias,

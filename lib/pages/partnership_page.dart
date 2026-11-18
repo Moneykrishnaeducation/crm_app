@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../app_notifications.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_notch_toast/flutter_notch_toast.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -66,23 +66,6 @@ class _PartnershipColors {
       chipBg: isDark ? const Color(0xFF1F2F4A) : const Color(0xFFEAF2FD),
       appBarBg: isDark ? const Color(0xFF101D31) : Colors.white,
     );
-  }
-}
-
-void showAppToast(String message, {NotchToastType type = NotchToastType.info}) {
-  switch (type) {
-    case NotchToastType.success:
-      toast.success(message);
-    case NotchToastType.error:
-      toast.error(message);
-    case NotchToastType.warning:
-      toast.warning(message);
-    case NotchToastType.info:
-      toast.info(message);
-    case NotchToastType.loading:
-      toast.loading(message);
-    default:
-      toast(message);
   }
 }
 
@@ -262,7 +245,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                               await Clipboard.setData(
                                 ClipboardData(text: referralUrl),
                               );
-                              showAppToast('Referral link copied', type: NotchToastType.success);
+                              showAppMessage('Referral link copied');
                             },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colors.text,
@@ -699,7 +682,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                     onPressed: () async {
                       final url = 'https://client.vtindex.com/?ref=${_selectedPartner.code}';
                       await Clipboard.setData(ClipboardData(text: url));
-                      showAppToast('Referral link copied', type: NotchToastType.success);
+                      showAppMessage('Referral link copied');
                     },
                     icon: Icon(
                       LucideIcons.copy,
@@ -819,7 +802,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
   Future<void> copyText(String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (mounted) {
-      showAppToast('$label copied', type: NotchToastType.success);
+      showAppMessage('$label copied');
     }
   }
 
@@ -911,10 +894,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                           ),
                           if (wide)
                             FilledButton.icon(
-                              onPressed: () => showAppToast(
-                                'Open Client List to add a client.',
-                                type: NotchToastType.info,
-                              ),
+                              onPressed: () => showAppMessage('Open Client List to add a client.'),
                               style: FilledButton.styleFrom(
                                 backgroundColor: colors.blue,
                                 foregroundColor: Colors.white,
@@ -1376,10 +1356,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: () => showAppToast(
-              'PDF export is ready for distribution.',
-              type: NotchToastType.info,
-            ),
+            onPressed: () => showAppMessage('PDF export is ready for distribution.'),
             icon: const Icon(LucideIcons.download, size: 14),
             label: const Text(
               'DOWNLOAD PDF CARD',
@@ -2179,10 +2156,7 @@ class _BrokerCommissionWithdrawalPageState
             FilledButton.icon(
               onPressed: canSubmit
                   ? () {
-                      showAppToast(
-                        'Withdrawal request for \$${_amount.toStringAsFixed(2)} submitted.',
-                        type: NotchToastType.success,
-                      );
+                      showAppMessage('Withdrawal request for \$${_amount.toStringAsFixed(2)} submitted.');
                       Navigator.maybePop(context);
                     }
                   : null,
@@ -2525,7 +2499,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       ),
     );
     if (created == true && mounted) {
-      showAppToast('Client profile created successfully.', type: NotchToastType.success);
+      showAppMessage('Client profile created successfully.');
     }
   }
 

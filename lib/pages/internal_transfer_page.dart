@@ -12,12 +12,10 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   String _source = '3315';
   String _destination = '3312';
   final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
 
   @override
   void dispose() {
     _amountController.dispose();
-    _noteController.dispose();
     super.dispose();
   }
 
@@ -307,36 +305,6 @@ class _SwapButton extends StatelessWidget {
         side: BorderSide(color: colors.primary.withValues(alpha: .18)),
       ),
       icon: Icon(icon, size: 19),
-    );
-  }
-}
-
-class _TransferChip extends StatelessWidget {
-  const _TransferChip({required this.label, required this.selected, required this.enabled, required this.onTap});
-  final String label;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Material(
-      color: selected ? colors.primary.withValues(alpha: .13) : colors.surfaceContainerHighest.withValues(alpha: enabled ? 1 : .45),
-      borderRadius: BorderRadius.circular(11),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(11),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(11), border: Border.all(color: selected ? colors.primary : theme.dividerColor)),
-          child: Text(label, style: theme.textTheme.labelMedium?.copyWith(
-            color: enabled ? (selected ? colors.primary : colors.onSurface) : colors.onSurfaceVariant.withValues(alpha: .55),
-            fontWeight: FontWeight.w700,
-          )),
-        ),
-      ),
     );
   }
 }

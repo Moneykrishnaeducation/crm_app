@@ -410,6 +410,7 @@ class _AppShellState extends State<AppShell> {
           ),
         'Internal Transfer' => const BrokerInternalTransferPage(),
         'Demo Accounts' => BrokerDemoAccountsPage(
+            onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
             onOpenTradingAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
           ),
         'Account Details' when _selectedAccount != null => BrokerAccountDetailsPage(

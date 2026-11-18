@@ -46,6 +46,7 @@ const _gold = Color(0xFFD8A82E);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppNotificationCenter.instance.initialize();
   final preferences = await SharedPreferences.getInstance();
   final stored = preferences.getString('vtindex_theme_mode');
   final initialThemeMode = switch (stored) {

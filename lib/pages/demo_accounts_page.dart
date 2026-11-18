@@ -451,6 +451,14 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
       floatingPnl: 0.0,
     );
     Navigator.pop(context);
+    unawaited(AppNotificationCenter.instance.sendNotification(
+      title: 'Demo Account Created (#${newAccount.login})',
+      body: 'MT5 Demo account provisioned with \$${newAccount.balance} USD.',
+      category: 'Trading',
+      icon: LucideIcons.badgeCheck,
+      isGold: false,
+      sendToMobilePanel: true,
+    ));
     widget.onCreated(newAccount);
   }
 }

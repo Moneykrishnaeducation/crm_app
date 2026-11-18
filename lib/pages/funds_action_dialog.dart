@@ -1626,6 +1626,15 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     }
 
     if (withdrawal) {
+      final amt = _amount.text;
+      unawaited(AppNotificationCenter.instance.sendNotification(
+        title: 'Withdrawal Request Submitted',
+        body: 'Withdrawal request of \$$amt USD from MT5 #3311 is under review.',
+        category: 'Funds',
+        icon: LucideIcons.arrowUpRight,
+        isGold: false,
+        sendToMobilePanel: true,
+      ));
       showAppMessage('Withdrawal request is ready for review.');
       return;
     }
@@ -1644,6 +1653,15 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       _ => 'USDT (TRC20 Crypto)',
     };
     final refId = 'VTX-DEP-${100000 + DateTime.now().millisecondsSinceEpoch % 900000}';
+
+    unawaited(AppNotificationCenter.instance.sendNotification(
+      title: 'Deposit Request Initiated',
+      body: '$currencyStr $amountStr ($methodName) initiated. Ref: $refId.',
+      category: 'Funds',
+      icon: LucideIcons.wallet,
+      isGold: true,
+      sendToMobilePanel: true,
+    ));
 
     _showDepositResponseModal(
       context,

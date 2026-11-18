@@ -4,6 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 void main() {
+  setUp(() {
+    AppNotificationCenter.instance.resetToDefault();
+  });
+
   Widget createTestWidget() {
     return const MaterialApp(
       home: AppShell(),

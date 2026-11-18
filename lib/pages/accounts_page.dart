@@ -476,6 +476,14 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
     }
     final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
     widget.onCreated(BrokerAccount(accountName, login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
+    unawaited(AppNotificationCenter.instance.sendNotification(
+      title: 'Live Account Created (#$login)',
+      body: 'Live MT5 Trading Account #$login has been provisioned.',
+      category: 'Trading',
+      icon: LucideIcons.shieldCheck,
+      isGold: true,
+      sendToMobilePanel: true,
+    ));
     Navigator.pop(context);
     showAppMessage('Live account preview $login added.');
   }

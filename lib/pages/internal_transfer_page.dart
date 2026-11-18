@@ -1396,6 +1396,15 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
 
     widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
 
+    unawaited(AppNotificationCenter.instance.sendNotification(
+      title: 'Internal Transfer Completed (\$${amount.toStringAsFixed(2)})',
+      body: 'Transferred \$${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin instantly. Ref: ${record.id}.',
+      category: 'Funds',
+      icon: LucideIcons.arrowLeftRight,
+      isGold: false,
+      sendToMobilePanel: true,
+    ));
+
     _amountController.clear();
     _isProcessing = false;
     setState(() {});

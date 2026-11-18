@@ -147,28 +147,35 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
           clipBehavior: Clip.none,
           children: [
             Icon(LucideIcons.bell, size: 20, color: onSurface),
-            Positioned(
-              right: -6,
-              top: -4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDC2626),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
-                child: const Center(
-                  child: Text(
-                    '99+',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      height: 1,
+            ValueListenableBuilder<int>(
+              valueListenable: AppNotificationCenter.instance.unreadCountNotifier,
+              builder: (context, unread, _) {
+                if (unread <= 0) return const SizedBox.shrink();
+                final badgeLabel = unread >= 3 ? '99+' : '$unread';
+                return Positioned(
+                  right: -6,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
+                    child: Center(
+                      child: Text(
+                        badgeLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                          height: 1,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -904,28 +911,6 @@ class _MarketSearchBottomSheetState extends State<MarketSearchBottomSheet>
   }
 }
 
-class _NotificationItemData {
-  _NotificationItemData({
-    required this.id,
-    required this.title,
-    required this.body,
-    required this.timestamp,
-    required this.category,
-    required this.icon,
-    this.isUnread = true,
-    this.isGold = false,
-  });
-
-  final String id;
-  final String title;
-  final String body;
-  final String timestamp;
-  final String category;
-  final IconData icon;
-  bool isUnread;
-  final bool isGold;
-}
-
 class NotificationCenterBottomSheet extends StatefulWidget {
   const NotificationCenterBottomSheet({super.key});
 
@@ -938,59 +923,6 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
   late final AnimationController _animCtrl;
   String _selectedCategory = 'All';
 
-  final List<_NotificationItemData> _notifications = [
-    _NotificationItemData(
-      id: '1',
-      title: 'Deposit of \$2,500.00 Credited',
-      body: 'Your USDT deposit has been successfully credited to Standard account #3315.',
-      timestamp: '10 mins ago',
-      category: 'Funds',
-      icon: LucideIcons.wallet,
-      isUnread: true,
-      isGold: false,
-    ),
-    _NotificationItemData(
-      id: '2',
-      title: 'TP Executed: XAUUSD +\$180.50',
-      body: 'Take profit executed for 0.10 lots XAUUSD at 2,351.80. Net profit: \$180.50.',
-      timestamp: '1 hour ago',
-      category: 'Trading',
-      icon: LucideIcons.trendingUp,
-      isUnread: true,
-      isGold: true,
-    ),
-    _NotificationItemData(
-      id: '3',
-      title: 'Internal Transfer Completed (\$500.00)',
-      body: 'Transferred \$500.00 from Main Trading #3315 to ECN #3311 instantly.',
-      timestamp: '4 hours ago',
-      category: 'Funds',
-      icon: LucideIcons.arrowLeftRight,
-      isUnread: true,
-      isGold: false,
-    ),
-    _NotificationItemData(
-      id: '4',
-      title: 'New Authorized Login Detected',
-      body: 'Authorized login from Chrome on Windows. Review Security Center if unrecognized.',
-      timestamp: 'Yesterday, 18:24',
-      category: 'Security',
-      icon: LucideIcons.shieldCheck,
-      isUnread: false,
-      isGold: true,
-    ),
-    _NotificationItemData(
-      id: '5',
-      title: 'US CPI Release Market Alert',
-      body: 'High volatility anticipated ahead of the Federal Reserve interest rate statement.',
-      timestamp: '2 days ago',
-      category: 'Trading',
-      icon: LucideIcons.newspaper,
-      isUnread: false,
-      isGold: false,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -998,29 +930,30 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
       vsync: this,
       duration: const Duration(milliseconds: 320),
     )..forward();
+    AppNotificationCenter.instance.notificationsNotifier.addListener(_onNotificationsChanged);
+  }
+
+  void _onNotificationsChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    AppNotificationCenter.instance.notificationsNotifier.removeListener(_onNotificationsChanged);
     _animCtrl.dispose();
     super.dispose();
   }
 
-  int get _unreadCount => _notifications.where((n) => n.isUnread).length;
+  List<AppNotificationItem> get _notifications => AppNotificationCenter.instance.notifications;
+  int get _unreadCount => AppNotificationCenter.instance.unreadCount;
 
   void _markAllAsRead() {
-    setState(() {
-      for (final n in _notifications) {
-        n.isUnread = false;
-      }
-    });
+    AppNotificationCenter.instance.markAllAsRead();
     showAppMessage('All notifications marked as read.');
   }
 
   void _clearAll() {
-    setState(() {
-      _notifications.clear();
-    });
+    AppNotificationCenter.instance.clearAll();
     showAppMessage('All notifications cleared.');
   }
 
@@ -1158,6 +1091,25 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                               ),
                             ),
                             IconButton(
+                              tooltip: 'Send test notification',
+                              onPressed: () async {
+                                await AppNotificationCenter.instance.sendNotification(
+                                  title: 'Market Order Executed',
+                                  body: 'Bought 0.20 lots EURUSD at 1.0845. Stop loss and take profit confirmed.',
+                                  category: 'Trading',
+                                  icon: LucideIcons.trendingUp,
+                                  isGold: true,
+                                  sendToMobilePanel: true,
+                                );
+                                showAppMessage('Sent new notification to mobile panel & app list.');
+                              },
+                              icon: Icon(
+                                LucideIcons.bellRing,
+                                color: dark ? const Color(0xFFFFD566) : const Color(0xFFB3861B),
+                                size: 18,
+                              ),
+                            ),
+                            IconButton(
                               tooltip: 'Close',
                               onPressed: () => Navigator.pop(context),
                               icon: Icon(LucideIcons.x, color: muted, size: 19),
@@ -1286,7 +1238,7 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
 
                                   return InkWell(
                                     onTap: () {
-                                      setState(() => item.isUnread = false);
+                                      AppNotificationCenter.instance.markAsRead(item.id);
                                       showAppMessage('Viewing: ${item.title}');
                                     },
                                     borderRadius: BorderRadius.circular(14),

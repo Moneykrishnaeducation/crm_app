@@ -5,7 +5,6 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 void main() {
   setUp(() {
-    liveNotificationNotifier.value = null;
     AppNotificationCenter.instance.resetToDefault();
   });
 
@@ -98,11 +97,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify the new notification is immediately visible in the selection list
-      expect(find.text('Market Order Executed'), findsWidgets);
-      expect(find.textContaining('Bought 0.20 lots EURUSD'), findsWidgets);
+      expect(find.text('Market Order Executed'), findsOneWidget);
+      expect(find.textContaining('Bought 0.20 lots EURUSD'), findsOneWidget);
 
       // Tap on the item to view & mark as read
-      await tester.tap(find.text('Market Order Executed').last);
+      await tester.tap(find.text('Market Order Executed'));
       await tester.pumpAndSettle();
       expect(AppNotificationCenter.instance.notifications.first.isUnread, isFalse);
 
@@ -119,78 +118,46 @@ void main() {
     });
   });
 
-  group('LiveNotificationHost & Dynamic Live HUD Tests', () {
-    testWidgets('Renders top-floating Live Notification HUD on showAppMessage', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          scaffoldMessengerKey: appScaffoldMessengerKey,
-          builder: (context, child) => LiveNotificationHost(child: child!),
-          home: const Scaffold(
-            body: Center(child: Text('Home')),
-          ),
-        ),
+  group('Native OS Live Updates & Ongoing Notifications Tests', () {
+    test('startLiveUpdate, updateLiveUpdate, and stopLiveUpdate execute safely', () async {
+      final center = AppNotificationCenter.instance;
+
+      // Start an ongoing native OS live update for an open trade
+      await center.startLiveUpdate(
+        id: 9999,
+        title: 'Open Position: XAUUSD BUY 0.10',
+        body: 'Floating P&L: +\$42.50 (Live)',
+        subText: 'LIVE',
+        usesChronometer: true,
       );
 
-      // Trigger live notification
-      showAppMessage('Market order EURUSD executed successfully', type: AppNotificationType.success);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 350));
-
-      // Should find the LIVE badge and the notification text within the live pill
-      expect(find.text('LIVE'), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('live_notification_pill')),
-          matching: find.text('Market order EURUSD executed successfully'),
-        ),
-        findsOneWidget,
+      // Update the active native OS live update with new price/P&L
+      await center.updateLiveUpdate(
+        id: 9999,
+        title: 'Open Position: XAUUSD BUY 0.10',
+        body: 'Floating P&L: +\$68.00 (Target TP Approaching)',
+        subText: 'LIVE',
       );
 
-      // Tap close button on the live notification HUD
-      final closeBtn = find.byIcon(LucideIcons.x);
-      expect(closeBtn, findsOneWidget);
-      await tester.tap(closeBtn);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(find.text('LIVE'), findsNothing);
+      // Stop/dismiss the native OS live update once trade is closed
+      await center.stopLiveUpdate(9999);
     });
 
-    testWidgets('showLiveNotification displays title and auto-dismisses after duration', (tester) async {
+    testWidgets('showAppMessage displays a floating SnackBar', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           scaffoldMessengerKey: appScaffoldMessengerKey,
-          builder: (context, child) => LiveNotificationHost(child: child!),
           home: const Scaffold(
-            body: Center(child: Text('Home')),
+            body: Center(child: Text('Home Page')),
           ),
         ),
       );
 
-      showLiveNotification(
-        title: 'Deposit Approved',
-        message: '\$5,000.00 credited to account #3315',
-        type: AppNotificationType.success,
-        duration: const Duration(milliseconds: 1000),
-      );
+      showAppMessage('Trade order executed successfully');
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Deposit Approved'), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('live_notification_pill')),
-          matching: find.text(r'$5,000.00 credited to account #3315'),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('LIVE'), findsOneWidget);
-
-      // Advance clock past the duration + fade animation
-      await tester.pump(const Duration(milliseconds: 1200));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Deposit Approved'), findsNothing);
+      expect(find.text('Trade order executed successfully'), findsOneWidget);
+      expect(find.byType(SnackBar), findsOneWidget);
     });
   });
 }

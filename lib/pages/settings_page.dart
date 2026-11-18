@@ -5,10 +5,12 @@ class BrokerSettingsPage extends StatelessWidget {
     super.key,
     this.themeMode = ThemeMode.system,
     this.onThemeModeChanged,
+    this.onSelectPage,
   });
 
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode>? onThemeModeChanged;
+  final ValueChanged<String>? onSelectPage;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +135,47 @@ class BrokerSettingsPage extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Material(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: () => onSelectPage?.call('Privacy Policy'),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: theme.dividerColor),
+              ),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.shieldCheck, color: theme.colorScheme.primary, size: 19),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Privacy Policy',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          'Review the privacy policy',
+                          style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(LucideIcons.chevronRight, color: muted, size: 18),
+                ],
+              ),
+            ),
           ),
         ),
       ],

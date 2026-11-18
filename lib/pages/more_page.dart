@@ -70,6 +70,22 @@ class BrokerMorePage extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 20),
+        const _MoreSectionLabel(
+          'SUPPORT',
+          subtitle: 'Get help and manage your requests',
+        ),
+        _MoreMenuGroup(
+          children: [
+            _MoreMenuRow(
+              icon: LucideIcons.messageSquare,
+              title: 'Tickets',
+              subtitle: 'View and manage support tickets',
+              onTap: () => onSelectPage('Tickets'),
+              showDivider: false,
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
       ],
     ),

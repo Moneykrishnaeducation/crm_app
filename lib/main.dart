@@ -8,6 +8,7 @@ export 'app_notifications.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +17,7 @@ import 'package:video_player/video_player.dart';
 import 'pages/mam_page.dart';
 import 'pages/pamm_page.dart';
 import 'pages/partnership_page.dart';
+import 'pages/privacy_policy_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/security_center_page.dart';
 
@@ -30,6 +32,7 @@ part 'pages/demo_accounts_page.dart';
 part 'pages/more_page.dart';
 part 'pages/download_center_page.dart';
 part 'pages/settings_page.dart';
+part 'pages/support_legal_pages.dart';
 part 'pages/login_page.dart';
 
 const _background = Color(0xFFF5F7FB);
@@ -436,7 +439,10 @@ class _AppShellState extends State<AppShell> {
         'Settings' => BrokerSettingsPage(
             themeMode: widget.themeMode,
             onThemeModeChanged: widget.onThemeModeChanged,
+            onSelectPage: _selectPage,
           ),
+        'Tickets' => const BrokerTicketsPage(),
+        'Privacy Policy' => BrokerPrivacyPolicyPage(onSelectPage: _selectPage),
         'MAM' || 'MAM Account' => MamPage(
             initialTab: 0,
             onBack: () => setState(() => _selectedPage = 'More'),
@@ -514,6 +520,7 @@ class _AppShellState extends State<AppShell> {
         onBack: switch (_selectedPage) {
           'Profile' ||
           'Security Center' ||
+          'Settings' ||
           'MAM' ||
           'MAM Account' ||
           'MAM Manager' ||
@@ -521,7 +528,9 @@ class _AppShellState extends State<AppShell> {
           'Available MAM' ||
           'MAM Available' ||
           'Social Trading' ||
-          'PAMM Account' => () => setState(() => _selectedPage = 'More'),
+          'PAMM Account' ||
+          'Tickets' => () => setState(() => _selectedPage = 'More'),
+          'Privacy Policy' => () => setState(() => _selectedPage = 'Settings'),
           'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
           'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
           'Trade Report' => () => setState(() => _selectedPage = 'Transactions'),

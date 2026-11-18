@@ -661,7 +661,6 @@ class _AppShellState extends State<AppShell> {
           'Platform' => () => setState(() => _selectedPage = 'More'),
           _ => null,
         },
-        onAvatarTap: () => _selectPage('Profile'),
         onSelectPage: _selectPage,
       ),
       body: SafeArea(

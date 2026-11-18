@@ -72,7 +72,7 @@ class _PammPageState extends State<PammPage> {
           constraints: const BoxConstraints(maxWidth: 580),
           child: Column(
             children: [
-              _topBar(true),
+              _topBar(),
               Expanded(
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(
@@ -93,9 +93,9 @@ class _PammPageState extends State<PammPage> {
     ),
   );
 
-  Widget _topBar(bool compact) {
+  Widget _topBar() {
     final labels = ['Managed', 'Available', 'Investments'];
-    final counts = [_managed.length, _investments.length, _available.length];
+    final counts = [_managed.length, _available.length, _investments.length];
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
       padding: const EdgeInsets.all(12),
@@ -111,22 +111,23 @@ class _PammPageState extends State<PammPage> {
           Row(
             children: [
               _brandIcon(),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(child: _brandTitle()),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8FBF3),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF9DE8C9)),
+              const SizedBox(width: 8),
+              Tooltip(
+                message: 'Create PAMM Pool',
+                child: FilledButton.icon(
+                  onPressed: _createPool,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _blue,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 36),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(LucideIcons.plus, size: 14),
+                  label: const Text('Create', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
                 ),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.circle, color: Color(0xFF0BA878), size: 7),
-                  SizedBox(width: 5),
-                  Text('Live', style: TextStyle(
-                    color: Color(0xFF07845F), fontSize: 10, fontWeight: FontWeight.w800,
-                  )),
-                ]),
               ),
             ],
           ),
@@ -233,75 +234,6 @@ class _PammPageState extends State<PammPage> {
     const SizedBox(height: 4),
     Text('Manage pools, investments and allocations.', style: TextStyle(color: _muted, fontSize: 10.5)),
   ]);
-
-  Widget _tabs(List<String> labels, bool compact) {
-    final icons = [LucideIcons.activity, LucideIcons.trendingUp, LucideIcons.wallet];
-    final counts = [_managed.length, _available.length, _investments.length];
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: _dark ? const Color(0xFF17243A) : const Color(0xFFEAF1FC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _border),
-      ),
-      child: Row(children: [
-        for (var i = 0; i < labels.length; i++)
-          Expanded(child: InkWell(
-            onTap: () => setState(() { _tab = i; _query = ''; _search.clear(); }),
-            borderRadius: BorderRadius.circular(9),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 9, vertical: 10),
-              decoration: BoxDecoration(
-                color: _tab == i ? _blue : Colors.transparent,
-                borderRadius: BorderRadius.circular(9),
-                boxShadow: _tab == i ? [BoxShadow(color: _blue.withValues(alpha: .18), blurRadius: 8, offset: const Offset(0, 3))] : null,
-              ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (!compact) ...[
-                  Icon(icons[i], size: 13, color: _tab == i ? Colors.white : _muted),
-                  const SizedBox(width: 6),
-                ],
-                Flexible(child: Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: _tab == i ? Colors.white : _text, fontSize: compact ? 9 : 10.5, fontWeight: FontWeight.w700))),
-                const SizedBox(width: 5),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _tab == i ? Colors.white.withValues(alpha: .18) : _border.withValues(alpha: .65),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text('${counts[i]}', style: TextStyle(color: _tab == i ? Colors.white : _muted, fontSize: 8, fontWeight: FontWeight.w800)),
-                ),
-              ]),
-            ),
-          )),
-      ]),
-    );
-  }
-
-  Widget _miniStat(String label, String value, IconData icon, Color accent) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-    decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
-    child: Row(children: [
-      Container(width: 32, height: 32, decoration: BoxDecoration(color: accent.withValues(alpha: .08), borderRadius: BorderRadius.circular(9)),
-        child: Icon(icon, color: accent, size: 16)),
-      const SizedBox(width: 8),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(color: _muted, fontSize: 8, fontWeight: FontWeight.w700)),
-        Text(value, style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w800)),
-      ])),
-    ]),
-  );
-
-  Widget _createButton(bool compact) => FilledButton.icon(
-    onPressed: _createPool,
-    icon: const Icon(LucideIcons.plus, size: 15),
-    label: Text(compact ? 'Create' : 'CREATE PAMM', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
-    style: FilledButton.styleFrom(backgroundColor: _gold, foregroundColor: const Color(0xFF17233D),
-      elevation: 0, padding: EdgeInsets.symmetric(horizontal: compact ? 9 : 16, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))),
-  );
 
   Widget _snapshot() {
     final managed = _tab == 0;

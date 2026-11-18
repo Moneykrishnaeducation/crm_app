@@ -4,20 +4,18 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   const _AppHeader({
     required this.title,
     this.onBack,
-    this.onAvatarTap,
     this.onSelectPage,
   });
 
   final String title;
   final VoidCallback? onBack;
-  final VoidCallback? onAvatarTap;
   final ValueChanged<String>? onSelectPage;
 
   @override
   Size get preferredSize => const Size.fromHeight(58);
 
   bool get _isPrimaryTab => onBack == null;
-  bool get _usesBrandHeader => _isPrimaryTab || title == 'Account Details';
+  bool get _usesBrandHeader => _isPrimaryTab;
 
   @override
   Widget build(BuildContext context) {
@@ -56,11 +54,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
       title: _usesBrandHeader
           ? _buildPrimaryBrandTitle(context)
           : _buildDetailTitle(context),
-      actions: title == 'Account Details'
-          ? _buildAccountDetailActions(context, isDark)
-          : _isPrimaryTab
-              ? _buildPrimaryBrandActions(context)
-              : _buildStandardActions(context, isDark),
+      actions: _buildPrimaryBrandActions(context),
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(1),
         child: Divider(height: 1, thickness: 0.7, color: _border),
@@ -107,23 +101,6 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         fontWeight: FontWeight.w700,
       ),
     );
-  }
-
-  List<Widget> _buildAccountDetailActions(BuildContext context, bool isDark) {
-    return [
-      Padding(
-        padding: const EdgeInsetsDirectional.only(end: 14),
-        child: InkWell(
-          onTap: onAvatarTap,
-          borderRadius: BorderRadius.circular(16),
-          child: CircleAvatar(
-            radius: 16,
-            backgroundColor: isDark ? const Color(0xFF263750) : const Color(0xFFEAF0F8),
-            child: const Icon(LucideIcons.userRound, size: 18, color: _blue),
-          ),
-        ),
-      ),
-    ];
   }
 
   List<Widget> _buildPrimaryBrandActions(BuildContext context) {
@@ -214,33 +191,6 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         },
       ),
     );
-  }
-
-  List<Widget> _buildStandardActions(BuildContext context, bool isDark) {
-    return [
-      if (MediaQuery.sizeOf(context).width >= 480) ...[
-        const _LiveBadge(),
-        IconButton(
-          onPressed: () => _showNotificationsSheet(context),
-          tooltip: 'Notifications',
-          icon: const Icon(LucideIcons.bell, color: _muted, size: 21),
-        ),
-      ],
-      Padding(
-        padding: const EdgeInsetsDirectional.only(end: 14),
-        child: InkWell(
-          onTap: onAvatarTap,
-          borderRadius: BorderRadius.circular(16),
-          child: CircleAvatar(
-            radius: 16,
-            backgroundColor: isDark
-                ? const Color(0xFF263750)
-                : const Color(0xFFEAF0F8),
-            child: const Icon(LucideIcons.userRound, size: 18, color: _blue),
-          ),
-        ),
-      ),
-    ];
   }
 
   void _showSearchSheet(BuildContext context) {

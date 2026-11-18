@@ -1,6 +1,7 @@
 import 'package:crm_app/app_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 class PammPage extends StatefulWidget {
@@ -80,6 +81,10 @@ class _PammPageState extends State<PammPage> {
                   ),
                   padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
                   children: [
+                    if (_tab == 0) ...[
+                      _buildCreatePammBanner(),
+                      const SizedBox(height: 12),
+                    ],
                     if (_tab != 1) _snapshot(),
                     if (_tab != 1) const SizedBox(height: 12),
                     _tablePanel(true),
@@ -204,16 +209,111 @@ class _PammPageState extends State<PammPage> {
     );
   }
 
-  Widget _brandIcon() => Container(width: 48, height: 48,
-    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF36A9F5), Color(0xFF354CEB)]),
-      borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: _blue.withValues(alpha: .22), blurRadius: 12, offset: const Offset(0, 5))]),
-    child: const Icon(LucideIcons.activity, color: Colors.white, size: 25));
+  Widget _brandIcon() => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: _blue.withValues(alpha: .28),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: const Icon(LucideIcons.briefcaseBusiness, color: Colors.white, size: 20),
+  );
 
-  Widget _brandTitle() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text('PAMM', style: TextStyle(color: _text, fontSize: 21, fontWeight: FontWeight.w800)),
-    const SizedBox(height: 4),
-    Text('Manage pools, investments and allocations.', style: TextStyle(color: _muted, fontSize: 10.5)),
-  ]);
+  Widget _brandTitle() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('PAMM', style: GoogleFonts.inter(
+        color: _text, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.4,
+      )),
+      const SizedBox(height: 1),
+      Text('Percentage Allocation Management Module',
+        maxLines: 1, overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.inter(color: _muted, fontSize: 11, fontWeight: FontWeight.w500)),
+    ],
+  );
+
+  Widget _buildCreatePammBanner() => Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(16),
+      gradient: LinearGradient(
+        colors: [
+          const Color(0xFFF59E0B).withValues(alpha: _dark ? 0.45 : 0.6),
+          const Color(0xFF2563EB).withValues(alpha: _dark ? 0.55 : 0.7),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: _blue.withValues(alpha: _dark ? 0.25 : 0.1),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(1.2),
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          colors: [_card, _dark ? const Color(0xFF131F33) : const Color(0xFFF8FAFC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(LucideIcons.layers, color: Colors.white, size: 22),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Create PAMM Pool', style: GoogleFonts.inter(
+              color: _text, fontSize: 15, fontWeight: FontWeight.w800,
+            )),
+            const SizedBox(height: 3),
+            Text('Configure pool settings, profit share and investor access',
+              style: GoogleFonts.inter(color: _muted, fontSize: 11, height: 1.3)),
+          ],
+        )),
+        const SizedBox(width: 8),
+        FilledButton(
+          onPressed: _createPool,
+          style: FilledButton.styleFrom(
+            backgroundColor: _blue,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+          ),
+          child: const Text('Create', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+        ),
+      ]),
+    ),
+  );
 
   Widget _snapshot() {
     final managed = _tab == 0;

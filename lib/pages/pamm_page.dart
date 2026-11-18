@@ -81,13 +81,9 @@ class _PammPageState extends State<PammPage> {
                   ),
                   padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
                   children: [
-                    if (_tab == 0) ...[
-                      _buildCreatePammBanner(),
-                      const SizedBox(height: 12),
-                    ],
-                    if (_tab != 1) _snapshot(),
-                    if (_tab != 1) const SizedBox(height: 12),
-                    _tablePanel(true),
+                    if (_tab == 0) ..._buildManagedTab(),
+                    if (_tab == 1) ..._buildAvailableTab(),
+                    if (_tab == 2) ..._buildInvestmentsTab(),
                   ],
                 ),
               ),
@@ -358,6 +354,344 @@ class _PammPageState extends State<PammPage> {
       Text(value, style: TextStyle(color: accent == _gold ? const Color(0xFFAE6800) : accent, fontSize: 21, fontWeight: FontWeight.w800)),
       const SizedBox(height: 8), Divider(height: 1, color: _border), const SizedBox(height: 8),
       Row(children: [Expanded(child: Text(foot, style: TextStyle(color: _muted, fontSize: 9))), Text(badge, style: TextStyle(color: _text, fontSize: 9))]),
+    ]),
+  );
+
+  // PAMM tabs follow the same card-based layout hierarchy as MAM.
+  List<Widget> _buildManagedTab() {
+    final q = _query.toLowerCase();
+    final rows = _managed.where((p) =>
+      p.name.toLowerCase().contains(q) || p.login.contains(q)).toList();
+    return [
+      _buildCreatePammBanner(),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: _metricCard('MANAGED EQUITY', _money(_managed.fold<double>(0, (v, p) => v + p.equity)), 'Combined pool equity', LucideIcons.wallet, _blue)),
+        const SizedBox(width: 8),
+        Expanded(child: _metricCard('MANAGED POOLS', '${_managed.length}', 'Your active pools', LucideIcons.layers, _green)),
+        const SizedBox(width: 8),
+        Expanded(child: _metricCard('PROFIT / LOSS', _money(_managed.fold<double>(0, (v, p) => v + p.pnl)), 'Pool performance', LucideIcons.trendingUp, _gold)),
+      ]),
+      const SizedBox(height: 14),
+      _buildSearchAndFilters('Search managed pools by name or MT5 login...', ['All Pools']),
+      const SizedBox(height: 12),
+      _sectionHeader('Managed PAMM Pools', rows.length),
+      const SizedBox(height: 10),
+      if (rows.isEmpty) _emptyState('No Managed Pools Found', 'Try changing your search or create a new PAMM pool.')
+      else for (final pool in rows) ...[
+        _buildPoolCard(pool, managed: true),
+        const SizedBox(height: 10),
+      ],
+    ];
+  }
+
+  List<Widget> _buildAvailableTab() {
+    final q = _query.toLowerCase();
+    final rows = _available.where((p) =>
+      p.name.toLowerCase().contains(q) || p.login.contains(q)).toList();
+    final totalEquity = _available.fold<double>(0, (v, p) => v + p.equity);
+    return [
+      _buildExploreBanner(),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: _metricCard('AVAILABLE POOLS', '${_available.length}', 'Open for investment', LucideIcons.layers, _blue)),
+        const SizedBox(width: 8),
+        Expanded(child: _metricCard('TOTAL POOL EQUITY', _money(totalEquity), 'Across listed pools', LucideIcons.wallet, _green)),
+        const SizedBox(width: 8),
+        Expanded(child: _metricCard('AVG. PROFIT SHARE', _available.isEmpty ? '0%' : '${(_available.fold<double>(0, (v, p) => v + p.share) / _available.length).toStringAsFixed(1)}%', 'Pool allocation', LucideIcons.chartNoAxesCombined, _gold)),
+      ]),
+      const SizedBox(height: 14),
+      _buildSearchAndFilters('Search available pools by name or MT5 login...', ['All Pools', 'Profit Share']),
+      const SizedBox(height: 12),
+      _sectionHeader('Explore Investment Pools', rows.length),
+      const SizedBox(height: 10),
+      if (rows.isEmpty) _emptyState('No Investment Pools Found', 'Try another search to discover available pools.')
+      else for (final pool in rows) ...[
+        _buildPoolCard(pool, managed: false),
+        const SizedBox(height: 10),
+      ],
+    ];
+  }
+
+  List<Widget> _buildInvestmentsTab() {
+    final q = _query.toLowerCase();
+    final rows = _investments.where((p) =>
+      p.name.toLowerCase().contains(q) || p.login.contains(q) ||
+      p.manager.toLowerCase().contains(q)).toList();
+    final invested = _investments.fold<double>(0, (v, p) => v + p.deposit);
+    final value = _investments.fold<double>(0, (v, p) => v + p.value);
+    final pnl = _investments.fold<double>(0, (v, p) => v + p.pnl);
+    return [
+      _buildInvestmentBanner(),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: _metricCard('INVESTED CAPITAL', _money(invested), 'Initial deposits', LucideIcons.wallet, _blue)),
+        const SizedBox(width: 8),
+        Expanded(child: _metricCard('CURRENT VALUE', _money(value), 'Portfolio value', LucideIcons.chartNoAxesCombined, _green)),
+        const SizedBox(width: 8),
+        Expanded(child: _metricCard('NET PROFIT / LOSS', _money(pnl), 'Unrealized result', LucideIcons.trendingUp, _gold)),
+      ]),
+      const SizedBox(height: 14),
+      _buildSearchAndFilters('Search investments by pool, manager or login...', ['All Investments']),
+      const SizedBox(height: 12),
+      _sectionHeader('My Portfolio Investments', rows.length),
+      const SizedBox(height: 10),
+      if (rows.isEmpty) _emptyState('No Investments Found', 'Your PAMM investments will appear here.')
+      else for (final item in rows) ...[
+        _buildInvestmentCard(item),
+        const SizedBox(height: 10),
+      ],
+    ];
+  }
+
+  Widget _buildExploreBanner() => _featureBanner(
+    icon: LucideIcons.compass, title: 'Explore PAMM Pools', tag: 'INVESTOR',
+    subtitle: 'Discover available pool managers and invest in strategies that match your goals.',
+    actionLabel: 'Browse Pools', onAction: () => setState(() => _query = ''),
+  );
+
+  Widget _buildInvestmentBanner() => _featureBanner(
+    icon: LucideIcons.walletCards, title: 'My PAMM Investments', tag: 'PORTFOLIO',
+    subtitle: 'Track your allocated capital, current value and investment performance.',
+    actionLabel: 'Refresh View', onAction: () => setState(() {}),
+  );
+
+  Widget _featureBanner({required IconData icon, required String title, required String tag,
+    required String subtitle, required String actionLabel, required VoidCallback onAction}) {
+    return Container(
+      padding: const EdgeInsets.all(1.2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(colors: [
+          const Color(0xFFF59E0B).withValues(alpha: _dark ? .45 : .6),
+          const Color(0xFF2563EB).withValues(alpha: _dark ? .55 : .7),
+        ]),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _card, borderRadius: BorderRadius.circular(15),
+          gradient: LinearGradient(colors: [_card, _dark ? const Color(0xFF131F33) : const Color(0xFFF8FAFC)]),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(width: 44, height: 44,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
+                borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: Colors.white, size: 22)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(color: _text, fontSize: 15, fontWeight: FontWeight.w800))),
+                const SizedBox(width: 6),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(color: _gold.withValues(alpha: .15), borderRadius: BorderRadius.circular(4)),
+                  child: Text(tag, style: GoogleFonts.inter(color: _gold, fontSize: 8, fontWeight: FontWeight.w800))),
+              ]),
+              const SizedBox(height: 3),
+              Text(subtitle, style: TextStyle(color: _muted, fontSize: 10.5, height: 1.3)),
+            ])),
+          ]),
+          const SizedBox(height: 13),
+          SizedBox(width: double.infinity, height: 44,
+            child: FilledButton.icon(
+              onPressed: onAction,
+              icon: const Icon(LucideIcons.arrowRight, size: 16),
+              label: Text(actionLabel, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700)),
+              style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            )),
+        ]),
+      ),
+    );
+  }
+
+  Widget _metricCard(String label, String value, String subtext, IconData icon, Color accent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(13), border: Border.all(color: _border)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(color: _muted, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: .2))),
+          Icon(icon, color: accent, size: 13),
+        ]),
+        const SizedBox(height: 6),
+        FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown,
+          child: Text(value, style: GoogleFonts.inter(color: _text, fontSize: 15, fontWeight: FontWeight.w800))),
+        const SizedBox(height: 3),
+        Text(subtext, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: _muted, fontSize: 9)),
+      ]),
+    );
+  }
+
+  Widget _buildSearchAndFilters(String hint, List<String> filters) {
+    return Column(children: [
+      Container(height: 44,
+        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
+        child: TextField(
+          controller: _search,
+          onChanged: (v) => setState(() => _query = v),
+          style: GoogleFonts.inter(color: _text, fontSize: 12),
+          decoration: InputDecoration(
+            hintText: hint, hintStyle: GoogleFonts.inter(color: _muted, fontSize: 11),
+            prefixIcon: Icon(LucideIcons.search, color: _muted, size: 17),
+            suffixIcon: _query.isNotEmpty ? IconButton(
+              icon: Icon(LucideIcons.x, color: _muted, size: 16),
+              onPressed: () { _search.clear(); setState(() => _query = ''); },
+            ) : null,
+            border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+        )),
+      const SizedBox(height: 9),
+      SizedBox(height: 34, child: ListView.separated(
+        scrollDirection: Axis.horizontal, itemCount: filters.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) => Container(
+          alignment: Alignment.center, padding: const EdgeInsets.symmetric(horizontal: 13),
+          decoration: BoxDecoration(color: i == 0 ? _blue : _surface,
+            borderRadius: BorderRadius.circular(9), border: Border.all(color: i == 0 ? _blue : _border)),
+          child: Text(filters[i], style: GoogleFonts.inter(
+            color: i == 0 ? Colors.white : _text, fontSize: 10.5, fontWeight: FontWeight.w700)),
+        ),
+      )),
+    ]);
+  }
+
+  Widget _sectionHeader(String title, int count) => Container(
+    padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
+    decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(13), border: Border.all(color: _border)),
+    child: Row(children: [
+      Container(width: 4, height: 19, decoration: BoxDecoration(color: _blue, borderRadius: BorderRadius.circular(4))),
+      const SizedBox(width: 10),
+      Expanded(child: Text(title, style: GoogleFonts.inter(color: _text, fontSize: 13, fontWeight: FontWeight.w800))),
+      Text('$count records', style: GoogleFonts.inter(color: _muted, fontSize: 9, fontWeight: FontWeight.w700)),
+    ]),
+  );
+
+  Widget _buildPoolCard(_PammPool pool, {required bool managed}) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border), boxShadow: const [
+          BoxShadow(color: Color(0x080F2748), blurRadius: 8, offset: Offset(0, 2)),
+        ]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(width: 42, height: 42,
+            decoration: BoxDecoration(gradient: LinearGradient(colors: managed
+              ? const [Color(0xFF2563EB), Color(0xFF1D4ED8)]
+              : const [Color(0xFFF59E0B), Color(0xFFD97706)]),
+              borderRadius: BorderRadius.circular(12)),
+            child: Center(child: Text(pool.name.isEmpty ? 'P' : pool.name[0].toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)))),
+          const SizedBox(width: 11),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(pool.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(color: _text, fontSize: 13, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            Text('MT5 Account · ${pool.login}', style: TextStyle(color: _muted, fontSize: 10)),
+          ])),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF9DEDD1))),
+            child: const Text('● LIVE', style: TextStyle(color: Color(0xFF008B68), fontSize: 8, fontWeight: FontWeight.w800))),
+        ]),
+        const SizedBox(height: 13),
+        Container(height: 1, color: _border),
+        const SizedBox(height: 11),
+        Row(children: [
+          Expanded(child: _cardStat('LEVERAGE', pool.leverage)),
+          Expanded(child: _cardStat(managed ? 'MANAGER BALANCE' : 'POOL EQUITY', _money(managed ? pool.managerBalance : pool.equity))),
+          Expanded(child: _cardStat(managed ? 'POOL VALUE' : 'PROFIT SHARE', managed ? _money(pool.equity) : '${pool.share.toStringAsFixed(2)}%')),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: Text(managed ? 'Managed PAMM account' : 'Open for new investment',
+            style: TextStyle(color: _muted, fontSize: 10))),
+          if (managed) ...[
+            OutlinedButton.icon(onPressed: () => _details(pool.name, pool.login),
+              icon: const Icon(LucideIcons.chevronRight, size: 13), label: const Text('Details'),
+              style: OutlinedButton.styleFrom(foregroundColor: _text, side: BorderSide(color: _border),
+                padding: const EdgeInsets.symmetric(horizontal: 10), minimumSize: const Size(0, 34))),
+            const SizedBox(width: 7),
+            FilledButton(onPressed: () => _depositDialog(pool.name),
+              style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white,
+                minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 12)),
+              child: const Text('Deposit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+          ] else
+            FilledButton.icon(onPressed: () => _amountDialog('Invest in ${pool.name}'),
+              icon: const Icon(LucideIcons.trendingUp, size: 14),
+              style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white,
+                minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 12)),
+              label: const Text('Invest Now', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _cardStat(String label, String value) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+      style: GoogleFonts.inter(color: _muted, fontSize: 8, fontWeight: FontWeight.w700)),
+    const SizedBox(height: 5),
+    Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+      style: GoogleFonts.inter(color: _text, fontSize: 11, fontWeight: FontWeight.w800)),
+  ]);
+
+  Widget _buildInvestmentCard(_PammInvestment item) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(width: 42, height: 42,
+            decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(LucideIcons.walletCards, color: Color(0xFF2563EB), size: 21)),
+          const SizedBox(width: 11),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(item.name, style: GoogleFonts.inter(color: _text, fontSize: 13, fontWeight: FontWeight.w800)),
+            Text('MT5 Login · ${item.login}  |  ${item.manager}', maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: _muted, fontSize: 10)),
+          ])),
+          _share(item.share),
+        ]),
+        const SizedBox(height: 12),
+        Container(height: 1, color: _border),
+        const SizedBox(height: 11),
+        Row(children: [
+          Expanded(child: _cardStat('CURRENT VALUE', _money(item.value))),
+          Expanded(child: _cardStat('PROFIT / LOSS', _money(item.pnl))),
+          Expanded(child: _cardStat('INITIAL DEPOSIT', _money(item.deposit))),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: Text('PAMM allocation', style: TextStyle(color: _muted, fontSize: 10))),
+          OutlinedButton.icon(onPressed: () => _details(item.name, item.login),
+            icon: const Icon(LucideIcons.chevronRight, size: 13), label: const Text('Details'),
+            style: OutlinedButton.styleFrom(foregroundColor: _text, side: BorderSide(color: _border),
+              minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 10))),
+          const SizedBox(width: 7),
+          FilledButton(onPressed: () => _depositDialog(item.name),
+            style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white,
+              minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 12)),
+            child: const Text('Deposit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _emptyState(String title, String message) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+    decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+    child: Column(children: [
+      Icon(LucideIcons.searchX, color: _muted, size: 34),
+      const SizedBox(height: 10),
+      Text(title, style: GoogleFonts.inter(color: _text, fontSize: 14, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 5),
+      Text(message, textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 11)),
     ]),
   );
 

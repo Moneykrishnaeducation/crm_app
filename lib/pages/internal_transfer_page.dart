@@ -40,10 +40,9 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     final compact = size.height < 740;
     final narrow = size.width < 380;
     final horizontal = size.width >= 520;
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
 
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (context, _) {
         final bottomReserve = 104.0;
         return SizedBox.expand(
           child: Padding(

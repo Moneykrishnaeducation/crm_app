@@ -65,6 +65,9 @@ void main() {
     expect(find.text('TRANSFER AMOUNT'), findsOneWidget);
     expect(find.text('CONTINUE'), findsOneWidget);
     expect(find.textContaining('Available: \$2,500.00'), findsWidgets);
+    expect(find.text('Recent Transfers'), findsNothing);
+    expect(find.text('25%'), findsNothing);
+    expect(find.text('50%'), findsNothing);
   });
 
   testWidgets('swapping accounts toggles source and destination', (tester) async {
@@ -86,23 +89,15 @@ void main() {
     expect(find.textContaining('Available: \$1,000.00'), findsOneWidget);
   });
 
-  testWidgets('quick percentage and preset chips populate amount field', (tester) async {
+  testWidgets('MAX button populates available balance into amount field', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
-    // Tap 50% chip
-    await tester.tap(find.text('50%'));
-    await tester.pumpAndSettle();
-
-    // 50% of 2500 is 1250.00
-    final textField = tester.widget<TextField>(find.byType(TextField));
-    expect(textField.controller?.text, '1250.00');
-
     // Tap MAX
-    await tester.tap(find.text('MAX').first);
+    await tester.tap(find.text('MAX'));
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.byType(TextField)).controller?.text, '2500.00');
   });

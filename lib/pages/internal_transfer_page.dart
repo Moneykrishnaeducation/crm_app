@@ -81,25 +81,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   final _amountController = TextEditingController();
   bool _isProcessing = false;
 
-  final List<_InternalTransferRecord> _recentTransfers = [
-    _InternalTransferRecord(
-      id: 'TRX-783921',
-      sourceLogin: '3315',
-      destinationLogin: '3312',
-      amount: 350.00,
-      timestamp: DateTime.now().subtract(const Duration(hours: 4, minutes: 12)),
-      status: 'Completed',
-    ),
-    _InternalTransferRecord(
-      id: 'TRX-640192',
-      sourceLogin: '3312',
-      destinationLogin: '3311',
-      amount: 500.00,
-      timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-      status: 'Completed',
-    ),
-  ];
-
   static double _parseBalance(String balanceStr) {
     final clean = balanceStr.replaceAll(RegExp(r'[^0-9.]'), '');
     return double.tryParse(clean) ?? 0.0;
@@ -187,12 +168,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
       TextPosition(offset: _amountController.text.length),
     );
     setState(() {});
-  }
-
-  void _addAmount(double increment) {
-    HapticFeedback.lightImpact();
-    final current = _parsedAmount;
-    _setAmount(current + increment);
   }
 
   void _swapAccounts() {
@@ -654,35 +629,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                               ],
                             ),
                           ],
-
-                          const SizedBox(height: 14),
-
-                          // Quick Percentage Chips
-                          Row(
-                            children: [
-                              _buildPercentChip('25%', 0.25),
-                              const SizedBox(width: 8),
-                              _buildPercentChip('50%', 0.50),
-                              const SizedBox(width: 8),
-                              _buildPercentChip('75%', 0.75),
-                              const SizedBox(width: 8),
-                              _buildPercentChip('MAX', 1.00),
-                            ],
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Quick Preset Increment Chips
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _buildIncrementChip(50, r'+$50'),
-                              _buildIncrementChip(100, r'+$100'),
-                              _buildIncrementChip(500, r'+$500'),
-                              _buildIncrementChip(1000, r'+$1,000'),
-                            ],
-                          ),
                         ],
                       ),
                     ),
@@ -815,11 +761,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 26),
-
-                    // Recent Transfers Section
-                    _buildRecentTransfersSection(context),
                   ],
                 ),
               ),
@@ -967,7 +908,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Login #${acc.login} • ${acc.server ?? 'VTIndex-Live'}',
+                                        'Login ${acc.login} • ${acc.server ?? 'VTIndex-Live'}',
                                         style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
                                       ),
                                     ],
@@ -1113,7 +1054,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${acc.server ?? "VTIndex-MT5"} • Login #${acc.login}',
+                          '${acc.server ?? "VTIndex-MT5"} • Login ${acc.login}',
                           style: TextStyle(color: muted, fontSize: 11),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1146,79 +1087,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     );
   }
 
-  Widget _buildPercentChip(String label, double ratio) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final targetAmount = (_availableBalance * ratio);
-    final isSelected = _parsedAmount > 0 && (_parsedAmount - targetAmount).abs() < 0.01;
-
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _availableBalance > 0 ? () => _setAmount(targetAmount) : null,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : (isDark ? Colors.white.withValues(alpha: .06) : const Color(0xFFF1F5F9)),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : (isDark ? Colors.white.withValues(alpha: .1) : const Color(0xFFE2E8F0)),
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: isSelected
-                    ? Colors.white
-                    : (isDark ? Colors.white70 : const Color(0xFF334155)),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIncrementChip(double increment, [String? customLabel]) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _addAmount(increment),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: .06) : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: .10) : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Text(
-            customLabel ?? '+${_formatMoney(increment)}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white70 : const Color(0xFF334155),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildSummaryRow({
     required String label,
     required String value,
@@ -1242,145 +1110,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
             fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildRecentTransfersSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final muted = colors.onSurfaceVariant;
-    final isDark = theme.brightness == Brightness.dark;
-    final cardBorderColor = isDark
-        ? Colors.white.withValues(alpha: .10)
-        : const Color(0xFFE2E8F0);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Icon(LucideIcons.history, size: 16, color: muted),
-            const SizedBox(width: 8),
-            Text(
-              'Recent Transfers',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w900,
-                letterSpacing: -.2,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '${_recentTransfers.length} records',
-              style: theme.textTheme.labelSmall?.copyWith(color: muted),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (_recentTransfers.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0C2B68) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: cardBorderColor),
-            ),
-            alignment: Alignment.center,
-            child: Column(
-              children: [
-                Icon(LucideIcons.repeat, size: 32, color: muted.withValues(alpha: .5)),
-                const SizedBox(height: 8),
-                Text(
-                  'No recent transfers',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: muted,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _recentTransfers.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final item = _recentTransfers[index];
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0C2B68) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: cardBorderColor),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: .12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(LucideIcons.arrowUpRight, color: Color(0xFF10B981), size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                '#${item.sourceLogin} ➔ #${item.destinationLogin}',
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            item.id,
-                            style: TextStyle(color: muted, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          _formatMoney(item.amount),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                            color: Color(0xFF10B981),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: .10),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            item.status.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF10B981),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
       ],
     );
   }
@@ -1535,7 +1264,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'From: ${fromAcc.name} (#$_source)',
+                              'From: ${fromAcc.name} (${fromAcc.login})',
                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                             ),
                           ),
@@ -1557,7 +1286,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'To: ${toAcc.name} (#$_destination)',
+                              'To: ${toAcc.name} (${toAcc.login})',
                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                             ),
                           ),
@@ -1665,7 +1394,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
       status: 'Completed',
     );
 
-    _recentTransfers.insert(0, record);
     widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
 
     _amountController.clear();

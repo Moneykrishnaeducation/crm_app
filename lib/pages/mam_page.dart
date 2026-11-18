@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import '../widgets/mam_master_node_workspace.dart';
 
 // -----------------------------------------------------------------------------
 // DYNAMIC THEME COLORS HELPER
@@ -77,37 +78,8 @@ class _MamColors {
 }
 
 // -----------------------------------------------------------------------------
-// DATA MODELS
+// DATA MODELS (MamMasterAccount imported from mam_master_node_workspace.dart)
 // -----------------------------------------------------------------------------
-class MamMasterAccount {
-  MamMasterAccount({
-    required this.name,
-    required this.login,
-    required this.profitShare,
-    required this.leverage,
-    required this.balance,
-    required this.status,
-    required this.risk,
-    required this.payout,
-    this.allocationMethod = 'Lot Proportional',
-    this.investorsCount = 0,
-    this.totalAum = 0.0,
-    this.monthlyGain = 0.0,
-  });
-
-  String name;
-  String login;
-  double profitShare;
-  String leverage;
-  double balance;
-  String status; // Active, Paused, Draft
-  String risk;
-  String payout;
-  String allocationMethod;
-  int investorsCount;
-  double totalAum;
-  double monthlyGain;
-}
 
 class MamInvestmentSubscription {
   MamInvestmentSubscription({
@@ -253,6 +225,7 @@ class _MamPageState extends State<MamPage> {
   String _availableSearchQuery = '';
 
   // Data Lists
+  MamMasterAccount? _selectedMasterDetail;
   late List<MamMasterAccount> _masters;
   late List<MamInvestmentSubscription> _investments;
   late List<AvailableMamPool> _availablePools;
@@ -267,6 +240,28 @@ class _MamPageState extends State<MamPage> {
     _tab = widget.initialTab.clamp(0, 2);
 
     _masters = [
+      MamMasterAccount(
+        name: 'Devo-Testmam',
+        login: '2141715173',
+        profitShare: 40.0,
+        leverage: '1:500',
+        balance: 0.00,
+        status: 'Active',
+        risk: 'Medium',
+        payout: 'Weekly',
+        allocationMethod: 'Lot Proportional',
+        investorsCount: 12,
+        totalAum: 482500.0,
+        monthlyGain: 14.8,
+        server: 'VTindex-MT5',
+        tradingPlatform: 'MetaTrader 5 (MT5)',
+        algoTrading: 'Manual',
+        pendingRelease: 4.03,
+        releasedPayout: 0.00,
+        pendingWallet: 0.00,
+        totalSettled: 0.00,
+        tradesProcessed: 0,
+      ),
       MamMasterAccount(
         name: 'Alpha Quant Alpha-1',
         login: '8849102',
@@ -465,6 +460,31 @@ class _MamPageState extends State<MamPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedMasterDetail != null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: MamMasterNodeWorkspace(
+            master: _selectedMasterDetail!,
+            onBack: () {
+              setState(() {
+                _selectedMasterDetail = null;
+              });
+            },
+            onUpdate: (updatedMaster) {
+              setState(() {
+                _selectedMasterDetail = updatedMaster;
+                final idx = _masters.indexWhere((m) => m.login == updatedMaster.login);
+                if (idx != -1) {
+                  _masters[idx] = updatedMaster;
+                }
+              });
+            },
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -1110,7 +1130,10 @@ class _MamPageState extends State<MamPage> {
     final statusColor = isActive ? _c.green : _c.gold;
     final riskLevel = _riskToLevel(master.risk);
 
-    return Container(
+    return InkWell(
+      onTap: () => _openMasterDetails(master),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -1322,9 +1345,9 @@ class _MamPageState extends State<MamPage> {
                   height: 44,
                   child: FilledButton.icon(
                     onPressed: () => _openMasterDetails(master),
-                    icon: const Icon(LucideIcons.info, size: 14),
+                    icon: const Icon(LucideIcons.settings2, size: 14),
                     label: Text(
-                      'Node Details',
+                      'Account Details',
                       style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                     style: FilledButton.styleFrom(
@@ -1341,6 +1364,7 @@ class _MamPageState extends State<MamPage> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -1402,16 +1426,13 @@ class _MamPageState extends State<MamPage> {
     setState(() {
       master.status = master.status == 'Active' ? 'Paused' : 'Active';
     });
-    showAppMessage('Master node #${master.login} marked as ${master.status}');
+    showAppMessage('Master Account ${master.login} marked as ${master.status}');
   }
 
   void _openMasterDetails(MamMasterAccount master) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _MamMasterDetailsSheet(master: master, colors: _c),
-    );
+    setState(() {
+      _selectedMasterDetail = master;
+    });
   }
 
   void _openCreateMasterSheet() {
@@ -1425,7 +1446,7 @@ class _MamPageState extends State<MamPage> {
           setState(() {
             _masters.insert(0, newMaster);
           });
-          showAppMessage('MAM Master Node "${newMaster.name}" created successfully!');
+          showAppMessage('MAM Master Account "${newMaster.name}" created successfully!');
         },
       ),
     );
@@ -2968,7 +2989,7 @@ class _CreateMamMasterSheetState extends State<_CreateMamMasterSheet> {
               items: _accounts
                   .map((acc) => DropdownMenuItem(
                         value: acc,
-                        child: Text('MT5 Master Node #$acc',
+                        child: Text('MT5 Master Account $acc',
                             style: GoogleFonts.inter(color: c.text, fontSize: 12)),
                       ))
                   .toList(),
@@ -3226,7 +3247,7 @@ class _MamMasterDetailsSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'MT5 Node #${master.login} • Status: ${master.status}',
+                      'MT5 Account ${master.login} • Status: ${master.status}',
                       style: TextStyle(color: c.muted, fontSize: 11.5),
                     ),
                   ],

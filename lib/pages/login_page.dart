@@ -39,15 +39,15 @@ class _LoginPageState extends State<LoginPage> {
 
   void _submitSignUp() {
     if (!_emailVerified) {
-      showAppToast('Verify your email before creating an account.', type: NotchToastType.warning);
+      showAppMessage('Verify your email before creating an account.');
       return;
     }
     if (!(_signUpFormKey.currentState?.validate() ?? false)) return;
     if (!_acceptedTerms) {
-      showAppToast('Please accept the Terms & Conditions to continue.', type: NotchToastType.warning);
+      showAppMessage('Please accept the Terms & Conditions to continue.');
       return;
     }
-    showAppToast('Account creation is not connected yet.', type: NotchToastType.info);
+    showAppMessage('Account creation is not connected yet.');
   }
 
   String? _required(String? value, String label) =>
@@ -306,11 +306,11 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: () {
                           final email = _emailController.text.trim();
                           if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-                            showAppToast('Enter a valid email address first.', type: NotchToastType.error);
+                            showAppMessage('Enter a valid email address first.');
                             return;
                           }
                           setState(() => _emailVerified = true);
-                          showAppToast('Email verified. You can now create a password.', type: NotchToastType.success);
+                          showAppMessage('Email verified. You can now create a password.');
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF2384F4),

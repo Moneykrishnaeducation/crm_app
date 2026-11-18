@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_notch_toast/flutter_notch_toast.dart';
+import '../app_notifications.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 const _securityNavy = Color(0xFF10264A);
@@ -68,7 +68,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    toast.info(message, duration: const Duration(seconds: 2));
+    showAppMessage(message);
   }
 
   @override

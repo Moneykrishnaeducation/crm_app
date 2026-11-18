@@ -183,8 +183,30 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
         tooltip: 'Customer Support',
         onPressed: () => _showSupportDialog(context),
       ),
+      IconButton(
+        visualDensity: VisualDensity.compact,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+        icon: Icon(LucideIcons.logOut, size: 19, color: onSurface),
+        tooltip: 'Log out',
+        onPressed: () => _showLogoutSheet(context),
+      ),
       const SizedBox(width: 8),
     ];
+  }
+
+  void _showLogoutSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => LogoutBottomSheet(
+        onConfirm: () {
+          Navigator.of(sheetContext).pop();
+          onSelectPage?.call('Logout');
+        },
+      ),
+    );
   }
 
   List<Widget> _buildStandardActions(BuildContext context, bool isDark) {

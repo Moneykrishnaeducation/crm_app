@@ -1,3 +1,4 @@
+import 'package:crm_app/app_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -859,20 +860,24 @@ class _PammPageState extends State<PammPage> {
     decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: _muted, fontSize: 11), filled: true, fillColor: _surface,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _border))));
 
-  void _depositDialog(String accountName) {
+  Future<void> _depositDialog(String accountName) async {
     final amount = TextEditingController();
     final picker = ImagePicker();
     var method = 0;
     XFile? proof;
     var submitting = false;
+    ModalRoute<dynamic>? sheetRoute;
 
-    showModalBottomSheet<void>(
+    final submitted = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: const Color(0x9907132D),
+      isDismissible: true,
+      enableDrag: true,
       builder: (sheetContext) {
+        sheetRoute ??= ModalRoute.of(sheetContext);
         final screen = MediaQuery.sizeOf(sheetContext);
         final compact = screen.width < 600;
         final maxHeight = screen.height * .94;
@@ -947,11 +952,20 @@ class _PammPageState extends State<PammPage> {
             ));
           }
 
-          return Align(
-            alignment: Alignment.bottomCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 780, maxHeight: maxHeight),
-              child: Container(
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(sheetContext).maybePop(),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 780, maxHeight: maxHeight),
+                  child: Container(
                 margin: EdgeInsets.fromLTRB(compact ? 7 : 14, 0, compact ? 7 : 14, compact ? 5 : 12),
                 decoration: BoxDecoration(
                   color: modalCard,
@@ -1079,7 +1093,9 @@ class _PammPageState extends State<PammPage> {
                         onTap: () async {
                           try {
                             final selected = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
-                            if (selected != null) setModalState(() => proof = selected);
+                            if (selected != null && sheetContext.mounted) {
+                              setModalState(() => proof = selected);
+                            }
                           } catch (_) {
                             if (sheetContext.mounted) {
                               ScaffoldMessenger.of(sheetContext).showSnackBar(
@@ -1121,22 +1137,19 @@ class _PammPageState extends State<PammPage> {
                           onPressed: submitting ? null : () {
                             final value = double.tryParse(amount.text.trim());
                             if (value == null || value < 10) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
                                 const SnackBar(content: Text(r'Enter a valid deposit amount of at least $10.00.')),
                               );
                               return;
                             }
                             if (proof == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
                                 const SnackBar(content: Text('Please upload your payment proof.')),
                               );
                               return;
                             }
                             setModalState(() => submitting = true);
-                            Navigator.pop(sheetContext);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Deposit UI preview only. Connect the payment API to submit this request.')),
-                            );
+                            Navigator.pop(sheetContext, true);
                           },
                           style: FilledButton.styleFrom(
                             backgroundColor: _blue,
@@ -1166,12 +1179,20 @@ class _PammPageState extends State<PammPage> {
                     ),
                   ),
                 ]),
+                  ),
+                ),
               ),
-            ),
+            ],
           );
         });
       },
-    ).whenComplete(amount.dispose);
+    );
+    final route = sheetRoute;
+    if (route != null) await route.completed;
+    amount.dispose();
+    if (submitted == true && mounted) {
+      showAppMessage('Deposit UI preview only. Connect the payment API to submit this request.');
+    }
   }
 
   Widget _depositFooterItem(IconData icon, String label, Color color) => Row(

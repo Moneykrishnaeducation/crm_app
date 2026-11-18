@@ -90,18 +90,18 @@ class _PammPageState extends State<PammPage> {
           ),
         ),
       ),
-      floatingActionButton: _tab == 0
-          ? FloatingActionButton.extended(
-              onPressed: _createPool,
-              backgroundColor: _blue,
-              foregroundColor: Colors.white,
-              elevation: 4,
-              icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Create PAMM Pool',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-            )
-          : null,
     ),
+    floatingActionButton: _tab == 0
+        ? FloatingActionButton.extended(
+            onPressed: _createPool,
+            backgroundColor: _blue,
+            foregroundColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(LucideIcons.plus, size: 18),
+            label: const Text('Create PAMM Pool',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+          )
+        : null,
   );
 
   Widget _topBar() {

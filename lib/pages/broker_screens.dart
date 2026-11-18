@@ -3775,7 +3775,7 @@ class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
         subtitle: 'Add money to your account',
         category: 'FUNDS',
         target: 'Deposit',
-        gradient: [Color(0xFF10B981), Color(0xFF059669)],
+        gradient: [Color(0xFF1658C9), Color(0xFF0C2B68)],
       ),
       _QuickActionData(
         icon: LucideIcons.arrowUpRight,
@@ -3783,7 +3783,7 @@ class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
         subtitle: 'Transfer funds to your bank',
         category: 'FUNDS',
         target: 'Withdraw',
-        gradient: [Color(0xFFF59E0B), Color(0xFFD97706)],
+        gradient: [_brokerGold, Color(0xFF9E7719)],
       ),
       _QuickActionData(
         icon: LucideIcons.userRoundPlus,
@@ -3791,7 +3791,7 @@ class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
         subtitle: 'Start trading with real capital',
         category: 'LIVE TRADING',
         target: 'Open Account',
-        gradient: [Color(0xFF1658C9), Color(0xFF0E3E91)],
+        gradient: [Color(0xFF1658C9), Color(0xFF0C2B68)],
       ),
       _QuickActionData(
         icon: LucideIcons.arrowLeftRight,
@@ -3799,7 +3799,7 @@ class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
         subtitle: 'Move balance between accounts',
         category: 'TRANSFER',
         target: 'Internal Transfer',
-        gradient: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+        gradient: [_brokerGold, Color(0xFF9E7719)],
       ),
       _QuickActionData(
         icon: LucideIcons.monitor,
@@ -3807,7 +3807,7 @@ class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
         subtitle: 'Practice strategies risk-free',
         category: 'DEMO TRADING',
         target: 'Create Demo Account',
-        gradient: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+        gradient: [Color(0xFF1658C9), Color(0xFF0C2B68)],
       ),
     ];
 
@@ -4046,18 +4046,32 @@ class _QuickActionRowState extends State<_QuickActionRow> {
     final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final isActive = _isPressed || _isHovered;
-    final defaultGradients = isActive
-        ? const [Color(0x44389BFF), Color(0x280875F5)]
-        : const [Color(0x260875F5), Color(0x1A0875F5)];
-    final iconGradient = widget.gradientColors != null
+    final isGold = widget.gradientColors?.first == _brokerGold ||
+        widget.gradientColors?.first == const Color(0xFFD8A82E);
+    final iconColor = isGold
+        ? (isDark ? const Color(0xFFFFD566) : const Color(0xFFB3861B))
+        : (isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9));
+    final iconGradient = isGold
         ? [
-            widget.gradientColors!.first.withValues(alpha: isActive ? 0.35 : 0.20),
-            widget.gradientColors!.last.withValues(alpha: isActive ? 0.22 : 0.12),
+            const Color(0xFFD8A82E).withValues(alpha: isActive ? 0.32 : 0.16),
+            const Color(0xFF9E7719).withValues(alpha: isActive ? 0.22 : 0.10),
           ]
-        : defaultGradients;
-    final iconColor = widget.gradientColors != null
-        ? (isDark ? widget.gradientColors!.first : const Color(0xFF1658C9))
-        : (isActive ? const Color(0xFF174A8B) : const Color(0xFF5279A9));
+        : [
+            const Color(0xFF1658C9).withValues(alpha: isActive ? 0.32 : 0.16),
+            const Color(0xFF0C2B68).withValues(alpha: isActive ? 0.22 : 0.10),
+          ];
+    final iconBorder = isGold
+        ? const Color(0xFFD8A82E).withValues(alpha: isActive ? 0.55 : 0.28)
+        : const Color(0xFF1658C9).withValues(alpha: isActive ? 0.55 : 0.28);
+    final categoryBg = isGold
+        ? const Color(0xFFD8A82E).withValues(alpha: 0.14)
+        : const Color(0xFF1658C9).withValues(alpha: 0.12);
+    final categoryTextColor = isGold
+        ? (isDark ? const Color(0xFFFFD566) : const Color(0xFFB3861B))
+        : (isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9));
+    final cardBorder = isDark
+        ? (isActive ? (isGold ? const Color(0x66D8A82E) : const Color(0x661658C9)) : const Color(0xFF334B6E))
+        : (isActive ? (isGold ? const Color(0x66D8A82E) : const Color(0x661658C9)) : const Color(0xFFE7EDF5));
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -4087,17 +4101,17 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                     : (isDark ? const Color(0xFF1A283E) : const Color(0xFFF8FAFD)),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark
-                      ? (isActive ? const Color(0xFF4B72A4) : const Color(0xFF334B6E))
-                      : (isActive ? const Color(0xFFB9CEE9) : const Color(0xFFE7EDF5)),
+                  color: cardBorder,
                   width: 1,
                 ),
                 boxShadow: isActive
-                    ? const [
+                    ? [
                         BoxShadow(
-                          color: Color(0x220875F5),
+                          color: isGold
+                              ? const Color(0x22D8A82E)
+                              : const Color(0x221658C9),
                           blurRadius: 10,
-                          offset: Offset(0, 3),
+                          offset: const Offset(0, 3),
                         ),
                       ]
                     : null,
@@ -4116,9 +4130,7 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                         colors: iconGradient,
                       ),
                       border: Border.all(
-                        color: widget.gradientColors != null
-                            ? widget.gradientColors!.first.withValues(alpha: isActive ? 0.55 : 0.3)
-                            : (isActive ? const Color(0x665CABFF) : const Color(0x334B96FF)),
+                        color: iconBorder,
                         width: 1.1,
                       ),
                     ),
@@ -4155,16 +4167,13 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                                 decoration: BoxDecoration(
-                                  color: (widget.gradientColors?.first ?? const Color(0xFF1658C9))
-                                      .withValues(alpha: 0.12),
+                                  color: categoryBg,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   widget.category!,
                                   style: TextStyle(
-                                    color: isDark
-                                        ? (widget.gradientColors?.first ?? const Color(0xFF8CCBFF))
-                                        : const Color(0xFF1658C9),
+                                    color: categoryTextColor,
                                     fontSize: 8.5,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 0.4,
@@ -4197,7 +4206,7 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                     child: Icon(
                       LucideIcons.chevronRight,
                       color: isActive
-                          ? const Color(0xFF1658C9)
+                          ? (isGold ? const Color(0xFFD8A82E) : const Color(0xFF1658C9))
                           : scheme.onSurfaceVariant,
                       size: 18,
                     ),

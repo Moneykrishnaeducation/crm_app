@@ -146,6 +146,9 @@ class _MyAppState extends State<MyApp> {
       theme: _lightTheme,
       darkTheme: _darkTheme,
       themeMode: _themeMode,
+      builder: (context, child) => LiveNotificationHost(
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: _AppEntry(
         themeMode: _themeMode,
         onThemeModeChanged: _setThemeMode,
@@ -638,7 +641,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final primaryIndex = _primaryTabIndex;
-    return Scaffold(
+    final scaffold = Scaffold(
       appBar: _AppHeader(
         title: _selectedPage == 'Platform' ? 'Download Center' : _selectedPage,
         onBack: switch (_selectedPage) {
@@ -764,5 +767,10 @@ class _AppShellState extends State<AppShell> {
         ),
       ),
     );
+
+    if (context.findAncestorWidgetOfExactType<LiveNotificationHost>() == null) {
+      return LiveNotificationHost(child: scaffold);
+    }
+    return scaffold;
   }
 }

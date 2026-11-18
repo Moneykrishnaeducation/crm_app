@@ -5,6 +5,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 void main() {
   setUp(() {
+    liveNotificationNotifier.value = null;
     AppNotificationCenter.instance.resetToDefault();
   });
 
@@ -97,11 +98,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify the new notification is immediately visible in the selection list
-      expect(find.text('Market Order Executed'), findsOneWidget);
-      expect(find.textContaining('Bought 0.20 lots EURUSD'), findsOneWidget);
+      expect(find.text('Market Order Executed'), findsWidgets);
+      expect(find.textContaining('Bought 0.20 lots EURUSD'), findsWidgets);
 
       // Tap on the item to view & mark as read
-      await tester.tap(find.text('Market Order Executed'));
+      await tester.tap(find.text('Market Order Executed').last);
       await tester.pumpAndSettle();
       expect(AppNotificationCenter.instance.notifications.first.isUnread, isFalse);
 
@@ -115,6 +116,81 @@ void main() {
       await tester.tap(find.text('All').first);
       await tester.pumpAndSettle();
       expect(find.text('Market Order Executed'), findsOneWidget);
+    });
+  });
+
+  group('LiveNotificationHost & Dynamic Live HUD Tests', () {
+    testWidgets('Renders top-floating Live Notification HUD on showAppMessage', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          scaffoldMessengerKey: appScaffoldMessengerKey,
+          builder: (context, child) => LiveNotificationHost(child: child!),
+          home: const Scaffold(
+            body: Center(child: Text('Home')),
+          ),
+        ),
+      );
+
+      // Trigger live notification
+      showAppMessage('Market order EURUSD executed successfully', type: AppNotificationType.success);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      // Should find the LIVE badge and the notification text within the live pill
+      expect(find.text('LIVE'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('live_notification_pill')),
+          matching: find.text('Market order EURUSD executed successfully'),
+        ),
+        findsOneWidget,
+      );
+
+      // Tap close button on the live notification HUD
+      final closeBtn = find.byIcon(LucideIcons.x);
+      expect(closeBtn, findsOneWidget);
+      await tester.tap(closeBtn);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('LIVE'), findsNothing);
+    });
+
+    testWidgets('showLiveNotification displays title and auto-dismisses after duration', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          scaffoldMessengerKey: appScaffoldMessengerKey,
+          builder: (context, child) => LiveNotificationHost(child: child!),
+          home: const Scaffold(
+            body: Center(child: Text('Home')),
+          ),
+        ),
+      );
+
+      showLiveNotification(
+        title: 'Deposit Approved',
+        message: '\$5,000.00 credited to account #3315',
+        type: AppNotificationType.success,
+        duration: const Duration(milliseconds: 1000),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Deposit Approved'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('live_notification_pill')),
+          matching: find.text(r'$5,000.00 credited to account #3315'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('LIVE'), findsOneWidget);
+
+      // Advance clock past the duration + fade animation
+      await tester.pump(const Duration(milliseconds: 1200));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Deposit Approved'), findsNothing);
     });
   });
 }

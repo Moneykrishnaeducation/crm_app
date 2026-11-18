@@ -1100,8 +1100,8 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                   icon: LucideIcons.trendingUp,
                                   isGold: true,
                                   sendToMobilePanel: true,
+                                  showLiveOverlay: true,
                                 );
-                                showAppMessage('Sent new notification to mobile panel & app list.');
                               },
                               icon: Icon(
                                 LucideIcons.bellRing,

@@ -51,18 +51,18 @@ class _PartnershipColors {
       isDark: isDark,
       canvas: Theme.of(context).scaffoldBackgroundColor,
       card: isDark ? const Color(0xFF17243A) : Colors.white,
-      subCard: isDark ? const Color(0xFF132238) : const Color(0xFFF8FAFC),
+      subCard: isDark ? const Color(0xFF132238) : const Color(0xFFF3F6FB),
       border: isDark ? const Color(0xFF2A3A53) : const Color(0xFFE2E8F1),
       subBorder: isDark ? const Color(0xFF22354E) : const Color(0xFFEAF1FA),
-      text: isDark ? const Color(0xFFF2F5FA) : const Color(0xFF10264A),
-      muted: isDark ? const Color(0xFF94A3B8) : const Color(0xFF62738E),
-      navy: isDark ? const Color(0xFF1E3A5F) : const Color(0xFF10264A),
-      blue: const Color(0xFF0875F5),
-      gold: const Color(0xFFF4C84A),
-      green: const Color(0xFF10B981),
+      text: isDark ? const Color(0xFFF2F5FA) : const Color(0xFF10264B),
+      muted: isDark ? const Color(0xFF94A3B8) : const Color(0xFF71809A),
+      navy: isDark ? const Color(0xFF1E3A5F) : const Color(0xFF10264B),
+      blue: const Color(0xFF174A8B),
+      gold: const Color(0xFFD8A82E),
+      green: const Color(0xFF13C7A1),
       red: const Color(0xFFEF4444),
       cardShadow: isDark ? const Color(0x33000000) : const Color(0x0A0B1D35),
-      inputBg: isDark ? const Color(0xFF132238) : const Color(0xFFF8FAFC),
+      inputBg: isDark ? const Color(0xFF132238) : const Color(0xFFF3F6FB),
       chipBg: isDark ? const Color(0xFF1F2F4A) : const Color(0xFFEAF2FD),
       appBarBg: isDark ? const Color(0xFF101D31) : Colors.white,
     );
@@ -314,42 +314,52 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
     final colors = _PartnershipColors.of(context);
     return Container(
       color: colors.canvas,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 112),
-        children: [
-         const SizedBox(height: 22),
-          const SizedBox(height: 9),
-          _buildHeroCard(context, colors),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _PartnershipStat(
-              icon: LucideIcons.usersRound,
-              label: 'Total clients',
-              value: '2,458',
-            )),
-            const SizedBox(width: 10),
-            Expanded(child: _PartnershipStat(
-              icon: LucideIcons.coins,
-              label: 'IB earnings',
-              value: r'$4,820.00',
-              gold: true,
-            )),
-          ]),
-          const SizedBox(height: 22),
-          _PartnershipSectionLabel(
-            'REFERRAL & INVITATIONS',
-            subtitle: 'Manage partner profiles, referral codes and QR materials',
-            colors: colors,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 580),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+            children: [
+              _buildHeroCard(context, colors),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PartnershipStat(
+                      icon: LucideIcons.usersRound,
+                      label: 'Total clients',
+                      value: '2,458',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _PartnershipStat(
+                      icon: LucideIcons.coins,
+                      label: 'IB earnings',
+                      value: r'$4,820.00',
+                      gold: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _PartnershipSectionLabel(
+                'REFERRAL & INVITATIONS',
+                subtitle: 'Manage partner profiles, referral codes and QR materials',
+                colors: colors,
+              ),
+              const SizedBox(height: 9),
+              _buildToolsColumn(context, colors),
+              const SizedBox(height: 22),
+            ],
           ),
-          const SizedBox(height: 9),
-          _buildToolsColumn(context, colors),
-          const SizedBox(height: 22),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildHeroCard(BuildContext context, _PartnershipColors colors) {
+    final compact = MediaQuery.sizeOf(context).width < 600;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
@@ -357,15 +367,15 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF071941),
-            Color(0xFF0C2B68),
-            Color(0xFF144EA5),
+            Color(0xFF0B2256),
+            Color(0xFF0F3678),
+            Color(0xFF144EA1),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0C2B68).withValues(alpha: 0.35),
-            blurRadius: 18,
+            color: const Color(0xFF0A1D45).withValues(alpha: 0.2),
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -392,15 +402,15 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(compact ? 14 : 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    runSpacing: 10,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
@@ -430,11 +440,11 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            const Text(
+                            Text(
                               'PARTNERSHIP PROGRAM',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: compact ? 8 : 10,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.8,
                               ),
@@ -472,28 +482,29 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                           ),
                         ),
                       ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 18),
+                  SizedBox(height: compact ? 12 : 18),
                   Text(
                     'Total IB Earnings',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: 12.5,
+                      fontSize: compact ? 10 : 12.5,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
+                  const SizedBox(height: 4),
+                  Text(
                     r'$4,820.00 USD',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
+                      fontSize: compact ? 22 : 28,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  SizedBox(height: compact ? 12 : 18),
                   Row(
                     children: [
                       Expanded(
@@ -504,16 +515,16 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                               'Network Clients',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.72),
-                                fontSize: 11,
+                                fontSize: compact ? 9 : 11,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               '2,458 Clients',
                               style: TextStyle(
-                                color: Color(0xFFF4C84A),
-                                fontSize: 15,
+                                color: colors.gold,
+                                fontSize: compact ? 13 : 15,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -528,16 +539,16 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                               'Executed Volume',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.72),
-                                fontSize: 11,
+                                fontSize: compact ? 9 : 11,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               '142.80 Lots',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 15,
+                                fontSize: compact ? 13 : 15,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -559,18 +570,11 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: colors.card,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(13),
           border: Border.all(color: colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: colors.cardShadow,
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,26 +599,26 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                         'Your partner code',
                         style: TextStyle(
                           color: colors.text,
-                          fontSize: 15,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Share this code to invite and onboard new clients.',
-                        style: TextStyle(color: colors.muted, fontSize: 11.5),
+                        style: TextStyle(color: colors.muted, fontSize: 10),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'SELECT PARTNER PROFILE',
               style: TextStyle(
                 color: colors.muted,
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
               ),
@@ -624,12 +628,13 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 color: colors.subCard,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: colors.border),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<int>(
                   value: _selectedPartnerIndex,
+                  isDense: true,
                   isExpanded: true,
                   dropdownColor: colors.card,
                   iconEnabledColor: colors.blue,
@@ -652,12 +657,12 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
                 color: colors.subCard,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: colors.border),
               ),
               child: Row(
@@ -665,7 +670,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                   Icon(
                     LucideIcons.link,
                     color: colors.blue,
-                    size: 18,
+                    size: 16,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -676,7 +681,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                           'INVITATION CODE',
                           style: TextStyle(
                             color: colors.muted,
-                            fontSize: 8.5,
+                            fontSize: 8,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -685,7 +690,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                           _selectedPartner.code,
                           style: TextStyle(
                             color: colors.text,
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.5,
                           ),
@@ -696,6 +701,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                   IconButton(
                     tooltip: 'Copy referral link',
                     visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                     onPressed: () async {
                       final url = 'https://client.vtindex.com/?ref=${_selectedPartner.code}';
                       await Clipboard.setData(ClipboardData(text: url));
@@ -710,6 +716,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                   IconButton(
                     tooltip: 'Show referral QR code',
                     visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                     onPressed: _showReferralQr,
                     icon: Icon(
                       LucideIcons.qrCode,
@@ -720,17 +727,17 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _showReferralQr,
                 style: FilledButton.styleFrom(
-                  backgroundColor: colors.navy,
+                  backgroundColor: colors.blue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 11),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(9),
                   ),
                 ),
                 icon: const Icon(LucideIcons.qrCode, size: 17),
@@ -1909,7 +1916,7 @@ class _BrokerCommissionWithdrawalPageState
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colors.card,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(13),
           border: Border.all(color: colors.border),
         ),
         child: Row(
@@ -2324,41 +2331,45 @@ class _PartnershipStat extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
     final accent = gold ? colors.gold : colors.blue;
+    final compact = MediaQuery.sizeOf(context).width < 600;
     return Material(
       color: colors.card,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(9),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 11,
+          vertical: 10,
+        ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(9),
           border: Border.all(color: colors.border),
         ),
         child: Row(children: [
           Container(
-            width: 35,
-            height: 35,
+            width: 26,
+            height: 26,
             decoration: BoxDecoration(
               color: accent.withValues(alpha: .09),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, color: accent, size: 16),
+            child: Icon(icon, color: accent, size: 14),
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: 9),
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: TextStyle(
                 color: colors.muted,
-                fontSize: 10,
+                fontSize: compact ? 8 : 10,
                 fontWeight: FontWeight.w600,
               )),
-              const SizedBox(height: 4),
+              SizedBox(height: compact ? 2 : 4),
               FittedBox(
                 alignment: Alignment.centerLeft,
                 fit: BoxFit.scaleDown,
                 child: Text(value, style: TextStyle(
                   color: colors.text,
-                  fontSize: 16,
+                  fontSize: compact ? 13 : 16,
                   fontWeight: FontWeight.w800,
                 )),
               ),

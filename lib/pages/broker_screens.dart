@@ -3786,19 +3786,19 @@ class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
         gradient: [_brokerGold, Color(0xFF9E7719)],
       ),
       _QuickActionData(
-        icon: LucideIcons.userRoundPlus,
-        title: 'Open live account',
-        subtitle: 'Start trading with real capital',
-        category: 'LIVE TRADING',
-        target: 'Open Account',
-        gradient: [Color(0xFF1658C9), Color(0xFF0C2B68)],
-      ),
-      _QuickActionData(
         icon: LucideIcons.arrowLeftRight,
         title: 'Internal transfer',
         subtitle: 'Move balance between accounts',
         category: 'TRANSFER',
         target: 'Internal Transfer',
+        gradient: [Color(0xFF1658C9), Color(0xFF0C2B68)],
+      ),
+      _QuickActionData(
+        icon: LucideIcons.userRoundPlus,
+        title: 'Open live account',
+        subtitle: 'Start trading with real capital',
+        category: 'LIVE TRADING',
+        target: 'Open Account',
         gradient: [_brokerGold, Color(0xFF9E7719)],
       ),
       _QuickActionData(

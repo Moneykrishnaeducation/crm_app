@@ -55,14 +55,18 @@ class _AvailableColors {
       subCard: isDark ? const Color(0xFF101D31) : const Color(0xFFF7F9FC),
       border: isDark ? const Color(0xFF263750) : const Color(0xFFE2E8F0),
       subBorder: isDark ? const Color(0xFF1E2E48) : const Color(0xFFEDF2F7),
-      text: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A),
+      text: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
       muted: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
       blue: const Color(0xFF2563EB),
       blueLight: isDark ? const Color(0xFF1E2E48) : const Color(0xFFEFF6FF),
-      blueBorder: isDark ? const Color(0xFF2563EB).withValues(alpha: 0.35) : const Color(0xFFBFDBFE),
-      gold: const Color(0xFFEAB308),
+      blueBorder: isDark
+          ? const Color(0xFF2563EB).withValues(alpha: 0.35)
+          : const Color(0xFFBFDBFE),
+      gold: const Color(0xFFF59E0B),
       goldLight: isDark ? const Color(0xFF2D2619) : const Color(0xFFFEFCE8),
-      goldBorder: isDark ? const Color(0xFFEAB308).withValues(alpha: 0.35) : const Color(0xFFFEF08A),
+      goldBorder: isDark
+          ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
+          : const Color(0xFFFEF08A),
       green: const Color(0xFF10B981),
       greenLight: isDark ? const Color(0xFF132D28) : const Color(0xFFECFDF5),
       red: const Color(0xFFEF4444),
@@ -115,10 +119,12 @@ class MamAvailablePage extends StatefulWidget {
     super.key,
     this.onBack,
     this.onJoinedPool,
+    this.showBackButton = false,
   });
 
   final VoidCallback? onBack;
   final ValueChanged<AvailableMamPool>? onJoinedPool;
+  final bool showBackButton;
 
   @override
   State<MamAvailablePage> createState() => _MamAvailablePageState();
@@ -211,21 +217,27 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   _AvailableColors get _c => _AvailableColors.of(context);
 
   List<AvailableMamPool> get _filteredPools => _pools.where((p) {
-    final q = _searchQuery.toLowerCase();
-    final matchesQuery = q.isEmpty ||
-        p.name.toLowerCase().contains(q) ||
-        p.traderHandle.toLowerCase().contains(q) ||
-        p.pairs.any((pair) => pair.toLowerCase().contains(q));
+        final q = _searchQuery.toLowerCase();
+        final matchesQuery = q.isEmpty ||
+            p.name.toLowerCase().contains(q) ||
+            p.traderHandle.toLowerCase().contains(q) ||
+            p.pairs.any((pair) => pair.toLowerCase().contains(q));
 
-    if (!matchesQuery) return false;
+        if (!matchesQuery) return false;
 
-    if (_selectedFilter == 'Low Risk') return p.riskScore <= 3;
-    if (_selectedFilter == 'Medium Risk') return p.riskScore > 3 && p.riskScore <= 6;
-    if (_selectedFilter == 'High ROI') return p.monthlyRoi >= 20.0;
-    if (_selectedFilter == 'Top Win Rate') return p.winRate >= 80.0;
+        if (_selectedFilter == 'Low Risk') return p.riskScore <= 3;
+        if (_selectedFilter == 'Medium Risk') return p.riskScore > 3 && p.riskScore <= 6;
+        if (_selectedFilter == 'High ROI') return p.monthlyRoi >= 20.0;
+        if (_selectedFilter == 'Top Win Rate') return p.winRate >= 80.0;
 
-    return true;
-  }).toList();
+        return true;
+      }).toList();
+
+  String _formatCurrency(double val) {
+    if (val >= 1000000) return '\$${(val / 1000000).toStringAsFixed(2)}M';
+    if (val >= 1000) return '\$${(val / 1000).toStringAsFixed(1)}K';
+    return '\$${val.toStringAsFixed(0)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,15 +252,17 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                 _buildTopAppBar(),
                 Expanded(
                   child: ListView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
                     children: [
                       _buildHeaderBanner(),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       _buildMarketMetrics(),
-                      const SizedBox(height: 16),
-                      _buildSearchAndFilters(),
                       const SizedBox(height: 14),
+                      _buildSearchAndFilters(),
+                      const SizedBox(height: 12),
                       _buildPoolsList(),
                     ],
                   ),
@@ -266,14 +280,14 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   // ---------------------------------------------------------------------------
   Widget _buildTopAppBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
       decoration: BoxDecoration(
         color: _c.card,
         border: Border(bottom: BorderSide(color: _c.border)),
       ),
       child: Row(
         children: [
-          if (widget.onBack != null || Navigator.canPop(context))
+          if (widget.showBackButton && (widget.onBack != null || Navigator.canPop(context)))
             IconButton(
               icon: Icon(LucideIcons.arrowLeft, color: _c.text, size: 20),
               onPressed: () {
@@ -284,7 +298,8 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                 }
               },
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Back',
             ),
           const SizedBox(width: 4),
           Expanded(
@@ -295,19 +310,38 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                   'Available MAM Pools',
                   style: GoogleFonts.inter(
                     color: _c.text,
-                    fontSize: 17,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
                   ),
                 ),
                 Text(
                   'Verified Strategy Providers & Master Allocations',
-                  style: TextStyle(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
                     color: _c.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _c.blue.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: _c.blueBorder),
+            ),
+            child: Text(
+              '${_pools.length} Pools',
+              style: GoogleFonts.inter(
+                color: _c.blue,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -320,35 +354,35 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   // ---------------------------------------------------------------------------
   Widget _buildHeaderBanner() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _c.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: _c.isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFFEAB308), Color(0xFFCA8A04)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(LucideIcons.wallet, color: Colors.white, size: 22),
+            child: const Icon(LucideIcons.compass, color: Colors.white, size: 20),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,16 +391,16 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                   'Explore Available Master Pools',
                   style: GoogleFonts.inter(
                     color: _c.text,
-                    fontSize: 14.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
-                  'Evaluate verified win rates, historical drawdowns, and allocate capital with automatic risk stops.',
+                  'Evaluate audited win rates, live drawdowns, and allocate capital with automatic stop guards.',
                   style: TextStyle(
                     color: _c.muted,
-                    fontSize: 11.5,
+                    fontSize: 11,
                     height: 1.35,
                   ),
                 ),
@@ -421,10 +455,10 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(color: _c.border),
       ),
       child: Column(
@@ -439,17 +473,21 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: _c.muted, fontSize: 10.5, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: _c.muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             value,
             style: GoogleFonts.inter(
               color: _c.text,
-              fontSize: 14.5,
+              fontSize: 14,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -467,7 +505,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
     return Column(
       children: [
         Container(
-          height: 42,
+          height: 44,
           decoration: BoxDecoration(
             color: _c.card,
             borderRadius: BorderRadius.circular(12),
@@ -477,23 +515,24 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
             controller: _searchController,
             style: TextStyle(color: _c.text, fontSize: 13),
             decoration: InputDecoration(
-              hintText: 'Search by strategy, trader handle or pairs...',
+              hintText: 'Search pool name, trader, or pairs...',
               hintStyle: TextStyle(color: _c.muted, fontSize: 12),
-              prefixIcon: Icon(LucideIcons.search, size: 16, color: _c.muted),
+              prefixIcon: Icon(LucideIcons.search, size: 17, color: _c.muted),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: Icon(LucideIcons.x, size: 14, color: _c.muted),
+                      icon: Icon(LucideIcons.x, size: 16, color: _c.muted),
                       onPressed: () => _searchController.clear(),
+                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                     )
                   : null,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 32,
+          height: 36,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: filters.length,
@@ -505,11 +544,15 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                 onTap: () => setState(() => _selectedFilter = filter),
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  constraints: const BoxConstraints(minHeight: 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: isSelected ? _c.blue : _c.subCard,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: isSelected ? _c.blue : _c.border),
+                    border: Border.all(
+                      color: isSelected ? _c.blue : _c.border,
+                    ),
                   ),
                   child: Text(
                     filter,
@@ -534,7 +577,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   Widget _buildPoolsList() {
     if (_filteredPools.isEmpty) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
         decoration: BoxDecoration(
           color: _c.card,
           borderRadius: BorderRadius.circular(16),
@@ -542,17 +585,21 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
         ),
         child: Column(
           children: [
-            Icon(LucideIcons.searchX, size: 38, color: _c.muted),
-            const SizedBox(height: 12),
+            Icon(LucideIcons.searchX, size: 36, color: _c.muted),
+            const SizedBox(height: 10),
             Text(
               'No Master Pools Match Criteria',
-              style: GoogleFonts.inter(color: _c.text, fontSize: 14.5, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(
+                color: _c.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(
-              'Try clearing your search query or selecting a different filter.',
+              'Try clearing your search query or selecting another filter.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: _c.muted, fontSize: 12),
+              style: TextStyle(color: _c.muted, fontSize: 11.5),
             ),
           ],
         ),
@@ -563,7 +610,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _filteredPools.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final pool = _filteredPools[index];
         return _buildPoolCard(pool);
@@ -573,24 +620,36 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
 
   Widget _buildPoolCard(AvailableMamPool pool) {
     Color riskColor;
+    String riskLabel;
     if (pool.riskScore <= 3) {
       riskColor = _c.green;
+      riskLabel = 'Low Risk';
     } else if (pool.riskScore <= 6) {
       riskColor = _c.gold;
+      riskLabel = 'Med Risk';
     } else {
       riskColor = _c.red;
+      riskLabel = 'High Risk';
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(color: _c.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _c.isDark ? 0.2 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top row: Avatar, Info, Status Badges
           Row(
             children: [
               Container(
@@ -602,16 +661,20 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
                   child: Text(
                     pool.name.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -623,7 +686,11 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                             pool.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(color: _c.text, fontSize: 14, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.inter(
+                              color: _c.text,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                         if (pool.isVerified) ...[
@@ -634,49 +701,100 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${pool.traderHandle} • ${pool.copiersCount} investors',
-                      style: TextStyle(color: _c.muted, fontSize: 11),
+                      '${pool.traderHandle} • ${pool.copiersCount} investors • AUM ${_formatCurrency(pool.totalAum)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: _c.muted, fontSize: 10.5),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: riskColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: riskColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  'Risk ${pool.riskScore}/10',
-                  style: TextStyle(color: riskColor, fontSize: 10.5, fontWeight: FontWeight.w700),
+                  riskLabel,
+                  style: TextStyle(
+                    color: riskColor,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 11),
+
+          // 2x2 Grid of Key Stats
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: _c.subCard,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: _c.subBorder),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Column(
               children: [
-                _cardStat('Monthly ROI', '+${pool.monthlyRoi.toStringAsFixed(1)}%', valueColor: _c.green),
-                _cardStat('Win Rate', '${pool.winRate.toStringAsFixed(1)}%'),
-                _cardStat('Max DD', '${pool.maxDrawdown.toStringAsFixed(1)}%', valueColor: _c.red),
-                _cardStat('Fee Rate', '${pool.performanceFee.toStringAsFixed(0)}%'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _microStat(
+                        'Monthly ROI',
+                        '+${pool.monthlyRoi.toStringAsFixed(1)}%',
+                        valueColor: _c.green,
+                        icon: LucideIcons.trendingUp,
+                      ),
+                    ),
+                    Container(width: 1, height: 28, color: _c.subBorder),
+                    Expanded(
+                      child: _microStat(
+                        'Win Rate',
+                        '${pool.winRate.toStringAsFixed(1)}%',
+                        valueColor: _c.text,
+                        icon: LucideIcons.award,
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(height: 12, thickness: 1, color: _c.subBorder),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _microStat(
+                        'Max Drawdown',
+                        '${pool.maxDrawdown.toStringAsFixed(1)}%',
+                        valueColor: _c.red,
+                        icon: LucideIcons.shieldAlert,
+                      ),
+                    ),
+                    Container(width: 1, height: 28, color: _c.subBorder),
+                    Expanded(
+                      child: _microStat(
+                        'Perf Fee / Min Dep',
+                        '${pool.performanceFee.toStringAsFixed(0)}% • \$${pool.minDeposit.toStringAsFixed(0)}',
+                        valueColor: _c.text,
+                        icon: LucideIcons.percent,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
+
+          // Pairs & Action Button
           Row(
             children: [
               Expanded(
                 child: Wrap(
                   spacing: 4,
+                  runSpacing: 4,
                   children: pool.pairs
                       .map((pair) => Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -685,21 +803,36 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                               borderRadius: BorderRadius.circular(5),
                               border: Border.all(color: _c.subBorder),
                             ),
-                            child: Text(pair, style: TextStyle(color: _c.muted, fontSize: 9.5, fontWeight: FontWeight.w600)),
+                            child: Text(
+                              pair,
+                              style: TextStyle(
+                                color: _c.muted,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ))
                       .toList(),
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: () => _openInvestModal(pool),
-                icon: const Icon(LucideIcons.plus, size: 14),
-                label: const Text('Invest in Pool', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _c.blue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 44,
+                child: ElevatedButton.icon(
+                  onPressed: () => _openInvestModal(pool),
+                  icon: const Icon(LucideIcons.plus, size: 15),
+                  label: const Text(
+                    'Invest in Pool',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _c.blue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: const Size(120, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
@@ -709,20 +842,45 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
     );
   }
 
-  Widget _cardStat(String label, String value, {Color? valueColor}) {
-    return Column(
-      children: [
-        Text(label, style: TextStyle(color: _c.muted, fontSize: 10, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            color: valueColor ?? _c.text,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
+  Widget _microStat(String label, String value, {Color? valueColor, IconData? icon}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 11, color: _c.muted),
+                const SizedBox(width: 4),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _c.muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              color: valueColor ?? _c.text,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -742,7 +900,9 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
           if (widget.onJoinedPool != null) {
             widget.onJoinedPool!(pool);
           }
-          toast.success('Successfully invested \${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!');
+          toast.success(
+            'Successfully invested \$${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!',
+          );
         },
       ),
     );
@@ -784,10 +944,10 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
+      padding: EdgeInsets.fromLTRB(16, 14, 16, 20 + bottomInset),
       decoration: BoxDecoration(
         color: c.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -796,69 +956,153 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
           children: [
             Center(
               child: Container(
-                width: 40,
+                width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: c.border,
+                  color: c.muted.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Invest in ${widget.pool.name}',
-              style: GoogleFonts.inter(color: c.text, fontSize: 16, fontWeight: FontWeight.w800),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Invest in ${widget.pool.name}',
+                        style: GoogleFonts.inter(
+                          color: c.text,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Allocate capital to this verified master node.',
+                        style: TextStyle(color: c.muted, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(LucideIcons.x, size: 20, color: c.muted),
+                  onPressed: () => Navigator.pop(context),
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 14),
             Text(
-              'Allocate trading capital to this verified MAM master node.',
-              style: TextStyle(color: c.muted, fontSize: 11.5),
+              'From Trading Account',
+              style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 16),
-            Text('From Trading Account', style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               initialValue: _selectedAccount,
               dropdownColor: c.card,
               style: TextStyle(color: c.text, fontSize: 12.5),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 filled: true,
                 fillColor: c.subCard,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: c.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: c.border),
+                ),
               ),
               items: const [
-                DropdownMenuItem(value: 'MT5 Standard #1029482 (\$8,420.00)', child: Text('MT5 Standard #1029482 (\$8,420.00)')),
-                DropdownMenuItem(value: 'MT5 Pro #1084920 (\$15,200.00)', child: Text('MT5 Pro #1084920 (\$15,200.00)')),
+                DropdownMenuItem(
+                  value: 'MT5 Standard #1029482 (\$8,420.00)',
+                  child: Text('MT5 Standard #1029482 (\$8,420.00)'),
+                ),
+                DropdownMenuItem(
+                  value: 'MT5 Pro #1084920 (\$15,200.00)',
+                  child: Text('MT5 Pro #1084920 (\$15,200.00)'),
+                ),
               ],
               onChanged: (val) {
                 if (val != null) setState(() => _selectedAccount = val);
               },
             ),
             const SizedBox(height: 12),
-            Text('Allocation Capital (\$)', style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600)),
+            Text(
+              'Allocation Capital (\$ USD)',
+              style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: _amountController,
               keyboardType: TextInputType.number,
-              style: TextStyle(color: c.text, fontSize: 12.5),
+              style: TextStyle(color: c.text, fontSize: 13, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 prefixText: '\$ ',
                 prefixStyle: TextStyle(color: c.text, fontWeight: FontWeight.w700),
                 filled: true,
                 fillColor: c.subCard,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: c.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: c.border),
+                ),
               ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (final amt in [500, 1000, 2500, 5000])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: InkWell(
+                      onTap: () => setState(() => _amountController.text = amt.toString()),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 32),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: c.subCard,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: c.border),
+                        ),
+                        child: Text(
+                          '\$$amt',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: c.text,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Drawdown Guard Threshold', style: TextStyle(color: c.text, fontSize: 12, fontWeight: FontWeight.w600)),
-                Text('${_drawdownGuard.toInt()}%', style: GoogleFonts.inter(color: c.red, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                Text(
+                  'Drawdown Guard Threshold',
+                  style: TextStyle(color: c.text, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '${_drawdownGuard.toInt()}%',
+                  style: GoogleFonts.inter(
+                    color: c.red,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
             Slider(
@@ -870,7 +1114,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
               inactiveColor: c.border,
               onChanged: (val) => setState(() => _drawdownGuard = val),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -886,7 +1130,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               height: 44,
@@ -899,10 +1143,14 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: c.blue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  minimumSize: const Size.fromHeight(44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
                   elevation: 0,
                 ),
-                child: Text('Confirm Investment', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
+                child: Text(
+                  'Confirm Investment',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
               ),
             ),
           ],
@@ -918,7 +1166,10 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: c.muted, fontSize: 11)),
-          Text(value, style: TextStyle(color: c.text, fontSize: 11.5, fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: TextStyle(color: c.text, fontSize: 11.5, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

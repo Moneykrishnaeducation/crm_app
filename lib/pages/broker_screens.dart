@@ -1,4 +1,5 @@
 part of '../main.dart';
+import '../app_notifications.dart';
 
 const _brokerNavy = Color(0xFF10264B);
 const _brokerPanel = Colors.white;
@@ -1297,7 +1298,7 @@ void _showQuickTradeDialog(
                       ),
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        showAppToast('Instant SELL ${lotSize.toStringAsFixed(2)} $symbol @ ${sellPrice.toStringAsFixed(5)} executed', type: NotchToastType.success);
+                        showAppMessage('Instant SELL ${lotSize.toStringAsFixed(2)} $symbol @ ${sellPrice.toStringAsFixed(5)} executed');
                       },
                       child: Column(
                         children: [
@@ -1326,7 +1327,7 @@ void _showQuickTradeDialog(
                       ),
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        showAppToast('Instant BUY ${lotSize.toStringAsFixed(2)} $symbol @ ${buyPrice.toStringAsFixed(5)} executed', type: NotchToastType.success);
+                        showAppMessage('Instant BUY ${lotSize.toStringAsFixed(2)} $symbol @ ${buyPrice.toStringAsFixed(5)} executed');
                       },
                       child: Column(
                         children: [
@@ -1783,7 +1784,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                 _accountBalances[_selectedLogin] =
                     (_accountBalances[_selectedLogin] ?? 0.0) + position.profit;
               });
-              showAppToast('Position ${position.symbol} closed successfully', type: NotchToastType.success);
+              showAppMessage('Position ${position.symbol} closed successfully');
             },
             child: const Text('Confirm Close'),
           ),
@@ -1832,7 +1833,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               setState(() {
                 _accountPendingOrders[_selectedLogin]?.removeWhere((o) => o.id == order.id);
               });
-              showAppToast('Pending order for ${order.symbol} cancelled', type: NotchToastType.info);
+              showAppMessage('Pending order for ${order.symbol} cancelled');
             },
             child: const Text('Cancel Order'),
           ),

@@ -1612,11 +1612,10 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           ),
           const SizedBox(height: 16),
 
-          // Action Buttons Row (min height 44)
+          // Action Buttons: 2x2 Mobile-Friendly Grid
           Row(
             children: [
               Expanded(
-                flex: 3,
                 child: SizedBox(
                   height: 44,
                   child: FilledButton.icon(
@@ -1624,65 +1623,84 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                     icon: const Icon(LucideIcons.plus, size: 16),
                     label: Text(
                       'Quick Fund',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: c.blue,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
-                flex: 3,
                 child: SizedBox(
                   height: 44,
                   child: OutlinedButton.icon(
                     onPressed: () => _openWithdrawSheet(c),
-                    icon: Icon(LucideIcons.arrowUpRight, size: 15, color: c.text),
+                    icon: Icon(LucideIcons.arrowUpRight, size: 16, color: c.text),
                     label: Text(
                       'Withdraw',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: c.text),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.text),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: c.border),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              SizedBox(
-                height: 44,
-                child: OutlinedButton.icon(
-                  onPressed: () => _openPerformanceSheet(c),
-                  icon: Icon(LucideIcons.barChart2, size: 15, color: c.text),
-                  label: Text(
-                    'Stats',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: c.text),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: c.border),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openPerformanceSheet(c),
+                    icon: Icon(LucideIcons.barChart2, size: 16, color: c.text),
+                    label: Text(
+                      'Performance',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.text),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: c.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              SizedBox(
-                height: 44,
-                child: OutlinedButton(
-                  onPressed: () => _openManageInvestorsSheet(c),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: c.border),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openManageInvestorsSheet(c),
+                    icon: Icon(LucideIcons.users, size: 16, color: c.text),
+                    label: Text(
+                      'Investor Pool',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.text),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: c.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
                   ),
-                  child: Icon(LucideIcons.users, size: 16, color: c.text),
                 ),
               ),
             ],

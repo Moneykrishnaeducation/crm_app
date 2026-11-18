@@ -135,32 +135,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                         TextButton(onPressed: _availableBalance > 0 ? () => _setAmount(_availableBalance) : null, child: const Text('MAX')),
                       ]),
                       const SizedBox(height: 14),
-                      Text('QUICK AMOUNT', style: theme.textTheme.labelSmall?.copyWith(color: muted, fontWeight: FontWeight.w800, letterSpacing: .9)),
-                      const SizedBox(height: 9),
-                      Wrap(spacing: 8, runSpacing: 8, children: [
-                        for (final value in [50, 100, 250, 500])
-                          _TransferChip(label: '\$' + value.toString(), selected: amount == value.toDouble(), enabled: value <= _availableBalance, onTap: () => _setAmount(value.toDouble())),
-                        _TransferChip(label: 'MAX', selected: _availableBalance > 0 && amount == _availableBalance, enabled: _availableBalance > 0, onTap: () => _setAmount(_availableBalance)),
-                      ]),
-                      const SizedBox(height: 20),
-                      Text('REFERENCE (OPTIONAL)', style: theme.textTheme.labelSmall?.copyWith(color: muted, fontWeight: FontWeight.w800, letterSpacing: .9)),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _noteController,
-                        textCapitalization: TextCapitalization.sentences,
-                        style: theme.textTheme.bodyMedium,
-                        decoration: InputDecoration(
-                          hintText: 'Add a reference for this transfer',
-                          hintStyle: theme.textTheme.bodySmall?.copyWith(color: muted),
-                          prefixIcon: Icon(LucideIcons.messageSquare, size: 18, color: muted),
-                          filled: true,
-                          fillColor: dark ? colors.surfaceContainerHighest.withValues(alpha: .35) : colors.surfaceContainerLowest,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: theme.dividerColor)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: theme.dividerColor)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: colors.primary, width: 1.4)),
-                        ),
-                      ),
                       const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.all(13),

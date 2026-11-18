@@ -110,6 +110,55 @@ class MamMasterAccount {
 }
 
 // -----------------------------------------------------------------------------
+// VISUAL RISK GAUGE METER (3-BAR SEGMENTED)
+// -----------------------------------------------------------------------------
+class _RiskMeter extends StatelessWidget {
+  const _RiskMeter({
+    required this.level,
+    this.barWidth = 3.0,
+    this.barSpacing = 2.0,
+  });
+
+  final int level; // 1 = Low, 2 = Med, 3 = High
+  final double barWidth;
+  final double barSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    Color activeColor;
+    if (level <= 1) {
+      activeColor = const Color(0xFF10B981);
+    } else if (level == 2) {
+      activeColor = const Color(0xFFF59E0B);
+    } else {
+      activeColor = const Color(0xFFEF4444);
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final heights = [5.5, 8.5, 11.5];
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (int i = 0; i < 3; i++)
+          Container(
+            width: barWidth,
+            height: heights[i],
+            margin: EdgeInsets.only(right: i < 2 ? barSpacing : 0),
+            decoration: BoxDecoration(
+              color: i < level
+                  ? activeColor
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
 // MAM MANAGER PAGE
 // -----------------------------------------------------------------------------
 class MamManagerPage extends StatefulWidget {
@@ -338,101 +387,145 @@ class _MamManagerPageState extends State<MamManagerPage> {
   // ---------------------------------------------------------------------------
   Widget _buildCreateMasterNodeBanner() {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _c.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _c.isDark
-              ? const Color(0xFF2563EB).withValues(alpha: 0.35)
-              : const Color(0xFFBFDBFE),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFF59E0B).withValues(alpha: _c.isDark ? 0.45 : 0.6),
+            const Color(0xFF2563EB).withValues(alpha: _c.isDark ? 0.55 : 0.7),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2563EB).withValues(alpha: _c.isDark ? 0.2 : 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF2563EB).withValues(alpha: _c.isDark ? 0.25 : 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(LucideIcons.plus, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Create Master Node',
-                      style: GoogleFonts.inter(
-                        color: _c.text,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Set allocation rules, profit share %, and accept investor capital',
-                      style: TextStyle(
-                        color: _c.muted,
-                        fontSize: 11,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      padding: const EdgeInsets.all(1.2),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _c.card,
+          borderRadius: BorderRadius.circular(15),
+          gradient: LinearGradient(
+            colors: [
+              _c.card,
+              _c.isDark ? const Color(0xFF131F33) : const Color(0xFFF8FAFC),
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: FilledButton.icon(
-              onPressed: _openCreateMasterSheet,
-              icon: const Icon(LucideIcons.plus, size: 16),
-              label: Text(
-                '+ Create Master Node',
-                style: GoogleFonts.inter(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(LucideIcons.crown, color: Colors.white, size: 22),
                 ),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Create Master Node',
+                              style: GoogleFonts.inter(
+                                color: _c.text,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Text(
+                              'MAM LEADER',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFFF59E0B),
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Set allocation rules, profit share %, and accept investor capital',
+                        style: TextStyle(
+                          color: _c.muted,
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 13),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: FilledButton.icon(
+                onPressed: _openCreateMasterSheet,
+                icon: const Icon(LucideIcons.plus, size: 16),
+                label: Text(
+                  '+ Create Master Node',
+                  style: GoogleFonts.inter(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: const Color(0xFF2563EB).withValues(alpha: 0.4),
+                  minimumSize: const Size.fromHeight(46),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -687,17 +780,28 @@ class _MamManagerPageState extends State<MamManagerPage> {
 
   Widget _buildMasterCard(MamMasterAccount master) {
     final isActive = master.status == 'Active';
+    final statusColor = isActive ? _c.green : _c.gold;
+    final riskLevel = master.risk.toLowerCase().contains('high')
+        ? 3
+        : (master.risk.toLowerCase().contains('mod') ? 2 : 1);
 
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _c.card,
+            _c.isDark ? const Color(0xFF131F33) : const Color(0xFFFBFDFF),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _c.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? 0.2 : 0.03),
-            blurRadius: 6,
+            color: Colors.black.withValues(alpha: _c.isDark ? 0.25 : 0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -709,19 +813,21 @@ class _MamManagerPageState extends State<MamManagerPage> {
           Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: isActive ? _c.greenLight : _c.subCard,
-                  borderRadius: BorderRadius.circular(10),
+                  color: isActive ? _c.greenLight : _c.goldLight,
+                  borderRadius: BorderRadius.circular(11),
                   border: Border.all(
-                    color: isActive ? _c.green.withValues(alpha: 0.4) : _c.border,
+                    color: isActive
+                        ? _c.green.withValues(alpha: 0.35)
+                        : _c.goldBorder,
                   ),
                 ),
                 child: Icon(
                   isActive ? LucideIcons.radio : LucideIcons.pause,
                   size: 18,
-                  color: isActive ? _c.green : _c.muted,
+                  color: isActive ? _c.green : _c.gold,
                 ),
               ),
               const SizedBox(width: 10),
@@ -740,32 +846,64 @@ class _MamManagerPageState extends State<MamManagerPage> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      'MT5 Node: #${master.login} • ${master.allocationMethod}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: _c.muted, fontSize: 10.5),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'MT5 Node: #${master.login} • ${master.allocationMethod}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: _c.muted, fontSize: 10.5),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _RiskMeter(level: riskLevel),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isActive ? _c.greenLight : _c.redLight,
+                  color: isActive ? _c.greenLight : _c.goldLight,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isActive ? _c.green.withValues(alpha: 0.3) : _c.red.withValues(alpha: 0.3),
+                    color: isActive
+                        ? _c.green.withValues(alpha: 0.35)
+                        : _c.goldBorder,
                   ),
                 ),
-                child: Text(
-                  master.status,
-                  style: TextStyle(
-                    color: isActive ? _c.green : _c.red,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: statusColor.withValues(alpha: 0.6),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4.5),
+                    Text(
+                      master.status.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        color: statusColor,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -814,9 +952,10 @@ class _MamManagerPageState extends State<MamManagerPage> {
                     Container(width: 1, height: 28, color: _c.subBorder),
                     Expanded(
                       child: _microStat(
-                        'Leverage / Risk',
-                        '${master.leverage} • ${master.risk}',
-                        icon: LucideIcons.zap,
+                        'Leverage / Gain',
+                        '${master.leverage} • +${master.monthlyGain.toStringAsFixed(1)}%',
+                        icon: LucideIcons.trendingUp,
+                        valueColor: _c.green,
                       ),
                     ),
                   ],
@@ -837,7 +976,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
                     icon: Icon(
                       isActive ? LucideIcons.pause : LucideIcons.play,
                       size: 14,
-                      color: _c.text,
+                      color: isActive ? _c.gold : _c.green,
                     ),
                     label: Text(
                       isActive ? 'Pause Node' : 'Resume Node',
@@ -882,19 +1021,31 @@ class _MamManagerPageState extends State<MamManagerPage> {
   }
 
   Widget _microStat(String label, String value, {Color? valueColor, IconData? icon}) {
+    final tintColor = valueColor ?? _c.blue;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 11, color: _c.muted),
-                const SizedBox(width: 4),
-              ],
-              Flexible(
-                child: Text(
+          if (icon != null) ...[
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: tintColor.withValues(alpha: _c.isDark ? 0.16 : 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 13, color: tintColor),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -904,18 +1055,18 @@ class _MamManagerPageState extends State<MamManagerPage> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              color: valueColor ?? _c.text,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
+                const SizedBox(height: 1.5),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: valueColor ?? _c.text,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

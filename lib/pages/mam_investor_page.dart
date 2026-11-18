@@ -111,6 +111,55 @@ class MamInvestmentSubscription {
 }
 
 // -----------------------------------------------------------------------------
+// VISUAL RISK GAUGE METER (3-BAR SEGMENTED)
+// -----------------------------------------------------------------------------
+class _RiskMeter extends StatelessWidget {
+  const _RiskMeter({
+    required this.level,
+    this.barWidth = 3.0,
+    this.barSpacing = 2.0,
+  });
+
+  final int level; // 1 = Low, 2 = Med, 3 = High
+  final double barWidth;
+  final double barSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    Color activeColor;
+    if (level <= 1) {
+      activeColor = const Color(0xFF10B981);
+    } else if (level == 2) {
+      activeColor = const Color(0xFFF59E0B);
+    } else {
+      activeColor = const Color(0xFFEF4444);
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final heights = [5.5, 8.5, 11.5];
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (int i = 0; i < 3; i++)
+          Container(
+            width: barWidth,
+            height: heights[i],
+            margin: EdgeInsets.only(right: i < 2 ? barSpacing : 0),
+            decoration: BoxDecoration(
+              color: i < level
+                  ? activeColor
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
 // MAM INVESTOR PAGE
 // -----------------------------------------------------------------------------
 class MamInvestorPage extends StatefulWidget {
@@ -576,17 +625,29 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
 
   Widget _buildInvestmentCard(MamInvestmentSubscription inv) {
     final isPos = inv.unrealizedPnl >= 0;
+    final activeStatus = inv.isMirroringActive;
+    final statusColor = activeStatus ? _c.green : _c.gold;
+    final riskLevel = inv.riskLevel.toLowerCase().contains('high')
+        ? 3
+        : (inv.riskLevel.toLowerCase().contains('med') || inv.riskLevel.toLowerCase().contains('mod') ? 2 : 1);
 
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _c.card,
+            _c.isDark ? const Color(0xFF131F33) : const Color(0xFFFBFDFF),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _c.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? 0.2 : 0.03),
-            blurRadius: 6,
+            color: Colors.black.withValues(alpha: _c.isDark ? 0.25 : 0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -598,21 +659,21 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: inv.isMirroringActive ? _c.greenLight : _c.subCard,
-                  borderRadius: BorderRadius.circular(10),
+                  color: activeStatus ? _c.greenLight : _c.goldLight,
+                  borderRadius: BorderRadius.circular(11),
                   border: Border.all(
-                    color: inv.isMirroringActive
-                        ? _c.green.withValues(alpha: 0.4)
-                        : _c.border,
+                    color: activeStatus
+                        ? _c.green.withValues(alpha: 0.35)
+                        : _c.goldBorder,
                   ),
                 ),
                 child: Icon(
-                  inv.isMirroringActive ? LucideIcons.radio : LucideIcons.pause,
+                  activeStatus ? LucideIcons.radio : LucideIcons.pause,
                   size: 18,
-                  color: inv.isMirroringActive ? _c.green : _c.muted,
+                  color: activeStatus ? _c.green : _c.gold,
                 ),
               ),
               const SizedBox(width: 10),
@@ -631,34 +692,64 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      'Master #${inv.managerLogin} • ${inv.allocationMethod}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: _c.muted, fontSize: 10.5),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Master #${inv.managerLogin} • ${inv.allocationMethod}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: _c.muted, fontSize: 10.5),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _RiskMeter(level: riskLevel),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: inv.isMirroringActive ? _c.greenLight : _c.redLight,
+                  color: activeStatus ? _c.greenLight : _c.goldLight,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: inv.isMirroringActive
-                        ? _c.green.withValues(alpha: 0.3)
-                        : _c.red.withValues(alpha: 0.3),
+                    color: activeStatus
+                        ? _c.green.withValues(alpha: 0.35)
+                        : _c.goldBorder,
                   ),
                 ),
-                child: Text(
-                  inv.isMirroringActive ? 'Active' : 'Paused',
-                  style: TextStyle(
-                    color: inv.isMirroringActive ? _c.green : _c.red,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: statusColor.withValues(alpha: 0.6),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4.5),
+                    Text(
+                      activeStatus ? 'ACTIVE' : 'PAUSED',
+                      style: GoogleFonts.inter(
+                        color: statusColor,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -776,19 +867,31 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   }
 
   Widget _microStat(String label, String value, {Color? valueColor, IconData? icon}) {
+    final tintColor = valueColor ?? _c.blue;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 11, color: _c.muted),
-                const SizedBox(width: 4),
-              ],
-              Flexible(
-                child: Text(
+          if (icon != null) ...[
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: tintColor.withValues(alpha: _c.isDark ? 0.16 : 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 13, color: tintColor),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -798,18 +901,18 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              color: valueColor ?? _c.text,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
+                const SizedBox(height: 1.5),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: valueColor ?? _c.text,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

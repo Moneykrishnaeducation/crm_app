@@ -41,7 +41,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     final narrow = size.width < 380;
 
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (context, _) {
         return SizedBox.expand(
           child: Padding(
             padding: EdgeInsets.fromLTRB(narrow ? 12 : 16, compact ? 8 : 14, narrow ? 12 : 16, 104),
@@ -428,15 +428,3 @@ class _SwapButton extends StatelessWidget {
   }
 }
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label, required this.color});
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(color: color.withValues(alpha: .10), borderRadius: BorderRadius.circular(30), border: Border.all(color: color.withValues(alpha: .22))),
-    child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w800, letterSpacing: .6)),
-  );
-}

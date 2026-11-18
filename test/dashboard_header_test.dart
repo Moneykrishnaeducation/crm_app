@@ -99,8 +99,8 @@ void main() {
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
 
-    // In More tab, tap 'Profile'
-    await tester.tap(find.text('Profile').first);
+    // In More tab, tap 'View profile'
+    await tester.tap(find.text('View profile').first);
     await tester.pumpAndSettle();
 
     // Detail page: should show Back button and 'Profile' title

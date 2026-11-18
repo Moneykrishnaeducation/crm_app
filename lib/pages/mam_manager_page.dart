@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import '../widgets/mam_master_node_workspace.dart';
 
 // -----------------------------------------------------------------------------
 // DYNAMIC THEME COLORS HELPER
@@ -77,37 +78,8 @@ class _MamColors {
 }
 
 // -----------------------------------------------------------------------------
-// DATA MODEL: MAM MASTER ACCOUNT
+// DATA MODEL (MamMasterAccount imported from mam_master_node_workspace.dart)
 // -----------------------------------------------------------------------------
-class MamMasterAccount {
-  MamMasterAccount({
-    required this.name,
-    required this.login,
-    required this.profitShare,
-    required this.leverage,
-    required this.balance,
-    required this.status,
-    required this.risk,
-    required this.payout,
-    this.allocationMethod = 'Lot Proportional',
-    this.investorsCount = 0,
-    this.totalAum = 0.0,
-    this.monthlyGain = 0.0,
-  });
-
-  String name;
-  String login;
-  double profitShare;
-  String leverage;
-  double balance;
-  String status; // Active, Draft, Paused, Disabled
-  String risk;
-  String payout;
-  String allocationMethod;
-  int investorsCount;
-  double totalAum;
-  double monthlyGain;
-}
 
 // -----------------------------------------------------------------------------
 // VISUAL RISK GAUGE METER (3-BAR SEGMENTED)
@@ -183,12 +155,35 @@ class _MamManagerPageState extends State<MamManagerPage> {
   String _searchQuery = '';
   bool _showGuide = false;
 
+  MamMasterAccount? _selectedMasterDetail;
   late List<MamMasterAccount> _masters;
 
   @override
   void initState() {
     super.initState();
     _masters = [
+      MamMasterAccount(
+        name: 'Devo-Testmam',
+        login: '2141715173',
+        profitShare: 40.0,
+        leverage: '1:500',
+        balance: 0.00,
+        status: 'Active',
+        risk: 'Medium',
+        payout: 'Weekly',
+        allocationMethod: 'Lot Proportional',
+        investorsCount: 12,
+        totalAum: 482500.0,
+        monthlyGain: 14.8,
+        server: 'VTindex-MT5',
+        tradingPlatform: 'MetaTrader 5 (MT5)',
+        algoTrading: 'Manual',
+        pendingRelease: 4.03,
+        releasedPayout: 0.00,
+        pendingWallet: 0.00,
+        totalSettled: 0.00,
+        tradesProcessed: 0,
+      ),
       MamMasterAccount(
         name: 'Alpha Quant Alpha-1',
         login: '8849102',
@@ -265,6 +260,31 @@ class _MamManagerPageState extends State<MamManagerPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedMasterDetail != null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: MamMasterNodeWorkspace(
+            master: _selectedMasterDetail!,
+            onBack: () {
+              setState(() {
+                _selectedMasterDetail = null;
+              });
+            },
+            onUpdate: (updatedMaster) {
+              setState(() {
+                _selectedMasterDetail = updatedMaster;
+                final idx = _masters.indexWhere((m) => m.login == updatedMaster.login);
+                if (idx != -1) {
+                  _masters[idx] = updatedMaster;
+                }
+              });
+            },
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -355,7 +375,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
                   ),
                 ),
                 Text(
-                  'Master Account Management & Node Allocations',
+                  'Master Account Management & Allocations',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
@@ -757,7 +777,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
             ),
             const SizedBox(height: 5),
             Text(
-              'Create a new MAM master node to begin managing pooled accounts.',
+              'Create a new MAM master account to begin managing pooled accounts.',
               textAlign: TextAlign.center,
               style: TextStyle(color: _c.muted, fontSize: 12),
             ),
@@ -785,7 +805,10 @@ class _MamManagerPageState extends State<MamManagerPage> {
         ? 3
         : (master.risk.toLowerCase().contains('mod') ? 2 : 1);
 
-    return Container(
+    return InkWell(
+      onTap: () => _openMasterDetails(master),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -999,7 +1022,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
                     onPressed: () => _openMasterDetails(master),
                     icon: const Icon(LucideIcons.settings2, size: 14),
                     label: const Text(
-                      'Node Details',
+                      'Account Details',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -1017,6 +1040,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -1078,16 +1102,13 @@ class _MamManagerPageState extends State<MamManagerPage> {
     setState(() {
       master.status = master.status == 'Active' ? 'Paused' : 'Active';
     });
-    showAppMessage('Master node #${master.login} marked as ${master.status}');
+    showAppMessage('Master account ${master.login} marked as ${master.status}');
   }
 
   void _openMasterDetails(MamMasterAccount master) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _MamMasterDetailsSheet(master: master, colors: _c),
-    );
+    setState(() {
+      _selectedMasterDetail = master;
+    });
   }
 
   void _openCreateMasterSheet() {
@@ -1101,7 +1122,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
           setState(() {
             _masters.insert(0, newMaster);
           });
-          showAppMessage('MAM Master Node "${newMaster.name}" created successfully!');
+          showAppMessage('MAM Master Account "${newMaster.name}" created successfully!');
         },
       ),
     );
@@ -1486,7 +1507,7 @@ class _MamMasterDetailsSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Node Login: #${master.login}',
+                      'Account Login: ${master.login}',
                       style: TextStyle(color: colors.muted, fontSize: 11.5),
                     ),
                   ],

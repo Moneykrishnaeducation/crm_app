@@ -294,6 +294,7 @@ class _AppShellState extends State<AppShell> {
   BrokerAccount? _selectedAccount;
   String _accountDetailsReturnPage = 'Trading Accounts';
   bool _balanceVisible = true;
+  final Map<String, List<ActivityFundTransaction>> _appFundTransactions = {};
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
     BrokerAccount(
@@ -421,7 +422,84 @@ class _AppShellState extends State<AppShell> {
         'PAMM Account' => PammPage(
             onBack: () => setState(() => _selectedPage = 'More'),
           ),
-        'Internal Transfer' => const BrokerInternalTransferPage(),
+        'Internal Transfer' => BrokerInternalTransferPage(
+            accounts: _accounts,
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onSelectPage: _selectPage,
+            onTransferCompleted: (fromLogin, toLogin, amount) {
+              setState(() {
+                final fromIdx = _accounts.indexWhere((a) => a.login == fromLogin);
+                final toIdx = _accounts.indexWhere((a) => a.login == toLogin);
+                if (fromIdx != -1) {
+                  final fromAcc = _accounts[fromIdx];
+                  final cur = double.tryParse(fromAcc.balance.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+                  final newBal = (cur - amount).clamp(0.0, double.infinity);
+                  final balStr = '\$${newBal.toStringAsFixed(2)}';
+                  _accounts[fromIdx] = BrokerAccount(
+                    fromAcc.name, fromAcc.login, fromAcc.leverage,
+                    balStr, balStr, fromAcc.type,
+                    server: fromAcc.server,
+                    currency: fromAcc.currency,
+                    floatingPnl: fromAcc.floatingPnl,
+                    equityHistory: fromAcc.equityHistory,
+                    openPositions: fromAcc.openPositions,
+                    recentTrades: fromAcc.recentTrades,
+                  );
+                }
+                if (toIdx != -1) {
+                  final toAcc = _accounts[toIdx];
+                  final cur = double.tryParse(toAcc.balance.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+                  final newBal = cur + amount;
+                  final balStr = '\$${newBal.toStringAsFixed(2)}';
+                  _accounts[toIdx] = BrokerAccount(
+                    toAcc.name, toAcc.login, toAcc.leverage,
+                    balStr, balStr, toAcc.type,
+                    server: toAcc.server,
+                    currency: toAcc.currency,
+                    floatingPnl: toAcc.floatingPnl,
+                    equityHistory: toAcc.equityHistory,
+                    openPositions: toAcc.openPositions,
+                    recentTrades: toAcc.recentTrades,
+                  );
+                }
+
+                // Record transfer in activity funds tab
+                final now = DateTime.now();
+                final timeStr = 'Today, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                final txId = 'trx-${now.millisecondsSinceEpoch % 1000000}';
+
+                _appFundTransactions.putIfAbsent(fromLogin, () => []).insert(
+                  0,
+                  ActivityFundTransaction(
+                    id: '$txId-out',
+                    isDeposit: false,
+                    method: 'Internal Transfer',
+                    amount: amount,
+                    date: timeStr,
+                    status: 'Completed',
+                    sourceLogin: fromLogin,
+                    destinationLogin: toLogin,
+                    isTransfer: true,
+                  ),
+                );
+
+                _appFundTransactions.putIfAbsent(toLogin, () => []).insert(
+                  0,
+                  ActivityFundTransaction(
+                    id: '$txId-in',
+                    isDeposit: true,
+                    method: 'Internal Transfer',
+                    amount: amount,
+                    date: timeStr,
+                    status: 'Completed',
+                    sourceLogin: fromLogin,
+                    destinationLogin: toLogin,
+                    isTransfer: true,
+                  ),
+                );
+              });
+            },
+          ),
         'Demo Accounts' => BrokerDemoAccountsPage(
             onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
             onAccountSelected: _openDemoAccount,
@@ -574,7 +652,10 @@ class _AppShellState extends State<AppShell> {
                                 _buildPrimaryTabLayer(
                                   index: 1,
                                   activeIndex: primaryIndex,
-                                  child: BrokerTransactionsPage(accounts: _accounts),
+                                  child: BrokerTransactionsPage(
+                                    accounts: _accounts,
+                                    externalFundTransactions: _appFundTransactions,
+                                  ),
                                 ),
                                 _buildPrimaryTabLayer(
                                   index: 2,

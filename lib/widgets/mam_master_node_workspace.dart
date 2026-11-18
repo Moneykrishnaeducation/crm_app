@@ -611,9 +611,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   }
 
   void _openSecuritySettingsSheet(MamWorkspaceColors c) {
-    bool obscureMaster = true;
     bool obscureInvestor = true;
-    final masterPwdCtrl = TextEditingController(text: 'TradingNode@2026!');
     final investorPwdCtrl = TextEditingController(text: 'ReadOnly*Inv#99');
     final authKeyCtrl = TextEditingController(text: 'VTX-MT5-SEC-991204');
 
@@ -672,39 +670,10 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Manage trading passwords and investor read-only keys.',
+                      'Manage investor read-only keys and MT5 credentials.',
                       style: TextStyle(fontSize: 12, color: c.muted),
                     ),
                     const SizedBox(height: 16),
-
-                    // Master Trading Password
-                    Text(
-                      'MASTER TRADING PASSWORD',
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: c.muted),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: masterPwdCtrl,
-                      obscureText: obscureMaster,
-                      style: GoogleFonts.inter(fontSize: 14, color: c.text),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: c.subCard,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            obscureMaster ? LucideIcons.eyeOff : LucideIcons.eye,
-                            size: 18,
-                            color: c.muted,
-                          ),
-                          onPressed: () => setModalState(() => obscureMaster = !obscureMaster),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: c.border),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
 
                     // Investor Read-Only Password
                     Text(
@@ -766,7 +735,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       child: FilledButton(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          showAppMessage('Master Security & Passwords updated successfully');
+                          showAppMessage('Investor Security & Keys updated successfully');
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: c.navy,
@@ -1937,7 +1906,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       ),
                     ),
                     Text(
-                      'Master & investor passwords',
+                      'Investor password & MT5 keys',
                       style: TextStyle(fontSize: 11, color: c.muted),
                     ),
                   ],
@@ -1947,7 +1916,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           ),
           const SizedBox(height: 14),
 
-          // Box 1: TRADER & INVESTOR PASSWORDS
+          // Box 1: INVESTOR READ-ONLY CREDENTIALS
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -1959,7 +1928,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'TRADER & INVESTOR PASSWORDS',
+                  'INVESTOR READ-ONLY CREDENTIALS',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -1969,7 +1938,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Update your master trading password or investor read-only password securely.',
+                  'Manage investor read-only password and MT5 node keys securely.',
                   style: TextStyle(fontSize: 11.5, color: c.muted, height: 1.3),
                 ),
                 const SizedBox(height: 10),

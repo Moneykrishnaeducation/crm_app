@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter_notch_toast/flutter_notch_toast.dart';
+import '../app_notifications.dart';
 import 'dart:math' as math;
 
 import 'package:image_picker/image_picker.dart';
@@ -653,7 +653,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    toast.info(message, duration: const Duration(seconds: 2));
+    showAppMessage(message);
   }
 
   @override

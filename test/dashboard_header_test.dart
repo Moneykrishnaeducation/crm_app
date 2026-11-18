@@ -114,4 +114,51 @@ void main() {
     // Now back on 'More' tab, brand header is restored (VT Index logo, Search, Support, 99+)
     expect(find.byTooltip('Customer Support'), findsOneWidget);
   });
+
+  testWidgets('Search and Notifications open animated bottom sheets instead of popups', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(createTestWidget());
+    await tester.pumpAndSettle();
+
+    // 1. Verify tapping Search opens MarketSearchBottomSheet
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+
+    // Verify it is a bottom sheet and NOT an AlertDialog popup
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Search Markets'), findsOneWidget);
+    expect(find.text('Search symbols (e.g. EURUSD, XAUUSD, BTC)...'), findsOneWidget);
+    expect(find.text('Forex'), findsWidgets);
+    expect(find.text('Crypto'), findsWidgets);
+
+    // Dismiss search bottom sheet via close button
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(find.text('Search Markets'), findsNothing);
+
+    // 2. Verify tapping Notifications opens NotificationCenterBottomSheet
+    await tester.tap(find.byTooltip('Notifications').first);
+    await tester.pumpAndSettle();
+
+    // Verify it is a bottom sheet and NOT an AlertDialog popup
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Notifications'), findsWidgets);
+    expect(find.text('Mark read'), findsOneWidget);
+    expect(find.text('Trading'), findsWidgets);
+    expect(find.text('Funds'), findsWidgets);
+    expect(find.text('Security'), findsWidgets);
+
+    // Tap 'Mark read'
+    await tester.tap(find.text('Mark read'));
+    await tester.pumpAndSettle();
+
+    // Dismiss notification bottom sheet
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark read'), findsNothing);
+  });
 }

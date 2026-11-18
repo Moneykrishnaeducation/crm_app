@@ -66,6 +66,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                 onPressed: () => showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
+                  isDismissible: true,
                   useSafeArea: true,
                   backgroundColor: Colors.transparent,
                   barrierColor: Colors.black54,
@@ -323,6 +324,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
             child: Container(

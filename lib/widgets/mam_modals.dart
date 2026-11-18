@@ -228,6 +228,7 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints:
                 BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
@@ -1414,6 +1415,7 @@ void showEstablishMasterMamSheet(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => EstablishMasterMamSheet(onCreated: onCreated),
   );
@@ -1427,6 +1429,7 @@ void showManagerPerformanceProfileModal(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => ManagerPerformanceProfileModal(
       manager: manager,
@@ -1443,6 +1446,7 @@ void showInvestInManagerModal(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => InvestInManagerModal(
       manager: manager,

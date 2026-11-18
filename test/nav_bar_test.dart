@@ -367,5 +367,48 @@ void main() {
       expect(find.text('Create Demo Account'), findsNothing);
       expect(find.text('Quick actions'), findsNothing);
     });
+
+    testWidgets('quick actions and account sheets dismiss when tapping outside', (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: AppShell(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      Future<void> openQuickActions() async {
+        await tester.tap(find.byIcon(LucideIcons.plus).first);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> tapOutsidePopup() async {
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+      }
+
+      await openQuickActions();
+      expect(find.text('Quick actions'), findsOneWidget);
+      await tapOutsidePopup();
+      expect(find.text('Quick actions'), findsNothing);
+
+      await openQuickActions();
+      await tester.tap(find.text('Open live account'));
+      await tester.pumpAndSettle();
+      expect(find.text('Open Live Account'), findsOneWidget);
+      await tapOutsidePopup();
+      expect(find.text('Open Live Account'), findsNothing);
+
+      await openQuickActions();
+      await tester.tap(find.text('Create demo account'));
+      await tester.pumpAndSettle();
+      expect(find.text('Create Demo Account'), findsOneWidget);
+      await tapOutsidePopup();
+      expect(find.text('Create Demo Account'), findsNothing);
+    });
   });
 }

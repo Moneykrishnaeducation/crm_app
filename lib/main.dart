@@ -390,6 +390,7 @@ class _AppShellState extends State<AppShell> {
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        isDismissible: true,
         useSafeArea: true,
         backgroundColor: Colors.transparent,
         barrierColor: Colors.black54,
@@ -401,6 +402,7 @@ class _AppShellState extends State<AppShell> {
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        isDismissible: true,
         useSafeArea: true,
         backgroundColor: Colors.transparent,
         barrierColor: Colors.black54,

@@ -188,6 +188,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
@@ -267,6 +268,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
             child: Container(

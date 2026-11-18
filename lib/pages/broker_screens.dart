@@ -3611,6 +3611,7 @@ class BrokerBottomNavigation extends StatelessWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.54),
       builder: (sheetContext) => _AnimatedQuickActionsSheet(
         onSelect: (action) {
@@ -3818,6 +3819,7 @@ class _AnimatedQuickActionsSheetState extends State<_AnimatedQuickActionsSheet>
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: Container(

@@ -250,49 +250,25 @@ class _PammPageState extends State<PammPage> {
 
   Widget _snapshot() {
     final managed = _tab == 0;
-    return Container(
-      decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(13), border: Border.all(color: _border)),
-      child: Column(children: [
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11), child: Row(children: [
-          Text(managed ? 'PORTFOLIO SNAPSHOT' : 'INVESTMENT SNAPSHOT',
-            style: const TextStyle(color: _blue, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1)),
-          const SizedBox(width: 9),
-          Expanded(child: Text(managed ? 'Live overview of your PAMM workspace' : 'Live overview of your PAMM investment portfolio',
-            style: TextStyle(color: _muted, fontSize: 9))),
-          const Icon(LucideIcons.refreshCw, size: 13, color: Color(0xFF8292A8)),
-        ])),
-        Divider(height: 1, color: _border),
-        LayoutBuilder(builder: (context, c) {
-          final metrics = [
-            _metric('Total ${managed ? 'pool' : 'invested'} equity', r'$0.00', 'Combined capital', 'USD', LucideIcons.wallet, _blue),
-            _metric(managed ? 'Managed pools' : 'Net profit / loss', managed ? _managed.length.toString() : '+\$0.00',
-              managed ? 'Accepting deposits' : 'Active allocations', managed ? '1 active' : '1 pool', LucideIcons.trendingUp, _green),
-            _metric('Allocation technology', 'Proportional', 'Automated percentage equity distribution', 'Execution MT5', LucideIcons.activity, _gold),
-          ];
-          return c.maxWidth < 650
-            ? Column(children: metrics)
-            : Row(children: [for (var i = 0; i < metrics.length; i++) Expanded(child: Container(
-                decoration: BoxDecoration(border: i == 0 ? null : Border(left: BorderSide(color: _border))),
-                child: metrics[i]))]);
-        }),
-      ]),
-    );
+    return Row(children: [
+      Expanded(child: _metricCard(
+        managed ? 'POOL EQUITY' : 'INVESTED EQUITY', r'$0.00',
+        'Combined capital', LucideIcons.wallet, _blue,
+      )),
+      const SizedBox(width: 8),
+      Expanded(child: _metricCard(
+        managed ? 'MANAGED POOLS' : 'NET PROFIT / LOSS',
+        managed ? '${_managed.length}' : '+\$0.00',
+        managed ? 'Accepting deposits' : 'Active allocations',
+        LucideIcons.trendingUp, _green,
+      )),
+      const SizedBox(width: 8),
+      Expanded(child: _metricCard(
+        'ALLOCATION', 'Proportional', 'Execution MT5',
+        LucideIcons.activity, _gold,
+      )),
+    ]);
   }
-
-  Widget _metric(String label, String value, String foot, String badge, IconData icon, Color accent) => Padding(
-    padding: const EdgeInsets.all(15),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Icon(icon, color: accent, size: 14), const SizedBox(width: 7),
-        Expanded(child: Text(label, style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w600))),
-        Text(badge, style: TextStyle(color: accent, fontSize: 8, fontWeight: FontWeight.w800)),
-      ]),
-      const SizedBox(height: 8),
-      Text(value, style: TextStyle(color: accent == _gold ? const Color(0xFFAE6800) : accent, fontSize: 21, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 8), Divider(height: 1, color: _border), const SizedBox(height: 8),
-      Row(children: [Expanded(child: Text(foot, style: TextStyle(color: _muted, fontSize: 9))), Text(badge, style: TextStyle(color: _text, fontSize: 9))]),
-    ]),
-  );
 
   // PAMM tabs follow the same card-based layout hierarchy as MAM.
   List<Widget> _buildManagedTab() {

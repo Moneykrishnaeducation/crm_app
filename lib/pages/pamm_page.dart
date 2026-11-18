@@ -90,12 +90,25 @@ class _PammPageState extends State<PammPage> {
           ),
         ),
       ),
+      floatingActionButton: _tab == 0
+          ? FloatingActionButton.extended(
+              onPressed: _createPool,
+              backgroundColor: _blue,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              icon: const Icon(LucideIcons.plus, size: 18),
+              label: const Text('Create PAMM Pool',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+            )
+          : null,
     ),
   );
 
   Widget _topBar() {
     final labels = ['Managed', 'Available', 'Investments'];
     final counts = [_managed.length, _available.length, _investments.length];
+    final icons = [LucideIcons.briefcaseBusiness, LucideIcons.layers, LucideIcons.usersRound];
+
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
       padding: const EdgeInsets.all(12),
@@ -106,121 +119,88 @@ class _PammPageState extends State<PammPage> {
           color: _dark ? const Color(0xFF263750) : const Color(0xFFBFD5FF),
         ),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _brandIcon(),
-              const SizedBox(width: 10),
-              Expanded(child: _brandTitle()),
-              const SizedBox(width: 8),
-              Tooltip(
-                message: 'Create PAMM Pool',
-                child: FilledButton.icon(
-                  onPressed: _createPool,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _blue,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(0, 36),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  icon: const Icon(LucideIcons.plus, size: 14),
-                  label: const Text('Create', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+      child: Column(children: [
+        Row(children: [
+          _brandIcon(),
+          const SizedBox(width: 12),
+          Expanded(child: _brandTitle()),
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
             decoration: BoxDecoration(
-              color: _dark ? const Color(0xFF17243A) : const Color(0xFFEAF1FC),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: _border),
+              color: _dark ? const Color(0xFF132D28) : const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _green.withValues(alpha: .3)),
             ),
-            child: Row(
-              children: [
-                for (var i = 0; i < labels.length; i++)
-                  Expanded(
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => setState(() {
-                          _tab = i;
-                          _query = '';
-                          _search.clear();
-                        }),
-                        borderRadius: BorderRadius.circular(9),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          constraints: const BoxConstraints(minHeight: 44),
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                          decoration: BoxDecoration(
-                            gradient: _tab == i
-                                ? const LinearGradient(
-                                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                                  )
-                                : null,
-                            borderRadius: BorderRadius.circular(9),
-                            boxShadow: _tab == i ? [
-                              BoxShadow(
-                                color: _blue.withValues(alpha: .3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ] : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                [LucideIcons.briefcaseBusiness, LucideIcons.layers, LucideIcons.usersRound][i],
-                                size: 13,
-                                color: _tab == i ? Colors.white : _muted,
-                              ),
-                              const SizedBox(width: 5),
-                              Flexible(
-                                child: Text(
-                                  labels[i],
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: _tab == i ? Colors.white : _text,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: _tab == i
-                                      ? Colors.white.withValues(alpha: .24)
-                                      : _border.withValues(alpha: .7),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '${counts[i]}',
-                                  style: TextStyle(
-                                    color: _tab == i ? Colors.white : _muted,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 6, height: 6, decoration: const BoxDecoration(
+                color: _green, shape: BoxShape.circle)),
+              const SizedBox(width: 5),
+              const Text('Live', style: TextStyle(
+                color: _green, fontSize: 10.5, fontWeight: FontWeight.w700)),
+            ]),
           ),
-        ],
-      ),
+        ]),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: _dark ? const Color(0xFF17243A) : const Color(0xFFEAF1FC),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: _border),
+          ),
+          child: Row(children: [
+            for (var i = 0; i < labels.length; i++)
+              Expanded(child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => setState(() {
+                    _tab = i;
+                    _query = '';
+                    _search.clear();
+                  }),
+                  borderRadius: BorderRadius.circular(9),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOutCubic,
+                    constraints: const BoxConstraints(minHeight: 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: _tab == i ? const LinearGradient(
+                        colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                        begin: Alignment.topLeft, end: Alignment.bottomRight,
+                      ) : null,
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: _tab == i ? [BoxShadow(
+                        color: _blue.withValues(alpha: .3),
+                        blurRadius: 8, offset: const Offset(0, 2),
+                      )] : null,
+                    ),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(icons[i], size: 14, color: _tab == i ? Colors.white : _muted),
+                      const SizedBox(width: 5),
+                      Flexible(child: Text(labels[i], maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: _tab == i ? Colors.white : _text,
+                          fontSize: 10.5, fontWeight: FontWeight.w700))),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _tab == i ? Colors.white.withValues(alpha: .24)
+                              : _border.withValues(alpha: .7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text('${counts[i]}', style: TextStyle(
+                          color: _tab == i ? Colors.white : _muted,
+                          fontSize: 9, fontWeight: FontWeight.w800)),
+                      ),
+                    ]),
+                  ),
+                ),
+              )),
+          ]),
+        ),
+      ]),
     );
   }
 

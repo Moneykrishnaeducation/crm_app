@@ -1,5 +1,4 @@
 part of '../main.dart';
-import '../app_notifications.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({

@@ -1,5 +1,4 @@
 part of '../main.dart';
-import '../app_notifications.dart';
 
 const _brokerNavy = Color(0xFF10264B);
 const _brokerPanel = Colors.white;

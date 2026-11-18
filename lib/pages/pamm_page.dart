@@ -66,49 +66,160 @@ class _PammPageState extends State<PammPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    body: SafeArea(child: LayoutBuilder(builder: (context, box) {
-      // Keep the header and table controls comfortable on tablet widths too.
-      final compact = box.maxWidth < 980;
-      return Column(children: [
-        _topBar(compact),
-        Expanded(child: ListView(
-          padding: EdgeInsets.fromLTRB(compact ? 12 : 16, 14, compact ? 12 : 16, 110),
-          children: [
-            if (_tab != 1) _snapshot(),
-            if (_tab != 1) const SizedBox(height: 18),
-            _tablePanel(compact),
-          ],
-        )),
-      ]);
-    })),
+    body: SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 580),
+          child: Column(
+            children: [
+              _topBar(true),
+              Expanded(
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
+                  children: [
+                    if (_tab != 1) _snapshot(),
+                    if (_tab != 1) const SizedBox(height: 12),
+                    _tablePanel(true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
 
   Widget _topBar(bool compact) {
-    final labels = ['Managed pools', 'Available pools', 'My investments'];
+    final labels = ['Manager', 'Investor', 'Available'];
+    final counts = [_managed.length, _investments.length, _available.length];
     return Container(
-      margin: EdgeInsets.fromLTRB(compact ? 10 : 14, 8, compact ? 10 : 14, 0),
-      padding: EdgeInsets.all(compact ? 10 : 14),
-      decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(18),
+      margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _dark ? const Color(0xFF263750) : const Color(0xFFBFD5FF),
         ),
-      child: compact
-        ? Column(children: [
-            Row(children: [_brandIcon(), const SizedBox(width: 10), Expanded(child: _brandTitle()), _createButton(true)]),
-            const SizedBox(height: 12),
-            _tabs(labels, true),
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(child: _miniStat('POOL EQUITY', r'$0.00', LucideIcons.wallet, _blue)),
-              const SizedBox(width: 8),
-              Expanded(child: _miniStat('MANAGED POOLS', '${_managed.length} live', LucideIcons.usersRound, const Color(0xFFF59E0B))),
-            ]),
-          ])
-        : Row(children: [
-            _brandIcon(), const SizedBox(width: 12), SizedBox(width: 225, child: _brandTitle()),
-            const SizedBox(width: 16), Expanded(child: _tabs(labels, false)),
-            const SizedBox(width: 14), SizedBox(width: 170, child: _miniStat('POOL EQUITY', r'$0.00', LucideIcons.wallet, _blue)),
-            const SizedBox(width: 10), SizedBox(width: 170, child: _miniStat('MANAGED POOLS', '${_managed.length} live', LucideIcons.usersRound, const Color(0xFFF59E0B))),
-            const SizedBox(width: 10), _createButton(false),
-          ]),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _brandIcon(),
+              const SizedBox(width: 12),
+              Expanded(child: _brandTitle()),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8FBF3),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF9DE8C9)),
+                ),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.circle, color: Color(0xFF0BA878), size: 7),
+                  SizedBox(width: 5),
+                  Text('Live', style: TextStyle(
+                    color: Color(0xFF07845F), fontSize: 10, fontWeight: FontWeight.w800,
+                  )),
+                ]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: _dark ? const Color(0xFF17243A) : const Color(0xFFEAF1FC),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: _border),
+            ),
+            child: Row(
+              children: [
+                for (var i = 0; i < labels.length; i++)
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => setState(() {
+                          _tab = i;
+                          _query = '';
+                          _search.clear();
+                        }),
+                        borderRadius: BorderRadius.circular(9),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          constraints: const BoxConstraints(minHeight: 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: _tab == i
+                                ? const LinearGradient(
+                                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.circular(9),
+                            boxShadow: _tab == i ? [
+                              BoxShadow(
+                                color: _blue.withValues(alpha: .3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ] : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                [LucideIcons.briefcaseBusiness, LucideIcons.usersRound, LucideIcons.layers][i],
+                                size: 13,
+                                color: _tab == i ? Colors.white : _muted,
+                              ),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  labels[i],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: _tab == i ? Colors.white : _text,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _tab == i
+                                      ? Colors.white.withValues(alpha: .24)
+                                      : _border.withValues(alpha: .7),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${counts[i]}',
+                                  style: TextStyle(
+                                    color: _tab == i ? Colors.white : _muted,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -271,9 +382,9 @@ class _PammPageState extends State<PammPage> {
         ),
         Divider(height: 1, color: _border),
         if (_tab == 2)
-          _investmentRows(investments, compact)
+          _investmentRows(investments, true)
         else
-          _poolRows(pools, compact),
+          _poolRows(pools, true),
         Divider(height: 1, color: _border),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15), child: Row(children: [
           Expanded(child: Text('Showing ${_tab == 2 ? investments.length : pools.length} records',

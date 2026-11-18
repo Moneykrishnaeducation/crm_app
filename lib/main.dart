@@ -289,6 +289,7 @@ class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
 class _AppShellState extends State<AppShell> {
   String _selectedPage = 'Dashboard';
   BrokerAccount? _selectedAccount;
+  String _accountDetailsReturnPage = 'Trading Accounts';
   bool _balanceVisible = true;
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
@@ -337,6 +338,15 @@ class _AppShellState extends State<AppShell> {
   void _openAccount(BrokerAccount account) {
     setState(() {
       _selectedAccount = account;
+      _accountDetailsReturnPage = 'Trading Accounts';
+      _selectedPage = 'Account Details';
+    });
+  }
+
+  void _openDemoAccount(BrokerAccount account) {
+    setState(() {
+      _selectedAccount = account;
+      _accountDetailsReturnPage = 'Demo Accounts';
       _selectedPage = 'Account Details';
     });
   }
@@ -411,11 +421,11 @@ class _AppShellState extends State<AppShell> {
         'Internal Transfer' => const BrokerInternalTransferPage(),
         'Demo Accounts' => BrokerDemoAccountsPage(
             onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
-            onOpenTradingAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onAccountSelected: _openDemoAccount,
           ),
         'Account Details' when _selectedAccount != null => BrokerAccountDetailsPage(
             account: _selectedAccount!,
-            onBack: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onBack: () => setState(() => _selectedPage = _accountDetailsReturnPage),
             onSelectPage: _selectPage,
           ),
         'Profile' => BrokerProfilePage(

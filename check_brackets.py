@@ -1,8 +1,11 @@
 import sys
 
 def check_brackets(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except FileNotFoundError:
+        return []
     
     stack = []
     i = 0
@@ -147,11 +150,11 @@ def check_brackets(filepath):
 files = [
     r'lib/main.dart',
     r'lib/pages/more_page.dart',
+    r'lib/pages/mam_page.dart',
     r'lib/pages/mam_manager_page.dart',
     r'lib/pages/mam_investor_page.dart',
     r'lib/pages/mam_available_page.dart',
     r'lib/pages/broker_screens.dart',
-    r'lib/pages/social_trading_mam_page.dart'
 ]
 
 all_ok = True

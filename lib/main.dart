@@ -12,9 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
-import 'pages/mam_available_page.dart';
-import 'pages/mam_investor_page.dart';
-import 'pages/mam_manager_page.dart';
+import 'pages/mam_page.dart';
 import 'pages/pamm_page.dart';
 import 'pages/partnership_page.dart';
 import 'pages/profile_page.dart';
@@ -465,23 +463,25 @@ class _AppShellState extends State<AppShell> {
             themeMode: widget.themeMode,
             onThemeModeChanged: widget.onThemeModeChanged,
           ),
-        'MAM Manager' => MamManagerPage(
+        'MAM' || 'MAM Account' => MamPage(
+            initialTab: 0,
             onBack: () => setState(() => _selectedPage = 'More'),
-            onSelectPage: _selectPage,
           ),
-        'MAM Investor' => MamInvestorPage(
+        'MAM Manager' => MamPage(
+            initialTab: 0,
             onBack: () => setState(() => _selectedPage = 'More'),
-            onExploreAvailable: () => setState(() => _selectedPage = 'Available MAM'),
           ),
-        'Available MAM' || 'MAM Available' => MamAvailablePage(
+        'MAM Investor' => MamPage(
+            initialTab: 1,
             onBack: () => setState(() => _selectedPage = 'More'),
-            onJoinedPool: (pool) {
-              setState(() => _selectedPage = 'MAM Investor');
-            },
           ),
-        'Social Trading' => MamManagerPage(
+        'Available MAM' || 'MAM Available' => MamPage(
+            initialTab: 2,
             onBack: () => setState(() => _selectedPage = 'More'),
-            onSelectPage: _selectPage,
+          ),
+        'Social Trading' => MamPage(
+            initialTab: 0,
+            onBack: () => setState(() => _selectedPage = 'More'),
           ),
         'Security Center' => SecurityCenterPage(
             onBack: () => setState(() => _selectedPage = 'More'),
@@ -540,6 +540,8 @@ class _AppShellState extends State<AppShell> {
         onBack: switch (_selectedPage) {
           'Profile' ||
           'Security Center' ||
+          'MAM' ||
+          'MAM Account' ||
           'MAM Manager' ||
           'MAM Investor' ||
           'Available MAM' ||

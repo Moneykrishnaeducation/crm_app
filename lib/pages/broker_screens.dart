@@ -3980,7 +3980,7 @@ class _BrokerNavItem extends StatelessWidget {
 
 // -----------------------------------------------------------------------------
 // MAM / SOCIAL TRADING PAGE
-// Note: Extracted to standalone page 'lib/pages/mam_manager_page.dart'.
+// Note: MamPage is in 'lib/pages/mam_page.dart'.
 // BrokerMamManagerPage is retained as a compatibility wrapper.
 // -----------------------------------------------------------------------------
 class BrokerMamManagerPage extends StatelessWidget {
@@ -3988,7 +3988,7 @@ class BrokerMamManagerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MamManagerPage();
+    return const MamPage();
   }
 }
 

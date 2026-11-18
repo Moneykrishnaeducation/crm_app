@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'app_notifications.dart';
+import 'app_notifications.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -137,21 +138,11 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'VTIndex',
       scaffoldMessengerKey: appScaffoldMessengerKey,
+      scaffoldMessengerKey: appScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: _lightTheme,
       darkTheme: _darkTheme,
       themeMode: _themeMode,
-      builder: (context, child) => NotchToaster(
-        position: NotchPosition.topCenter,
-        mode: NotchMode.attached,
-        animation: NotchAnimationPreset.fluid,
-        style: const NotchToastStyle(
-          backgroundColor: Color(0xFF071629),
-          foregroundColor: Colors.white,
-          notchRadius: 18,
-        ),
-        child: child!,
-      ),
       home: _AppEntry(
         themeMode: _themeMode,
         onThemeModeChanged: _setThemeMode,

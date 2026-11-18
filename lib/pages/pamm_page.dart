@@ -94,7 +94,7 @@ class _PammPageState extends State<PammPage> {
   );
 
   Widget _topBar(bool compact) {
-    final labels = ['Manager', 'Investor', 'Available'];
+    final labels = ['Managed', 'Available', 'Investments'];
     final counts = [_managed.length, _investments.length, _available.length];
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
@@ -174,7 +174,7 @@ class _PammPageState extends State<PammPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                [LucideIcons.briefcaseBusiness, LucideIcons.usersRound, LucideIcons.layers][i],
+                                [LucideIcons.briefcaseBusiness, LucideIcons.layers, LucideIcons.usersRound][i],
                                 size: 13,
                                 color: _tab == i ? Colors.white : _muted,
                               ),

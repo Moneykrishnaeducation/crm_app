@@ -1,17 +1,163 @@
 part of '../main.dart';
 
+class _InternalTransferRecord {
+  const _InternalTransferRecord({
+    required this.id,
+    required this.sourceLogin,
+    required this.destinationLogin,
+    required this.amount,
+    required this.timestamp,
+    required this.status,
+  });
+
+  final String id;
+  final String sourceLogin;
+  final String destinationLogin;
+  final double amount;
+  final DateTime timestamp;
+  final String status;
+}
+
 class BrokerInternalTransferPage extends StatefulWidget {
-  const BrokerInternalTransferPage({super.key});
+  const BrokerInternalTransferPage({
+    super.key,
+    this.accounts,
+    this.initialSourceLogin,
+    this.initialDestinationLogin,
+    this.onBack,
+    this.onSelectPage,
+    this.onTransferCompleted,
+  });
+
+  final List<BrokerAccount>? accounts;
+  final String? initialSourceLogin;
+  final String? initialDestinationLogin;
+  final VoidCallback? onBack;
+  final ValueChanged<String>? onSelectPage;
+  final void Function(String fromLogin, String toLogin, double amount)? onTransferCompleted;
+
   @override
   State<BrokerInternalTransferPage> createState() => _BrokerInternalTransferPageState();
 }
 
 class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage> {
-  static const _accountIds = ['3315', '3311', '3312', '3327'];
-  static const double _availableBalance = 0;
-  String _source = '3315';
-  String _destination = '3312';
+  static const List<BrokerAccount> _defaultAccounts = [
+    BrokerAccount(
+      'Standard Account',
+      '52132132',
+      '1:500',
+      r'$0.00',
+      r'$0.00',
+      'Live MT5',
+      server: 'VTIndex-Live',
+      currency: 'USD',
+    ),
+    BrokerAccount(
+      'ECN Zero',
+      '3315',
+      '1:500',
+      r'$10,000.00',
+      r'$10,250.00',
+      'Live MT5',
+      server: 'VTIndex-Live',
+      currency: 'USD',
+    ),
+    BrokerAccount(
+      'Pro Trading',
+      '8820412',
+      '1:200',
+      r'$2,450.00',
+      r'$2,450.00',
+      'Live MT5',
+      server: 'VTIndex-Live',
+      currency: 'USD',
+    ),
+  ];
+
+  late final List<BrokerAccount> _accountList;
+  final Map<String, double> _balances = {};
+  late String _source;
+  late String _destination;
   final _amountController = TextEditingController();
+  bool _isProcessing = false;
+
+  final List<_InternalTransferRecord> _recentTransfers = [
+    _InternalTransferRecord(
+      id: 'TRX-783921',
+      sourceLogin: '3315',
+      destinationLogin: '3312',
+      amount: 350.00,
+      timestamp: DateTime.now().subtract(const Duration(hours: 4, minutes: 12)),
+      status: 'Completed',
+    ),
+    _InternalTransferRecord(
+      id: 'TRX-640192',
+      sourceLogin: '3312',
+      destinationLogin: '3311',
+      amount: 500.00,
+      timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+      status: 'Completed',
+    ),
+  ];
+
+  static double _parseBalance(String balanceStr) {
+    final clean = balanceStr.replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(clean) ?? 0.0;
+  }
+
+  static String _formatMoney(double amount) {
+    final isNegative = amount < 0;
+    final absAmount = amount.abs();
+    final parts = absAmount.toStringAsFixed(2).split('.');
+    final intPart = parts[0];
+    final decPart = parts[1];
+
+    final buffer = StringBuffer();
+    final len = intPart.length;
+    for (int i = 0; i < len; i++) {
+      if (i > 0 && (len - i) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(intPart[i]);
+    }
+    return '${isNegative ? '-' : ''}\$${buffer.toString()}.$decPart';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final rawAccounts = (widget.accounts != null && widget.accounts!.isNotEmpty)
+        ? widget.accounts!
+        : _defaultAccounts;
+    _accountList = List.from(rawAccounts);
+
+    for (final acc in _accountList) {
+      _balances[acc.login] = _parseBalance(acc.balance);
+    }
+
+    if (widget.initialSourceLogin != null &&
+        _accountList.any((a) => a.login == widget.initialSourceLogin)) {
+      _source = widget.initialSourceLogin!;
+    } else {
+      final firstWithFunds = _accountList.firstWhere(
+        (a) => (_balances[a.login] ?? 0) > 0,
+        orElse: () => _accountList.first,
+      );
+      _source = firstWithFunds.login;
+    }
+
+    if (widget.initialDestinationLogin != null &&
+        _accountList.any((a) => a.login == widget.initialDestinationLogin) &&
+        widget.initialDestinationLogin != _source) {
+      _destination = widget.initialDestinationLogin!;
+    } else {
+      final other = _accountList.firstWhere(
+        (a) => a.login != _source,
+        orElse: () => _accountList.first,
+      );
+      _destination = other.login;
+    }
+  }
 
   @override
   void dispose() {
@@ -19,244 +165,842 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     super.dispose();
   }
 
+  double get _availableBalance => _balances[_source] ?? 0.0;
+  double get _destinationBalance => _balances[_destination] ?? 0.0;
+  double get _parsedAmount => double.tryParse(_amountController.text.trim()) ?? 0.0;
+
+  bool get _isRouteValid => _source != _destination;
+  bool get _isAmountValid => _parsedAmount > 0 && _parsedAmount <= _availableBalance;
+  bool get _canSubmit => _isRouteValid && _isAmountValid && !_isProcessing;
+
+  BrokerAccount _accountFor(String login) {
+    return _accountList.firstWhere(
+      (a) => a.login == login,
+      orElse: () => BrokerAccount('Account', login, '1:500', r'$0.00', r'$0.00', 'Live MT5'),
+    );
+  }
+
   void _setAmount(double amount) {
+    HapticFeedback.lightImpact();
     _amountController.text = amount.toStringAsFixed(2);
+    _amountController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _amountController.text.length),
+    );
     setState(() {});
   }
 
-  void _swapAccounts() => setState(() {
-    final oldSource = _source;
-    _source = _destination;
-    _destination = oldSource;
-  });
+  void _addAmount(double increment) {
+    HapticFeedback.lightImpact();
+    final current = _parsedAmount;
+    _setAmount(current + increment);
+  }
+
+  void _swapAccounts() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      final temp = _source;
+      _source = _destination;
+      _destination = temp;
+    });
+  }
+
+  Future<void> _refreshData() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final muted = colors.onSurfaceVariant;
-    final dark = theme.brightness == Brightness.dark;
-    final size = MediaQuery.sizeOf(context);
-    final compact = size.height < 760;
-    final narrow = size.width < 380;
+    final isDark = theme.brightness == Brightness.dark;
+    final isNarrow = MediaQuery.sizeOf(context).width < 380;
 
-    return LayoutBuilder(
-      builder: (context, _) {
-        return SizedBox.expand(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(narrow ? 12 : 16, compact ? 8 : 14, narrow ? 12 : 16, 104),
+    final brandPrimary = colors.primary;
+    final cardBorderColor = isDark
+        ? Colors.white.withValues(alpha: .10)
+        : const Color(0xFFE2E8F0);
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF071941) : const Color(0xFFF5F7FB),
+      appBar: AppBar(
+        title: Text(
+          'Internal Transfer',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -.2,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: isDark ? const Color(0xFF0C2B68) : Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(LucideIcons.arrowLeft),
+          onPressed: widget.onBack ?? () => Navigator.maybePop(context),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Transfer information',
+            icon: const Icon(LucideIcons.circleHelp),
+            onPressed: () => _showGuidelines(context),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refreshData,
+          color: brandPrimary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: EdgeInsets.fromLTRB(isNarrow ? 12 : 16, 16, isNarrow ? 12 : 16, 120),
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
+                constraints: const BoxConstraints(maxWidth: 620),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    // Subtitle & Header Tagline
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Internal Transfer',
+                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Move funds between your trading accounts',
+                                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: .12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: .3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                const Text(
+                                  'INSTANT TRANSFER',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF10B981),
+                                    letterSpacing: .5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Main Transfer Route Card
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0C2B68) : Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: cardBorderColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? .22 : .04),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
                             children: [
-                              Text('Internal transfer', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -.7)),
-                              const SizedBox(height: 3),
-                              Text('Move funds between your trading accounts', style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+                              Text(
+                                'TRANSFER ROUTE',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: muted,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: brandPrimary.withValues(alpha: .1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF10B981),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'INSTANT TRANSFER',
+                                      style: TextStyle(
+                                        color: brandPrimary,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 10,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                        IconButton(
-                          tooltip: 'Transfer information',
-                          onPressed: () => _showGuidelines(context),
-                          icon: Icon(LucideIcons.circleHelp, color: muted),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: compact ? 12 : 18),
-                    Expanded(
-                      child: Container(
-                        padding: EdgeInsets.all(compact ? 14 : 20),
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(26),
-                          border: Border.all(color: theme.dividerColor.withValues(alpha: .75)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: dark ? .18 : .045),
-                              blurRadius: 28,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
+                          const SizedBox(height: 14),
+
+                          // From Account Picker
+                          _buildAccountTile(
+                            context: context,
+                            title: 'FROM ACCOUNT',
+                            selectedLogin: _source,
+                            balance: _availableBalance,
+                            onTap: () => _showAccountPickerModal(context, isSource: true),
+                          ),
+
+                          // Central Swap Divider
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
                               children: [
-                                Text('TRANSFER ROUTE', style: theme.textTheme.labelSmall?.copyWith(color: muted, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: colors.primary.withValues(alpha: .09),
-                                    borderRadius: BorderRadius.circular(30),
+                                Expanded(
+                                  child: Divider(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: .12)
+                                        : const Color(0xFFE2E8F0),
+                                    thickness: 1,
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(width: 6, height: 6, decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle)),
-                                      const SizedBox(width: 6),
-                                      Text('LIVE ACCOUNTS', style: theme.textTheme.labelSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.w800, letterSpacing: .45)),
-                                    ],
+                                ),
+                                const SizedBox(width: 10),
+                                Tooltip(
+                                  message: 'Swap accounts',
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      key: const ValueKey('swap_accounts_button'),
+                                      onTap: _swapAccounts,
+                                      borderRadius: BorderRadius.circular(24),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: brandPrimary.withValues(alpha: isDark ? .25 : .10),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: brandPrimary.withValues(alpha: .35),
+                                            width: 1.2,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          LucideIcons.arrowDownUp,
+                                          color: brandPrimary,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Divider(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: .12)
+                                        : const Color(0xFFE2E8F0),
+                                    thickness: 1,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: compact ? 13 : 18),
-                            _TransferAccountPicker(
-                              label: 'FROM',
-                              value: _source,
-                              accountIds: _accountIds,
-                              onChanged: (v) => setState(() => _source = v),
-                              compact: true,
-                            ),
-                            SizedBox(
-                              height: compact ? 38 : 46,
-                              child: Row(
-                                children: [
-                                  const SizedBox(width: 24),
-                                  Container(width: 1, height: double.infinity, color: colors.primary.withValues(alpha: .22)),
-                                  const Spacer(),
-                                  _SwapButton(onPressed: _swapAccounts, icon: LucideIcons.arrowDownUp, compact: true),
-                                  const Spacer(),
-                                  const SizedBox(width: 24),
-                                ],
-                              ),
-                            ),
-                            _TransferAccountPicker(
-                              label: 'TO',
-                              value: _destination,
-                              accountIds: _accountIds,
-                              onChanged: (v) => setState(() => _destination = v),
-                              compact: true,
-                            ),
-                            SizedBox(height: compact ? 15 : 20),
+                          ),
+
+                          // To Account Picker
+                          _buildAccountTile(
+                            context: context,
+                            title: 'TO ACCOUNT',
+                            selectedLogin: _destination,
+                            balance: _destinationBalance,
+                            onTap: () => _showAccountPickerModal(context, isSource: false),
+                          ),
+
+                          // Route Error Banner if identical
+                          if (!_isRouteValid) ...[
+                            const SizedBox(height: 12),
                             Container(
-                              height: 1,
-                              color: theme.dividerColor,
-                            ),
-                            SizedBox(height: compact ? 13 : 18),
-                            Row(
-                              children: [
-                                Text('Transfer amount', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                                const Spacer(),
-                                Text('USD', style: theme.textTheme.labelSmall?.copyWith(color: muted, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                              ],
-                            ),
-                            const SizedBox(height: 9),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: dark ? colors.surfaceContainerHighest.withValues(alpha: .42) : colors.surfaceContainerLowest,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: _amountController.text.isNotEmpty ? colors.primary.withValues(alpha: .65) : theme.dividerColor,
-                                  width: _amountController.text.isNotEmpty ? 1.4 : 1,
-                                ),
+                                color: const Color(0xFFEF4444).withValues(alpha: .10),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: .3)),
                               ),
-                              child: Row(
+                              child: const Row(
                                 children: [
-                                  Text('\$', style: theme.textTheme.headlineMedium?.copyWith(color: const Color(0xFFD69B16), fontWeight: FontWeight.w800)),
-                                  const SizedBox(width: 8),
+                                  Icon(LucideIcons.circleAlert, color: Color(0xFFEF4444), size: 16),
+                                  SizedBox(width: 8),
                                   Expanded(
-                                    child: TextField(
-                                      controller: _amountController,
-                                      onChanged: (_) => setState(() {}),
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -.8),
-                                      decoration: InputDecoration(
-                                        hintText: '0.00',
-                                        hintStyle: theme.textTheme.headlineMedium?.copyWith(color: muted.withValues(alpha: .42), fontWeight: FontWeight.w700),
-                                        border: InputBorder.none,
-                                        isDense: true,
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                                    child: Text(
+                                      'Source and destination accounts must be different.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFFEF4444),
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 9),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Transfer Amount Card
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0C2B68) : Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: cardBorderColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? .22 : .04),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'TRANSFER AMOUNT',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: muted,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.white.withValues(alpha: .08) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'USD',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                    letterSpacing: .5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Big Input Field
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF071941).withValues(alpha: .6)
+                                  : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _parsedAmount > _availableBalance
+                                    ? const Color(0xFFEF4444)
+                                    : (_parsedAmount > 0
+                                        ? brandPrimary
+                                        : (isDark ? Colors.white.withValues(alpha: .12) : const Color(0xFFCBD5E1))),
+                                width: _parsedAmount > 0 ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  r'$',
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w900,
+                                    color: brandPrimary,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _amountController,
+                                    onChanged: (_) => setState(() {}),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    style: theme.textTheme.headlineMedium?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -.5,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: '0.00',
+                                      hintStyle: theme.textTheme.headlineMedium?.copyWith(
+                                        color: muted.withValues(alpha: .35),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                                if (_amountController.text.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.x, size: 18),
+                                    color: muted,
+                                    tooltip: 'Clear',
+                                    onPressed: () {
+                                      _amountController.clear();
+                                      setState(() {});
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          // Available Balance Bar with MAX button
+                          Row(
+                            children: [
+                              Icon(LucideIcons.wallet, size: 14, color: muted),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Available: ${_formatMoney(_availableBalance)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: muted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _availableBalance > 0 ? () => _setAmount(_availableBalance) : null,
+                                style: TextButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text(
+                                  'MAX',
+                                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Inline Error / Valid indicator
+                          if (_parsedAmount > _availableBalance) ...[
+                            const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(LucideIcons.wallet, size: 15, color: muted),
-                                const SizedBox(width: 7),
-                                Expanded(child: Text('Available balance', style: theme.textTheme.bodySmall?.copyWith(color: muted))),
-                                Text('\$' + _availableBalance.toStringAsFixed(2), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
-                                TextButton(
-                                  onPressed: _availableBalance > 0 ? () => _setAmount(_availableBalance) : null,
-                                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.only(left: 8)),
-                                  child: const Text('MAX'),
+                                const Icon(LucideIcons.circleAlert, size: 13, color: Color(0xFFEF4444)),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    'Amount exceeds available balance (${_formatMoney(_availableBalance)})',
+                                    style: const TextStyle(
+                                      color: Color(0xFFEF4444),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                            const Spacer(),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 11, vertical: compact ? 9 : 11),
-                              decoration: BoxDecoration(
-                                color: colors.primary.withValues(alpha: .055),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(LucideIcons.info, color: colors.primary, size: 17),
-                                  const SizedBox(width: 9),
-                                  Expanded(
-                                    child: Text(
-                                      'Make sure the destination account is correct before reviewing.',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.25),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: compact ? 11 : 15),
-                            SizedBox(
-                              height: compact ? 49 : 54,
-                              child: FilledButton(
-                                onPressed: _submitTransfer,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFFC533),
-                                  foregroundColor: const Color(0xFF10213A),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  elevation: 0,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: .8)),
-                                    const SizedBox(width: 9),
-                                    const Icon(LucideIcons.arrowRight, size: 18),
-                                  ],
-                                ),
-                              ),
-                            ),
                           ],
-                        ),
+
+                          const SizedBox(height: 14),
+
+                          // Quick Percentage Chips
+                          Row(
+                            children: [
+                              _buildPercentChip('25%', 0.25),
+                              const SizedBox(width: 8),
+                              _buildPercentChip('50%', 0.50),
+                              const SizedBox(width: 8),
+                              _buildPercentChip('75%', 0.75),
+                              const SizedBox(width: 8),
+                              _buildPercentChip('MAX', 1.00),
+                            ],
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Quick Preset Increment Chips
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildIncrementChip(50, r'+$50'),
+                              _buildIncrementChip(100, r'+$100'),
+                              _buildIncrementChip(500, r'+$500'),
+                              _buildIncrementChip(1000, r'+$1,000'),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: compact ? 6 : 9),
+
+                    const SizedBox(height: 16),
+
+                    // Transfer Summary Breakdown Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0C2B68).withValues(alpha: .7) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: cardBorderColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(LucideIcons.receipt, size: 15, color: Color(0xFF1658C9)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Transfer Summary',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          _buildSummaryRow(
+                            label: 'Fee',
+                            value: 'Free (\$0.00)',
+                            valueColor: const Color(0xFF10B981),
+                            isBold: true,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildSummaryRow(
+                            label: 'Execution',
+                            value: 'Instant (0-5s)',
+                            valueColor: brandPrimary,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildSummaryRow(
+                            label: 'Exchange Rate',
+                            value: '1 USD = 1.00 USD',
+                            valueColor: muted,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Divider(
+                              color: isDark ? Colors.white.withValues(alpha: .1) : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          _buildSummaryRow(
+                            label: 'Source Balance',
+                            value: '${_formatMoney(_availableBalance)} ➔ ${_formatMoney((_availableBalance - _parsedAmount).clamp(0.0, double.infinity))}',
+                            valueColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildSummaryRow(
+                            label: 'Destination Balance',
+                            value: '${_formatMoney(_destinationBalance)} ➔ ${_formatMoney(_destinationBalance + _parsedAmount)}',
+                            valueColor: const Color(0xFF10B981),
+                            isBold: true,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Continue Action Button
+                    SizedBox(
+                      height: 52,
+                      child: FilledButton(
+                        onPressed: _canSubmit ? _showConfirmationSheet : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: brandPrimary,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: brandPrimary.withValues(alpha: .35),
+                          disabledForegroundColor: Colors.white60,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: _canSubmit ? 3 : 0,
+                          shadowColor: brandPrimary.withValues(alpha: .4),
+                        ),
+                        child: _isProcessing
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'CONTINUE',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: .8,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(LucideIcons.arrowRight, size: 18),
+                                ],
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Security Assurance Tag
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(LucideIcons.shieldCheck, size: 13, color: muted),
+                        Icon(LucideIcons.shieldCheck, size: 14, color: muted),
                         const SizedBox(width: 6),
-                        Text('Protected account transfer', style: theme.textTheme.labelSmall?.copyWith(color: muted)),
+                        Flexible(
+                          child: Text(
+                            'Protected institutional internal transfer',
+                            style: theme.textTheme.labelSmall?.copyWith(color: muted, fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
+
+                    const SizedBox(height: 26),
+
+                    // Recent Transfers Section
+                    _buildRecentTransfersSection(context),
                   ],
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAccountPickerModal(BuildContext context, {required bool isSource}) {
+    HapticFeedback.lightImpact();
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final selectedLogin = isSource ? _source : _destination;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0C2B68) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: .4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isSource ? 'Select Source Account' : 'Select Destination Account',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isSource
+                      ? 'Funds will be transferred out of this account'
+                      : 'Funds will be deposited into this account',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.45,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _accountList.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (ctx, idx) {
+                      final acc = _accountList[idx];
+                      final isSelected = acc.login == selectedLogin;
+                      final bal = _balances[acc.login] ?? 0.0;
+
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            Navigator.pop(sheetContext);
+                            setState(() {
+                              if (isSource) {
+                                if (acc.login == _destination) {
+                                  _destination = _source;
+                                }
+                                _source = acc.login;
+                              } else {
+                                if (acc.login == _source) {
+                                  _source = _destination;
+                                }
+                                _destination = acc.login;
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? colors.primary.withValues(alpha: isDark ? .2 : .08)
+                                  : (isDark ? const Color(0xFF071941).withValues(alpha: .5) : const Color(0xFFF8FAFC)),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSelected
+                                    ? colors.primary
+                                    : (isDark ? Colors.white.withValues(alpha: .1) : const Color(0xFFE2E8F0)),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: colors.primary.withValues(alpha: .12),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(LucideIcons.walletCards, color: colors.primary, size: 18),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            acc.name,
+                                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: colors.primary.withValues(alpha: .1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              acc.type,
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w800,
+                                                color: colors.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Login #${acc.login} • ${acc.server ?? 'VTIndex-Live'}',
+                                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      _formatMoney(bal),
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                    ),
+                                    Text(
+                                      'Available',
+                                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 10),
+                                Icon(
+                                  isSelected ? LucideIcons.circleCheck : LucideIcons.circle,
+                                  color: isSelected ? colors.primary : theme.colorScheme.onSurfaceVariant.withValues(alpha: .4),
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -264,167 +1008,785 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     );
   }
 
-  void _submitTransfer() {
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
-    if (_source == _destination) {
-      showAppMessage('Select two different trading accounts.');
-    } else if (amount <= 0) {
-      showAppMessage('Enter a transfer amount greater than zero.');
-    } else if (amount > _availableBalance) {
-      showAppMessage('Insufficient available balance.');
-    } else {
-      showAppMessage('Transfer service is not connected yet. No funds have been moved.');
-    }
-  }
-
-  void _showGuidelines(BuildContext context) {
-    final theme = Theme.of(context);
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
-        title: const Text('Transfer guidelines'),
-        content: const Text('Transfers are intended for eligible live MT5 accounts. Verify the source account, destination account and available balance before confirming.'),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close'))],
-      ),
-    );
-  }
-}
-
-class _TransferAccountPicker extends StatelessWidget {
-  const _TransferAccountPicker({
-    required this.label,
-    required this.value,
-    required this.accountIds,
-    required this.onChanged,
-    this.compact = false,
-  });
-
-  final String label;
-  final String value;
-  final List<String> accountIds;
-  final ValueChanged<String> onChanged;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildAccountTile({
+    required BuildContext context,
+    required String title,
+    required String selectedLogin,
+    required double balance,
+    required VoidCallback onTap,
+  }) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final muted = colors.onSurfaceVariant;
+    final isDark = theme.brightness == Brightness.dark;
+    final acc = _accountFor(selectedLogin);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 2, bottom: 6),
-          child: Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: muted,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+        Row(
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: muted,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
-          ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                'Balance: ${_formatMoney(balance)}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+            ),
+          ],
         ),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 8 : 11),
-          decoration: BoxDecoration(
-            color: colors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(17),
-            border: Border.all(color: theme.dividerColor),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: .10),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(LucideIcons.walletCards, color: colors.primary, size: 19),
-              ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MT5 Trading account',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                    ),
-                    DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: value,
-                        isExpanded: true,
-                        isDense: true,
-                        dropdownColor: colors.surface,
-                        icon: Icon(LucideIcons.chevronDown, color: muted, size: 18),
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: colors.onSurface,
-                          fontWeight: FontWeight.w900,
-                        ),
-                        items: accountIds.map((id) => DropdownMenuItem(
-                          value: id,
-                          child: Text('Account #$id', maxLines: 1, overflow: TextOverflow.ellipsis),
-                        )).toList(),
-                        onChanged: (next) {
-                          if (next != null) onChanged(next);
-                        },
-                      ),
-                    ),
-                  ],
+        const SizedBox(height: 8),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF071941).withValues(alpha: .6) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: .12) : const Color(0xFFCBD5E1),
                 ),
               ),
-              const SizedBox(width: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'LIVE',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colors.primary,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: .5,
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(LucideIcons.walletCards, color: colors.primary, size: 20),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                acc.name,
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colors.primary.withValues(alpha: .10),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                acc.type.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${acc.server ?? "VTIndex-MT5"} • Login #${acc.login}',
+                          style: TextStyle(color: muted, fontSize: 11),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _formatMoney(balance),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                      Text(
+                        'Available',
+                        style: TextStyle(color: muted, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(LucideIcons.chevronRight, size: 16, color: muted),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ],
     );
   }
-}
 
-class _SwapButton extends StatelessWidget {
-  const _SwapButton({required this.onPressed, required this.icon, this.compact = false});
-  final VoidCallback onPressed;
-  final IconData icon;
-  final bool compact;
+  Widget _buildPercentChip(String label, double ratio) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final targetAmount = (_availableBalance * ratio);
+    final isSelected = _parsedAmount > 0 && (_parsedAmount - targetAmount).abs() < 0.01;
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return IconButton.filledTonal(
-      constraints: compact ? const BoxConstraints.tightFor(width: 34, height: 34) : null,
-      padding: compact ? EdgeInsets.zero : null,
-      visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
-      onPressed: onPressed,
-      tooltip: 'Swap accounts',
-      style: IconButton.styleFrom(
-        backgroundColor: colors.primary.withValues(alpha: .10),
-        foregroundColor: colors.primary,
-        side: BorderSide(color: colors.primary.withValues(alpha: .18)),
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _availableBalance > 0 ? () => _setAmount(targetAmount) : null,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : (isDark ? Colors.white.withValues(alpha: .06) : const Color(0xFFF1F5F9)),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : (isDark ? Colors.white.withValues(alpha: .1) : const Color(0xFFE2E8F0)),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? Colors.white70 : const Color(0xFF334155)),
+              ),
+            ),
+          ),
+        ),
       ),
-      icon: Icon(icon, size: 19),
+    );
+  }
+
+  Widget _buildIncrementChip(double increment, [String? customLabel]) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _addAmount(increment),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: .06) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: .10) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Text(
+            customLabel ?? '+${_formatMoney(increment)}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow({
+    required String label,
+    required String value,
+    Color? valueColor,
+    bool isBold = false,
+  }) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(color: muted, fontWeight: FontWeight.w500),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: valueColor ?? theme.colorScheme.onSurface,
+            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentTransfersSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final muted = colors.onSurfaceVariant;
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBorderColor = isDark
+        ? Colors.white.withValues(alpha: .10)
+        : const Color(0xFFE2E8F0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(LucideIcons.history, size: 16, color: muted),
+            const SizedBox(width: 8),
+            Text(
+              'Recent Transfers',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: -.2,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${_recentTransfers.length} records',
+              style: theme.textTheme.labelSmall?.copyWith(color: muted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_recentTransfers.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0C2B68) : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: cardBorderColor),
+            ),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                Icon(LucideIcons.repeat, size: 32, color: muted.withValues(alpha: .5)),
+                const SizedBox(height: 8),
+                Text(
+                  'No recent transfers',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: muted,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _recentTransfers.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final item = _recentTransfers[index];
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0C2B68) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: cardBorderColor),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(LucideIcons.arrowUpRight, color: Color(0xFF10B981), size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                '#${item.sourceLogin} ➔ #${item.destinationLogin}',
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            item.id,
+                            style: TextStyle(color: muted, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatMoney(item.amount),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: .10),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            item.status.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  void _showGuidelines(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF0C2B68) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Row(
+          children: [
+            Icon(LucideIcons.info, color: theme.colorScheme.primary, size: 22),
+            const SizedBox(width: 10),
+            const Text('Transfer Guidelines', style: TextStyle(fontWeight: FontWeight.w900)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildGuidelineItem(
+              'Zero Commission',
+              'Internal transfers between your VTIndex live MT5 trading accounts are completely free of charge with 0% fee.',
+            ),
+            const SizedBox(height: 12),
+            _buildGuidelineItem(
+              'Instant Settlement',
+              'Transfers are credited immediately without waiting for banking hours or manual approvals.',
+            ),
+            const SizedBox(height: 12),
+            _buildGuidelineItem(
+              'Open Position Margin',
+              'Make sure sufficient free margin remains on your source account if you have open floating positions.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Understood', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuidelineItem(String title, String desc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+        const SizedBox(height: 2),
+        Text(desc, style: const TextStyle(fontSize: 12, height: 1.35, color: Colors.grey)),
+      ],
+    );
+  }
+
+  void _showConfirmationSheet() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final amount = _parsedAmount;
+    final fromAcc = _accountFor(_source);
+    final toAcc = _accountFor(_destination);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0C2B68) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: .4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Confirm Internal Transfer',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -.3,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 18),
+
+                // Amount Showcase
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: colors.primary.withValues(alpha: .2)),
+                  ),
+                  alignment: Alignment.center,
+                  child: Column(
+                    children: [
+                      Text(
+                        _formatMoney(amount),
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: colors.primary,
+                          letterSpacing: -.8,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Total Transfer Amount (USD)',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                // Flow from -> to
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF071941).withValues(alpha: .6) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withValues(alpha: .1) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.arrowUpRight, color: Color(0xFFEF4444), size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'From: ${fromAcc.name} (#$_source)',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                          ),
+                          Text(
+                            '-${_formatMoney(amount)}',
+                            style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFEF4444)),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Divider(
+                          color: isDark ? Colors.white.withValues(alpha: .08) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.arrowDownLeft, color: Color(0xFF10B981), size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'To: ${toAcc.name} (#$_destination)',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                          ),
+                          Text(
+                            '+${_formatMoney(amount)}',
+                            style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF10B981)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildSummaryRow(label: 'Transfer Fee', value: 'Free (\$0.00)', valueColor: const Color(0xFF10B981), isBold: true),
+                const SizedBox(height: 6),
+                _buildSummaryRow(label: 'Settlement Speed', value: 'Instant (< 1 sec)', valueColor: colors.primary),
+
+                const SizedBox(height: 22),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w800)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _executeTransfer(amount);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text(
+                          'Confirm & Transfer',
+                          style: TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _executeTransfer(double amount) async {
+    setState(() => _isProcessing = true);
+    HapticFeedback.mediumImpact();
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    final fromLogin = _source;
+    final toLogin = _destination;
+
+    // Update state balances
+    final currentSourceBal = _balances[fromLogin] ?? 0.0;
+    final currentDestBal = _balances[toLogin] ?? 0.0;
+    _balances[fromLogin] = (currentSourceBal - amount).clamp(0.0, double.infinity);
+    _balances[toLogin] = currentDestBal + amount;
+
+    // Also update _accountList
+    final sIdx = _accountList.indexWhere((a) => a.login == fromLogin);
+    if (sIdx != -1) {
+      final a = _accountList[sIdx];
+      final b = _formatMoney(_balances[fromLogin]!);
+      _accountList[sIdx] = BrokerAccount(
+        a.name, a.login, a.leverage, b, b, a.type,
+        server: a.server, currency: a.currency,
+      );
+    }
+    final dIdx = _accountList.indexWhere((a) => a.login == toLogin);
+    if (dIdx != -1) {
+      final a = _accountList[dIdx];
+      final b = _formatMoney(_balances[toLogin]!);
+      _accountList[dIdx] = BrokerAccount(
+        a.name, a.login, a.leverage, b, b, a.type,
+        server: a.server, currency: a.currency,
+      );
+    }
+
+    final record = _InternalTransferRecord(
+      id: 'TRX-${(100000 + math.Random().nextInt(900000))}',
+      sourceLogin: fromLogin,
+      destinationLogin: toLogin,
+      amount: amount,
+      timestamp: DateTime.now(),
+      status: 'Completed',
+    );
+
+    _recentTransfers.insert(0, record);
+    widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
+
+    _amountController.clear();
+    _isProcessing = false;
+    setState(() {});
+
+    _showSuccessReceipt(record);
+  }
+
+  void _showSuccessReceipt(_InternalTransferRecord record) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0C2B68) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (receiptContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: .4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Center(
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: .14),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF10B981), width: 2),
+                    ),
+                    child: const Icon(LucideIcons.check, color: Color(0xFF10B981), size: 32),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Transfer Successful!',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Funds have been credited instantly',
+                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _formatMoney(record.amount),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF071941).withValues(alpha: .6) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withValues(alpha: .1) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildSummaryRow(label: 'Reference ID', value: record.id, isBold: true),
+                      const SizedBox(height: 8),
+                      _buildSummaryRow(label: 'From Account', value: '#${record.sourceLogin}'),
+                      const SizedBox(height: 8),
+                      _buildSummaryRow(label: 'To Account', value: '#${record.destinationLogin}'),
+                      const SizedBox(height: 8),
+                      _buildSummaryRow(label: 'Status', value: 'Completed', valueColor: const Color(0xFF10B981), isBold: true),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+                FilledButton(
+                  onPressed: () => Navigator.pop(receiptContext),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
-

@@ -418,7 +418,49 @@ class _AppShellState extends State<AppShell> {
         'PAMM Account' => PammPage(
             onBack: () => setState(() => _selectedPage = 'More'),
           ),
-        'Internal Transfer' => const BrokerInternalTransferPage(),
+        'Internal Transfer' => BrokerInternalTransferPage(
+            accounts: _accounts,
+            onBack: () => setState(() => _selectedPage = 'More'),
+            onSelectPage: _selectPage,
+            onTransferCompleted: (fromLogin, toLogin, amount) {
+              setState(() {
+                final fromIdx = _accounts.indexWhere((a) => a.login == fromLogin);
+                final toIdx = _accounts.indexWhere((a) => a.login == toLogin);
+                if (fromIdx != -1) {
+                  final fromAcc = _accounts[fromIdx];
+                  final cur = double.tryParse(fromAcc.balance.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+                  final newBal = (cur - amount).clamp(0.0, double.infinity);
+                  final balStr = '\$${newBal.toStringAsFixed(2)}';
+                  _accounts[fromIdx] = BrokerAccount(
+                    fromAcc.name, fromAcc.login, fromAcc.leverage,
+                    balStr, balStr, fromAcc.type,
+                    server: fromAcc.server,
+                    currency: fromAcc.currency,
+                    floatingPnl: fromAcc.floatingPnl,
+                    equityHistory: fromAcc.equityHistory,
+                    openPositions: fromAcc.openPositions,
+                    recentTrades: fromAcc.recentTrades,
+                  );
+                }
+                if (toIdx != -1) {
+                  final toAcc = _accounts[toIdx];
+                  final cur = double.tryParse(toAcc.balance.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+                  final newBal = cur + amount;
+                  final balStr = '\$${newBal.toStringAsFixed(2)}';
+                  _accounts[toIdx] = BrokerAccount(
+                    toAcc.name, toAcc.login, toAcc.leverage,
+                    balStr, balStr, toAcc.type,
+                    server: toAcc.server,
+                    currency: toAcc.currency,
+                    floatingPnl: toAcc.floatingPnl,
+                    equityHistory: toAcc.equityHistory,
+                    openPositions: toAcc.openPositions,
+                    recentTrades: toAcc.recentTrades,
+                  );
+                }
+              });
+            },
+          ),
         'Demo Accounts' => BrokerDemoAccountsPage(
             onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
             onAccountSelected: _openDemoAccount,

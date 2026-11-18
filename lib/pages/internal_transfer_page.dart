@@ -54,7 +54,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 760, maxHeight: usableHeight),
                 child: Column(
-                  mainAxisSize: MainAxisSize.max,
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(children: [
@@ -77,8 +77,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                       ),
                     ]),
                     SizedBox(height: compact ? 10 : 16),
-                    Expanded(
-                      child: Container(
+                    Container(
                         padding: EdgeInsets.all(compact ? 13 : 17),
                         decoration: BoxDecoration(
                           color: colors.surface,
@@ -163,7 +162,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                                 ),
                               ),
                             ]),
-                            const Spacer(),
+                            SizedBox(height: compact ? 14 : 18),
                             Container(
                               padding: EdgeInsets.all(compact ? 9 : 11),
                               decoration: BoxDecoration(
@@ -199,7 +198,6 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                             ),
                           ],
                         ),
-                      ),
                     ),
                     SizedBox(height: compact ? 5 : 8),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -273,7 +271,7 @@ class _TransferAccountPicker extends StatelessWidget {
             dropdownColor: colors.surface,
             iconEnabledColor: muted,
             style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-            items: accountIds.map((id) => DropdownMenuItem(value: id, child: Text('MT5 Account  •  ' + id, overflow: TextOverflow.ellipsis))).toList(),
+            items: accountIds.map((id) => DropdownMenuItem(value: id, child: Text('MT5 · ' + id, maxLines: 1, overflow: TextOverflow.clip))).toList(),
             onChanged: (next) { if (next != null) onChanged(next); },
           ))),
         ]),

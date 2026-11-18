@@ -412,10 +412,14 @@ class AppNotificationCenter {
 
     // 2. Dispatch to the native mobile notification panel
     if (sendToMobilePanel) {
+      final color = colorHex ?? generatePillColorHex(title, body, isGold, category);
       await _dispatchSystemNotification(
         id: _nextNotificationId++,
         title: title,
         body: body,
+        category: category,
+        colorHex: color,
+        isGold: isGold,
       );
     }
 
@@ -439,6 +443,9 @@ class AppNotificationCenter {
     required int id,
     required String title,
     required String body,
+    String category = 'Trading',
+    String colorHex = '#1658C9',
+    bool isGold = false,
   }) async {
     if (kIsWeb) return;
     try {
@@ -452,14 +459,59 @@ class AppNotificationCenter {
         await initialize();
       }
 
-      const androidDetails = AndroidNotificationDetails(
+      Color parsedColor;
+      try {
+        final hex = colorHex.replaceAll('#', '');
+        parsedColor = Color(int.parse('FF$hex', radix: 16));
+      } catch (_) {
+        parsedColor = const Color(0xFF1658C9);
+      }
+
+      final isTrade = category.toLowerCase() == 'trading';
+      final smallIcon = isTrade ? 'ic_stat_live' : 'ic_stat_vt';
+
+      // Rich actionable notification buttons by category
+      List<AndroidNotificationAction>? actions;
+      if (isTrade) {
+        actions = const [
+          AndroidNotificationAction('view_trade', 'View Trade', showsUserInterface: true),
+          AndroidNotificationAction('dismiss', 'Dismiss', cancelNotification: true),
+        ];
+      } else if (category.toLowerCase() == 'funds') {
+        actions = const [
+          AndroidNotificationAction('view_wallet', 'View Wallet', showsUserInterface: true),
+          AndroidNotificationAction('deposit', 'Deposit', showsUserInterface: true),
+        ];
+      } else if (category.toLowerCase() == 'security') {
+        actions = const [
+          AndroidNotificationAction('review_security', 'Review', showsUserInterface: true),
+        ];
+      } else {
+        actions = const [
+          AndroidNotificationAction('open_app', 'Open App', showsUserInterface: true),
+        ];
+      }
+
+      final androidDetails = AndroidNotificationDetails(
         'vt_index_channel',
         'VT Index Notifications',
         channelDescription: 'Trading, funding, and security alerts for VT Index CRM',
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF1658C9),
+        icon: smallIcon,
+        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        color: parsedColor,
+        subText: category.toUpperCase(),
+        groupKey: 'com.example.crm_app.NOTIFICATIONS',
+        styleInformation: BigTextStyleInformation(
+          body,
+          contentTitle: title,
+          summaryText: category.toUpperCase(),
+          htmlFormatBigText: true,
+          htmlFormatContentTitle: true,
+          htmlFormatSummaryText: true,
+        ),
+        actions: actions,
         playSound: true,
         enableVibration: true,
       );
@@ -470,7 +522,7 @@ class AppNotificationCenter {
         presentSound: true,
       );
 
-      const notificationDetails = NotificationDetails(
+      final notificationDetails = NotificationDetails(
         android: androidDetails,
         iOS: darwinDetails,
         macOS: darwinDetails,

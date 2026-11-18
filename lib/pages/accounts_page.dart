@@ -657,25 +657,6 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               action(LucideIcons.settings, 'Settings', false, () => widget.onSelectPage('Settings')),
             ]),
             const SizedBox(height: 14),
-          ] else ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: border),
-              ),
-              child: Row(children: [
-                Icon(LucideIcons.flaskConical, color: blue, size: 18),
-                const SizedBox(width: 9),
-                Expanded(child: Text(
-                  'Demo account · Virtual funds only. Deposits, withdrawals and transfers are not available.',
-                  style: TextStyle(color: muted, fontSize: 10, height: 1.4, fontWeight: FontWeight.w600),
-                )),
-              ]),
-            ),
-            const SizedBox(height: 14),
           ],
           Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')])),
           const SizedBox(height: 10),

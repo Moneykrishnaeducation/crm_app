@@ -5,10 +5,11 @@ class BrokerDemoAccountsPage extends StatefulWidget {
     super.key,
     VoidCallback? onOpenLiveAccounts,
     VoidCallback? onOpenTradingAccounts,
-    required this.onAccountSelected,
+    this.onAccountSelected = _noopAccount,
   })  : onOpenLiveAccounts = onOpenLiveAccounts ?? onOpenTradingAccounts ?? _noop;
 
   static void _noop() {}
+  static void _noopAccount(BrokerAccount account) {}
   final VoidCallback onOpenLiveAccounts;
   final ValueChanged<BrokerAccount> onAccountSelected;
   @override
@@ -158,10 +159,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
               selected: false,
               onTap: () => widget.onAccountSelected(account),
             )),
-          // // const SizedBox(height: 7),
-          // Text('Combined demo balance  ${_demoAccounts.isEmpty ? '—' : '\$ ${totalBalance.toStringAsFixed(2)}'}',
-          //   textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
-      )],
+        ],
       ),
     );
   }

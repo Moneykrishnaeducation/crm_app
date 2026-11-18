@@ -223,7 +223,7 @@ class _PammPageState extends State<PammPage> {
         ),
       ],
     ),
-    child: const Icon(LucideIcons.briefcaseBusiness, color: Colors.white, size: 20),
+    child: const Icon(LucideIcons.activity, color: Colors.white, size: 21),
   );
 
   Widget _brandTitle() => Column(
@@ -359,7 +359,7 @@ class _PammPageState extends State<PammPage> {
     final value = _investments.fold<double>(0, (v, p) => v + p.value);
     final pnl = _investments.fold<double>(0, (v, p) => v + p.pnl);
     return [
-      _buildInvestmentBanner(),
+      _snapshot(),
       const SizedBox(height: 12),
       Row(children: [
         Expanded(child: _metricCard('INVESTED CAPITAL', _money(invested), 'Initial deposits', LucideIcons.wallet, _blue)),

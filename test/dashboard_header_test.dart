@@ -161,4 +161,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Mark read'), findsNothing);
   });
+
+  testWidgets('Header sheets close when tapping outside', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(createTestWidget());
+    await tester.pumpAndSettle();
+
+    Future<void> tapOutsidePopup() async {
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+    }
+
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Search Markets'), findsOneWidget);
+    await tapOutsidePopup();
+    expect(find.text('Search Markets'), findsNothing);
+
+    await tester.tap(find.byTooltip('Notifications').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Mark read'), findsOneWidget);
+    await tapOutsidePopup();
+    expect(find.text('Mark read'), findsNothing);
+
+    await tester.tap(find.byTooltip('Customer Support'));
+    await tester.pumpAndSettle();
+    expect(find.text('Live Chat Support'), findsOneWidget);
+    await tapOutsidePopup();
+    expect(find.text('Live Chat Support'), findsNothing);
+
+    await tester.tap(find.byTooltip('Log out'));
+    await tester.pumpAndSettle();
+    const logoutMessage =
+        'Are you sure you want to log out of your account? You will need to enter your credentials to sign back in.';
+    expect(find.text(logoutMessage), findsOneWidget);
+    await tapOutsidePopup();
+    expect(find.text(logoutMessage), findsNothing);
+  });
 }

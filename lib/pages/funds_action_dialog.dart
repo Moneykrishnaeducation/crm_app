@@ -1,8 +1,8 @@
 part of '../main.dart';
 
 const _fundInk = Color(0xFF10213E);
-const _fundSurface = Color(0xFFF7F9FC);
-const _fundBorder = Color(0xFFE1E7F0);
+const _fundSurface = Color(0xFFF7FAFF);
+const _fundBorder = Color(0xFFDCE5F2);
 
 class BrokerFundsPage extends StatefulWidget {
   const BrokerFundsPage({
@@ -25,6 +25,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   int _method = 0;
   int _currency = 0;
   int _payout = 0;
+  bool _isSubmitting = false;
+  String? _uploadedProofName;
   final String _selectedAccount = 'Mohanprasath R - 3311 - \$0.00';
   final String _withdrawSourceAccount = '3311     STANDARD     Available:  \$0.00';
 
@@ -38,6 +40,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   Widget build(BuildContext context) {
     final isWithdraw = widget.withdrawal;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (!isWithdraw) return _buildDepositPage(context, isDark);
+
     final scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
     final cardBg = Theme.of(context).cardColor;
     final borderColor = isDark ? const Color(0xFF223656) : const Color(0xFFE2E8F1);
@@ -73,9 +77,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                           ),
                         ],
                       ),
-                      child: isWithdraw
-                          ? _buildWithdrawForm(context, isDark, constraints)
-                          : _buildDepositForm(context, isDark, constraints),
+                      child: _buildWithdrawForm(context, isDark, constraints),
                     );
                   },
                 ),
@@ -86,6 +88,108 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       ),
     );
   }
+
+  Widget _buildDepositPage(BuildContext context, bool isDark) {
+    final page = isDark ? const Color(0xFF08152A) : const Color(0xFFF4F7FC);
+    final panel = isDark ? const Color(0xFF10213E) : Colors.white;
+    final border = isDark ? const Color(0xFF29436D) : const Color(0xFFDCE5F2);
+    final muted = isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987);
+    return Container(
+      color: page,
+      child: LayoutBuilder(builder: (context, viewport) {
+        final compact = viewport.maxWidth < 760;
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          padding: EdgeInsets.fromLTRB(compact ? 16 : 28, 20, compact ? 16 : 28, 110),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: InkWell(
+                        onTap: widget.onBack,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.arrowLeft, size: 16, color: isDark ? Colors.white : _fundInk),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Back to Dashboard',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : _fundInk,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _secureBadge(isDark, label: 'SSL Secured'),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(children: [
+                  Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(color: isDark ? const Color(0xFF1A3154) : const Color(0xFFFFF3D2), borderRadius: BorderRadius.circular(16)),
+                    child: const Icon(LucideIcons.wallet, color: Color(0xFFC99A2E), size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Deposit Funds', style: TextStyle(color: isDark ? Colors.white : _fundInk, fontSize: compact ? 24 : 30, fontWeight: FontWeight.w900, letterSpacing: -.8)),
+                    const SizedBox(height: 4),
+                    Text('Add funds to your trading account securely.', style: TextStyle(color: muted, fontSize: 13)),
+                  ])),
+                ]),
+                const SizedBox(height: 24),
+                LayoutBuilder(builder: (context, content) {
+                  return _depositFormPanel(context, isDark, panel, border, content.maxWidth);
+                }),
+              ]),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _secureBadge(bool isDark, {String label = 'Secure checkout'}) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF172B49) : const Color(0xFFFFF3D2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? const Color(0xFF3C5680) : const Color(0xFFEAD18F)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(LucideIcons.shieldCheck, color: Color(0xFFC99A2E), size: 13),
+          const SizedBox(width: 5),
+          Text(label, style: TextStyle(color: isDark ? const Color(0xFFF1CF78) : const Color(0xFF785912), fontSize: 10, fontWeight: FontWeight.w800)),
+        ]),
+      );
+
+  Widget _depositFormPanel(BuildContext context, bool isDark, Color panel, Color border, double width) => Container(
+        padding: EdgeInsets.all(width < 440 ? 16 : 24),
+        decoration: BoxDecoration(
+          color: panel,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? .16 : .035), blurRadius: 24, offset: const Offset(0, 8))],
+        ),
+        child: _buildDepositForm(context, isDark, BoxConstraints(maxWidth: width - (width < 440 ? 32 : 48))),
+      );
 
   Widget _buildHeroBanner(BuildContext context, bool isWithdraw, bool isDark) {
     return Container(
@@ -271,8 +375,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   Widget _buildDepositForm(BuildContext context, bool isDark, BoxConstraints constraints) {
     final isCompact = constraints.maxWidth < 440;
     final textPrimary = isDark ? Colors.white : _fundInk;
-    final textMuted = isDark ? const Color(0xFF8E9EB5) : _muted;
-    final badgeBg = isDark ? const Color(0xFF1E2D47) : const Color(0xFFEAF0F8);
+    final textMuted = isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987);
+    final badgeBg = isDark ? const Color(0xFF1D3557) : const Color(0xFFEAF0FF);
 
     final currencyCard = _infoCard(
       'Deposit Currency',
@@ -286,6 +390,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             (i) => setState(() => _currency = i),
             compact: true,
             isDark: isDark,
+            selectedColor: const Color(0xFF153467),
           ),
           const SizedBox(height: 8),
           Text(
@@ -323,7 +428,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                 width: 6,
                 height: 6,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF16D994),
+                  color: Color(0xFFC99A2E),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -346,14 +451,12 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _segmented(
-          ['CHEESE PAY', 'MANUAL', 'USDT'],
-          _method,
-          (i) => setState(() => _method = i),
-          isDark: isDark,
-          icons: [LucideIcons.creditCard, LucideIcons.wallet, LucideIcons.coins],
-        ),
+        _depositSectionHeading('01', 'Payment method', isDark),
+        const SizedBox(height: 10),
+        _depositMethodPicker(isDark),
         const SizedBox(height: 18),
+        _depositSectionHeading('02', 'Trading account', isDark),
+        const SizedBox(height: 10),
         _fieldLabel('SELECT TRADING ACCOUNT', isDark),
         const SizedBox(height: 7),
         _accountSelect(_selectedAccount, isDark),
@@ -374,6 +477,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             ),
           ],
           const SizedBox(height: 16),
+          _depositSectionHeading('03', 'Deposit amount', isDark),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -386,7 +491,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
               Text(
                 'YOU WILL GET (USD)',
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF8E9EB5) : const Color(0xFF687991),
+        color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
                 ),
@@ -426,22 +531,27 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           const SizedBox(height: 16),
           _fundButton(
             'PAY NOW',
-            onPressed: () => _submit(context, false),
+            onPressed: () => _submit(false),
+            isLoading: _isSubmitting,
           ),
         ] else if (_method == 1) ...[
+          _depositSectionHeading('03', 'Deposit amount', isDark),
+          const SizedBox(height: 10),
           _notice(
             'INSTRUCTIONS\nContact support for verified bank details, then upload your transaction proof for review.',
             icon: LucideIcons.info,
             isDark: isDark,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          _buildManualBankDetails(isDark),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(child: _fieldLabel('DEPOSIT AMOUNT (INR)', isDark)),
               Text(
                 'USD EQUIVALENT',
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF8E9EB5) : const Color(0xFF687991),
+                  color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
                 ),
@@ -457,33 +567,101 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             ],
           ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () {
-              showAppMessage('Choose a transaction proof file.');
-            },
-            icon: const Icon(LucideIcons.cloudUpload, size: 16),
-            label: const Text('Upload transaction proof (JPG, PNG or PDF)'),
-            style: _outlineStyle(isDark),
-          ),
+          if (_uploadedProofName == null) ...[
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _uploadedProofName = 'bank_transfer_receipt_3311.pdf';
+                });
+                showAppMessage('Attached transaction proof: bank_transfer_receipt_3311.pdf (1.4 MB)');
+              },
+              icon: const Icon(LucideIcons.cloudUpload, size: 16),
+              label: const Text('Upload transaction proof (JPG, PNG or PDF)'),
+              style: _outlineStyle(isDark),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF142744) : const Color(0xFFF1F6FE),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF28487A) : const Color(0xFFC7DBF8),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(LucideIcons.fileText, size: 16, color: Color(0xFF1658C9)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _uploadedProofName!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : _fundInk,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          '1.4 MB · Ready for review',
+                          style: TextStyle(
+                            color: Color(0xFF16D994),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, size: 16),
+                    color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
+                    tooltip: 'Remove',
+                    onPressed: () => setState(() => _uploadedProofName = null),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           _fundButton(
             'SUBMIT FOR VERIFICATION',
-            onPressed: () => _submit(context, false),
+            onPressed: () => _submit(false),
+            isLoading: _isSubmitting,
           ),
         ] else ...[
+          _depositSectionHeading('03', 'Deposit amount', isDark),
+          const SizedBox(height: 10),
           _notice(
             'USDT TRC20 PROTOCOL\nEnter the amount you wish to fund. You will be securely redirected to our payment gateway.',
             icon: LucideIcons.globe,
             isDark: isDark,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          _buildUsdtWalletBox(isDark),
+          const SizedBox(height: 14),
           _fieldLabel('DEPOSIT AMOUNT (USDT)', isDark),
           const SizedBox(height: 7),
           _moneyInput('\$', suffix: 'USDT', isDark: isDark),
           const SizedBox(height: 16),
           _fundButton(
             'PAY NOW',
-            onPressed: () => _submit(context, false),
+            onPressed: () => _submit(false),
+            isLoading: _isSubmitting,
           ),
         ],
         const SizedBox(height: 16),
@@ -491,7 +669,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           child: Text(
             '♢  PROTECTED',
             style: TextStyle(
-              color: isDark ? const Color(0xFF687991) : const Color(0xFF53617A),
+              color: isDark ? const Color(0xFFF1CF78) : const Color(0xFF9A741F),
               fontSize: 8.5,
               letterSpacing: 1.3,
               fontWeight: FontWeight.w800,
@@ -501,6 +679,237 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       ],
     );
   }
+
+  Widget _depositMethodPicker(bool isDark) {
+    const items = [
+      (label: 'CHEESE PAY', sub: 'Instant UPI / Cards', badge: '0% FEE', icon: LucideIcons.creditCard),
+      (label: 'MANUAL', sub: 'Bank Wire / IMPS', badge: 'VERIFIED', icon: LucideIcons.landmark),
+      (label: 'USDT', sub: 'TRC20 / ERC20', badge: 'INSTANT', icon: LucideIcons.coins),
+    ];
+    final muted = isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987);
+    return Row(children: [
+      for (var i = 0; i < items.length; i++) ...[
+        if (i > 0) const SizedBox(width: 8),
+        Expanded(child: InkWell(
+          onTap: () => setState(() => _method = i),
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            height: 72,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            decoration: BoxDecoration(
+              color: _method == i
+                  ? (isDark ? const Color(0xFF193258) : const Color(0xFFFFF7E6))
+                  : (isDark ? const Color(0xFF12223F) : const Color(0xFFF8FAFE)),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _method == i ? const Color(0xFFD8A82E) : (isDark ? const Color(0xFF243B5E) : const Color(0xFFDCE5F2)),
+                width: _method == i ? 1.6 : 1,
+              ),
+              boxShadow: _method == i
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFD8A82E).withValues(alpha: 0.18),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(items[i].icon, size: 18, color: _method == i ? const Color(0xFFD8A82E) : muted),
+              const SizedBox(height: 5),
+              Text(items[i].label, maxLines: 1, style: TextStyle(
+                color: _method == i ? (isDark ? const Color(0xFFF1CF78) : const Color(0xFF785912)) : (isDark ? Colors.white : _fundInk),
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: .25,
+              )),
+              const SizedBox(height: 2),
+              Text(items[i].badge, maxLines: 1, style: TextStyle(
+                color: _method == i ? const Color(0xFFD8A82E) : muted,
+                fontSize: 7.5,
+                fontWeight: FontWeight.w700,
+              )),
+            ]),
+          ),
+        )),
+      ],
+    ]);
+  }
+
+  Widget _buildManualBankDetails(bool isDark) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF13223A) : const Color(0xFFF7FAFE),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? const Color(0xFF243B5E) : const Color(0xFFDEE7F4),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Icon(LucideIcons.shieldCheck, size: 14, color: Color(0xFFD8A82E)),
+                SizedBox(width: 6),
+                Text(
+                  'OFFICIAL BENEFICIARY ACCOUNT',
+                  style: TextStyle(
+                    color: Color(0xFFD8A82E),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _copyableDetailRow('Beneficiary', 'VT Index Markets Ltd', isDark),
+            const SizedBox(height: 6),
+            _copyableDetailRow('Bank Name', 'HDFC Bank Ltd', isDark),
+            const SizedBox(height: 6),
+            _copyableDetailRow('Account No.', '5020 0084 9201 33', isDark),
+            const SizedBox(height: 6),
+            _copyableDetailRow('IFSC Code', 'HDFC0001048', isDark),
+          ],
+        ),
+      );
+
+  Widget _copyableDetailRow(String label, String value, bool isDark) => Row(
+        children: [
+          SizedBox(
+            width: 84,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: isDark ? Colors.white : _fundInk,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: value));
+              showAppMessage('Copied $value to clipboard.');
+            },
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                LucideIcons.copy,
+                size: 13,
+                color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
+              ),
+            ),
+          ),
+        ],
+      );
+
+  Widget _buildUsdtWalletBox(bool isDark) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF13223A) : const Color(0xFFF7FAFE),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? const Color(0xFF243B5E) : const Color(0xFFDEE7F4),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Icon(LucideIcons.coins, size: 14, color: Color(0xFFD8A82E)),
+                SizedBox(width: 6),
+                Text(
+                  'OFFICIAL TRC20 DEPOSIT ADDRESS',
+                  style: TextStyle(
+                    color: Color(0xFFD8A82E),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(LucideIcons.qrCode, size: 16, color: Color(0xFF1658C9)),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TX8nQ9xR4bH2mP7vW1kL3s9zY6V4m2Pq',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Network: TRON (TRC20) · Instant Auto-Credit',
+                        style: TextStyle(
+                          color: Color(0xFF16D994),
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(LucideIcons.copy, size: 14),
+                  color: const Color(0xFF1658C9),
+                  tooltip: 'Copy address',
+                  onPressed: () {
+                    Clipboard.setData(const ClipboardData(text: 'TX8nQ9xR4bH2mP7vW1kL3s9zY6V4m2Pq'));
+                    showAppMessage('Copied TRC20 address to clipboard.');
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+  Widget _depositSectionHeading(String number, String title, bool isDark) => Row(children: [
+        Container(
+          width: 25,
+          height: 25,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A3154) : const Color(0xFFEAF0FF),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(number, style: const TextStyle(color: Color(0xFFC99A2E), fontSize: 10, fontWeight: FontWeight.w900)),
+        ),
+        const SizedBox(width: 9),
+        Text(title, style: TextStyle(color: isDark ? Colors.white : _fundInk, fontSize: 14, fontWeight: FontWeight.w800)),
+      ]);
 
   Widget _buildWithdrawForm(BuildContext context, bool isDark, BoxConstraints constraints) {
     final isCompact = constraints.maxWidth < 440;
@@ -528,7 +937,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF16D994),
+                      color: Color(0xFFC99A2E),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -632,7 +1041,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             Text(
               'Min: \$10.00',
               style: TextStyle(
-                color: isDark ? const Color(0xFF8E9EB5) : _muted,
+                color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
                 fontSize: 9.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -650,36 +1059,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             _amountChip('MAX', '0', isDark),
           ],
         ),
-        const SizedBox(height: 14),
-        _infoCard(
-          'Net Payout Amount',
-          isDark: isDark,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Credited to your destination',
-                  style: TextStyle(
-                    color: isDark ? const Color(0xFF8E9EB5) : _muted,
-                    fontSize: 10,
-                  ),
-                ),
-              ),
-              Text(
-                '\$${_amount.text.isEmpty ? '0.00' : _amount.text}',
-                style: const TextStyle(
-                  color: Color(0xFF00D7A1),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 18),
         _fundButton(
           'CONFIRM WITHDRAWAL',
-          onPressed: () => _submit(context, true),
+          onPressed: () => _submit(true),
         ),
       ],
     );
@@ -696,9 +1079,9 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   ) {
     final selected = _payout == index;
     final accent = selected
-        ? const Color(0xFF4B83FF)
-        : (isDark ? const Color(0xFF2B3C58) : const Color(0xFFE2E8F1));
-    final surface = isDark ? const Color(0xFF16253E) : _fundSurface;
+        ? const Color(0xFFD3A638)
+        : (isDark ? const Color(0xFF29436D) : const Color(0xFFDCE5F2));
+    final surface = isDark ? const Color(0xFF142744) : _fundSurface;
     final textPrimary = isDark ? Colors.white : _fundInk;
     final textMuted = isDark ? const Color(0xFF8E9EB5) : _muted;
 
@@ -711,7 +1094,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           color: surface,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: selected ? const Color(0xFF4B83FF) : accent,
+            color: selected ? const Color(0xFFD3A638) : accent,
             width: selected ? 1.4 : 1.0,
           ),
         ),
@@ -724,15 +1107,15 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4B83FF).withValues(alpha: .18),
+                    color: const Color(0xFF416FFF).withValues(alpha: .12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: const Color(0xFF5990FF), size: 18),
+                  child: Icon(icon, color: const Color(0xFF416FFF), size: 18),
                 ),
                 const Spacer(),
                 Icon(
                   selected ? LucideIcons.circleCheck : LucideIcons.circle,
-                  color: selected ? const Color(0xFF4B83FF) : textMuted,
+                  color: selected ? const Color(0xFFC99A2E) : textMuted,
                   size: 17,
                 ),
               ],
@@ -761,7 +1144,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: selected ? const Color(0xFF16D994) : textMuted,
+                color: selected ? (isDark ? const Color(0xFFF1CF78) : const Color(0xFF785912)) : textMuted,
                 fontSize: 8.5,
                 fontWeight: FontWeight.w700,
               ),
@@ -779,7 +1162,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             height: 20,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
-              color: Color(0xFF3458E8),
+              color: const Color(0xFF153467),
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -792,13 +1175,17 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.white : _fundInk,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: .3,
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isDark ? Colors.white : _fundInk,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: .3,
+              ),
             ),
           ),
         ],
@@ -807,7 +1194,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   Widget _fieldLabel(String label, bool isDark) => Text(
         label,
         style: TextStyle(
-          color: isDark ? const Color(0xFF8E9EB5) : const Color(0xFF687991),
+          color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
           fontSize: 9.5,
           letterSpacing: .55,
           fontWeight: FontWeight.w800,
@@ -815,31 +1202,75 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       );
 
   Widget _accountSelect(String value, bool isDark) {
-    final surface = isDark ? const Color(0xFF16253E) : _fundSurface;
-    final border = isDark ? const Color(0xFF223656) : _fundBorder;
+    final surface = isDark ? const Color(0xFF13223A) : const Color(0xFFF7FAFE);
+    final border = isDark ? const Color(0xFF243B5E) : const Color(0xFFDEE7F4);
     final textPrimary = isDark ? Colors.white : _fundInk;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: surface,
         border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          const Icon(LucideIcons.users, color: Color(0xFF416FFF), size: 16),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Icon(LucideIcons.wallet, color: Color(0xFF1658C9), size: 16),
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 2,
+                  children: [
+                    Text(
+                      'Live MT5 · 3311',
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'STANDARD',
+                        style: TextStyle(
+                          color: Color(0xFF1658C9),
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
           Icon(
@@ -859,10 +1290,11 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     List<IconData>? icons,
     bool compact = false,
     required bool isDark,
+    Color selectedColor = const Color(0xFF425CC5),
   }) {
     final surface = isDark ? const Color(0xFF142137) : _fundSurface;
     final border = isDark ? const Color(0xFF223656) : _fundBorder;
-    final textMuted = isDark ? const Color(0xFF8E9EB5) : _muted;
+    final textMuted = isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987);
 
     return Container(
       padding: const EdgeInsets.all(4),
@@ -882,7 +1314,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: i == selected
-                        ? const Color(0xFF425CC5)
+                        ? selectedColor
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1123,43 +1555,137 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         textStyle: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
       );
 
-  Widget _fundButton(String label, {required VoidCallback onPressed}) => SizedBox(
+  Widget _fundButton(
+    String label, {
+    required VoidCallback onPressed,
+    bool isLoading = false,
+  }) =>
+      SizedBox(
         width: double.infinity,
         height: 48,
-        child: FilledButton.icon(
-          onPressed: onPressed,
-          iconAlignment: IconAlignment.end,
-          icon: const Icon(LucideIcons.arrowRight, size: 16),
-          label: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12.5,
-              letterSpacing: .8,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
+        child: FilledButton(
+          onPressed: isLoading ? null : onPressed,
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF345CE5),
+            backgroundColor: const Color(0xFF1658C9),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
+          child: isLoading
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    SizedBox(
+                      width: 17,
+                      height: 17,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: 9),
+                    Text(
+                      'PROCESSING...',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        letterSpacing: .8,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(LucideIcons.arrowRight, size: 16),
+                  ],
+                ),
         ),
       );
 
   String _getEstimatedUsd() {
     if (_amount.text.isEmpty) return '0.00';
-    if (_currency == 0) return _amount.text;
+    if (_currency == 0 && _method != 1) return _amount.text;
     final val = double.tryParse(_amount.text.replaceAll(',', '')) ?? 0.0;
     return (val / 94.29).toStringAsFixed(2);
   }
 
-  void _submit(BuildContext context, bool withdrawal) {
+  void _submit(bool withdrawal) async {
     if (_amount.text.isEmpty ||
         (withdrawal && (double.tryParse(_amount.text) ?? 0) < 10)) {
       showAppMessage(withdrawal ? 'Enter a withdrawal amount of at least \$10.' : 'Enter an amount to continue.');
       return;
     }
-    showAppMessage(withdrawal ? 'Withdrawal request is ready for review.' : 'Deposit request is ready for processing.');
+
+    if (withdrawal) {
+      showAppMessage('Withdrawal request is ready for review.');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    final amountStr = _amount.text;
+    final currencyStr = _method == 2 ? 'USDT' : (_currency == 0 ? 'USD' : 'INR');
+    final estimatedUsd = _getEstimatedUsd();
+    final methodName = switch (_method) {
+      0 => 'Cheese Pay (Instant UPI / Cards)',
+      1 => 'Manual Bank Wire',
+      _ => 'USDT (TRC20 Crypto)',
+    };
+    final refId = 'VTX-DEP-${100000 + DateTime.now().millisecondsSinceEpoch % 900000}';
+
+    _showDepositResponseModal(
+      context,
+      refId: refId,
+      amount: amountStr,
+      currency: currencyStr,
+      estimatedUsd: estimatedUsd,
+      method: methodName,
+    );
+
+    showAppMessage('Deposit request $refId submitted successfully.');
+  }
+
+  void _showDepositResponseModal(
+    BuildContext context, {
+    required String refId,
+    required String amount,
+    required String currency,
+    required String estimatedUsd,
+    required String method,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (ctx) => _DepositResponseSheet(
+        refId: refId,
+        amount: amount,
+        currency: currency,
+        estimatedUsd: estimatedUsd,
+        method: method,
+        onViewActivity: () {
+          Navigator.pop(ctx);
+          widget.onSelectPage('activity');
+        },
+        onBackToDashboard: () {
+          Navigator.pop(ctx);
+          widget.onBack();
+        },
+      ),
+    );
   }
 
   String _formatAmount(int value) => value >= 100000
@@ -1170,6 +1696,244 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                 (m) => ',',
               )
           : '$value';
+}
+
+class _DepositResponseSheet extends StatelessWidget {
+  const _DepositResponseSheet({
+    required this.refId,
+    required this.amount,
+    required this.currency,
+    required this.estimatedUsd,
+    required this.method,
+    required this.onViewActivity,
+    required this.onBackToDashboard,
+  });
+
+  final String refId;
+  final String amount;
+  final String currency;
+  final String estimatedUsd;
+  final String method;
+  final VoidCallback onViewActivity;
+  final VoidCallback onBackToDashboard;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF0F1E38) : Colors.white;
+    final border = isDark ? const Color(0xFF1E355B) : const Color(0xFFE2E8F0);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final cardBg = isDark ? const Color(0xFF152A4E) : const Color(0xFFF8FAFC);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: border),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        20 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 38,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: muted.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _brokerGold.withValues(alpha: 0.15),
+              border: Border.all(color: _brokerGold, width: 2),
+            ),
+            child: const Icon(LucideIcons.checkCheck, color: _brokerGold, size: 28),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Deposit Request Initiated',
+            style: TextStyle(
+              color: isDark ? Colors.white : _fundInk,
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Your deposit request has been submitted for processing.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: muted, fontSize: 12),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Ref: $refId',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: refId));
+                    showAppMessage('Copied reference ID $refId');
+                  },
+                  child: Icon(
+                    LucideIcons.copy,
+                    size: 13,
+                    color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+            ),
+            child: Column(
+              children: [
+                _row('Amount to Deposit', '$currency $amount', isDark),
+                const SizedBox(height: 10),
+                _row('Estimated Credit', '\$$estimatedUsd USD', isDark, isGold: true),
+                const SizedBox(height: 10),
+                _row('Destination', 'Live MT5 · 3311', isDark),
+                const SizedBox(height: 10),
+                _row('Payment Method', method, isDark),
+                const SizedBox(height: 10),
+                _row('Status', 'Processing Gateway', isDark, isStatus: true),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: FilledButton.icon(
+              onPressed: onViewActivity,
+              icon: const Icon(LucideIcons.activity, size: 16),
+              label: const Text(
+                'View in Activity & Orders',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1658C9),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton(
+              onPressed: onBackToDashboard,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isDark ? Colors.white : _fundInk,
+                side: BorderSide(color: border),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+              ),
+              child: const Text(
+                'Back to Dashboard',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, String value, bool isDark, {bool isGold = false, bool isStatus = false}) {
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (isStatus)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF1658C9),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                const Text(
+                  'Processing',
+                  style: TextStyle(
+                    color: Color(0xFF1658C9),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isGold
+                    ? _brokerGold
+                    : (isDark ? Colors.white : _fundInk),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 /// Backwards compatibility dialog wrapper

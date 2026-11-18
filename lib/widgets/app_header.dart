@@ -197,6 +197,8 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      isDismissible: true,
       isScrollControlled: true,
       builder: (sheetContext) => LogoutBottomSheet(
         onConfirm: () {
@@ -237,6 +239,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   void _showSearchSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      isDismissible: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
@@ -248,6 +251,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   void _showNotificationsSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      isDismissible: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
@@ -260,6 +264,8 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
+      isDismissible: true,
+      isScrollControlled: true,
       backgroundColor: isDark ? const Color(0xFF101D31) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -496,6 +502,7 @@ class _MarketSearchBottomSheetState extends State<MarketSearchBottomSheet>
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: 560,
@@ -1037,6 +1044,7 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: 560,

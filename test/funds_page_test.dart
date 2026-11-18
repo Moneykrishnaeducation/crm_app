@@ -49,6 +49,10 @@ void main() {
       expect(find.text('Deposit Currency'), findsOneWidget);
       expect(find.text('1 USD = 94.29 INR'), findsOneWidget);
 
+      // Verify Deposit Summary is removed
+      expect(find.text('DEPOSIT SUMMARY'), findsNothing);
+      expect(find.text('Estimated deposit credit'), findsNothing);
+
       // Tap preset amount chip
       await tester.tap(find.text('₹ 5,000'));
       await tester.pumpAndSettle();
@@ -107,6 +111,10 @@ void main() {
       expect(find.text('CHOOSE PAYOUT METHOD'), findsOneWidget);
       expect(find.text('ENTER WITHDRAWAL AMOUNT'), findsOneWidget);
 
+      // Verify Withdraw Summary is removed
+      expect(find.text('Net Payout Amount'), findsNothing);
+      expect(find.text('Credited to your destination'), findsNothing);
+
       // Verify Payout methods
       expect(find.text('Bank Transfer'), findsOneWidget);
       expect(find.text('Crypto Wallet'), findsOneWidget);
@@ -154,7 +162,77 @@ void main() {
 
       expect(find.text('Deposit Funds'), findsOneWidget);
       expect(find.text('CHEESE PAY'), findsOneWidget);
-      expect(tester.takeException(), isNull);
+      final exc = tester.takeException();
+      expect(exc, isNull);
+    });
+
+    testWidgets('Deposit flow handles method switching, validation, and response bottom sheet', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      String? selectedPage;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(useMaterial3: true),
+          home: Scaffold(
+            body: BrokerFundsPage(
+              withdrawal: false,
+              onBack: () {},
+              onSelectPage: (p) => selectedPage = p,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Test switching to Manual transfer method
+      expect(find.text('MANUAL'), findsOneWidget);
+      await tester.tap(find.text('MANUAL'));
+      await tester.pumpAndSettle();
+      expect(find.text('OFFICIAL BENEFICIARY ACCOUNT'), findsOneWidget);
+      expect(find.text('VT Index Markets Ltd'), findsOneWidget);
+      expect(find.text('Upload transaction proof (JPG, PNG or PDF)'), findsOneWidget);
+
+      // Test switching to USDT method
+      expect(find.text('USDT'), findsOneWidget);
+      await tester.tap(find.text('USDT'));
+      await tester.pumpAndSettle();
+      expect(find.text('OFFICIAL TRC20 DEPOSIT ADDRESS'), findsOneWidget);
+      expect(find.text('TX8nQ9xR4bH2mP7vW1kL3s9zY6V4m2Pq'), findsOneWidget);
+
+      // Test switching back to Cheese Pay
+      await tester.tap(find.text('CHEESE PAY'));
+      await tester.pumpAndSettle();
+
+      // Tap preset amount chip
+      expect(find.text('₹ 5,000'), findsOneWidget);
+      await tester.tap(find.text('₹ 5,000'));
+      await tester.pumpAndSettle();
+
+      // Scroll to make PAY NOW button visible if needed
+      await tester.ensureVisible(find.text('PAY NOW'));
+      await tester.tap(find.text('PAY NOW'));
+
+      // Advance clock through the simulated network call
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+
+      // Verify response sheet is displayed
+      expect(find.text('Deposit Request Initiated'), findsOneWidget);
+      expect(find.textContaining('VTX-DEP-'), findsOneWidget);
+      expect(find.text('Processing'), findsOneWidget);
+      expect(find.text('Live MT5 · 3311'), findsWidgets);
+      expect(find.text('View in Activity & Orders'), findsOneWidget);
+      expect(find.text('Back to Dashboard'), findsWidgets);
+
+      // Tap View in Activity & Orders
+      await tester.tap(find.text('View in Activity & Orders'));
+      await tester.pumpAndSettle();
+      expect(selectedPage, 'activity');
     });
   });
 }

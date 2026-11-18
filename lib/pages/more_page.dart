@@ -384,6 +384,7 @@ class _LogoutBottomSheetState extends State<LogoutBottomSheet>
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Align(
           alignment: Alignment.bottomCenter,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: FadeTransition(

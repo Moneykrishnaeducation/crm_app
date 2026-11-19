@@ -92,7 +92,7 @@ void main() {
     await tester.tap(find.byTooltip('Customer Support'));
     await tester.pumpAndSettle();
     expect(find.text('Customer Support'), findsOneWidget);
-    expect(find.text('Live Chat Support'), findsOneWidget);
+    expect(find.text('Support Tickets'), findsOneWidget);
     expect(find.text('Email Support'), findsOneWidget);
     // Dismiss support bottom sheet
     await tester.tap(find.byIcon(LucideIcons.x));
@@ -194,9 +194,9 @@ void main() {
 
     await tester.tap(find.byTooltip('Customer Support'));
     await tester.pumpAndSettle();
-    expect(find.text('Live Chat Support'), findsOneWidget);
+    expect(find.text('Support Tickets'), findsOneWidget);
     await tapOutsidePopup();
-    expect(find.text('Live Chat Support'), findsNothing);
+    expect(find.text('Support Tickets'), findsNothing);
 
     await tester.tap(find.byTooltip('Log out'));
     await tester.pumpAndSettle();

@@ -620,7 +620,638 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
       sendToMobilePanel: true,
     ));
   }
+}
 
+enum _PasswordStep { input, confirm, done }
+
+class _ChangeInvestorPasswordSheet extends StatefulWidget {
+  const _ChangeInvestorPasswordSheet({required this.account});
+
+  final BrokerAccount account;
+
+  @override
+  State<_ChangeInvestorPasswordSheet> createState() => _ChangeInvestorPasswordSheetState();
+}
+
+class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordSheet> {
+  final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+  String? _error;
+  _PasswordStep _step = _PasswordStep.input;
+  String? _savedPassword;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  void _generatePassword() {
+    final generated = _generateAccountPassword();
+    setState(() {
+      _passwordController.text = generated;
+      _confirmController.text = generated;
+      _obscurePassword = false;
+      _obscureConfirm = false;
+      _error = null;
+    });
+  }
+
+  void _onContinue() {
+    final pwd = _passwordController.text.trim();
+    final confirm = _confirmController.text.trim();
+
+    if (pwd.isEmpty) {
+      setState(() => _error = 'Please enter a new investor password.');
+      return;
+    }
+    if (pwd.length < 8) {
+      setState(() => _error = 'Password must be at least 8 characters long.');
+      return;
+    }
+    if (pwd != confirm) {
+      setState(() => _error = 'Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setState(() {
+      _savedPassword = pwd;
+      _step = _PasswordStep.confirm;
+      _error = null;
+    });
+  }
+
+  void _onConfirm() {
+    setState(() {
+      _step = _PasswordStep.done;
+      _error = null;
+    });
+
+    unawaited(AppNotificationCenter.instance.sendNotification(
+      title: 'Investor Password Changed (#${widget.account.login})',
+      body: 'Investor password for MT5 account #${widget.account.login} was updated successfully.',
+      category: 'Security',
+      icon: LucideIcons.keyRound,
+      isGold: true,
+      sendToMobilePanel: true,
+    ));
+    showAppMessage('Investor password updated for account #${widget.account.login}.');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+    final screen = MediaQuery.sizeOf(context);
+
+    final isDone = _step == _PasswordStep.done;
+    final isConfirm = _step == _PasswordStep.confirm;
+
+    final headerIcon = isDone
+        ? LucideIcons.shieldCheck
+        : (isConfirm ? LucideIcons.shieldAlert : LucideIcons.keyRound);
+    final headerIconColor = isDone
+        ? const Color(0xFF10B981)
+        : (isConfirm ? const Color(0xFFD8A82E) : cs.primary);
+    final headerTitle = isDone
+        ? 'Password Updated'
+        : (isConfirm ? 'Confirm Password Change' : 'Change Investor Password');
+    final headerSubtitle = isDone
+        ? 'Account #${widget.account.login} · Ready'
+        : (isConfirm
+            ? 'Review and confirm update for #${widget.account.login}'
+            : 'MT5 Read-only access for #${widget.account.login}');
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: dark ? .34 : .12),
+                    blurRadius: 30,
+                    offset: const Offset(0, -8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 2),
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: muted.withValues(alpha: .45),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 12, 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: headerIconColor.withValues(alpha: .12),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Icon(headerIcon, color: headerIconColor, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                headerTitle,
+                                style: TextStyle(
+                                  color: cs.onSurface,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                headerSubtitle,
+                                style: TextStyle(color: muted, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Close',
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(LucideIcons.x, color: muted, size: 19),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: border),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                      child: switch (_step) {
+                        _PasswordStep.input => _buildInputView(cs, border, muted, dark),
+                        _PasswordStep.confirm => _buildConfirmView(cs, border, muted, dark),
+                        _PasswordStep.done => _buildSuccessView(cs, border, muted),
+                      },
+                    ),
+                  ),
+                  Divider(height: 1, color: border),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(18, 13, 18, 16 + MediaQuery.viewPaddingOf(context).bottom),
+                    child: _buildBottomActions(context, cs, border),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomActions(BuildContext context, ColorScheme cs, Color border) {
+    switch (_step) {
+      case _PasswordStep.input:
+        return SizedBox(
+          height: 48,
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _onContinue,
+            style: FilledButton.styleFrom(
+              backgroundColor: _brokerGold,
+              foregroundColor: const Color(0xFF142238),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: const Icon(LucideIcons.arrowRight, size: 18),
+            label: const Text(
+              'CONTINUE',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+            ),
+          ),
+        );
+      case _PasswordStep.confirm:
+        return Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () => setState(() => _step = _PasswordStep.input),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: cs.onSurface,
+                    side: BorderSide(color: border),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: const Icon(LucideIcons.arrowLeft, size: 16),
+                  label: const Text(
+                    'CANCEL',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: _onConfirm,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _brokerGold,
+                    foregroundColor: const Color(0xFF142238),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: const Icon(LucideIcons.check, size: 18),
+                  label: const Text(
+                    'CONFIRM',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      case _PasswordStep.done:
+        return SizedBox(
+          height: 48,
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () => Navigator.pop(context),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: const Icon(LucideIcons.check, size: 18),
+            label: const Text(
+              'DONE',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+            ),
+          ),
+        );
+    }
+  }
+
+  Widget _buildInputView(ColorScheme cs, Color border, Color muted, bool dark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: cs.primary.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cs.primary.withValues(alpha: .22)),
+          ),
+          child: Row(
+            children: [
+              Icon(LucideIcons.info, color: cs.primary, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'The investor password gives read-only access to view trades and performance. It cannot be used to open or close orders.',
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 11,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: dark ? .35 : .45),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: border),
+          ),
+          child: Row(
+            children: [
+              Icon(LucideIcons.userRoundCheck, size: 17, color: cs.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Account #${widget.account.login} (${widget.account.name})',
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                widget.account.type,
+                style: TextStyle(
+                  color: widget.account.type == 'Live MT5' ? const Color(0xFF10B981) : const Color(0xFF39B5FF),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Text('01', style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 8),
+            Text('NEW INVESTOR PASSWORD', style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text('New password', style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _passwordController,
+          obscureText: _obscurePassword,
+          style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            prefixIcon: Icon(LucideIcons.lock, size: 17, color: muted),
+            suffixIcon: IconButton(
+              icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye, size: 17, color: muted),
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
+            hintText: 'Enter new investor password',
+            hintStyle: TextStyle(color: muted, fontSize: 11),
+            filled: true,
+            fillColor: cs.surfaceContainerHighest.withValues(alpha: dark ? .45 : .55),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _generatePassword,
+            icon: const Icon(LucideIcons.sparkles, size: 14),
+            label: const Text('Generate Strong Password', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text('Confirm password', style: TextStyle(color: cs.onSurface, fontSize: 11, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _confirmController,
+          obscureText: _obscureConfirm,
+          style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            prefixIcon: Icon(LucideIcons.lockKeyhole, size: 17, color: muted),
+            suffixIcon: IconButton(
+              icon: Icon(_obscureConfirm ? LucideIcons.eyeOff : LucideIcons.eye, size: 17, color: muted),
+              onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+            ),
+            hintText: 'Confirm new investor password',
+            hintStyle: TextStyle(color: muted, fontSize: 11),
+            filled: true,
+            fillColor: cs.surfaceContainerHighest.withValues(alpha: dark ? .45 : .55),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: .35)),
+            ),
+            child: Row(
+              children: [
+                const Icon(LucideIcons.alertCircle, color: Color(0xFFEF4444), size: 15),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildConfirmView(ColorScheme cs, Color border, Color muted, bool dark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD8A82E).withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFD8A82E).withValues(alpha: .30)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(LucideIcons.alertTriangle, color: Color(0xFFD8A82E), size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Confirm Password Replacement',
+                      style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Are you sure you want to change the investor password for account #${widget.account.login}? Any active read-only sessions will be disconnected.',
+                      style: TextStyle(
+                        color: cs.onSurface.withValues(alpha: .85),
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          'SUMMARY OF CHANGES',
+          style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: dark ? .35 : .45),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border),
+          ),
+          child: Column(
+            children: [
+              _summaryRow('Account Number', '#${widget.account.login}', cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('Account Name', widget.account.name, cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('Platform & Type', widget.account.type, cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('Access Permission', 'Read-Only (Investor)', cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('New Password', _savedPassword ?? '', cs, muted, isPassword: true),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: border),
+          ),
+          child: Row(
+            children: [
+              Icon(LucideIcons.info, size: 15, color: muted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Tap "CONFIRM" to apply changes or "CANCEL" to return and edit.',
+                  style: TextStyle(color: muted, fontSize: 10.5, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryRow(String label, String value, ColorScheme cs, Color muted, {bool isPassword = false}) {
+    return Row(
+      children: [
+        Text(label, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            color: cs.onSurface,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            fontFamily: isPassword ? 'monospace' : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessView(ColorScheme cs, Color border, Color muted) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: .15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(LucideIcons.checkCheck, color: Color(0xFF10B981), size: 30),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Center(
+          child: Text(
+            'Investor Password Changed!',
+            style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Center(
+          child: Text(
+            'Account #${widget.account.login} now has a new investor password.',
+            style: TextStyle(color: muted, fontSize: 11),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _credentialRow('New investor password', _savedPassword ?? '', cs, border, muted),
+      ],
+    );
+  }
+
+  Widget _credentialRow(String label, String value, ColorScheme cs, Color border, Color muted) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(13, 11, 5, 11),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: border),
+      ),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 5),
+          SelectableText(value, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: .3)),
+        ])),
+        IconButton(
+          tooltip: 'Copy $label',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: value));
+            showAppMessage('$label copied to clipboard.');
+          },
+          icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
+        ),
+      ]),
+    );
+  }
 }
 
 class BrokerAccountDetailsPage extends StatefulWidget {
@@ -637,6 +1268,17 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   String _range = '1W';
 
   String _money(double value) => (value < 0 ? '-' : '') + r'$' + value.abs().toStringAsFixed(2);
+
+  void _showChangeInvestorPassword(BrokerAccount a) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (_) => _ChangeInvestorPasswordSheet(account: a),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -786,7 +1428,12 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               const SizedBox(width: 8),
               action(LucideIcons.arrowLeftRight, 'Transfer', false, () => widget.onSelectPage('Internal Transfer')),
               const SizedBox(width: 8),
-              action(LucideIcons.settings, 'Settings', false, () => widget.onSelectPage('Settings')),
+              action(LucideIcons.settings, 'Settings', false, () => _showChangeInvestorPassword(a)),
+            ]),
+            const SizedBox(height: 14),
+          ] else ...[
+            Row(children: [
+              action(LucideIcons.settings, 'Settings', false, () => _showChangeInvestorPassword(a)),
             ]),
             const SizedBox(height: 14),
           ],

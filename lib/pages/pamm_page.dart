@@ -265,10 +265,6 @@ class _PammPageState extends State<PammPage> {
       ],
     );
   }
-
-
-  Widget _buildInvestmentBanner() => _featureBanner(icon: LucideIcons.walletCards, title: 'My PAMM Investments', tag: 'PORTFOLIO', subtitle: 'Track your allocated capital, current value and investment performance.', actionLabel: 'Refresh View', onAction: () => setState(() {}));
-
   Widget _featureBanner({required IconData icon, required String title, required String tag, required String subtitle, required String actionLabel, required VoidCallback onAction}) {
     return Container(
       padding: const EdgeInsets.all(1.2),
@@ -1438,105 +1434,6 @@ class _PammPageState extends State<PammPage> {
       ],
     ),
   );
-
-  Widget _tablePanel(bool compact) {
-    final title = ['Managed PAMM Pools', 'Available Investment Pools', 'My Portfolio Investments'][_tab];
-    final source = _tab == 0
-        ? _managed
-        : _tab == 1
-        ? _available
-        : <_PammPool>[];
-    final q = _query.toLowerCase();
-    final pools = source.where((p) => p.name.toLowerCase().contains(q) || p.login.contains(q)).toList();
-    final investments = _investments.where((p) => p.name.toLowerCase().contains(q) || p.login.contains(q) || p.manager.toLowerCase().contains(q)).toList();
-    return Container(
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _border),
-        boxShadow: const [BoxShadow(color: Color(0x0A0F2748), blurRadius: 9, offset: Offset(0, 3))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 15),
-            child: compact
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 5,
-                            height: 20,
-                            decoration: BoxDecoration(color: const Color(0xFF4C7BFF), borderRadius: BorderRadius.circular(5)),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800),
-                            ),
-                          ),
-                          Text(
-                            '${_tab == 0
-                                ? _managed.length
-                                : _tab == 1
-                                ? _available.length
-                                : _investments.length} records',
-                            style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      _searchField(double.infinity),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 18,
-                        decoration: BoxDecoration(color: const Color(0xFF4C7BFF), borderRadius: BorderRadius.circular(5)),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      _searchField(285),
-                    ],
-                  ),
-          ),
-          Divider(height: 1, color: _border),
-          if (_tab == 2) _investmentRows(investments, true) else _poolRows(pools, true),
-          Divider(height: 1, color: _border),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Showing ${_tab == 2 ? investments.length : pools.length} records',
-                    style: TextStyle(color: _muted, fontSize: 10, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                Text(
-                  '1 / 1',
-                  style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(width: 10),
-                Icon(LucideIcons.chevronRight, color: _muted, size: 17),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _searchField(double width) => SizedBox(
     width: width,

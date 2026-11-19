@@ -218,62 +218,324 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   void _showSupportDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
       isDismissible: true,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF101D31) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Customer Support',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(LucideIcons.x, size: 20),
-                    onPressed: () => Navigator.of(ctx).pop(),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.54),
+      builder: (_) => CustomerSupportBottomSheet(onSelectPage: onSelectPage),
+    );
+  }
+}
+
+class CustomerSupportBottomSheet extends StatelessWidget {
+  const CustomerSupportBottomSheet({super.key, this.onSelectPage});
+
+  final ValueChanged<String>? onSelectPage;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+    const blue = Color(0xFF1658C9);
+    const gold = Color(0xFFD8A82E);
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF101D31) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+                    blurRadius: 32,
+                    offset: const Offset(0, -8),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEEF4FF),
-                  child: Icon(LucideIcons.messageSquare, color: _blue, size: 20),
-                ),
-                title: const Text('Live Chat Support'),
-                subtitle: const Text('Available 24/7 • Instant response'),
-                trailing: const Icon(LucideIcons.chevronRight, size: 18),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  showAppMessage('Starting Live Chat...');
-                },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 2),
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: muted.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 12, 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: blue.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(LucideIcons.headset, color: blue, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Customer Support',
+                                style: TextStyle(
+                                  color: cs.onSurface,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Support tickets, desk & account assistance',
+                                style: TextStyle(
+                                  color: muted,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Close',
+                          icon: Icon(LucideIcons.x, color: muted, size: 19),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: border.withValues(alpha: 0.6)),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          decoration: BoxDecoration(
+                            color: blue.withValues(alpha: 0.07),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: blue.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(LucideIcons.clock, color: blue, size: 17),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Tickets are typically answered within 2–4 hours by our specialized desk during trading hours.',
+                                  style: TextStyle(
+                                    color: cs.onSurface,
+                                    fontSize: 11,
+                                    height: 1.4,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _SupportActionCard(
+                          icon: LucideIcons.ticketPlus,
+                          iconColor: gold,
+                          iconBg: gold.withValues(alpha: 0.12),
+                          title: 'Submit a Ticket',
+                          subtitle: 'Open a new inquiry for trading, deposit, or account issue',
+                          badge: 'NEW',
+                          badgeColor: gold,
+                          onTap: () async {
+                            Navigator.of(context).pop();
+                            await showModalBottomSheet<bool>(
+                              context: context,
+                              isScrollControlled: true,
+                              useSafeArea: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => const _TicketRequestSheet(),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        _SupportActionCard(
+                          icon: LucideIcons.ticket,
+                          iconColor: blue,
+                          iconBg: blue.withValues(alpha: 0.12),
+                          title: 'Support Tickets',
+                          subtitle: 'View, track, and manage all your existing tickets',
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            onSelectPage?.call('Tickets');
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        _SupportActionCard(
+                          icon: LucideIcons.mail,
+                          iconColor: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
+                          iconBg: (isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9)).withValues(alpha: 0.10),
+                          title: 'Email Support',
+                          subtitle: 'support@vtindex.com • Direct desk',
+                          trailingIcon: LucideIcons.copy,
+                          onTap: () {
+                            Clipboard.setData(const ClipboardData(text: 'support@vtindex.com'));
+                            showAppMessage('Support email copied: support@vtindex.com');
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Desk Active: Mon – Fri 24/5 Trading Hours',
+                              style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEEF4FF),
-                  child: Icon(LucideIcons.mail, color: _blue, size: 20),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SupportActionCard extends StatelessWidget {
+  const _SupportActionCard({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.title,
+    required this.subtitle,
+    this.badge,
+    this.badgeColor,
+    this.trailingIcon = LucideIcons.chevronRight,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final String subtitle;
+  final String? badge;
+  final Color? badgeColor;
+  final IconData trailingIcon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+    final muted = cs.onSurfaceVariant;
+
+    return Material(
+      color: isDark ? const Color(0xFF142238) : const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border.withValues(alpha: 0.65)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                title: const Text('Email Support'),
-                subtitle: const Text('support@vtindex.com'),
-                trailing: const Icon(LucideIcons.chevronRight, size: 18),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  showAppMessage('Support ticket created.');
-                },
+                child: Icon(icon, color: iconColor, size: 20),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (badge != null) ...[
+                          const SizedBox(width: 7),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: (badgeColor ?? iconColor).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              badge!,
+                              style: TextStyle(
+                                color: badgeColor ?? iconColor,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: TextStyle(color: muted, fontSize: 10.5, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(trailingIcon, size: 16, color: muted.withValues(alpha: 0.7)),
             ],
           ),
         ),

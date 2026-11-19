@@ -291,6 +291,117 @@ class BrokerTradeRecord {
   final double profit;
 }
 
+class _AccountCredentialsPanel extends StatelessWidget {
+  const _AccountCredentialsPanel({
+    required this.accountNumber,
+    required this.masterPassword,
+    required this.investorPassword,
+  });
+
+  final String accountNumber;
+  final String masterPassword;
+  final String investorPassword;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final border = Theme.of(context).dividerColor;
+    final muted = cs.onSurfaceVariant;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cs.primary.withValues(alpha: .08),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: cs.primary.withValues(alpha: .25)),
+        ),
+        child: Row(children: [
+          Icon(LucideIcons.sparkles, color: cs.primary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(
+            'Save these credentials now. The passwords will not be shown again after you close this sheet.',
+            style: TextStyle(color: cs.onSurface, fontSize: 11, height: 1.45, fontWeight: FontWeight.w600),
+          )),
+        ]),
+      ),
+      const SizedBox(height: 18),
+      _credentialSectionHeading('LOGIN CREDENTIALS', cs),
+      const SizedBox(height: 10),
+      _credentialRow('Account number', accountNumber, cs, border, muted),
+      const SizedBox(height: 9),
+      _credentialRow('Master password', masterPassword, cs, border, muted),
+      const SizedBox(height: 9),
+      _credentialRow('Investor password', investorPassword, cs, border, muted),
+      const SizedBox(height: 12),
+      Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          onPressed: () {
+            Clipboard.setData(ClipboardData(
+              text: 'Account number: $accountNumber\n'
+                  'Master password: $masterPassword\n'
+                  'Investor password: $investorPassword',
+            ));
+            showAppMessage('Account credentials copied to clipboard.');
+          },
+          icon: const Icon(LucideIcons.copy, size: 14),
+          label: const Text('Copy all credentials'),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _credentialRow(String label, String value, ColorScheme cs, Color border, Color muted) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(13, 11, 5, 11),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: border),
+      ),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 5),
+          SelectableText(value, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: .3)),
+        ])),
+        IconButton(
+          tooltip: 'Copy $label',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: value));
+            showAppMessage('$label copied to clipboard.');
+          },
+          icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
+        ),
+      ]),
+    );
+  }
+}
+
+Widget _credentialSectionHeading(String title, ColorScheme cs) => Row(children: [
+  Text('03', style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+  const SizedBox(width: 8),
+  Text(title, style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+]);
+
+String _generateAccountPassword() {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#%';
+  const characters = '$upper$lower$digits$symbols';
+  final random = math.Random.secure();
+  String pick(String from) => from[random.nextInt(from.length)];
+  final password = <String>[
+    pick(upper),
+    pick(lower),
+    pick(digits),
+    pick(symbols),
+    ...List.generate(12, (_) => pick(characters)),
+  ]..shuffle(random);
+  return password.join();
+}
+
 class _OpenLiveAccountSheet extends StatefulWidget {
   const _OpenLiveAccountSheet({required this.onCreated});
   final ValueChanged<BrokerAccount> onCreated;
@@ -367,7 +478,11 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
             Flexible(child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
               child: _accountCreated
-                  ? _buildCredentials(cs, border, muted)
+                  ? _AccountCredentialsPanel(
+                      accountNumber: _accountNumber!,
+                      masterPassword: _masterPassword!,
+                      investorPassword: _investorPassword!,
+                    )
                   : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 _sectionHeading('ACCOUNT PROFILE', '01'),
                 const SizedBox(height: 10),
@@ -469,80 +584,6 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
 
   Widget _fieldLabel(String value) => Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11, fontWeight: FontWeight.w700));
 
-  Widget _buildCredentials(ColorScheme cs, Color border, Color muted) {
-    final accountNumber = _accountNumber!;
-    final masterPassword = _masterPassword!;
-    final investorPassword = _investorPassword!;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: cs.primary.withValues(alpha: .08),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: cs.primary.withValues(alpha: .25)),
-        ),
-        child: Row(children: [
-          Icon(LucideIcons.sparkles, color: cs.primary, size: 20),
-          const SizedBox(width: 10),
-          Expanded(child: Text(
-            'Save these credentials now. The passwords will not be shown again after you close this sheet.',
-            style: TextStyle(color: cs.onSurface, fontSize: 11, height: 1.45, fontWeight: FontWeight.w600),
-          )),
-        ]),
-      ),
-      const SizedBox(height: 18),
-      _sectionHeading('LOGIN CREDENTIALS', '03'),
-      const SizedBox(height: 10),
-      _credentialRow('Account number', accountNumber, cs, border, muted),
-      const SizedBox(height: 9),
-      _credentialRow('Master password', masterPassword, cs, border, muted),
-      const SizedBox(height: 9),
-      _credentialRow('Investor password', investorPassword, cs, border, muted),
-      const SizedBox(height: 12),
-      Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(
-          onPressed: () {
-            Clipboard.setData(ClipboardData(
-              text: 'Account number: $accountNumber\n'
-                  'Master password: $masterPassword\n'
-                  'Investor password: $investorPassword',
-            ));
-            showAppMessage('Account credentials copied to clipboard.');
-          },
-          icon: const Icon(LucideIcons.copy, size: 14),
-          label: const Text('Copy all credentials'),
-        ),
-      ),
-    ]);
-  }
-
-  Widget _credentialRow(String label, String value, ColorScheme cs, Color border, Color muted) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(13, 11, 5, 11),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: border),
-      ),
-      child: Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 5),
-          SelectableText(value, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: .3)),
-        ])),
-        IconButton(
-          tooltip: 'Copy $label',
-          onPressed: () {
-            Clipboard.setData(ClipboardData(text: value));
-            showAppMessage('$label copied to clipboard.');
-          },
-          icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
-        ),
-      ]),
-    );
-  }
-
   InputDecoration _inputDecoration(String hint, IconData icon, ColorScheme cs, Color border, Color muted) => InputDecoration(
     prefixIcon: Icon(icon, size: 17, color: muted),
     hintText: hint,
@@ -562,8 +603,8 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
       return;
     }
     final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
-    final masterPassword = _generatePassword();
-    final investorPassword = _generatePassword();
+    final masterPassword = _generateAccountPassword();
+    final investorPassword = _generateAccountPassword();
     widget.onCreated(BrokerAccount(accountName, login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
     setState(() {
       _accountNumber = login;
@@ -580,14 +621,6 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
     ));
   }
 
-  String _generatePassword() {
-    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#%';
-    final random = math.Random.secure();
-    return List.generate(
-      16,
-      (_) => characters[random.nextInt(characters.length)],
-    ).join();
-  }
 }
 
 class BrokerAccountDetailsPage extends StatefulWidget {

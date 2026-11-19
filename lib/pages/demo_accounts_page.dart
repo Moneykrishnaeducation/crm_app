@@ -245,6 +245,11 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
   final _nameController = TextEditingController();
   final _balanceController = TextEditingController(text: '10000');
   String _leverage = '1:500';
+  String? _accountNumber;
+  String? _masterPassword;
+  String? _investorPassword;
+
+  bool get _accountCreated => _accountNumber != null;
 
   @override
   void dispose() {
@@ -296,13 +301,13 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)),
-                      child: Icon(LucideIcons.flaskConical, color: cs.primary, size: 22),
+                      child: Icon(_accountCreated ? LucideIcons.sparkles : LucideIcons.flaskConical, color: cs.primary, size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Create Demo Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                      Text(_accountCreated ? 'Demo Account Created' : 'Create Demo Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 3),
-                      Text('Configure your virtual MT5 practice account', style: TextStyle(color: muted, fontSize: 11)),
+                      Text(_accountCreated ? 'Your demo credentials are ready' : 'Configure your virtual MT5 practice account', style: TextStyle(color: muted, fontSize: 11)),
                     ])),
                     IconButton(
                       tooltip: 'Close',
@@ -314,7 +319,13 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                 Divider(height: 1, color: border),
                 Flexible(child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  child: _accountCreated
+                      ? _AccountCredentialsPanel(
+                          accountNumber: _accountNumber!,
+                          masterPassword: _masterPassword!,
+                          investorPassword: _investorPassword!,
+                        )
+                      : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     _demoSectionHeading('ACCOUNT PROFILE', '01', cs),
                     const SizedBox(height: 10),
                     _demoFieldLabel('Account name', cs),
@@ -378,21 +389,27 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                   padding: EdgeInsets.fromLTRB(18, 10, 18, 8 + MediaQuery.viewPaddingOf(context).bottom),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     SizedBox(height: 48, child: FilledButton.icon(
-                      onPressed: _createAccount,
+                      onPressed: _accountCreated ? () => Navigator.pop(context) : _createAccount,
                       style: FilledButton.styleFrom(
                         backgroundColor: _brokerGold,
                         foregroundColor: const Color(0xFF142238),
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      icon: const Icon(LucideIcons.plus, size: 18),
-                      label: const Text('CREATE DEMO ACCOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                      icon: Icon(_accountCreated ? LucideIcons.check : LucideIcons.plus, size: 18),
+                      label: Text(_accountCreated ? 'DONE' : 'CREATE DEMO ACCOUNT', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                     )),
                     const SizedBox(height: 9),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(LucideIcons.shieldCheck, color: muted, size: 12),
                       const SizedBox(width: 5),
-                      Text('Virtual practice funds only · Zero real financial risk', style: TextStyle(color: muted, fontSize: 9)),
+                      Flexible(child: Text(
+                        _accountCreated
+                            ? 'Preview credentials only · Virtual practice account · No real-money transactions'
+                            : 'Virtual practice funds only · Zero real financial risk',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: muted, fontSize: 9),
+                      )),
                     ]),
                   ]),
                 ),
@@ -450,15 +467,21 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
       currency: 'USD',
       floatingPnl: 0.0,
     );
-    Navigator.pop(context);
+    final masterPassword = _generateAccountPassword();
+    final investorPassword = _generateAccountPassword();
+    widget.onCreated(newAccount);
+    setState(() {
+      _accountNumber = login;
+      _masterPassword = masterPassword;
+      _investorPassword = investorPassword;
+    });
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Demo Account Created (#${newAccount.login})',
-      body: 'MT5 Demo account provisioned with \$${newAccount.balance} USD.',
+      title: 'Demo Account Preview Created (#${newAccount.login})',
+      body: 'MT5 demo preview account #${newAccount.login} was created with \$${newAccount.balance} virtual funds.',
       category: 'Trading',
       icon: LucideIcons.badgeCheck,
       isGold: false,
       sendToMobilePanel: true,
     ));
-    widget.onCreated(newAccount);
   }
 }

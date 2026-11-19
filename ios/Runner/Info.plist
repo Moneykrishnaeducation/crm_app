@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow CRM App to take a profile photo using your camera.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to securely sign in to your VTIndex account.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow CRM App to choose a profile photo or banner from your photo library.</string>
 	<key>LSRequiresIPhoneOS</key>

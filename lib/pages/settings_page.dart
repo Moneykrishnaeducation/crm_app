@@ -1,16 +1,131 @@
 part of '../main.dart';
 
-class BrokerSettingsPage extends StatelessWidget {
+class BrokerSettingsPage extends StatefulWidget {
   const BrokerSettingsPage({
     super.key,
     this.themeMode = ThemeMode.system,
     this.onThemeModeChanged,
     this.onSelectPage,
+    this.biometricSignIn,
   });
 
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode>? onThemeModeChanged;
   final ValueChanged<String>? onSelectPage;
+  final BiometricSignIn? biometricSignIn;
+
+  @override
+  State<BrokerSettingsPage> createState() => _BrokerSettingsPageState();
+}
+
+class _BrokerSettingsPageState extends State<BrokerSettingsPage> {
+  bool _biometricEnabled = false;
+  bool _biometricAvailable = false;
+  bool _biometricLoading = true;
+  bool _biometricSaving = false;
+  String? _biometricError;
+
+  BiometricSignIn get _biometricService =>
+      widget.biometricSignIn ?? BiometricSignIn.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadBiometricSettings());
+  }
+
+  Future<void> _loadBiometricSettings() async {
+    var enabled = false;
+    try {
+      enabled = await _biometricService.isEnabled();
+      if (!mounted) return;
+      final available = await _biometricService.isAvailable(
+        platform: Theme.of(context).platform,
+      );
+      if (!mounted) return;
+      setState(() {
+        _biometricEnabled = enabled;
+        _biometricAvailable = available;
+        _biometricLoading = false;
+        _biometricError = null;
+      });
+    } on PlatformException {
+      _setBiometricUnavailable(
+        'Could not check biometrics. Use password sign-in.',
+        enabled: enabled,
+      );
+    } on MissingPluginException {
+      _setBiometricUnavailable(
+        'Biometric sign-in is unavailable on this device.',
+        enabled: enabled,
+      );
+    }
+  }
+
+  void _setBiometricUnavailable(String message, {required bool enabled}) {
+    if (!mounted) return;
+    setState(() {
+      _biometricEnabled = enabled;
+      _biometricAvailable = false;
+      _biometricLoading = false;
+      _biometricError = message;
+    });
+  }
+
+  Future<void> _setBiometricEnabled(bool enabled) async {
+    if (_biometricSaving) return;
+    setState(() => _biometricSaving = true);
+    try {
+      if (enabled) {
+        final available = await _biometricService.isAvailable(
+          platform: Theme.of(context).platform,
+        );
+        if (!available) {
+          if (mounted) {
+            setState(() {
+              _biometricAvailable = false;
+              _biometricError = 'Set up device biometrics before enabling sign-in.';
+            });
+          }
+          showAppMessage('Set up a fingerprint or Face ID before enabling biometric sign-in.');
+          return;
+        }
+        final authenticated = await _biometricService.authenticate(
+          localizedReason: 'Verify your identity to enable biometric sign-in',
+        );
+        if (!authenticated) {
+          showAppMessage('Biometric setup was canceled.');
+          return;
+        }
+      }
+
+      await _biometricService.setEnabled(enabled);
+      if (!mounted) return;
+      setState(() {
+        _biometricEnabled = enabled;
+        _biometricAvailable = enabled || _biometricAvailable;
+        _biometricError = null;
+      });
+      showAppMessage(enabled
+          ? 'Biometric sign-in enabled.'
+          : 'Biometric sign-in disabled.');
+    } on PlatformException {
+      if (mounted) {
+        setState(() => _biometricError = 'Biometric sign-in could not be updated.');
+      }
+      showAppMessage('Could not update biometric sign-in. Please try again.');
+    } on MissingPluginException {
+      if (mounted) {
+        setState(() {
+          _biometricAvailable = false;
+          _biometricError = 'Biometric sign-in is unavailable on this device.';
+        });
+      }
+      showAppMessage('Biometric sign-in is unavailable on this device.');
+    } finally {
+      if (mounted) setState(() => _biometricSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,15 +188,45 @@ class BrokerSettingsPage extends StatelessWidget {
                             icon: LucideIcons.sun,
                             title: 'Theme Mode',
                             subtitle: 'Choose light, dark, or device default.',
-                            value: _themeModeLabel(themeMode),
-                            onTap: () => onSelectPage?.call('Theme Mode'),
+                            value: _themeModeLabel(widget.themeMode),
+                            onTap: () => widget.onSelectPage?.call('Theme Mode'),
                           ),
                           const _SettingsDivider(),
                           _SettingsTile(
                             icon: LucideIcons.shieldCheck,
                             title: 'Privacy Policy',
                             subtitle: 'Review how your information is handled.',
-                            onTap: () => onSelectPage?.call('Privacy Policy'),
+                            onTap: () => widget.onSelectPage?.call('Privacy Policy'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      _SettingsSection(
+                        title: 'SECURITY',
+                        children: [
+                          _SettingsTile(
+                            icon: LucideIcons.fingerprint,
+                            title: 'Biometric sign-in',
+                            subtitle: _biometricError ??
+                                (_biometricLoading
+                                    ? 'Checking device support...'
+                                    : _biometricAvailable
+                                        ? 'Use fingerprint or Face ID instead of your password.'
+                                        : 'Not available. Use your login ID and password.'),
+                            showChevron: false,
+                            trailing: _biometricLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Switch.adaptive(
+                                    value: _biometricEnabled,
+                                    onChanged: !_biometricSaving &&
+                                            (_biometricAvailable || _biometricEnabled)
+                                        ? _setBiometricEnabled
+                                        : null,
+                                  ),
                           ),
                         ],
                       ),
@@ -132,7 +277,7 @@ class BrokerSettingsPage extends StatelessWidget {
                           builder: (sheetContext) => LogoutBottomSheet(
                             onConfirm: () {
                               Navigator.of(sheetContext).pop();
-                              onSelectPage?.call('Logout');
+                                widget.onSelectPage?.call('Logout');
                             },
                           ),
                         ),
@@ -205,6 +350,7 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.value,
+    this.trailing,
     this.onTap,
     this.showChevron = true,
   });
@@ -213,6 +359,7 @@ class _SettingsTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? value;
+  final Widget? trailing;
   final VoidCallback? onTap;
   final bool showChevron;
 
@@ -269,33 +416,35 @@ class _SettingsTile extends StatelessWidget {
               const SizedBox(width: 8),
               SizedBox(
                 width: 96,
-                child: Row(
-                  children: [
-                    if (value != null) ...[
-                      Expanded(
-                        child: Text(
-                          value!,
-                          textAlign: TextAlign.end,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: onTap == null ? colors.onSurfaceVariant : colors.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                child: trailing != null
+                    ? Align(alignment: Alignment.centerRight, child: trailing)
+                    : Row(
+                        children: [
+                          if (value != null) ...[
+                            Expanded(
+                              child: Text(
+                                value!,
+                                textAlign: TextAlign.end,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: onTap == null ? colors.onSurfaceVariant : colors.primary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            if (showChevron) const SizedBox(width: 7),
+                          ] else
+                            const Spacer(),
+                          if (showChevron)
+                            Icon(
+                              LucideIcons.chevronRight,
+                              size: 16,
+                              color: colors.onSurfaceVariant.withValues(alpha: .7),
+                            ),
+                        ],
                       ),
-                      if (showChevron) const SizedBox(width: 7),
-                    ] else
-                      const Spacer(),
-                    if (showChevron)
-                      Icon(
-                        LucideIcons.chevronRight,
-                        size: 16,
-                        color: colors.onSurfaceVariant.withValues(alpha: .7),
-                      ),
-                  ],
-                ),
               ),
             ],
           ),

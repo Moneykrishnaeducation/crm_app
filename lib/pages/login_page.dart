@@ -4,10 +4,16 @@ const _loginGold = Color(0xFFFFD45C);
 const _loginBlue = Color(0xFF087BFF);
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, this.onLogin, this.initialSignUp = false});
+  const LoginPage({
+    super.key,
+    this.onLogin,
+    this.initialSignUp = false,
+    this.biometricSignIn,
+  });
 
   final VoidCallback? onLogin;
   final bool initialSignUp;
+  final BiometricSignIn? biometricSignIn;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -25,6 +31,80 @@ class _LoginPageState extends State<LoginPage> {
   bool _passwordVisible = false;
   bool _rememberMe = true;
   bool _acceptedTerms = true;
+  bool _biometricEnabled = false;
+  bool _biometricAvailable = false;
+  bool _biometricBusy = false;
+  bool _biometricAttempted = false;
+
+  BiometricSignIn get _biometricService =>
+      widget.biometricSignIn ?? BiometricSignIn.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadBiometricSignIn());
+  }
+
+  Future<void> _loadBiometricSignIn() async {
+    var enabled = false;
+    try {
+      enabled = await _biometricService.isEnabled();
+      if (!mounted) return;
+      final available = enabled &&
+          await _biometricService.isAvailable(
+            platform: Theme.of(context).platform,
+          );
+      if (!mounted) return;
+      setState(() {
+        _biometricEnabled = enabled;
+        _biometricAvailable = available;
+      });
+      if (enabled && available) await _signInWithBiometrics();
+    } on PlatformException {
+      if (mounted) {
+        setState(() {
+          _biometricEnabled = enabled;
+          _biometricAvailable = false;
+        });
+      }
+    } on MissingPluginException {
+      if (mounted) {
+        setState(() {
+          _biometricEnabled = enabled;
+          _biometricAvailable = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _signInWithBiometrics() async {
+    if (!_biometricEnabled || !_biometricAvailable || _biometricBusy) return;
+    setState(() => _biometricBusy = true);
+    try {
+      final authenticated = await _biometricService.authenticate(
+        localizedReason: 'Sign in to your VTIndex account',
+      );
+      if (!mounted) return;
+      if (authenticated) {
+        _submit();
+      } else {
+        setState(() => _biometricAttempted = true);
+        showAppMessage('Biometric sign-in was canceled. Use your login ID and password instead.');
+      }
+    } on PlatformException {
+      if (mounted) {
+        setState(() => _biometricAttempted = true);
+        showAppMessage('Biometric sign-in failed. Use your login ID and password instead.');
+      }
+    } on MissingPluginException {
+      if (mounted) {
+        setState(() => _biometricAttempted = true);
+        showAppMessage('Biometric sign-in is unavailable. Use your login ID and password instead.');
+      }
+    } finally {
+      if (mounted) setState(() => _biometricBusy = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -237,6 +317,43 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
+            if (_biometricEnabled) ...[
+              SizedBox(height: compact ? 10 : 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_biometricBusy)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    const Icon(
+                      LucideIcons.fingerprint,
+                      size: 18,
+                      color: Color(0xFFE0E9FF),
+                    ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      _biometricBusy
+                          ? 'Waiting for biometric verification...'
+                          : !_biometricAvailable
+                              ? 'Biometric sign-in unavailable. Use your login ID and password.'
+                              : _biometricAttempted
+                                  ? 'Biometric sign-in was not completed. Use your login ID and password.'
+                                  : 'Biometric sign-in starts automatically.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFFE0E9FF),
+                        fontSize: compact ? 11 : 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             SizedBox(height: compact ? 16 : 26),
             _buildSocialDivider(compact),
             SizedBox(height: compact ? 16 : 26),

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crm_app/main.dart';
 
 void main() {
   testWidgets('settings groups options and keeps their navigation working', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
+
     final selectedPages = <String>[];
     await tester.pumpWidget(
       MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.linux),
         home: Scaffold(
           body: BrokerSettingsPage(
             themeMode: ThemeMode.dark,
@@ -22,7 +26,9 @@ void main() {
 
     expect(find.text('Personalize your experience'), findsOneWidget);
     expect(find.text('PREFERENCES'), findsOneWidget);
+    expect(find.text('SECURITY'), findsOneWidget);
     expect(find.text('ABOUT'), findsOneWidget);
+    expect(find.text('Biometric sign-in'), findsOneWidget);
     expect(find.text('Dark Mode'), findsOneWidget);
     expect(find.text('Version'), findsOneWidget);
     expect(find.text('Sub-version'), findsOneWidget);

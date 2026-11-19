@@ -593,7 +593,7 @@ class _AppShellState extends State<AppShell> {
             onThemeModeChanged: _changeThemeMode,
           ),
         'Tickets' => const BrokerTicketsPage(),
-        'Privacy Policy' => BrokerPrivacyPolicyPage(onSelectPage: _selectPage),
+        'Privacy Policy' => const BrokerPrivacyPolicyPage(),
         'MAM' || 'MAM Account' => MamPage(
             initialTab: 0,
             onBack: () => setState(() => _selectedPage = 'More'),

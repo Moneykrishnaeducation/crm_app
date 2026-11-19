@@ -71,6 +71,7 @@ flutter:
   assets:
     - assets/icons/google_logo.svg
     - assets/images/vtindex_logo.png
+    - assets/images/vtindex_logo_img.png
     - assets/images/login_light_ribbons.png
     - assets/splash/Logo_animation.mp4
 

@@ -137,7 +137,6 @@ class _ReferenceAccountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     const gold = Color(0xFFFFC533);
-    const blue = Color(0xFF39B5FF);
     const green = Color(0xFF08D879);
     const red = Color(0xFFFF6268);
     final live = account.type == 'Live MT5';
@@ -166,7 +165,7 @@ class _ReferenceAccountCard extends StatelessWidget {
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Container(width: 46, height: 46, decoration: BoxDecoration(color: const Color(0xFF163D70), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 23)),
+                const _AccountLogoBadge(size: 46),
                 const SizedBox(width: 11),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
@@ -192,6 +191,37 @@ class _ReferenceAccountCard extends StatelessWidget {
                 Expanded(child: _ReferenceMetric(label: 'P/L', value: account.floatingPnl == null ? '—' : (pnl > 0 ? '+' : pnl < 0 ? '-' : '') + r'$' + pnl.abs().toStringAsFixed(2), color: pnlColor, muted: muted)),
               ]),
             ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountLogoBadge extends StatelessWidget {
+  const _AccountLogoBadge({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF163D70),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Image.network(
+        'https://image.vtindex.com/Logo-img.png',
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Image.asset(
+          'assets/images/vtindex_logo_img.png',
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            LucideIcons.chartNoAxesColumnIncreasing,
+            color: Color(0xFF39B5FF),
           ),
         ),
       ),
@@ -1393,7 +1423,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: border)),
             child: Column(children: [
               Padding(padding: const EdgeInsets.fromLTRB(12, 11, 12, 10), child: Row(children: [
-                Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFF163D70), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 25)),
+                const _AccountLogoBadge(size: 48),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [

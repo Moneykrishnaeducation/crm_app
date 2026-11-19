@@ -291,6 +291,8 @@ class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
 }
 
 class _AppShellState extends State<AppShell> {
+  ThemeMode? _currentThemeMode;
+  ThemeMode get _effectiveThemeMode => _currentThemeMode ?? widget.themeMode;
   String _selectedPage = 'Dashboard';
   BrokerAccount? _selectedAccount;
   String _accountDetailsReturnPage = 'Trading Accounts';
@@ -336,6 +338,27 @@ class _AppShellState extends State<AppShell> {
       ],
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentThemeMode = widget.themeMode;
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.themeMode != widget.themeMode) {
+      _currentThemeMode = widget.themeMode;
+    }
+  }
+
+  void _changeThemeMode(ThemeMode mode) {
+    if (_effectiveThemeMode != mode) {
+      setState(() => _currentThemeMode = mode);
+    }
+    widget.onThemeModeChanged?.call(mode);
+  }
 
   void _addAccount(BrokerAccount account) =>
       setState(() => _accounts.insert(0, account));
@@ -419,7 +442,7 @@ class _AppShellState extends State<AppShell> {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(
           builder: (_) => _AppEntry(
-            themeMode: widget.themeMode,
+            themeMode: _effectiveThemeMode,
             onThemeModeChanged: widget.onThemeModeChanged,
           ),
         ),
@@ -561,9 +584,13 @@ class _AppShellState extends State<AppShell> {
           ),
         'Platform' => const BrokerDownloadCenterPage(),
         'Settings' => BrokerSettingsPage(
-            themeMode: widget.themeMode,
-            onThemeModeChanged: widget.onThemeModeChanged,
+            themeMode: _effectiveThemeMode,
+            onThemeModeChanged: _changeThemeMode,
             onSelectPage: _selectPage,
+          ),
+        'Theme Mode' => BrokerThemeModePage(
+            themeMode: _effectiveThemeMode,
+            onThemeModeChanged: _changeThemeMode,
           ),
         'Tickets' => const BrokerTicketsPage(),
         'Privacy Policy' => BrokerPrivacyPolicyPage(onSelectPage: _selectPage),
@@ -620,16 +647,11 @@ class _AppShellState extends State<AppShell> {
       ignoring: !active,
       child: ExcludeSemantics(
         excluding: !active,
-        child: AnimatedSlide(
-          offset: active ? Offset.zero : const Offset(0.035, 0),
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-          child: AnimatedOpacity(
-            opacity: active ? 1 : 0,
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOut,
-            child: child,
-          ),
+        child: AnimatedOpacity(
+          opacity: active ? 1 : 0,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          child: child,
         ),
       ),
     );
@@ -654,6 +676,7 @@ class _AppShellState extends State<AppShell> {
           'Social Trading' ||
           'PAMM Account' ||
           'Tickets' => () => setState(() => _selectedPage = 'More'),
+          'Theme Mode' => () => setState(() => _selectedPage = 'Settings'),
           'Privacy Policy' => () => setState(() => _selectedPage = 'Settings'),
           'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
           'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
@@ -727,17 +750,7 @@ class _AppShellState extends State<AppShell> {
                               switchInCurve: Curves.easeOutCubic,
                               switchOutCurve: Curves.easeInCubic,
                               transitionBuilder: (child, animation) {
-                                final slide = Tween<Offset>(
-                                  begin: const Offset(0.025, 0),
-                                  end: Offset.zero,
-                                ).animate(animation);
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: SlideTransition(
-                                    position: slide,
-                                    child: child,
-                                  ),
-                                );
+                                return FadeTransition(opacity: animation, child: child);
                               },
                               child: _buildSecondaryPage(_selectedPage),
                             ),
@@ -748,17 +761,19 @@ class _AppShellState extends State<AppShell> {
                 ),
               ),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: RepaintBoundary(
-                child: BrokerBottomNavigation(
-                  selectedPage: _selectedPage,
-                  onSelect: _selectPage,
+            if (!const {'Settings', 'Theme Mode', 'Privacy Policy'}
+                .contains(_selectedPage))
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: RepaintBoundary(
+                  child: BrokerBottomNavigation(
+                    selectedPage: _selectedPage,
+                    onSelect: _selectPage,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

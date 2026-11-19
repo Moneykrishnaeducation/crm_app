@@ -15,54 +15,144 @@ class BrokerSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return ColoredBox(
-      color: theme.colorScheme.surface,
+      color: colors.surface,
       child: Column(
         children: [
           Expanded(
-            child: Column(
-              children: [
-                _SettingsRow(
-                  title: 'Theme Mode',
-                  value: _themeModeLabel(themeMode),
-                  onTap: () => onSelectPage?.call('Theme Mode'),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(2, 0, 2, 22),
+                        child: Row(children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: colors.primary.withValues(alpha: .10),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Icon(LucideIcons.settings2, color: colors.primary, size: 23),
+                          ),
+                          const SizedBox(width: 13),
+                          Expanded(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Personalize your experience',
+                                style: TextStyle(
+                                  color: colors.onSurface,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Manage appearance, privacy, and app details.',
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          )),
+                        ]),
+                      ),
+                      _SettingsSection(
+                        title: 'PREFERENCES',
+                        children: [
+                          _SettingsTile(
+                            icon: LucideIcons.sun,
+                            title: 'Theme Mode',
+                            subtitle: 'Choose light, dark, or device default.',
+                            value: _themeModeLabel(themeMode),
+                            onTap: () => onSelectPage?.call('Theme Mode'),
+                          ),
+                          const _SettingsDivider(),
+                          _SettingsTile(
+                            icon: LucideIcons.shieldCheck,
+                            title: 'Privacy Policy',
+                            subtitle: 'Review how your information is handled.',
+                            onTap: () => onSelectPage?.call('Privacy Policy'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      _SettingsSection(
+                        title: 'ABOUT',
+                        children: const [
+                          _SettingsTile(
+                            icon: LucideIcons.info,
+                            title: 'Version',
+                            value: 'V 2.20.0 (g)',
+                            showChevron: false,
+                          ),
+                          _SettingsDivider(),
+                          _SettingsTile(
+                            icon: LucideIcons.hash,
+                            title: 'Sub-version',
+                            value: '1',
+                            showChevron: false,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                _SettingsRow(
-                  title: 'Privacy Policy',
-                  onTap: () => onSelectPage?.call('Privacy Policy'),
-                ),
-                const _SettingsRow(title: 'Version', value: 'V 2.20.0 (g)'),
-                const _SettingsRow(title: 'Sub-version', value: '1', showChevron: false),
-              ],
+              ),
             ),
           ),
           SafeArea(
             top: false,
-            minimum: const EdgeInsets.fromLTRB(18, 8, 18, 14),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: () => showModalBottomSheet<void>(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  barrierColor: Colors.black54,
-                  isDismissible: true,
-                  isScrollControlled: true,
-                  builder: (sheetContext) => LogoutBottomSheet(
-                    onConfirm: () {
-                      Navigator.of(sheetContext).pop();
-                      onSelectPage?.call('Logout');
-                    },
-                  ),
-                ),
-                icon: const Icon(LucideIcons.logOut, size: 21),
-                label: const Text('Log Out'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF2454F5),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                  textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            minimum: const EdgeInsets.fromLTRB(18, 10, 18, 14),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed: () => showModalBottomSheet<void>(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          barrierColor: Colors.black54,
+                          isDismissible: true,
+                          isScrollControlled: true,
+                          builder: (sheetContext) => LogoutBottomSheet(
+                            onConfirm: () {
+                              Navigator.of(sheetContext).pop();
+                              onSelectPage?.call('Logout');
+                            },
+                          ),
+                        ),
+                        icon: const Icon(LucideIcons.logOut, size: 19),
+                        label: const Text('Log Out'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.error,
+                          foregroundColor: colors.onError,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      'You can sign back in at any time.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -73,15 +163,55 @@ class BrokerSettingsPage extends StatelessWidget {
   }
 }
 
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({required this.title, required this.children});
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 3, bottom: 9),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: colors.onSurfaceVariant,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.1,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .65)),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
     required this.title,
+    this.subtitle,
     this.value,
     this.onTap,
     this.showChevron = true,
   });
 
+  final IconData icon;
   final String title;
+  final String? subtitle;
   final String? value;
   final VoidCallback? onTap;
   final bool showChevron;
@@ -89,31 +219,103 @@ class _SettingsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Material(
       color: Colors.transparent,
+      borderRadius: BorderRadius.circular(17),
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          height: 54,
-          margin: const EdgeInsets.symmetric(horizontal: 18),
-          padding: const EdgeInsets.symmetric(horizontal: 0),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: theme.dividerColor.withValues(alpha: .55))),
-          ),
+        borderRadius: BorderRadius.circular(17),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           child: Row(
             children: [
-              Expanded(
-                child: Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colors.primary.withValues(alpha: .09),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 19, color: colors.primary),
               ),
-              if (value != null)
-                Text(value!, style: TextStyle(color: title == 'Theme Mode' ? const Color(0xFF2454F5) : theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-              if (showChevron) ...[
-                const SizedBox(width: 8),
-                Icon(LucideIcons.chevronRight, size: 17, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: .7)),
-              ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: colors.onSurface,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          color: colors.onSurfaceVariant,
+                          fontSize: 10,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 96,
+                child: Row(
+                  children: [
+                    if (value != null) ...[
+                      Expanded(
+                        child: Text(
+                          value!,
+                          textAlign: TextAlign.end,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: onTap == null ? colors.onSurfaceVariant : colors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (showChevron) const SizedBox(width: 7),
+                    ] else
+                      const Spacer(),
+                    if (showChevron)
+                      Icon(
+                        LucideIcons.chevronRight,
+                        size: 16,
+                        color: colors.onSurfaceVariant.withValues(alpha: .7),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SettingsDivider extends StatelessWidget {
+  const _SettingsDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 66),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: Theme.of(context).dividerColor.withValues(alpha: .55),
       ),
     );
   }

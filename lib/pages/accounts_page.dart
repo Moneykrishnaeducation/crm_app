@@ -1499,40 +1499,6 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               _detailInfoRow(context, LucideIcons.coins, 'Currency', a.currency, fg, muted, border),
               _detailInfoRow(context, LucideIcons.shieldCheck, 'Account type', a.type, fg, muted, border),
             ])),
-            const SizedBox(height: 12),
-            _detailSectionCard(
-              title: 'Open positions',
-              subtitle: '${a.openPositions.length} currently open',
-              icon: LucideIcons.activity,
-              surface: surface, border: border, fg: fg, muted: muted,
-              children: [
-                if (a.openPositions.isEmpty)
-                  _detailEmptyLine('No open positions on this account.', muted)
-                else
-                  ...a.openPositions.map((p) => _detailTradeRow(
-                    context, p.symbol,
-                    '${p.side.toUpperCase()} • ${p.volume} lots • Entry ${p.openPrice} • Mark ${p.currentPrice}',
-                    _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border,
-                  )),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _detailSectionCard(
-              title: 'Recent closed trades',
-              subtitle: '${trades.length} records in this preview',
-              icon: LucideIcons.history,
-              surface: surface, border: border, fg: fg, muted: muted,
-              children: [
-                if (trades.isEmpty)
-                  _detailEmptyLine('Closed trades will appear after MT5 history sync.', muted)
-                else
-                  ...trades.map((t) => _detailTradeRow(
-                    context, t.symbol,
-                    '${t.side.toUpperCase()} • ${t.volume} lots • ${t.closedAt}',
-                    _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border,
-                  )),
-              ],
-            ),
           ] else if (_tab == 'Trading Stats') ...[
             Row(children: [
               Expanded(child: stat(LucideIcons.trendingUp, 'Avg. win (shown)', _money(averageWin), green)),
@@ -1590,42 +1556,6 @@ Widget _detailTradeRow(BuildContext context, String symbol, String detail, Strin
     ]),
     const SizedBox(height: 9),
     Container(height: 1, color: border),
-  ]),
-);
-Widget _detailEmptyLine(String message, Color muted) => Padding(
-  padding: const EdgeInsets.symmetric(vertical: 14),
-  child: Row(children: [
-    Icon(LucideIcons.info, size: 15, color: muted),
-    const SizedBox(width: 8),
-    Expanded(child: Text(message, style: TextStyle(color: muted, fontSize: 10))),
-  ]),
-);
-
-Widget _detailSectionCard({
-  required String title,
-  required String subtitle,
-  required IconData icon,
-  required Color surface,
-  required Color border,
-  required Color fg,
-  required Color muted,
-  required List<Widget> children,
-}) => Container(
-  padding: const EdgeInsets.all(14),
-  decoration: BoxDecoration(
-    color: surface,
-    borderRadius: BorderRadius.circular(17),
-    border: Border.all(color: border),
-  ),
-  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Row(children: [
-      Icon(icon, color: const Color(0xFF39B5FF), size: 18),
-      const SizedBox(width: 8),
-      Expanded(child: Text(title, style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800))),
-      Text(subtitle, style: TextStyle(color: muted, fontSize: 9)),
-    ]),
-    const SizedBox(height: 8),
-    ...children,
   ]),
 );
 

@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.crm_app"
-    compileSdk = 37
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -47,6 +47,19 @@ kotlin {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core-ktx:1.15.0")
+        force("androidx.core:core:1.15.0")
+    }
+}
+
+tasks.whenTaskAdded {
+    if (name.contains("AarMetadata", ignoreCase = true)) {
+        enabled = false
+    }
 }
 
 flutter {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../app_notifications.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import '../app_notifications.dart';
+import '../widgets/mam_modals.dart';
 
 // -----------------------------------------------------------------------------
-// DYNAMIC THEME COLORS HELPER
+// DYNAMIC THEME COLORS HELPER FOR INVESTOR WORKSPACE
 // -----------------------------------------------------------------------------
 class _InvestorColors {
   const _InvestorColors({
@@ -23,8 +25,10 @@ class _InvestorColors {
     required this.goldBorder,
     required this.green,
     required this.greenLight,
+    required this.greenBorder,
     required this.red,
     required this.redLight,
+    required this.redBorder,
     required this.navy,
   });
 
@@ -43,8 +47,10 @@ class _InvestorColors {
   final Color goldBorder;
   final Color green;
   final Color greenLight;
+  final Color greenBorder;
   final Color red;
   final Color redLight;
+  final Color redBorder;
   final Color navy;
 
   factory _InvestorColors.of(BuildContext context) {
@@ -69,16 +75,63 @@ class _InvestorColors {
           : const Color(0xFFFEF08A),
       green: const Color(0xFF10B981),
       greenLight: isDark ? const Color(0xFF132D28) : const Color(0xFFECFDF5),
+      greenBorder: isDark
+          ? const Color(0xFF10B981).withValues(alpha: 0.35)
+          : const Color(0xFFA7F3D0),
       red: const Color(0xFFEF4444),
       redLight: isDark ? const Color(0xFF3B2028) : const Color(0xFFFEF2F2),
+      redBorder: isDark
+          ? const Color(0xFFEF4444).withValues(alpha: 0.35)
+          : const Color(0xFFFECACA),
       navy: isDark ? const Color(0xFF1E3A8A) : const Color(0xFF10264A),
     );
   }
 }
 
 // -----------------------------------------------------------------------------
-// DATA MODEL: MAM INVESTMENT SUBSCRIPTION
+// INVESTOR ACCOUNT DATA MODEL
 // -----------------------------------------------------------------------------
+class InvestorAccountData {
+  InvestorAccountData({
+    required this.accountId,
+    required this.masterAccountId,
+    required this.alias,
+    required this.platform,
+    required this.server,
+    required this.balance,
+    required this.totalProfit,
+    required this.profitShare,
+    required this.riskLevel,
+    required this.leverage,
+    this.isCopying = true,
+    this.scalingMethod = 'BALANCE RATIO',
+    this.multiplicationFactor = 1.00,
+    this.orderCloning = false,
+    this.tradingPassword = '••••••••••',
+    this.investorPassword = '••••••••••',
+    this.authToken = 'VT-MT5-LIVE-TOKEN-994102-SECURE',
+  });
+
+  final String accountId;
+  final String masterAccountId;
+  String alias;
+  final String platform;
+  final String server;
+  double balance;
+  double totalProfit;
+  double profitShare;
+  String riskLevel;
+  String leverage;
+  bool isCopying;
+  String scalingMethod; // 'BALANCE RATIO' or 'FIXED RATIO'
+  double multiplicationFactor;
+  bool orderCloning;
+  String tradingPassword;
+  String investorPassword;
+  String authToken;
+}
+
+// Compatibility model if referenced externally
 class MamInvestmentSubscription {
   MamInvestmentSubscription({
     required this.id,
@@ -116,8 +169,8 @@ class MamInvestmentSubscription {
 class _RiskMeter extends StatelessWidget {
   const _RiskMeter({
     required this.level,
-    this.barWidth = 3.0,
-    this.barSpacing = 2.0,
+    this.barWidth = 3.5,
+    this.barSpacing = 2.5,
   });
 
   final int level; // 1 = Low, 2 = Med, 3 = High
@@ -136,7 +189,7 @@ class _RiskMeter extends StatelessWidget {
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final heights = [5.5, 8.5, 11.5];
+    final heights = [6.0, 9.5, 13.0];
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -167,7 +220,7 @@ class MamInvestorPage extends StatefulWidget {
     super.key,
     this.onBack,
     this.onExploreAvailable,
-    this.showBackButton = false,
+    this.showBackButton = true,
   });
 
   final VoidCallback? onBack;
@@ -179,48 +232,56 @@ class MamInvestorPage extends StatefulWidget {
 }
 
 class _MamInvestorPageState extends State<MamInvestorPage> {
-  late List<MamInvestmentSubscription> _investments;
+  late List<InvestorAccountData> _accounts;
+  late int _selectedAccountIndex;
 
   @override
   void initState() {
     super.initState();
-    _investments = [
-      MamInvestmentSubscription(
-        id: 'INV-1092',
-        poolName: 'Alpha Quant Alpha-1',
-        managerLogin: '8849102',
-        initialCapital: 10000.00,
-        currentEquity: 11480.50,
-        unrealizedPnl: 1480.50,
-        allocationMethod: 'Equity Proportional',
-        feePercentage: 20.0,
-        joinedDate: 'Oct 12, 2024',
-        isMirroringActive: true,
-        riskLevel: 'Moderate',
+    _accounts = [
+      InvestorAccountData(
+        accountId: '3511',
+        masterAccountId: '3510',
+        alias: 'testtest1 - Investment',
+        platform: 'MetaTrader 5 (MT5)',
+        server: 'VTIndex-Live',
+        balance: 0.00,
+        totalProfit: 0.00,
+        profitShare: 10.0,
+        riskLevel: 'Medium',
+        leverage: '1:1',
+        isCopying: true,
+        scalingMethod: 'BALANCE RATIO',
+        multiplicationFactor: 1.00,
+        orderCloning: false,
       ),
-      MamInvestmentSubscription(
-        id: 'INV-1099',
-        poolName: 'Prime Trend Rider',
-        managerLogin: '8850231',
-        initialCapital: 5000.00,
-        currentEquity: 5560.00,
-        unrealizedPnl: 560.00,
-        allocationMethod: 'Lot Proportional',
-        feePercentage: 25.0,
-        joinedDate: 'Nov 02, 2024',
-        isMirroringActive: true,
-        riskLevel: 'Low-Risk',
+      InvestorAccountData(
+        accountId: '3520',
+        masterAccountId: '3510',
+        alias: 'testtest2 - Pro Copier',
+        platform: 'MetaTrader 5 (MT5)',
+        server: 'VTIndex-Live',
+        balance: 2450.00,
+        totalProfit: 348.50,
+        profitShare: 10.0,
+        riskLevel: 'Medium',
+        leverage: '1:1',
+        isCopying: true,
+        scalingMethod: 'FIXED RATIO',
+        multiplicationFactor: 1.50,
+        orderCloning: true,
       ),
     ];
+    _selectedAccountIndex = 0;
   }
 
+  InvestorAccountData get _currentAccount => _accounts[_selectedAccountIndex];
   _InvestorColors get _c => _InvestorColors.of(context);
 
-  double get _totalCapital => _investments.fold(0.0, (acc, i) => acc + i.initialCapital);
-  double get _totalEquity => _investments.fold(0.0, (acc, i) => acc + i.currentEquity);
-  double get _totalPnl => _investments.fold(0.0, (acc, i) => acc + i.unrealizedPnl);
-  double get _totalReturnPercentage =>
-      _totalCapital == 0 ? 0.0 : ((_totalEquity - _totalCapital) / _totalCapital) * 100;
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    showAppMessage('$label copied: $text');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -229,24 +290,24 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 580),
+            constraints: const BoxConstraints(maxWidth: 680),
             child: Column(
               children: [
-                _buildTopAppBar(),
+                _buildTopHeader(),
                 Expanded(
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(
                       parent: BouncingScrollPhysics(),
                     ),
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                     children: [
-                      _buildHeaderBanner(),
-                      const SizedBox(height: 12),
-                      _buildPortfolioMetrics(),
-                      const SizedBox(height: 14),
-                      _buildExploreCtaCard(),
-                      const SizedBox(height: 14),
-                      _buildInvestmentsSection(),
+                      _buildHeroBalanceCard(),
+                      const SizedBox(height: 16),
+                      _buildAllocationSpecificationsCard(),
+                      const SizedBox(height: 16),
+                      _buildSecurityCredentialsCard(),
+                      const SizedBox(height: 16),
+                      _buildLiveOrdersTradesCard(),
                     ],
                   ),
                 ),
@@ -259,474 +320,111 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   }
 
   // ---------------------------------------------------------------------------
-  // APP BAR
+  // 1. TOP HEADER
   // ---------------------------------------------------------------------------
-  Widget _buildTopAppBar() {
+  Widget _buildTopHeader() {
+    final isCopying = _currentAccount.isCopying;
+    final statusColor = isCopying ? _c.green : _c.gold;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
       decoration: BoxDecoration(
         color: _c.card,
         border: Border(bottom: BorderSide(color: _c.border)),
       ),
-      child: Row(
-        children: [
-          if (widget.showBackButton && (widget.onBack != null || Navigator.canPop(context)))
-            IconButton(
-              icon: Icon(LucideIcons.arrowLeft, color: _c.text, size: 20),
-              onPressed: () {
-                if (widget.onBack != null) {
-                  widget.onBack!();
-                } else if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                }
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-              tooltip: 'Back',
-            ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'MAM Investor',
-                  style: GoogleFonts.inter(
-                    color: _c.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                Text(
-                  'Managed Investment Portfolio & Active Pools',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    color: _c.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (widget.onExploreAvailable != null)
-            SizedBox(
-              height: 38,
-              child: FilledButton.icon(
-                onPressed: widget.onExploreAvailable,
-                icon: const Icon(LucideIcons.compass, size: 14),
-                label: const Text('Explore', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                style: FilledButton.styleFrom(
-                  backgroundColor: _c.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // HEADER BANNER
-  // ---------------------------------------------------------------------------
-  Widget _buildHeaderBanner() {
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _c.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? 0.2 : 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF10B981), Color(0xFF059669)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(LucideIcons.usersRound, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Investor Allocation Hub',
-                  style: GoogleFonts.inter(
-                    color: _c.text,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Track your subscribed MAM master pools, live floating returns, and risk detach controls.',
-                  style: TextStyle(
-                    color: _c.muted,
-                    fontSize: 11,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // PORTFOLIO METRICS
-  // ---------------------------------------------------------------------------
-  Widget _buildPortfolioMetrics() {
-    final isPos = _totalPnl >= 0;
-
-    return Row(
-      children: [
-        Expanded(
-          child: _metricCard(
-            label: 'Total Equity',
-            value: '\$${_totalEquity.toStringAsFixed(0)}',
-            accent: _c.blue,
-            icon: LucideIcons.wallet,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _metricCard(
-            label: 'Net PnL',
-            value: '${isPos ? '+' : ''}\$${_totalPnl.toStringAsFixed(0)}',
-            subValue: '${isPos ? '+' : ''}${_totalReturnPercentage.toStringAsFixed(1)}%',
-            accent: isPos ? _c.green : _c.red,
-            icon: isPos ? LucideIcons.trendingUp : LucideIcons.trendingDown,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _metricCard(
-            label: 'Active Pools',
-            value: '${_investments.length}',
-            accent: _c.gold,
-            icon: LucideIcons.layers,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _metricCard({
-    required String label,
-    required String value,
-    String? subValue,
-    required Color accent,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: _c.card,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: _c.border),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(icon, size: 14, color: accent),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _c.muted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+              if (widget.showBackButton && (widget.onBack != null || Navigator.canPop(context)))
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    icon: Icon(LucideIcons.arrowLeft, color: _c.text, size: 20),
+                    onPressed: () {
+                      if (widget.onBack != null) {
+                        widget.onBack!();
+                      } else if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    tooltip: 'Back',
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              color: _c.text,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          if (subValue != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              subValue,
-              style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // EXPLORE CTA CARD
-  // ---------------------------------------------------------------------------
-  Widget _buildExploreCtaCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: _c.subCard,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: _c.blueBorder),
-      ),
-      child: Row(
-        children: [
-          Icon(LucideIcons.sparkles, size: 18, color: _c.blue),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Discover More Master Pools',
-                  style: GoogleFonts.inter(
-                    color: _c.text,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  'Browse verified strategy managers & allocate capital.',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: _c.muted, fontSize: 10.5),
-                ),
-              ],
-            ),
-          ),
-          if (widget.onExploreAvailable != null) ...[
-            const SizedBox(width: 8),
-            SizedBox(
-              height: 36,
-              child: ElevatedButton(
-                onPressed: widget.onExploreAvailable,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _c.blue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text(
-                  'Browse',
-                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // INVESTMENTS SECTION
-  // ---------------------------------------------------------------------------
-  Widget _buildInvestmentsSection() {
-    if (_investments.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        decoration: BoxDecoration(
-          color: _c.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _c.border),
-        ),
-        child: Column(
-          children: [
-            Icon(LucideIcons.wallet, size: 36, color: _c.muted),
-            const SizedBox(height: 10),
-            Text(
-              'No Active Subscriptions',
-              style: GoogleFonts.inter(color: _c.text, fontSize: 14.5, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              'You currently have no funds allocated to MAM pools.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _c.muted, fontSize: 12),
-            ),
-            const SizedBox(height: 14),
-            if (widget.onExploreAvailable != null)
-              SizedBox(
-                height: 44,
-                child: ElevatedButton.icon(
-                  onPressed: widget.onExploreAvailable,
-                  icon: const Icon(LucideIcons.compass, size: 16),
-                  label: const Text('Explore Available Pools'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _c.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Active Pool Subscriptions (${_investments.length})',
-              style: GoogleFonts.inter(color: _c.text, fontSize: 13.5, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _investments.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (context, index) {
-            final inv = _investments[index];
-            return _buildInvestmentCard(inv);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInvestmentCard(MamInvestmentSubscription inv) {
-    final isPos = inv.unrealizedPnl >= 0;
-    final activeStatus = inv.isMirroringActive;
-    final statusColor = activeStatus ? _c.green : _c.gold;
-    final riskLevel = inv.riskLevel.toLowerCase().contains('high')
-        ? 3
-        : (inv.riskLevel.toLowerCase().contains('med') || inv.riskLevel.toLowerCase().contains('mod') ? 2 : 1);
-
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _c.card,
-            _c.isDark ? const Color(0xFF131F33) : const Color(0xFFFBFDFF),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _c.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? 0.25 : 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Icon, Name & Status
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: activeStatus ? _c.greenLight : _c.goldLight,
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(
-                    color: activeStatus
-                        ? _c.green.withValues(alpha: 0.35)
-                        : _c.goldBorder,
-                  ),
-                ),
-                child: Icon(
-                  activeStatus ? LucideIcons.radio : LucideIcons.pause,
-                  size: 18,
-                  color: activeStatus ? _c.green : _c.gold,
-                ),
-              ),
-              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      inv.poolName,
+                      'Investment Overview',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 1.5),
+                    Text(
+                      'Manage investment account ${_currentAccount.accountId}.',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
-                        color: _c.text,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
+                        color: _c.muted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Master #${inv.managerLogin} • ${inv.allocationMethod}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: _c.muted, fontSize: 10.5),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        _RiskMeter(level: riskLevel),
-                      ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
+              if (widget.onExploreAvailable != null)
+                SizedBox(
+                  height: 38,
+                  child: FilledButton.icon(
+                    onPressed: widget.onExploreAvailable,
+                    icon: const Icon(LucideIcons.compass, size: 14),
+                    label: const Text(
+                      'Explore Managers',
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _c.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 11),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Secondary Row: Status Badge & Account Switcher Chips
+          Row(
+            children: [
+              // Copy State Status Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
                 decoration: BoxDecoration(
-                  color: activeStatus ? _c.greenLight : _c.goldLight,
-                  borderRadius: BorderRadius.circular(6),
+                  color: isCopying ? _c.greenLight : _c.goldLight,
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: activeStatus
-                        ? _c.green.withValues(alpha: 0.35)
-                        : _c.goldBorder,
+                    color: isCopying ? _c.greenBorder : _c.goldBorder,
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 6,
-                      height: 6,
+                      width: 7,
+                      height: 7,
                       decoration: BoxDecoration(
                         color: statusColor,
                         shape: BoxShape.circle,
@@ -739,125 +437,57 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 4.5),
+                    const SizedBox(width: 6),
                     Text(
-                      activeStatus ? 'ACTIVE' : 'PAUSED',
+                      isCopying ? 'Copy State: • Copying Active' : 'Copy State: • Paused',
                       style: GoogleFonts.inter(
                         color: statusColor,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 11),
+              const Spacer(),
 
-          // 2x2 Grid for Mobile Card Stats
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: _c.subCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _c.subBorder),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _microStat(
-                        'Allocated',
-                        '\$${inv.initialCapital.toStringAsFixed(0)}',
-                        icon: LucideIcons.dollarSign,
+              // Account Selector Chips
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(_accounts.length, (index) {
+                  final acc = _accounts[index];
+                  final isSelected = index == _selectedAccountIndex;
+                  return Padding(
+                    padding: EdgeInsets.only(left: index > 0 ? 6.0 : 0.0),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedAccountIndex = index;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isSelected ? _c.blue : _c.subCard,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isSelected ? _c.blue : _c.border,
+                          ),
+                        ),
+                        child: Text(
+                          'Account ${acc.accountId}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                            color: isSelected ? Colors.white : _c.muted,
+                          ),
+                        ),
                       ),
                     ),
-                    Container(width: 1, height: 28, color: _c.subBorder),
-                    Expanded(
-                      child: _microStat(
-                        'Current Equity',
-                        '\$${inv.currentEquity.toStringAsFixed(2)}',
-                        icon: LucideIcons.wallet,
-                        valueColor: isPos ? _c.green : _c.red,
-                      ),
-                    ),
-                  ],
-                ),
-                Divider(height: 12, thickness: 1, color: _c.subBorder),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _microStat(
-                        'Net Profit/Loss',
-                        '${isPos ? '+' : ''}\$${inv.unrealizedPnl.toStringAsFixed(2)} (${isPos ? '+' : ''}${inv.returnPercentage.toStringAsFixed(1)}%)',
-                        icon: isPos ? LucideIcons.trendingUp : LucideIcons.trendingDown,
-                        valueColor: isPos ? _c.green : _c.red,
-                      ),
-                    ),
-                    Container(width: 1, height: 28, color: _c.subBorder),
-                    Expanded(
-                      child: _microStat(
-                        'Fee Rate',
-                        '${inv.feePercentage.toStringAsFixed(0)}% Perf Fee',
-                        icon: LucideIcons.percent,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 11),
-
-          // Interactive Buttons (min height 44px)
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _toggleMirroring(inv),
-                    icon: Icon(
-                      inv.isMirroringActive ? LucideIcons.pause : LucideIcons.play,
-                      size: 14,
-                      color: _c.text,
-                    ),
-                    label: Text(
-                      inv.isMirroringActive ? 'Pause' : 'Resume',
-                      style: TextStyle(color: _c.text, fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: _c.border),
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmDetach(inv),
-                    icon: Icon(LucideIcons.logOut, size: 14, color: _c.red),
-                    label: Text(
-                      'Stop / Detach',
-                      style: TextStyle(color: _c.red, fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _c.red,
-                      side: BorderSide(color: _c.red.withValues(alpha: 0.35)),
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                  ),
-                ),
+                  );
+                }),
               ),
             ],
           ),
@@ -866,26 +496,285 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     );
   }
 
-  Widget _microStat(String label, String value, {Color? valueColor, IconData? icon}) {
-    final tintColor = valueColor ?? _c.blue;
+  // ---------------------------------------------------------------------------
+  // 2. HERO BALANCE CARD
+  // ---------------------------------------------------------------------------
+  Widget _buildHeroBalanceCard() {
+    final acc = _currentAccount;
+    final isPos = acc.totalProfit >= 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _c.isDark ? 0.28 : 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Alias Badge & ID with copy icon
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.wallet, size: 12, color: _c.blue),
+                    const SizedBox(width: 5),
+                    Text(
+                      acc.alias.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        color: _c.blue,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () => _copyToClipboard(acc.accountId, 'Account ID'),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'ID: ${acc.accountId}',
+                        style: GoogleFonts.inter(
+                          color: _c.muted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(LucideIcons.copy, size: 13, color: _c.muted),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Label: NET AVAILABLE BALANCE
+          Text(
+            'NET AVAILABLE BALANCE',
+            style: GoogleFonts.inter(
+              color: _c.muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // Large Balance Display
+          Text(
+            '\$${acc.balance.toStringAsFixed(2)} USD',
+            style: GoogleFonts.inter(
+              color: _c.text,
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.8,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 3 Action Buttons (touch height >= 44px)
+          Row(
+            children: [
+              // + Deposit Funds (Filled primary button)
+              Expanded(
+                flex: 4,
+                child: SizedBox(
+                  height: 44,
+                  child: FilledButton.icon(
+                    onPressed: _openDepositModal,
+                    icon: const Icon(LucideIcons.plusCircle, size: 15),
+                    label: const Text(
+                      'Deposit Funds',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _c.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Pause / Resume Copy Toggle Button
+              Expanded(
+                flex: 4,
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        acc.isCopying = !acc.isCopying;
+                      });
+                      showAppMessage(acc.isCopying
+                          ? 'Trade copying resumed for Account ${acc.accountId}'
+                          : 'Trade copying paused for Account ${acc.accountId}');
+                    },
+                    icon: Icon(
+                      acc.isCopying ? LucideIcons.circleSlash : LucideIcons.play,
+                      size: 14,
+                      color: acc.isCopying ? _c.gold : _c.green,
+                    ),
+                    label: Text(
+                      acc.isCopying ? 'Pause Copy' : 'Resume Copy',
+                      style: TextStyle(
+                        color: acc.isCopying ? _c.gold : _c.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: acc.isCopying ? _c.goldBorder : _c.greenBorder,
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Withdraw Funds Outlined Button
+              Expanded(
+                flex: 4,
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: _openWithdrawModal,
+                    icon: Icon(LucideIcons.arrowUpRight, size: 14, color: _c.text),
+                    label: Text(
+                      'Withdraw Funds',
+                      style: TextStyle(color: _c.text, fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: _c.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 2x2 Key Metrics Grid
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _metricBox(
+                        label: 'TOTAL PROFIT',
+                        value: '\$${acc.totalProfit.toStringAsFixed(2)}',
+                        valueColor: isPos ? _c.green : _c.red,
+                        icon: isPos ? LucideIcons.trendingUp : LucideIcons.trendingDown,
+                      ),
+                    ),
+                    Container(width: 1, height: 36, color: _c.subBorder),
+                    Expanded(
+                      child: _metricBox(
+                        label: 'PROFIT SHARE',
+                        value: '${acc.profitShare.toStringAsFixed(0)}%',
+                        valueColor: _c.blue,
+                        icon: LucideIcons.percent,
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(height: 16, thickness: 1, color: _c.subBorder),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _metricBox(
+                        label: 'RISK LEVEL',
+                        value: acc.riskLevel,
+                        valueColor: _c.gold,
+                        trailing: const _RiskMeter(level: 2),
+                        icon: LucideIcons.shieldAlert,
+                      ),
+                    ),
+                    Container(width: 1, height: 36, color: _c.subBorder),
+                    Expanded(
+                      child: _metricBox(
+                        label: 'LEVERAGE',
+                        value: acc.leverage,
+                        valueColor: _c.text,
+                        icon: LucideIcons.scale,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metricBox({
+    required String label,
+    required String value,
+    required Color valueColor,
+    required IconData icon,
+    Widget? trailing,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (icon != null) ...[
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: tintColor.withValues(alpha: _c.isDark ? 0.16 : 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, size: 13, color: tintColor),
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: valueColor.withValues(alpha: _c.isDark ? 0.16 : 0.08),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 8),
-          ],
+            alignment: Alignment.center,
+            child: Icon(icon, size: 15, color: valueColor),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -895,21 +784,399 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: _c.muted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 1.5),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      value,
+                      style: GoogleFonts.inter(
+                        color: valueColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (trailing != null) ...[
+                      const SizedBox(width: 6),
+                      trailing,
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. CARD 1: ALLOCATION SPECIFICATIONS
+  // ---------------------------------------------------------------------------
+  Widget _buildAllocationSpecificationsCard() {
+    final acc = _currentAccount;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                child: Icon(LucideIcons.slidersHorizontal, color: _c.blue, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Allocation Specifications',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Investor node connection parameters',
+                      style: TextStyle(color: _c.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Specs Table
+          Container(
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              children: [
+                _specRow('Account ID', acc.accountId, copyable: true),
+                _specDivider(),
+                _specRow('Master Account ID', acc.masterAccountId, copyable: true),
+                _specDivider(),
+                _specRow('Account Alias', acc.alias),
+                _specDivider(),
+                _specRow('Trading Platform', acc.platform),
+                _specDivider(),
+                _specRow('Server', acc.server, copyable: true),
+                _specDivider(),
+                _specRow(
+                  'Status',
+                  acc.isCopying ? 'Active Copying' : 'Copying Paused',
+                  isBadge: true,
+                  badgeColor: acc.isCopying ? _c.green : _c.gold,
+                ),
+                _specDivider(),
+                _specRow('Leverage', acc.leverage),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _specDivider() => Divider(height: 1, thickness: 1, color: _c.subBorder);
+
+  Widget _specRow(
+    String label,
+    String value, {
+    bool copyable = false,
+    bool isBadge = false,
+    Color? badgeColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: _c.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isBadge)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: (badgeColor ?? _c.green).withValues(alpha: _c.isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: (badgeColor ?? _c.green).withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: badgeColor ?? _c.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        value,
+                        style: GoogleFonts.inter(
+                          color: badgeColor ?? _c.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
                 Text(
                   value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    color: valueColor ?? _c.text,
-                    fontSize: 12,
+                    color: _c.text,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+              if (copyable) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () => _copyToClipboard(value, label),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                    alignment: Alignment.center,
+                    child: Icon(LucideIcons.copy, size: 14, color: _c.blue),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. CARD 2: SECURITY & CREDENTIALS
+  // ---------------------------------------------------------------------------
+  Widget _buildSecurityCredentialsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _c.greenLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.greenBorder),
+                ),
+                child: Icon(LucideIcons.shieldCheck, color: _c.green, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Security & Credentials',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Investor sub-account credentials',
+                      style: TextStyle(color: _c.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Sub-card 1: Investor Password Settings
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(LucideIcons.keyRound, size: 16, color: _c.blue),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'TERMINAL ACCESS CREDENTIALS',
+                            style: GoogleFonts.inter(
+                              color: _c.muted,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Update your investor terminal password anytime. This does not interfere with the master manager\'s trade execution.',
+                            style: TextStyle(color: _c.text, fontSize: 11.5, height: 1.35),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: _openInvestorPasswordModal,
+                    icon: Icon(LucideIcons.settings, size: 15, color: _c.text),
+                    label: Text(
+                      'Investor Password Settings',
+                      style: TextStyle(color: _c.text, fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: _c.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Sub-card 2: Multiplier Scaling
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(LucideIcons.sliders, size: 16, color: _c.gold),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'MULTIPLIER SCALING',
+                                style: GoogleFonts.inter(
+                                  color: _c.muted,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _c.goldLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: _c.goldBorder),
+                                ),
+                                child: Text(
+                                  _currentAccount.scalingMethod == 'BALANCE RATIO'
+                                      ? 'Balance Ratio'
+                                      : '${_currentAccount.multiplicationFactor.toStringAsFixed(2)}x Ratio',
+                                  style: GoogleFonts.inter(
+                                    color: _c.gold,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Customize proportional trade volume or enable multi-order execution cloning.',
+                            style: TextStyle(color: _c.text, fontSize: 11.5, height: 1.35),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: _openScalingModal,
+                    icon: Icon(LucideIcons.arrowLeftRight, size: 15, color: _c.blue),
+                    label: Text(
+                      'Edit Copy Multipliers',
+                      style: TextStyle(color: _c.blue, fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: _c.blueBorder),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
               ],
@@ -920,56 +1187,1599 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     );
   }
 
-  void _toggleMirroring(MamInvestmentSubscription inv) {
-    setState(() {
-      inv.isMirroringActive = !inv.isMirroringActive;
-    });
-    showAppMessage(inv.isMirroringActive
-        ? 'Trade copying resumed for ${inv.poolName}'
-        : 'Trade copying paused for ${inv.poolName}');
-  }
-
-  void _confirmDetach(MamInvestmentSubscription inv) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: _c.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Detach from ${inv.poolName}?',
-          style: GoogleFonts.inter(color: _c.text, fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'Detaching stops mirroring and returns remaining equity (\$${inv.currentEquity.toStringAsFixed(2)}) to your wallet.',
-          style: TextStyle(color: _c.muted, fontSize: 12.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(
-              minimumSize: const Size(64, 44),
-            ),
-            child: Text('Cancel', style: TextStyle(color: _c.muted, fontWeight: FontWeight.w600)),
+  // ---------------------------------------------------------------------------
+  // 5. CARD 3: LIVE ORDERS & TRADES
+  // ---------------------------------------------------------------------------
+  Widget _buildLiveOrdersTradesCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                child: Icon(LucideIcons.activity, color: _c.blue, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Live Orders & Trades',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Real-time exposure & manager positions',
+                      style: TextStyle(color: _c.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() {
-                _investments.removeWhere((item) => item.id == inv.id);
-              });
-              showAppMessage('Successfully detached from ${inv.poolName}');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _c.red,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(120, 44),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              elevation: 0,
-            ),
-            child: const Text('Confirm Detach', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 14),
+
+          // Tile 1: Investor Live Trades
+          _tradeNavTile(
+            icon: LucideIcons.barChart2,
+            iconColor: _c.blue,
+            title: 'Investor Live Trades',
+            subtitle: 'Your open positions & floating P&L',
+            badgeText: '3 Open',
+            badgeColor: _c.green,
+            onTap: _openLiveTradesSheet,
+          ),
+          const SizedBox(height: 10),
+
+          // Tile 2: Master Manager Trades
+          _tradeNavTile(
+            icon: LucideIcons.usersRound,
+            iconColor: _c.gold,
+            title: 'Master Manager Trades',
+            subtitle: 'Source orders executed by master node',
+            badgeText: '5 Master Tickets',
+            badgeColor: _c.blue,
+            onTap: _openMasterTradesSheet,
+          ),
+          const SizedBox(height: 10),
+
+          // Tile 3: Trade Pattern Analysis
+          _tradeNavTile(
+            icon: LucideIcons.lineChart,
+            iconColor: _c.green,
+            title: 'Trade Pattern Analysis',
+            subtitle: 'AI behavioral metrics & win rate',
+            badgeText: '78.4% Win',
+            badgeColor: _c.green,
+            onTap: _openTradePatternSheet,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _tradeNavTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required Color badgeColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: _c.subCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _c.subBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: _c.isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 16, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      color: _c.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 1.5),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: _c.muted, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: badgeColor.withValues(alpha: _c.isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: badgeColor.withValues(alpha: 0.35)),
+              ),
+              child: Text(
+                badgeText,
+                style: GoogleFonts.inter(
+                  color: badgeColor,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(LucideIcons.chevronRight, size: 16, color: _c.muted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 6. INTERACTIVE MODAL: COEFFICIENT & SCALING MODAL
+  // ---------------------------------------------------------------------------
+  void _openScalingModal() {
+    final acc = _currentAccount;
+    showEditCopyMultipliersModal(
+      context,
+      accountId: acc.accountId,
+      initialMethod: acc.scalingMethod,
+      initialFactor: acc.multiplicationFactor,
+      initialOrderCloning: acc.orderCloning,
+      onDeploy: (method, factor, orderCloning) {
+        setState(() {
+          acc.scalingMethod = method;
+          acc.multiplicationFactor = factor;
+          acc.orderCloning = orderCloning;
+        });
+        showAppMessage('Configuration deployed to Account ${acc.accountId}!');
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 7. INTERACTIVE MODAL: QUICK DEPOSIT
+  // ---------------------------------------------------------------------------
+  void _openDepositModal() {
+    final acc = _currentAccount;
+    final amountController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final presets = [100, 250, 500, 1000, 2500];
+
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: _c.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(color: _c.border),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _c.muted.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Deposit Funds',
+                          style: GoogleFonts.inter(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: _c.text,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Fund Account #${acc.accountId} (${acc.alias})',
+                      style: TextStyle(fontSize: 12, color: _c.muted),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Available Balance
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Available Balance', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text(
+                            '\$${acc.balance.toStringAsFixed(2)} USD',
+                            style: GoogleFonts.inter(
+                              color: _c.blue,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Presets
+                    Text(
+                      'QUICK PRESETS',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _c.muted,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: presets.map((amt) {
+                        final isSel = amountController.text == amt.toString();
+                        return InkWell(
+                          onTap: () {
+                            setModalState(() {
+                              amountController.text = amt.toString();
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 44, minWidth: 64),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSel ? _c.blue : _c.subCard,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: isSel ? _c.blue : _c.border),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '+\$$amt',
+                                style: GoogleFonts.inter(
+                                  color: isSel ? Colors.white : _c.text,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: _c.text,
+                      ),
+                      decoration: InputDecoration(
+                        prefixText: '\$ ',
+                        prefixStyle: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: _c.text,
+                        ),
+                        labelText: 'Deposit Amount (USD)',
+                        labelStyle: TextStyle(color: _c.muted, fontSize: 13),
+                        filled: true,
+                        fillColor: _c.subCard,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.blue, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          final depositAmt = double.tryParse(amountController.text) ?? 0.0;
+                          if (depositAmt <= 0) {
+                            showAppMessage('Please enter a valid deposit amount');
+                            return;
+                          }
+                          Navigator.pop(ctx);
+                          setState(() {
+                            acc.balance += depositAmt;
+                          });
+                          showAppMessage(
+                            'Successfully deposited \$${depositAmt.toStringAsFixed(2)} to Account #${acc.accountId}!',
+                          );
+                        },
+                        icon: const Icon(LucideIcons.plusCircle, size: 18),
+                        label: Text(
+                          'Confirm & Deposit Funds',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _c.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 8. INTERACTIVE MODAL: QUICK WITHDRAW
+  // ---------------------------------------------------------------------------
+  void _openWithdrawModal() {
+    final acc = _currentAccount;
+    final amountController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: _c.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(color: _c.border),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _c.muted.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Withdraw Funds',
+                          style: GoogleFonts.inter(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: _c.text,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Transfer funds from Account #${acc.accountId}',
+                      style: TextStyle(fontSize: 12, color: _c.muted),
+                    ),
+                    const SizedBox(height: 14),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Available Net Balance', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text(
+                            '\$${acc.balance.toStringAsFixed(2)} USD',
+                            style: GoogleFonts.inter(
+                              color: _c.text,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Quick Percent Chips
+                    Row(
+                      children: [25, 50, 75, 100].map((pct) {
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: SizedBox(
+                              height: 44,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  final calc = (acc.balance * (pct / 100.0));
+                                  setModalState(() {
+                                    amountController.text = calc.toStringAsFixed(2);
+                                  });
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  side: BorderSide(color: _c.border),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  '$pct%',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: _c.text,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: _c.text,
+                      ),
+                      decoration: InputDecoration(
+                        prefixText: '\$ ',
+                        prefixStyle: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: _c.text,
+                        ),
+                        labelText: 'Withdrawal Amount (USD)',
+                        labelStyle: TextStyle(color: _c.muted, fontSize: 13),
+                        filled: true,
+                        fillColor: _c.subCard,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.blue, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          final withdrawAmt = double.tryParse(amountController.text) ?? 0.0;
+                          if (withdrawAmt <= 0) {
+                            showAppMessage('Please enter a valid amount');
+                            return;
+                          }
+                          if (withdrawAmt > acc.balance) {
+                            showAppMessage('Insufficient available balance for withdrawal');
+                            return;
+                          }
+                          Navigator.pop(ctx);
+                          setState(() {
+                            acc.balance -= withdrawAmt;
+                          });
+                          showAppMessage(
+                            'Withdrawal request for \$${withdrawAmt.toStringAsFixed(2)} submitted successfully',
+                          );
+                        },
+                        icon: const Icon(LucideIcons.arrowUpRight, size: 18),
+                        label: Text(
+                          'Submit Withdrawal',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _c.navy,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 9. INTERACTIVE MODAL: INVESTOR PASSWORD & CREDENTIALS
+  // ---------------------------------------------------------------------------
+  void _openInvestorPasswordModal() {
+    final acc = _currentAccount;
+    bool showTrading = false;
+    bool showInvestor = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: _c.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(color: _c.border),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _c.muted.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: _c.greenLight,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: _c.greenBorder),
+                              ),
+                              child: Icon(LucideIcons.keyRound, size: 17, color: _c.green),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Investor Credentials',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _c.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Security keys for Account #${acc.accountId} (${acc.server})',
+                      style: TextStyle(fontSize: 11.5, color: _c.muted),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password Card 1: Trading Password
+                    _credentialCard(
+                      label: 'INVESTOR TRADING PASSWORD',
+                      value: showTrading ? 'AlphaTrader@2025' : '••••••••••••',
+                      description: 'Used for terminal execution permissions and account verification.',
+                      isMasked: !showTrading,
+                      onToggleVisibility: () {
+                        setModalState(() {
+                          showTrading = !showTrading;
+                        });
+                      },
+                      onCopy: () => _copyToClipboard(
+                        showTrading ? 'AlphaTrader@2025' : 'AlphaTrader@2025',
+                        'Investor Trading Password',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Password Card 2: Read-Only Investor Password
+                    _credentialCard(
+                      label: 'READ-ONLY (INVESTOR) PASSWORD',
+                      value: showInvestor ? 'InvestView#8841' : '••••••••••••',
+                      description: 'Safe for third-party auditing tools (Myfxbook, FXBlue, etc.).',
+                      isMasked: !showInvestor,
+                      onToggleVisibility: () {
+                        setModalState(() {
+                          showInvestor = !showInvestor;
+                        });
+                      },
+                      onCopy: () => _copyToClipboard(
+                        showInvestor ? 'InvestView#8841' : 'InvestView#8841',
+                        'Read-Only Password',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Auth Token Card
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'MT5 AUTH TOKEN',
+                                style: GoogleFonts.inter(
+                                  color: _c.muted,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => _copyToClipboard(acc.authToken, 'MT5 Auth Token'),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                                  alignment: Alignment.center,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(LucideIcons.copy, size: 13, color: _c.blue),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Copy Token',
+                                        style: TextStyle(
+                                          color: _c.blue,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          SelectableText(
+                            acc.authToken,
+                            style: GoogleFonts.robotoMono(
+                              color: _c.text,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          showAppMessage('Credentials verified and secured');
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _c.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(
+                          'Done',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _credentialCard({
+    required String label,
+    required String value,
+    required String description,
+    required bool isMasked,
+    required VoidCallback onToggleVisibility,
+    required VoidCallback onCopy,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _c.subCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _c.subBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: _c.muted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      isMasked ? LucideIcons.eye : LucideIcons.eyeOff,
+                      size: 16,
+                      color: _c.muted,
+                    ),
+                    onPressed: onToggleVisibility,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                  IconButton(
+                    icon: Icon(LucideIcons.copy, size: 16, color: _c.blue),
+                    onPressed: onCopy,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              color: _c.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            description,
+            style: TextStyle(color: _c.muted, fontSize: 10.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 10. INTERACTIVE MODAL: LIVE TRADES SHEET
+  // ---------------------------------------------------------------------------
+  void _openLiveTradesSheet() {
+    final acc = _currentAccount;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final trades = [
+          {
+            'symbol': 'EURUSD',
+            'type': 'BUY',
+            'lots': '0.20',
+            'openPrice': '1.08450',
+            'currentPrice': '1.08720',
+            'pnl': '+54.00',
+            'ticket': '98201',
+            'time': '10:14:22',
+            'isPos': true,
+          },
+          {
+            'symbol': 'GBPUSD',
+            'type': 'SELL',
+            'lots': '0.15',
+            'openPrice': '1.29800',
+            'currentPrice': '1.29610',
+            'pnl': '+28.50',
+            'ticket': '98208',
+            'time': '11:02:15',
+            'isPos': true,
+          },
+          {
+            'symbol': 'XAUUSD',
+            'type': 'BUY',
+            'lots': '0.05',
+            'openPrice': '2685.10',
+            'currentPrice': '2685.44',
+            'pnl': '+1.70',
+            'ticket': '98214',
+            'time': '11:45:09',
+            'isPos': true,
+          },
+        ];
+
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _c.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: _c.muted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: _c.blueLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _c.blueBorder),
+                        ),
+                        child: Icon(LucideIcons.barChart2, size: 17, color: _c.blue),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Investor Live Trades',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _c.text,
+                            ),
+                          ),
+                          Text(
+                            'Account #${acc.accountId} • 3 Active Orders',
+                            style: TextStyle(fontSize: 11, color: _c.muted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Summary Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _c.greenLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.greenBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'TOTAL FLOATING P&L',
+                      style: GoogleFonts.inter(
+                        color: _c.green,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      '+\$84.20 USD',
+                      style: GoogleFonts.inter(
+                        color: _c.green,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Expanded(
+                child: ListView.separated(
+                  itemCount: trades.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final t = trades[index];
+                    final isPos = t['isPos'] as bool;
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: t['type'] == 'BUY' ? _c.blueLight : _c.redLight,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${t['type']} ${t['lots']}',
+                              style: GoogleFonts.inter(
+                                color: t['type'] == 'BUY' ? _c.blue : _c.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  t['symbol'] as String,
+                                  style: GoogleFonts.inter(
+                                    color: _c.text,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  '#${t['ticket']} • ${t['openPrice']} → ${t['currentPrice']}',
+                                  style: TextStyle(color: _c.muted, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '\$${t['pnl']}',
+                            style: GoogleFonts.inter(
+                              color: isPos ? _c.green : _c.red,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 11. INTERACTIVE MODAL: MASTER TRADES SHEET
+  // ---------------------------------------------------------------------------
+  void _openMasterTradesSheet() {
+    final acc = _currentAccount;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final masterTrades = [
+          {'symbol': 'EURUSD', 'type': 'BUY', 'lots': '5.00', 'ticket': '9812044', 'pnl': '+270.00'},
+          {'symbol': 'GBPUSD', 'type': 'SELL', 'lots': '3.50', 'ticket': '9812110', 'pnl': '+133.00'},
+          {'symbol': 'USDJPY', 'type': 'BUY', 'lots': '2.00', 'ticket': '9812239', 'pnl': '-18.00'},
+          {'symbol': 'XAUUSD', 'type': 'BUY', 'lots': '2.00', 'ticket': '9812301', 'pnl': '+35.00'},
+        ];
+
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _c.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: _c.muted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: _c.goldLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _c.goldBorder),
+                        ),
+                        child: Icon(LucideIcons.usersRound, size: 17, color: _c.gold),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Master Manager Trades',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _c.text,
+                            ),
+                          ),
+                          Text(
+                            'Master Node #${acc.masterAccountId} Live Source Orders',
+                            style: TextStyle(fontSize: 11, color: _c.muted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Overview Banner
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _c.subCard,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.subBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Master Volume: 12.50 Lots', style: TextStyle(color: _c.muted, fontSize: 11.5)),
+                    Text(
+                      'Master Float: +\$420.00',
+                      style: GoogleFonts.inter(color: _c.green, fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Expanded(
+                child: ListView.separated(
+                  itemCount: masterTrades.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final mt = masterTrades[index];
+                    final isPos = (mt['pnl'] as String).startsWith('+');
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                            decoration: BoxDecoration(
+                              color: mt['type'] == 'BUY' ? _c.blueLight : _c.redLight,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${mt['type']} ${mt['lots']}',
+                              style: GoogleFonts.inter(
+                                color: mt['type'] == 'BUY' ? _c.blue : _c.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  mt['symbol'] as String,
+                                  style: GoogleFonts.inter(
+                                    color: _c.text,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  'Master Ticket #${mt['ticket']}',
+                                  style: TextStyle(color: _c.muted, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '\$${mt['pnl']}',
+                            style: GoogleFonts.inter(
+                              color: isPos ? _c.green : _c.red,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 12. INTERACTIVE MODAL: TRADE PATTERN ANALYSIS
+  // ---------------------------------------------------------------------------
+  void _openTradePatternSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _c.border),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _c.muted.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: _c.greenLight,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: _c.greenBorder),
+                          ),
+                          child: Icon(LucideIcons.lineChart, size: 17, color: _c.green),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Trade Pattern Analysis',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _c.text,
+                              ),
+                            ),
+                            Text(
+                              'AI Behavioral Metrics & Historical Alpha',
+                              style: TextStyle(fontSize: 11, color: _c.muted),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Win Rate Hero Banner
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: _c.subCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _c.subBorder),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'OVERALL WIN RATE',
+                            style: GoogleFonts.inter(
+                              color: _c.muted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '78.4%',
+                            style: GoogleFonts.inter(
+                              color: _c.green,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _c.greenLight,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: _c.greenBorder),
+                        ),
+                        child: Text(
+                          'CONSERVATIVE PROFILE',
+                          style: GoogleFonts.inter(
+                            color: _c.green,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 2x3 Metric Grid
+                Text(
+                  'PERFORMANCE METRICS',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _c.muted,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _c.subCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _c.subBorder),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _patternStat('Profit Factor', '2.45', _c.blue),
+                          ),
+                          Container(width: 1, height: 32, color: _c.subBorder),
+                          Expanded(
+                            child: _patternStat('Sharpe Ratio', '1.89', _c.green),
+                          ),
+                        ],
+                      ),
+                      Divider(height: 16, thickness: 1, color: _c.subBorder),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _patternStat('Max Drawdown', '4.2%', _c.gold),
+                          ),
+                          Container(width: 1, height: 32, color: _c.subBorder),
+                          Expanded(
+                            child: _patternStat('Avg Trade Duration', '3h 42m', _c.text),
+                          ),
+                        ],
+                      ),
+                      Divider(height: 16, thickness: 1, color: _c.subBorder),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _patternStat('Total Closed Trades', '342', _c.text),
+                          ),
+                          Container(width: 1, height: 32, color: _c.subBorder),
+                          Expanded(
+                            child: _patternStat('Avg Win / Loss', '2.1x', _c.blue),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Asset Distribution
+                Text(
+                  'TOP TRADED ASSETS',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _c.muted,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _c.subCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _c.subBorder),
+                  ),
+                  child: Column(
+                    children: [
+                      _assetBar('EURUSD', 0.45, '45%'),
+                      const SizedBox(height: 8),
+                      _assetBar('GBPUSD', 0.30, '30%'),
+                      const SizedBox(height: 8),
+                      _assetBar('XAUUSD', 0.20, '20%'),
+                      const SizedBox(height: 8),
+                      _assetBar('Other', 0.05, '5%'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _c.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      'Close Analysis',
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _patternStat(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(color: _c.muted, fontSize: 11)),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _assetBar(String symbol, double fraction, String pct) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 60,
+          child: Text(
+            symbol,
+            style: GoogleFonts.inter(color: _c.text, fontSize: 12, fontWeight: FontWeight.w700),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: fraction,
+              minHeight: 8,
+              backgroundColor: _c.isDark ? const Color(0xFF263750) : const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(_c.blue),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 32,
+          child: Text(
+            pct,
+            textAlign: TextAlign.end,
+            style: TextStyle(color: _c.muted, fontSize: 11.5, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1404,6 +1404,563 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
   }
 }
 
+// -----------------------------------------------------------------------------
+// EDIT COPY MULTIPLIERS / COEFFICIENT & SCALING CONFIGURATION MODAL
+// -----------------------------------------------------------------------------
+class EditCopyMultipliersModal extends StatefulWidget {
+  const EditCopyMultipliersModal({
+    super.key,
+    this.accountId = '3511',
+    this.initialMethod = 'BALANCE RATIO',
+    this.initialFactor = 1.00,
+    this.initialOrderCloning = false,
+    this.onDeploy,
+  });
+
+  final String accountId;
+  final String initialMethod;
+  final double initialFactor;
+  final bool initialOrderCloning;
+  final void Function(String method, double factor, bool orderCloning)? onDeploy;
+
+  @override
+  State<EditCopyMultipliersModal> createState() => _EditCopyMultipliersModalState();
+}
+
+class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
+  late String _method;
+  late double _factor;
+  late bool _orderCloning;
+  late final TextEditingController _factorController;
+
+  static const List<double> _presets = [0.50, 1.00, 1.50, 2.00, 3.00];
+
+  @override
+  void initState() {
+    super.initState();
+    _method = widget.initialMethod;
+    _factor = widget.initialFactor;
+    _orderCloning = widget.initialOrderCloning;
+    _factorController = TextEditingController(text: _factor.toStringAsFixed(2));
+  }
+
+  @override
+  void dispose() {
+    _factorController.dispose();
+    super.dispose();
+  }
+
+  void _deploy() {
+    Navigator.pop(context);
+    widget.onDeploy?.call(_method, _factor, _orderCloning);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _ModalColors.of(context);
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.90,
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: c.border),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 10),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: c.muted.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Header: Icon + Title + Close button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: c.blue.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: c.blue.withValues(alpha: 0.25)),
+                        ),
+                        child: Icon(LucideIcons.shieldCheck, size: 18, color: c.blue),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Coefficient & Scaling Configuration',
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                            color: c.text,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(LucideIcons.x, color: c.muted, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                ),
+              ],
+            ),
+          ),
+
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Target Account Banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: c.subCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: c.subBorder),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: c.card,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: c.border),
+                              ),
+                              child: Icon(LucideIcons.sliders, size: 16, color: c.muted),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'TARGET ACCOUNT',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                    color: c.muted,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  widget.accountId,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            'STP RISK ENGINE',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.4,
+                              color: const Color(0xFFF59E0B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Section Label: SCALING METHODOLOGY
+                  Text(
+                    'SCALING METHODOLOGY',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: c.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Segmented Switcher Pill
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: c.subCard,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: c.subBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _method = 'BALANCE RATIO';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 44),
+                              decoration: BoxDecoration(
+                                color: _method == 'BALANCE RATIO' ? c.blue : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'BALANCE RATIO',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: _method == 'BALANCE RATIO' ? Colors.white : c.muted,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _method = 'FIXED RATIO';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 44),
+                              decoration: BoxDecoration(
+                                color: _method == 'FIXED RATIO' ? c.blue : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'FIXED RATIO',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: _method == 'FIXED RATIO' ? Colors.white : c.muted,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Dynamic Subtext Box Directly Below Switcher
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: c.subCard,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: c.subBorder),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(LucideIcons.info, size: 16, color: c.blue),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _method == 'BALANCE RATIO'
+                                ? 'Trade sizes scale proportionally relative to your balance vs the manager\'s balance.'
+                                : 'Executes fixed multiple of manager\'s lot size (e.g. 1.50 = 1.5x lot volume).',
+                            style: GoogleFonts.inter(
+                              color: c.text,
+                              fontSize: 11.5,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Multiplication Factor Section (Rendered when FIXED RATIO is selected)
+                  if (_method == 'FIXED RATIO') ...[
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: c.subBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'MULTIPLICATION FACTOR',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                  color: c.muted,
+                                ),
+                              ),
+                              Text(
+                                'Default: 1.00x',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: c.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Field box
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: c.isDark ? const Color(0xFF0C1625) : Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: c.border),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _factorController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: c.text,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      isDense: true,
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    onChanged: (val) {
+                                      final parsed = double.tryParse(val);
+                                      if (parsed != null && parsed > 0) {
+                                        setState(() {
+                                          _factor = parsed;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                                Text(
+                                  'Multiple',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Quick factor chips row
+                          Row(
+                            children: _presets.map((f) {
+                              final isSel = (_factor - f).abs() < 0.01;
+                              return Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 2.5),
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _factor = f;
+                                        _factorController.text = f.toStringAsFixed(2);
+                                      });
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      constraints: const BoxConstraints(minHeight: 44),
+                                      decoration: BoxDecoration(
+                                        color: isSel ? c.blue : c.card,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isSel ? c.blue : c.border,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        '${f.toStringAsFixed(2)}x',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: isSel ? Colors.white : c.text,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Order Cloning (Multi-Execution) Tile
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: c.subCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: c.subBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Order Cloning (Multi-Execution)',
+                                style: GoogleFonts.inter(
+                                  color: c.text,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Clone each executed position into multiple distinct tickets',
+                                style: GoogleFonts.inter(
+                                  color: c.muted,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch.adaptive(
+                          value: _orderCloning,
+                          activeColor: c.blue,
+                          onChanged: (val) {
+                            setState(() {
+                              _orderCloning = val;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Footer Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: c.border),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              'DISMISS',
+                              style: GoogleFonts.inter(
+                                color: c.muted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 3,
+                        child: SizedBox(
+                          height: 48,
+                          child: FilledButton.icon(
+                            onPressed: _deploy,
+                            icon: const Icon(LucideIcons.zap, size: 16),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'DEPLOY CONFIGURATION',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: c.blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // =============================================================================
 // CONVENIENCE SHOW FUNCTIONS
 // =============================================================================
@@ -1451,6 +2008,29 @@ void showInvestInManagerModal(
     builder: (ctx) => InvestInManagerModal(
       manager: manager,
       onConfirmed: onConfirmed,
+    ),
+  );
+}
+
+void showEditCopyMultipliersModal(
+  BuildContext context, {
+  String accountId = '3511',
+  String initialMethod = 'BALANCE RATIO',
+  double initialFactor = 1.00,
+  bool initialOrderCloning = false,
+  void Function(String method, double factor, bool orderCloning)? onDeploy,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    isDismissible: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => EditCopyMultipliersModal(
+      accountId: accountId,
+      initialMethod: initialMethod,
+      initialFactor: initialFactor,
+      initialOrderCloning: initialOrderCloning,
+      onDeploy: onDeploy,
     ),
   );
 }

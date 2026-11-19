@@ -8,9 +8,24 @@ class BrokerPrivacyPolicyPage extends StatelessWidget {
   static const _regulatoryUrl = 'https://vtindex.com/regulatory-information';
   static const _supportEmail = 'support@vtindex.com';
 
-  Future<void> _openUrl(String value) async {
-    final uri = Uri.parse(value);
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _openUrl(BuildContext context, String value) async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse(value),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open this link.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open this link.')),
+        );
+      }
+    }
   }
 
   @override
@@ -33,7 +48,7 @@ class BrokerPrivacyPolicyPage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 20, 14, 40),
       children: [
         InkWell(
-          onTap: () => _openUrl(_policyUrl),
+          onTap: () => _openUrl(context, _policyUrl),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
@@ -76,7 +91,7 @@ class BrokerPrivacyPolicyPage extends StatelessWidget {
                 alignment: PlaceholderAlignment.baseline,
                 baseline: TextBaseline.alphabetic,
                 child: GestureDetector(
-                  onTap: () => _openUrl(_regulatoryUrl),
+                  onTap: () => _openUrl(context, _regulatoryUrl),
                   child: Text(
                     'Regulatory Information',
                     style: bodyStyle?.copyWith(
@@ -128,7 +143,7 @@ class BrokerPrivacyPolicyPage extends StatelessWidget {
         ),
         const SizedBox(height: 5),
         InkWell(
-          onTap: () => _openUrl('mailto:$_supportEmail'),
+          onTap: () => _openUrl(context, 'mailto:$_supportEmail'),
           child: Text.rich(
             TextSpan(
               style: bodyStyle,

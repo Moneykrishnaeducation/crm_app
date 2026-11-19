@@ -40,10 +40,13 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
 
 
 
+    final bottomNavPadding = 110.0 + MediaQuery.paddingOf(context).bottom;
+
     return Container(
       color: dark ? navy : Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: EdgeInsets.fromLTRB(14, 12, 14, bottomNavPadding),
         children: [
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1377,10 +1380,13 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
       ]),
     );
 
+    final bottomNavPadding = 116.0 + MediaQuery.paddingOf(context).bottom;
+
     return Container(
       color: bg,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: EdgeInsets.fromLTRB(14, 4, 14, bottomNavPadding),
         children: [
           const SizedBox(height: 8),
           Container(

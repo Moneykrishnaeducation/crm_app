@@ -65,10 +65,13 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
     final totalBalance = accounts.fold<double>(0, (sum, a) =>
         sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
 
+    final bottomNavPadding = 110.0 + MediaQuery.paddingOf(context).bottom;
+
     return Container(
       color: dark ? navy : Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: EdgeInsets.fromLTRB(14, 12, 14, bottomNavPadding),
         children: [
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

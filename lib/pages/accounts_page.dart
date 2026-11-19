@@ -302,6 +302,11 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   final _nameController = TextEditingController();
   String _group = 'VIP - Recommended (Default)';
   String _leverage = '1:500';
+  String? _accountNumber;
+  String? _masterPassword;
+  String? _investorPassword;
+
+  bool get _accountCreated => _accountNumber != null;
 
   @override
   void dispose() {
@@ -348,12 +353,12 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(18, 12, 12, 15),
               child: Row(children: [
-                Container(width: 44, height: 44, decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)), child: Icon(LucideIcons.walletCards, color: cs.primary, size: 22)),
+                Container(width: 44, height: 44, decoration: BoxDecoration(color: cs.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)), child: Icon(_accountCreated ? LucideIcons.sparkles : LucideIcons.walletCards, color: cs.primary, size: 22)),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Open Live Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                  Text(_accountCreated ? 'Account Created' : 'Open Live Account', style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 3),
-                  Text('Configure your new MT5 trading account', style: TextStyle(color: muted, fontSize: 11)),
+                  Text(_accountCreated ? 'Your account credentials are ready' : 'Configure your new MT5 trading account', style: TextStyle(color: muted, fontSize: 11)),
                 ])),
                 IconButton(tooltip: 'Close', onPressed: () => Navigator.pop(context), icon: Icon(LucideIcons.x, color: muted, size: 19)),
               ]),
@@ -361,7 +366,9 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
             Divider(height: 1, color: border),
             Flexible(child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              child: _accountCreated
+                  ? _buildCredentials(cs, border, muted)
+                  : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 _sectionHeading('ACCOUNT PROFILE', '01'),
                 const SizedBox(height: 10),
                 _fieldLabel('Account name'),
@@ -424,16 +431,22 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
               padding: EdgeInsets.fromLTRB(18, 13, 18, 16 + MediaQuery.viewPaddingOf(context).bottom),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 SizedBox(height: 48, child: FilledButton.icon(
-                  onPressed: _createAccount,
+                  onPressed: _accountCreated ? () => Navigator.pop(context) : _createAccount,
                   style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: const Color(0xFF142238), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  icon: const Icon(LucideIcons.plus, size: 18),
-                  label: const Text('CREATE LIVE ACCOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                  icon: Icon(_accountCreated ? LucideIcons.check : LucideIcons.plus, size: 18),
+                  label: Text(_accountCreated ? 'DONE' : 'CREATE LIVE ACCOUNT', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                 )),
                 const SizedBox(height: 9),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(LucideIcons.lockKeyhole, color: muted, size: 12),
                   const SizedBox(width: 5),
-                  Text('Account provisioning is not connected in this preview', style: TextStyle(color: muted, fontSize: 9)),
+                  Flexible(child: Text(
+                    _accountCreated
+                        ? 'Preview credentials only; not valid for MT5 until provisioning is connected'
+                        : 'Account provisioning is not connected in this preview',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: muted, fontSize: 9),
+                  )),
                 ]),
               ]),
             ),
@@ -456,6 +469,80 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
 
   Widget _fieldLabel(String value) => Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 11, fontWeight: FontWeight.w700));
 
+  Widget _buildCredentials(ColorScheme cs, Color border, Color muted) {
+    final accountNumber = _accountNumber!;
+    final masterPassword = _masterPassword!;
+    final investorPassword = _investorPassword!;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cs.primary.withValues(alpha: .08),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: cs.primary.withValues(alpha: .25)),
+        ),
+        child: Row(children: [
+          Icon(LucideIcons.sparkles, color: cs.primary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(
+            'Save these credentials now. The passwords will not be shown again after you close this sheet.',
+            style: TextStyle(color: cs.onSurface, fontSize: 11, height: 1.45, fontWeight: FontWeight.w600),
+          )),
+        ]),
+      ),
+      const SizedBox(height: 18),
+      _sectionHeading('LOGIN CREDENTIALS', '03'),
+      const SizedBox(height: 10),
+      _credentialRow('Account number', accountNumber, cs, border, muted),
+      const SizedBox(height: 9),
+      _credentialRow('Master password', masterPassword, cs, border, muted),
+      const SizedBox(height: 9),
+      _credentialRow('Investor password', investorPassword, cs, border, muted),
+      const SizedBox(height: 12),
+      Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          onPressed: () {
+            Clipboard.setData(ClipboardData(
+              text: 'Account number: $accountNumber\n'
+                  'Master password: $masterPassword\n'
+                  'Investor password: $investorPassword',
+            ));
+            showAppMessage('Account credentials copied to clipboard.');
+          },
+          icon: const Icon(LucideIcons.copy, size: 14),
+          label: const Text('Copy all credentials'),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _credentialRow(String label, String value, ColorScheme cs, Color border, Color muted) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(13, 11, 5, 11),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: border),
+      ),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 5),
+          SelectableText(value, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: .3)),
+        ])),
+        IconButton(
+          tooltip: 'Copy $label',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: value));
+            showAppMessage('$label copied to clipboard.');
+          },
+          icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
+        ),
+      ]),
+    );
+  }
+
   InputDecoration _inputDecoration(String hint, IconData icon, ColorScheme cs, Color border, Color muted) => InputDecoration(
     prefixIcon: Icon(icon, size: 17, color: muted),
     hintText: hint,
@@ -475,17 +562,31 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
       return;
     }
     final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+    final masterPassword = _generatePassword();
+    final investorPassword = _generatePassword();
     widget.onCreated(BrokerAccount(accountName, login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
+    setState(() {
+      _accountNumber = login;
+      _masterPassword = masterPassword;
+      _investorPassword = investorPassword;
+    });
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Live Account Created (#$login)',
-      body: 'Live MT5 Trading Account #$login has been provisioned.',
+      title: 'Live Account Preview Created (#$login)',
+      body: 'Live MT5 preview account #$login was added. Connect provisioning before using MT5.',
       category: 'Trading',
       icon: LucideIcons.shieldCheck,
       isGold: true,
       sendToMobilePanel: true,
     ));
-    Navigator.pop(context);
-    showAppMessage('Live account preview $login added.');
+  }
+
+  String _generatePassword() {
+    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#%';
+    final random = math.Random.secure();
+    return List.generate(
+      16,
+      (_) => characters[random.nextInt(characters.length)],
+    ).join();
   }
 }
 
@@ -606,18 +707,6 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
         children: [
-          Row(children: [
-            IconButton(onPressed: widget.onBack, icon: Icon(LucideIcons.arrowLeft, color: fg, size: 23)),
-            Expanded(child: Text('Account Details', style: TextStyle(color: fg, fontSize: 20, fontWeight: FontWeight.w800))),
-            IconButton(
-              tooltip: 'Copy account login',
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: a.login));
-                showAppMessage('Account login copied.');
-              },
-              icon: Icon(LucideIcons.share2, color: fg, size: 20),
-            ),
-          ]),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: border)),

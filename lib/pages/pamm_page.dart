@@ -44,6 +44,7 @@ class _PammPageState extends State<PammPage> {
   String _query = '';
   _PammPool? _selectedManagedPool;
   _PammPool? _selectedAvailablePool;
+  _PammPool? _connectedInvestorPool;
   final _search = TextEditingController();
 
   final List<_PammPool> _managed = [_PammPool('MohanTest', '3503', '1:500', 0, 20, managerBalance: 0, pnl: 0, server: 'VTindex-Live', status: 'Open')];
@@ -75,8 +76,10 @@ class _PammPageState extends State<PammPage> {
       child: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: _selectedManagedPool == null && _selectedAvailablePool == null ? 580 : 1280),
-            child: _selectedManagedPool != null
+            constraints: BoxConstraints(maxWidth: _selectedManagedPool == null && _selectedAvailablePool == null && _connectedInvestorPool == null ? 580 : 1280),
+            child: _connectedInvestorPool != null
+                ? _buildConnectedInvestorPortfolio(_connectedInvestorPool!)
+                : _selectedManagedPool != null
                 ? _buildManagedDetail(_selectedManagedPool!)
                 : _selectedAvailablePool != null
                 ? _buildAvailableDetail(_selectedAvailablePool!)
@@ -99,7 +102,7 @@ class _PammPageState extends State<PammPage> {
         ),
       ),
     ),
-    floatingActionButton: _selectedManagedPool == null && _selectedAvailablePool == null && _tab == 0
+    floatingActionButton: _connectedInvestorPool == null && _selectedManagedPool == null && _selectedAvailablePool == null && _tab == 0
         ? FloatingActionButton.extended(
             onPressed: _createPool,
             backgroundColor: _blue,
@@ -567,6 +570,192 @@ class _PammPageState extends State<PammPage> {
     },
   );
 
+  Widget _buildConnectedInvestorPortfolio(_PammPool pool) {
+    final investors = _investments.where((investment) => investment.login == pool.login).toList();
+    final capital = investors.fold<double>(0, (sum, investment) => sum + investment.deposit);
+    final value = investors.fold<double>(0, (sum, investment) => sum + investment.value);
+    final pnl = investors.fold<double>(0, (sum, investment) => sum + investment.pnl);
+    final fees = investors.fold<double>(0, (sum, investment) => sum + (investment.pnl > 0 ? investment.pnl * pool.share / 100 : 0));
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          child: Row(
+            children: [
+              Container(width: 4, height: 20, decoration: BoxDecoration(color: _blue, borderRadius: BorderRadius.circular(4))),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Connected investor portfolio', style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800))),
+              IconButton(
+                tooltip: 'Close portfolio',
+                onPressed: () => setState(() => _connectedInvestorPool = null),
+                icon: Icon(Icons.close, color: _muted, size: 19),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _surface,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: _border),
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: 12,
+                  spacing: 16,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(color: _blue.withValues(alpha: .1), borderRadius: BorderRadius.circular(13)),
+                          child: const Icon(Icons.people_outline, color: _blue, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('PAMM MANAGER', style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .8)),
+                            const SizedBox(height: 4),
+                            Text(pool.name, style: TextStyle(color: _text, fontSize: 15, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 3),
+                            Text('Account ID: ${pool.login} · Investor allocation overview', style: TextStyle(color: _muted, fontSize: 9)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Wrap(
+                      spacing: 7,
+                      runSpacing: 6,
+                      children: [
+                        _portfolioBadge('${investors.length} investors', _green),
+                        _portfolioBadge('${pool.share.toStringAsFixed(2)}% performance fee', _blue),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 700 ? 4 : 2;
+                  final gap = 8.0;
+                  final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+                  final items = [
+                    ('Net capital invested', _money(capital), Icons.account_balance_wallet_outlined),
+                    ('Current investor value', _money(value), Icons.credit_card_outlined),
+                    ('Net investor P/L', _money(pnl), Icons.trending_up),
+                    ('Manager fees accrued', _money(fees), Icons.verified_user_outlined),
+                  ];
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: items.map((item) => SizedBox(
+                      width: width,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
+                        child: Row(
+                          children: [
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _muted, fontSize: 9)),
+                              const SizedBox(height: 6),
+                              Text(item.$2, style: TextStyle(color: _text, fontSize: 15, fontWeight: FontWeight.w800)),
+                            ])),
+                            Icon(item.$3, size: 15, color: _blue),
+                          ],
+                        ),
+                      ),
+                    )).toList(),
+                  );
+                },
+              ),
+              const SizedBox(height: 18),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Investor accounts', style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 3),
+                    Text('Individual balances, allocation, performance and fee breakdown', style: TextStyle(color: _muted, fontSize: 9)),
+                  ])),
+                  Text('Total units: ${investors.length}', style: TextStyle(color: _muted, fontSize: 9)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (investors.isEmpty)
+                Container(
+                  constraints: const BoxConstraints(minHeight: 155),
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border, style: BorderStyle.solid)),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Container(width: 42, height: 42, decoration: BoxDecoration(color: _blue.withValues(alpha: .06), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.people_outline, color: _blue, size: 21)),
+                    const SizedBox(height: 10),
+                    Text('No connected investors yet', style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text('Investor accounts and their portfolio details will appear here once they join this pool.', textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 9)),
+                  ]),
+                )
+              else
+                ...investors.map((investment) => _connectedInvestorCard(investment, pool.share)),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: _border))),
+          child: Row(
+            children: [
+              Expanded(child: Text('Values reflect saved PAMM investment records in this preview.', style: TextStyle(color: _muted, fontSize: 9))),
+              OutlinedButton(onPressed: () => setState(() => _connectedInvestorPool = null), child: const Text('Close portfolio')),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _portfolioBadge(String label, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(color: color.withValues(alpha: .06), borderRadius: BorderRadius.circular(18), border: Border.all(color: color.withValues(alpha: .35))),
+    child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+  );
+
+  Widget _connectedInvestorCard(_PammInvestment investment, double managerShare) => Container(
+    margin: const EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
+    child: Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      spacing: 16,
+      runSpacing: 10,
+      children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(investment.name, style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 3),
+          Text('Investor account · MT5 ${investment.login}', style: TextStyle(color: _muted, fontSize: 9)),
+        ]),
+        Wrap(spacing: 22, runSpacing: 8, children: [
+          _joinPoolValue('Capital invested', _money(investment.deposit)),
+          _joinPoolValue('Current value', _money(investment.value)),
+          _joinPoolValue('Investor P/L', _money(investment.pnl)),
+          _joinPoolValue('Manager fee', _money(investment.pnl > 0 ? investment.pnl * managerShare / 100 : 0)),
+        ]),
+      ],
+    ),
+  );
+
   Widget _buildAvailableDetail(_PammPool pool) => LayoutBuilder(
     builder: (context, constraints) {
       final wide = constraints.maxWidth >= 900;
@@ -881,7 +1070,7 @@ class _PammPageState extends State<PammPage> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: () => _showPammMessage('No connected investors yet.'),
+            onPressed: () => setState(() => _connectedInvestorPool = pool),
             icon: const Icon(Icons.people_outline, size: 17),
             label: const Text('Connected investor list'),
             style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 13)),

@@ -22,6 +22,8 @@ class DashboardPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const _DashboardIntro(),
+              const SizedBox(height: 18),
               _PortfolioPanel(
                 balanceVisible: balanceVisible,
                 onToggleBalance: onToggleBalance,
@@ -59,6 +61,76 @@ class DashboardPage extends StatelessWidget {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+class _DashboardIntro extends StatelessWidget {
+  const _DashboardIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 430;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'OVERVIEW',
+                    style: TextStyle(
+                      color: _gold,
+                      fontSize: 9,
+                      letterSpacing: 1.4,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Your dashboard',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: compact ? 22 : 26,
+                      height: 1.05,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    'A clear view of your accounts, funds and activity.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _muted,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(11),
+              decoration: BoxDecoration(
+                color: _panel,
+                border: Border.all(color: _border),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                LucideIcons.layoutDashboard,
+                color: Color(0xFF8EBEFF),
+                size: 20,
+              ),
+            ),
+          ],
         );
       },
     );
@@ -207,7 +279,7 @@ class _BalanceCardContent extends StatelessWidget {
                 visible ? '\$0' : '••••',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 25,
+                  fontSize: 30,
                   fontWeight: FontWeight.w800,
                   height: 1,
                 ),
@@ -327,7 +399,7 @@ class _MetricCard extends StatelessWidget {
                   value,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 13,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
                 ),

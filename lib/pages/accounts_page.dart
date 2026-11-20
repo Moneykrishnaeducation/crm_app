@@ -1,11 +1,13 @@
 part of '../main.dart';
 
 class BrokerAccountsPage extends StatefulWidget {
-  const BrokerAccountsPage({super.key, required this.onSelectPage, required this.accounts, required this.onAccountCreated, required this.onAccountSelected});
+  const BrokerAccountsPage({super.key, required this.onSelectPage, required this.accounts, required this.onAccountCreated, required this.onAccountSelected, required this.favoriteLogins, required this.onToggleFavorite});
   final ValueChanged<String> onSelectPage;
   final List<BrokerAccount> accounts;
   final ValueChanged<BrokerAccount> onAccountCreated;
   final ValueChanged<BrokerAccount> onAccountSelected;
+  final Set<String> favoriteLogins;
+  final ValueChanged<String> onToggleFavorite;
   @override
   State<BrokerAccountsPage> createState() => _BrokerAccountsPageState();
 }
@@ -26,7 +28,8 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     const green = Color(0xFF0B9E68);
     final liveAccounts = widget.accounts.where((a) => a.type == 'Live MT5').toList();
     final query = _query.trim().toLowerCase();
-    final filtered = liveAccounts.where((a) => query.isEmpty || a.login.toLowerCase().contains(query) || a.name.toLowerCase().contains(query)).toList();
+    final filtered = liveAccounts.where((a) => query.isEmpty || a.login.toLowerCase().contains(query) || a.name.toLowerCase().contains(query)).toList()
+      ..sort((a, b) => (widget.favoriteLogins.contains(b.login) ? 1 : 0).compareTo(widget.favoriteLogins.contains(a.login) ? 1 : 0));
     final surface = theme.colorScheme.surface;
     final border = theme.dividerColor.withValues(alpha: dark ? .72 : .8);
     final fg = theme.colorScheme.onSurface;
@@ -102,7 +105,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
           if (filtered.isEmpty)
             _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() => _query = ''); })
           else
-            ...filtered.map((account) => _ReferenceAccountCard(account: account, selected: liveAccounts.isNotEmpty && account.login == liveAccounts.first.login, onTap: () => widget.onAccountSelected(account))),
+            ...filtered.map((account) => _ReferenceAccountCard(account: account, isFavorite: widget.favoriteLogins.contains(account.login), onToggleFavorite: () => widget.onToggleFavorite(account.login), onTap: () => widget.onAccountSelected(account))),
         ],
       ),
     );
@@ -110,9 +113,10 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
 }
 
 class _ReferenceAccountCard extends StatelessWidget {
-  const _ReferenceAccountCard({required this.account, required this.selected, required this.onTap});
+  const _ReferenceAccountCard({required this.account, required this.isFavorite, required this.onToggleFavorite, required this.onTap});
   final BrokerAccount account;
-  final bool selected;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
   final VoidCallback onTap;
 
   @override
@@ -127,7 +131,7 @@ class _ReferenceAccountCard extends StatelessWidget {
     final pnlColor = pnl > 0 ? green : pnl < 0 ? red : theme.colorScheme.onSurface;
     final fg = theme.colorScheme.onSurface;
     final muted = theme.colorScheme.onSurfaceVariant;
-    final border = selected ? gold.withValues(alpha: .9) : theme.dividerColor.withValues(alpha: dark ? .75 : .9);
+    final border = isFavorite ? gold.withValues(alpha: .9) : theme.dividerColor.withValues(alpha: dark ? .75 : .9);
     final equity = account.equityHistory.isNotEmpty ? account.equityHistory : <double>[1, 1.1, 1.04, 1.2, 1.13, 1.3, 1.26, 1.4];
     final sparkWidth = MediaQuery.sizeOf(context).width < 380 ? 48.0 : 70.0;
 
@@ -137,10 +141,10 @@ class _ReferenceAccountCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: border, width: selected ? 1.6 : 1),
+          border: Border.all(color: border, width: isFavorite ? 1.6 : 1),
           boxShadow: [
             BoxShadow(color: Colors.black.withValues(alpha: dark ? .10 : .035), blurRadius: 14, offset: const Offset(0, 5)),
-            if (selected) BoxShadow(color: gold.withValues(alpha: dark ? .08 : .06), blurRadius: 14),
+            if (isFavorite) BoxShadow(color: gold.withValues(alpha: dark ? .08 : .06), blurRadius: 14),
           ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -165,8 +169,15 @@ class _ReferenceAccountCard extends StatelessWidget {
               Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
             ])),
             SizedBox(width: sparkWidth, height: 35, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
-            const SizedBox(width: 5),
-            Icon(selected ? LucideIcons.star : LucideIcons.chevronRight, color: selected ? gold : muted, size: 19),
+            const SizedBox(width: 2),
+            IconButton(
+              tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+              onPressed: onToggleFavorite,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              padding: EdgeInsets.zero,
+              icon: Icon(LucideIcons.star, color: isFavorite ? gold : muted, size: 19),
+            ),
           ]),
           const SizedBox(height: 13),
           Container(height: 1, color: theme.dividerColor.withValues(alpha: .65)),
@@ -1287,10 +1298,12 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
 
 
 class BrokerAccountDetailsPage extends StatefulWidget {
-  const BrokerAccountDetailsPage({super.key, required this.account, required this.onBack, required this.onSelectPage});
+  const BrokerAccountDetailsPage({super.key, required this.account, required this.onBack, required this.onSelectPage, required this.isFavorite, required this.onToggleFavorite});
   final BrokerAccount account;
   final VoidCallback onBack;
   final ValueChanged<String> onSelectPage;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
   @override
   State<BrokerAccountDetailsPage> createState() => _BrokerAccountDetailsPageState();
 }
@@ -1484,7 +1497,14 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                   const SizedBox(height: 5),
                   Text(a.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
                 ])),
-                Icon(LucideIcons.shieldCheck, color: Colors.white.withValues(alpha: .75), size: 20),
+                IconButton(
+                  onPressed: widget.onToggleFavorite,
+                  tooltip: widget.isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(width: 42, height: 42),
+                  padding: EdgeInsets.zero,
+                  icon: Icon(LucideIcons.star, color: widget.isFavorite ? gold : Colors.white.withValues(alpha: .75), size: 23),
+                ),
               ]),
               const SizedBox(height: 18),
               Text('ACCOUNT BALANCE', style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.15)),

@@ -685,6 +685,7 @@ class _QuickActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final compact = MediaQuery.sizeOf(context).width < 360;
     return Semantics(
       button: true,
       label: label,
@@ -699,8 +700,8 @@ class _QuickActionItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
             Container(
-              width: 44,
-              height: 44,
+              width: compact ? 40 : 44,
+              height: compact ? 40 : 44,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1B2E4E) : const Color(0xFFEEF4FF),
                 shape: BoxShape.circle,
@@ -708,7 +709,7 @@ class _QuickActionItem extends StatelessWidget {
               child: Icon(
                 icon,
                 color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF),
-                size: 20,
+                size: compact ? 18 : 20,
               ),
             ),
             const SizedBox(height: 8),
@@ -718,7 +719,7 @@ class _QuickActionItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: compact ? 10 : 12,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -742,6 +743,7 @@ class _DualFeatureCards extends StatelessWidget {
     final cardBg = Theme.of(context).cardColor;
     final borderColor = isDark ? const Color(0xFF223656) : const Color(0xFFE5EBF5);
     final shadowColor = Colors.black.withValues(alpha: isDark ? 0.2 : 0.035);
+    final compact = MediaQuery.sizeOf(context).width < 360;
 
     return Row(
       children: [
@@ -751,8 +753,8 @@ class _DualFeatureCards extends StatelessWidget {
             onTap: () => _showQuickTradeDialog(context),
             borderRadius: BorderRadius.circular(18),
             child: Container(
-              height: 140,
-              padding: const EdgeInsets.all(14),
+              height: compact ? 148 : 140,
+              padding: EdgeInsets.all(compact ? 11 : 14),
               decoration: BoxDecoration(
                 color: cardBg,
                 borderRadius: BorderRadius.circular(18),
@@ -811,7 +813,7 @@ class _DualFeatureCards extends StatelessWidget {
                       Text(
                         '1.10090',
                         style: GoogleFonts.inter(
-                          fontSize: 18,
+                          fontSize: compact ? 15 : 18,
                           fontWeight: FontWeight.w800,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -832,7 +834,7 @@ class _DualFeatureCards extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: compact ? 8 : 12),
         // Refer & Earn Card
         Expanded(
           child: InkWell(
@@ -904,8 +906,9 @@ class _MarketInsightsBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final compact = MediaQuery.sizeOf(context).width < 360;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 11 : 16, vertical: 14),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
@@ -961,8 +964,8 @@ class _MarketInsightsBanner extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          const _StackedCoinsBadge(),
+          if (!compact) const SizedBox(width: 8),
+          if (!compact) const _StackedCoinsBadge(),
         ],
       ),
     );

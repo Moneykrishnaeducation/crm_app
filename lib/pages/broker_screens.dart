@@ -2633,7 +2633,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: acc.login == _selectedLogin
                           ? const Color(0xFF1658C9).withValues(alpha: 0.08)
@@ -2867,7 +2867,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   Widget _buildMetricTile(BuildContext context, String label, String value, Color valueColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1C2B42) : const Color(0xFFF4F7FC),
         borderRadius: BorderRadius.circular(14),
@@ -3051,12 +3051,12 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                           );
                         },
                         onLongPress: () => _openTradeReportModal(context),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.22),
                               width: 0.8,
@@ -3314,7 +3314,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
       itemCount: positions.length,
       itemBuilder: (context, index) {
         final pos = positions[index];
@@ -3322,18 +3322,18 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 9),
+          padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF162238) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                blurRadius: 8,
+                blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
@@ -3350,7 +3350,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                         pos.symbol,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -3400,9 +3400,9 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Divider(height: 1, color: Theme.of(context).dividerColor),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -3471,7 +3471,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 11),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -3518,25 +3518,25 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
         final isBuy = order.orderType.toLowerCase().contains('buy');
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 9),
+          padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF162238) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                blurRadius: 8,
+                blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
@@ -3553,7 +3553,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                         order.symbol,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -3587,9 +3587,9 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Divider(height: 1, color: Theme.of(context).dividerColor),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -3698,7 +3698,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
       itemCount: positions.length,
       itemBuilder: (context, index) {
         final pos = positions[index];
@@ -3706,18 +3706,18 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 9),
+          padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF162238) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                blurRadius: 8,
+                blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
@@ -3734,7 +3734,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                         pos.symbol,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -3784,9 +3784,9 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Divider(height: 1, color: Theme.of(context).dividerColor),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -3876,7 +3876,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -3961,10 +3961,10 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF162238) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
                   ),
@@ -3972,8 +3972,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: iconBg,
                         borderRadius: BorderRadius.circular(12),
@@ -3995,7 +3995,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                                 title,
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -4025,7 +4025,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                             subtitle,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              fontSize: 11,
+                              fontSize: 10.5,
                             ),
                           ),
                         ],
@@ -4048,13 +4048,21 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                            color: (tx.status.toLowerCase().contains('fail') || tx.status.toLowerCase().contains('reject')
+                                ? const Color(0xFFDC2626)
+                                : (tx.status.toLowerCase().contains('pending') || tx.status.toLowerCase().contains('process')
+                                    ? const Color(0xFFD97706)
+                                    : const Color(0xFF10B981))).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             tx.status,
-                            style: const TextStyle(
-                              color: Color(0xFF10B981),
+                            style: TextStyle(
+                              color: tx.status.toLowerCase().contains('fail') || tx.status.toLowerCase().contains('reject')
+                                  ? const Color(0xFFDC2626)
+                                  : (tx.status.toLowerCase().contains('pending') || tx.status.toLowerCase().contains('process')
+                                      ? const Color(0xFFD97706)
+                                      : const Color(0xFF10B981)),
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
                             ),
@@ -4803,7 +4811,7 @@ class _QuickActionRowState extends State<_QuickActionRow> {
                 color: isActive
                     ? (isDark ? const Color(0xFF223656) : const Color(0xFFF2F6FC))
                     : (isDark ? const Color(0xFF1A283E) : const Color(0xFFF8FAFD)),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: cardBorder,
                   width: 1,
@@ -4961,7 +4969,7 @@ class _BrokerNavItem extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 onTap();
               },
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               splashColor: _brokerGold.withValues(alpha: .16),
               highlightColor: activeColor.withValues(alpha: .08),
               child: AnimatedContainer(

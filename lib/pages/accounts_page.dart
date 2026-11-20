@@ -1448,34 +1448,6 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         padding: EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, bottomNavPadding),
         children: [
-          Row(children: [
-            Material(
-              color: surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: border)),
-              child: InkWell(onTap: widget.onBack, borderRadius: BorderRadius.circular(12),
-                child: SizedBox(width: 40, height: 40, child: Icon(LucideIcons.arrowLeft, color: fg, size: 19))),
-            ),
-            const SizedBox(width: 11),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('ACCOUNT DETAILS', style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.25)),
-              const SizedBox(height: 3),
-              Text('Trading account', style: TextStyle(color: fg, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: -.4)),
-            ])),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: (isLive ? green : blue).withValues(alpha: .12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: (isLive ? green : blue).withValues(alpha: .28)),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 6, height: 6, decoration: BoxDecoration(color: isLive ? green : blue, shape: BoxShape.circle)),
-                const SizedBox(width: 6),
-                Text(isLive ? 'LIVE' : 'DEMO', style: TextStyle(color: isLive ? green : blue, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .5)),
-              ]),
-            ),
-          ]),
-          const SizedBox(height: 15),
           Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(

@@ -199,14 +199,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                 alignment: Alignment.center,
                 children: [
                   Text('Security Center', style: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      onPressed: widget.onBack,
-                      tooltip: 'Back',
-                      icon: Icon(LucideIcons.chevronLeft, color: _textColor, size: 25),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -454,12 +446,26 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               ],
             ],
           )),
-          if (trailing.isNotEmpty)
-            Flexible(child: Text(trailing, textAlign: TextAlign.end, style: TextStyle(color: trailingColor ?? _mutedColor, fontSize: 11, fontWeight: FontWeight.w700))),
-          if (onTap != null) ...[
-            const SizedBox(width: 7),
-            Icon(LucideIcons.chevronRight, color: _brokerGold, size: 19),
-          ],
+          if (trailing.isNotEmpty || onTap != null)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (trailing.isNotEmpty)
+                  Text(
+                    trailing,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      color: trailingColor ?? _mutedColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                if (onTap != null) ...[
+                  const SizedBox(width: 7),
+                  Icon(LucideIcons.chevronRight, color: _brokerGold, size: 19),
+                ],
+              ],
+            ),
         ],
       ),
     ),

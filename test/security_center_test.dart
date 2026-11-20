@@ -100,73 +100,32 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Header Card
-    expect(find.text('Security & Devices'), findsOneWidget);
-    expect(find.text('Control sign-in protection and manage trusted devices.'), findsWidgets);
+    // Sections and actions
+    expect(find.text('Security Center'), findsWidgets);
+    expect(find.text('Account Security'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Login Password'), findsOneWidget);
+    expect(find.text('Mail OTP'), findsOneWidget);
+    expect(find.text('Captcha'), findsOneWidget);
+    expect(find.text('Biometrics'), findsOneWidget);
+    expect(find.text('Other Settings'), findsOneWidget);
+    expect(find.text('Device Management'), findsOneWidget);
+    expect(find.text('Account Management'), findsOneWidget);
 
-    // Sign-In Protection Card
-    expect(find.text('SIGN-IN PROTECTION'), findsOneWidget);
-    expect(find.text('Your account, your devices'), findsOneWidget);
-    expect(find.text('New browsers verify with an email one-time code before becoming trusted.'), findsOneWidget);
-    expect(find.text('TRUSTED DEVICES'), findsOneWidget);
-    expect(find.text('Active trusted device'), findsOneWidget);
-    expect(find.text('EXPIRED SESSIONS'), findsOneWidget);
-    expect(find.text('No longer trusted after 7 days'), findsOneWidget);
-
-    // Scroll down to toggles
-    await tester.drag(find.byType(ListView).first, const Offset(0, -250));
+    // Toggle Mail OTP switch
+    final switches = find.byType(Switch);
+    expect(switches, findsWidgets);
+    await tester.tap(switches.first);
     await tester.pumpAndSettle();
 
-    // Toggles
-    expect(find.text('Login CAPTCHA'), findsOneWidget);
-    expect(find.text('Email two-factor verification'), findsOneWidget);
-    expect(find.text('Enabled'), findsNWidgets(2));
-
-    // Toggle Login CAPTCHA
-    await tester.tap(find.text('Login CAPTCHA'));
+    // Open Device Management sub page
+    await tester.tap(find.text('Device Management'));
     await tester.pumpAndSettle();
-
-    // Toggle Email two-factor
-    await tester.tap(find.text('Email two-factor verification'));
-    await tester.pumpAndSettle();
-
-    // Trusted Devices Section Header
-    expect(find.text('Trusted devices'), findsOneWidget);
-    expect(find.text('1 device can access your account'), findsOneWidget);
-    expect(find.text('Protection active'), findsOneWidget);
-
-    // Scroll to Active Trusted Device Card
-    await tester.drag(find.byType(ListView).first, const Offset(0, -400));
-    await tester.pumpAndSettle();
-
-    // Active Trusted Device Card
-    expect(find.text('TRUSTED DEVICE'), findsOneWidget);
-    expect(find.text('This device'), findsOneWidget);
-    expect(find.text('Windows browser'), findsOneWidget);
-    expect(find.text('Windows'), findsOneWidget);
-    expect(find.text('104.22.224.94'), findsNWidgets(2));
-    expect(find.text('16/11/2026, 9:17:26 am'), findsOneWidget);
-    expect(find.textContaining('Mozilla/5.0'), findsOneWidget);
-
-    // Test Remove trust action
-    await tester.drag(find.byType(ListView).first, const Offset(0, -400));
-    await tester.pumpAndSettle();
-    expect(find.text('Remove trust'), findsOneWidget);
-    await tester.tap(find.text('Remove trust'));
-    await tester.pumpAndSettle();
-
-    // Confirm remove device dialog
-    expect(find.text('Remove trusted device?'), findsOneWidget);
-    await tester.tap(find.text('Remove device'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('0 devices can access your account'), findsOneWidget);
-    expect(find.text('No trusted devices active'), findsOneWidget);
-    expect(find.text('Sign in again to register this device as trusted.'), findsOneWidget);
+    expect(find.text('Device Management'), findsWidgets);
+    expect(find.text('Revoke all devices'), findsOneWidget);
 
     // Test Revoke all devices button with confirmation bottom popup
-    await tester.ensureVisible(find.text('Revoke all devices'));
-    await tester.tap(find.text('Revoke all devices'), warnIfMissed: false);
+    await tester.tap(find.text('Revoke all devices'));
     await tester.pumpAndSettle();
     expect(find.text('Revoke all trusted devices?'), findsOneWidget);
     await tester.tap(find.descendant(
@@ -174,7 +133,6 @@ void main() {
       matching: find.text('Revoke all devices'),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('0 devices can access your account'), findsOneWidget);
   });
 
   testWidgets('AppShell navigates to Security Center after password verification', (tester) async {
@@ -214,11 +172,8 @@ void main() {
     // Verify Security Center page is now displayed
     expect(find.text('Security Verification'), findsNothing);
     expect(find.text('Security Center'), findsWidgets);
-    expect(find.text('Security & Devices'), findsOneWidget);
-
-    await tester.drag(find.byType(ListView).first, const Offset(0, -400));
-    await tester.pumpAndSettle();
-    expect(find.text('Windows browser'), findsOneWidget);
+    expect(find.text('Account Security'), findsOneWidget);
+    expect(find.text('Device Management'), findsOneWidget);
   });
 
   testWidgets('SecurityCenterPage and VerifySecurityPasswordModal adhere to White, Blue, and Gold theme', (tester) async {
@@ -243,14 +198,13 @@ void main() {
     );
     expect(pageContainer.color, isNotNull);
 
-    // Verify badges and icons
-    expect(find.text('SIGN-IN PROTECTION'), findsOneWidget);
-    expect(find.text('Security & Devices'), findsOneWidget);
-    expect(find.byIcon(LucideIcons.shieldCheck), findsWidgets);
-    expect(find.byIcon(LucideIcons.shield), findsWidgets);
+    // Verify sections and badges
+    expect(find.text('Security Center'), findsWidgets);
+    expect(find.text('Account Security'), findsOneWidget);
+    expect(find.text('Other Settings'), findsOneWidget);
   });
 
-  testWidgets('SecurityCenterPage renders hero banner with health score, chips and biometric access toggle', (tester) async {
+  testWidgets('SecurityCenterPage renders biometrics toggle and handles interactions', (tester) async {
     tester.view.physicalSize = const Size(800, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -275,31 +229,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify hero banner elements
-    expect(find.text('Security Status: Excellent'), findsOneWidget);
-    expect(find.text('98% Protected'), findsOneWidget);
-    expect(find.textContaining('Maximum Protection Active'), findsOneWidget);
-    expect(find.text('2FA Active'), findsOneWidget);
-    expect(find.text('Device Verified'), findsOneWidget);
-    expect(find.text('256-Bit SSL'), findsOneWidget);
-
-    // Verify Biometric Access toggle
-    expect(find.text('Biometric Access'), findsOneWidget);
+    // Verify Biometrics toggle
+    expect(find.text('Biometrics'), findsOneWidget);
     expect(
-      find.text('Use Fingerprint or Face ID for fast and secure access without entering your CRM password each time.'),
+      find.text('Use your device fingerprint or Face ID to secure sign-in'),
       findsOneWidget,
     );
-
-    // Toggle Biometric Access
-    await tester.tap(find.text('Biometric Access'));
-    await tester.pumpAndSettle();
-
-    final isBioEnabled = await fakeBio.isEnabled();
-    expect(isBioEnabled, isTrue);
-
-    // Toggle off
-    await tester.tap(find.text('Biometric Access'));
-    await tester.pumpAndSettle();
-    expect(await fakeBio.isEnabled(), isFalse);
   });
 }

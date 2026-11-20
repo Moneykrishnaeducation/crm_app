@@ -17,12 +17,14 @@ void main() {
           accounts: const [],
           onAccountCreated: (account) => createdAccount = account,
           onAccountSelected: (_) {},
+          favoriteLogins: const {},
+          onToggleFavorite: (_) {},
         ),
       ),
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Open Account'));
+    await tester.tap(find.text('Open live account'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Test Trader');
     await tester.tap(find.text('CREATE LIVE ACCOUNT'));
@@ -88,6 +90,8 @@ void main() {
           account: testAccount,
           onBack: () {},
           onSelectPage: (_) {},
+          isFavorite: false,
+          onToggleFavorite: () {},
         ),
       ),
     ));
@@ -133,8 +137,8 @@ void main() {
     await tester.tap(find.text('CONFIRM'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Investor Password Changed!'), findsOneWidget);
-    expect(find.text('Account #3419921 now has a new investor password.'), findsOneWidget);
+    expect(find.text('Investor Password Preview Ready'), findsOneWidget);
+    expect(find.text('This password is shown for preview only and has not been applied to MT5.'), findsOneWidget);
     expect(find.text('New investor password'), findsOneWidget);
     expect(find.text('Access permission'), findsNothing);
     expect(find.text('Read-only (No trading execution)'), findsNothing);
@@ -145,6 +149,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Investor Password Changed!'), findsNothing);
-    expect(find.text('Account Performance'), findsOneWidget);
+    expect(find.text('Trading snapshot'), findsOneWidget);
   });
 }

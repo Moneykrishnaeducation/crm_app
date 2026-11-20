@@ -274,13 +274,16 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     required String subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
+    bool showDivider = true,
   }) => Container(
     padding: const EdgeInsets.symmetric(vertical: 15),
     decoration: BoxDecoration(
-      border: Border(bottom: BorderSide(
-        color: _isDark ? const Color(0xFF24364D) : const Color(0xFFE6ECF4),
-        width: .8,
-      )),
+      border: showDivider
+          ? Border(bottom: BorderSide(
+              color: _isDark ? const Color(0xFF24364D) : const Color(0xFFE6ECF4),
+              width: .8,
+            ))
+          : null,
     ),
     child: Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1647,6 +1650,29 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       ],
     );
   }
+
+  Future<void> _showChangeLoginPassword() async {
+    final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
+    bool available = false;
+    bool enabled = false;
+    try {
+      available = await bio.isAvailable();
+      enabled = await bio.isEnabled();
+    } catch (_) {}
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (_) => _ChangeLoginPasswordSheet(
+        biometricSignIn: bio,
+        isBiometricAvailable: available,
+        isBiometricEnabled: enabled,
+      ),
+    );
+  }
 }
 
 class _LaptopSecurityGraphic extends StatelessWidget {
@@ -2062,30 +2088,6 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-  Future<void> _showChangeLoginPassword() async {
-    final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
-    bool available = false;
-    bool enabled = false;
-    try {
-      available = await bio.isAvailable();
-      enabled = await bio.isEnabled();
-    } catch (_) {}
-    if (!mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.65),
-      builder: (_) => _ChangeLoginPasswordSheet(
-        biometricSignIn: bio,
-        isBiometricAvailable: available,
-        isBiometricEnabled: enabled,
       ),
     );
   }

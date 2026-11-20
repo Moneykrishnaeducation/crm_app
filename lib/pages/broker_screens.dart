@@ -4512,7 +4512,8 @@ class BrokerBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+    if (MediaQuery.viewInsetsOf(context).bottom > 0 ||
+        View.of(context).viewInsets.bottom > 0) {
       return const SizedBox.shrink();
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;

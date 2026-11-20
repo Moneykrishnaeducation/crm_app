@@ -1961,8 +1961,8 @@ class _TradeReportLinePainter extends CustomPainter {
     if (values.length < 2 || size.isEmpty) return;
     const left = 48.0, right = 5.0, top = 8.0, bottom = 22.0;
     final chart = Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
-    final minValue = values.reduce(math.min);
-    final maxValue = values.reduce(math.max);
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
     final spread = (maxValue - minValue).abs();
     final pad = spread == 0 ? math.max(1.0, maxValue.abs() * .02).toDouble() : spread * .16;
     final low = minValue - pad, high = maxValue + pad;
@@ -2019,7 +2019,7 @@ class _TradeReportBarPainter extends CustomPainter {
     if (values.isEmpty || size.isEmpty) return;
     const left = 8.0, right = 6.0, top = 8.0, bottom = 27.0;
     final chart = Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
-    final maxAbs = values.map((v) => v.abs()).reduce(math.max).clamp(1.0, double.infinity);
+    final maxAbs = values.map((v) => v.abs()).reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity).toDouble();
     final zeroY = chart.top + chart.height / 2;
     final grid = Paint()..color = gridColor..strokeWidth = 1;
     canvas.drawLine(Offset(chart.left, zeroY), Offset(chart.right, zeroY), grid);
@@ -2036,7 +2036,7 @@ class _TradeReportBarPainter extends CustomPainter {
         Paint()..color = value >= 0 ? positiveColor : negativeColor);
       final label = labels[i].length > 7 ? labels[i].substring(0, 7) : labels[i];
       final tp = TextPainter(text: TextSpan(text: label,
-        style: TextStyle(color: labelColor, fontSize: math.min(9, slot * .24))),
+        style: TextStyle(color: labelColor, fontSize: math.min(9.0, slot * .24))),
         textDirection: TextDirection.ltr)..layout(maxWidth: slot);
       tp.paint(canvas, Offset(x + (barWidth - tp.width) / 2, chart.bottom + 7));
     }

@@ -300,6 +300,7 @@ class _AppShellState extends State<AppShell> {
   BrokerAccount? _selectedAccount;
   String _accountDetailsReturnPage = 'Trading Accounts';
   bool _balanceVisible = true;
+  final Set<String> _favoriteAccountLogins = <String>{};
   final Map<String, List<ActivityFundTransaction>> _appFundTransactions = {};
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
@@ -346,6 +347,28 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     _currentThemeMode = widget.themeMode;
+    _loadFavoriteAccounts();
+  }
+
+  Future<void> _loadFavoriteAccounts() async {
+    final preferences = await SharedPreferences.getInstance();
+    final stored = preferences.getStringList('vtindex_favorite_account_logins') ?? const <String>[];
+    if (!mounted) return;
+    setState(() {
+      _favoriteAccountLogins
+        ..clear()
+        ..addAll(stored);
+    });
+  }
+
+  Future<void> _toggleFavoriteAccount(String login) async {
+    setState(() {
+      if (!_favoriteAccountLogins.add(login)) {
+        _favoriteAccountLogins.remove(login);
+      }
+    });
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList('vtindex_favorite_account_logins', _favoriteAccountLogins.toList());
   }
 
   @override
@@ -642,6 +665,8 @@ class _AppShellState extends State<AppShell> {
             account: _selectedAccount!,
             onBack: _handleBack,
             onSelectPage: _selectPage,
+            isFavorite: _favoriteAccountLogins.contains(_selectedAccount!.login),
+            onToggleFavorite: () => _toggleFavoriteAccount(_selectedAccount!.login),
           ),
         'Profile' => BrokerProfilePage(
             onBack: _handleBack,
@@ -799,6 +824,8 @@ class _AppShellState extends State<AppShell> {
                                       accounts: _accounts,
                                       onAccountCreated: _addAccount,
                                       onAccountSelected: _openAccount,
+                                      favoriteLogins: _favoriteAccountLogins,
+                                      onToggleFavorite: _toggleFavoriteAccount,
                                     ),
                                   ),
                                   _buildPrimaryTabLayer(

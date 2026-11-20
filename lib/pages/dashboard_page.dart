@@ -53,7 +53,7 @@ class DashboardPage extends StatelessWidget {
                   'VT INDEX  •  INSTITUTIONAL CLIENT WORKSPACE',
                   style: TextStyle(
                     color: Color(0xFF7085A6),
-                    fontSize: 8,
+                    fontSize: 10,
                     letterSpacing: 1,
                     fontWeight: FontWeight.w600,
                   ),
@@ -86,7 +86,7 @@ class _DashboardIntro extends StatelessWidget {
                     'OVERVIEW',
                     style: TextStyle(
                       color: _gold,
-                      fontSize: 9,
+                      fontSize: 11,
                       letterSpacing: 1.4,
                       fontWeight: FontWeight.w800,
                     ),
@@ -299,7 +299,7 @@ class _BalanceCardContent extends StatelessWidget {
           const SizedBox(height: 9),
           const Text(
             'Real-time consolidated balance with instant cross-asset margin allocation and 0.0 pip STP routing.',
-            style: TextStyle(color: _muted, fontSize: 9, height: 1.5),
+            style: TextStyle(color: _muted, fontSize: 11, height: 1.5),
           ),
         ],
       ),
@@ -525,7 +525,7 @@ class _ActionButton extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: action.foreground,
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -565,7 +565,7 @@ class _QuickLinks extends StatelessWidget {
                     'INSTITUTIONAL',
                     style: TextStyle(
                       color: _gold,
-                      fontSize: 7,
+                      fontSize: 9,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -629,7 +629,7 @@ class _QuickLink extends StatelessWidget {
         foregroundColor: const Color(0xFFBED0EE),
         side: const BorderSide(color: _border),
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
-        textStyle: const TextStyle(fontSize: 8, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
         minimumSize: const Size(0, 31),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
       ),
@@ -714,7 +714,7 @@ class _FundsDonut extends StatelessWidget {
                       'TOTAL FUNDS',
                       style: TextStyle(
                         color: _muted,
-                        fontSize: 6,
+                        fontSize: 8,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -731,7 +731,7 @@ class _FundsDonut extends StatelessWidget {
                       'UNFUNDED',
                       style: TextStyle(
                         color: _gold,
-                        fontSize: 6,
+                        fontSize: 8,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -843,7 +843,7 @@ class _FundCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 7,
+                    fontSize: 9,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -852,7 +852,7 @@ class _FundCard extends StatelessWidget {
                 fund.percentage,
                 style: TextStyle(
                   color: fund.color,
-                  fontSize: 6,
+                  fontSize: 8,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -953,7 +953,7 @@ class _PartnershipPanel extends StatelessWidget {
                         'cm - 9BSFEEOGTL',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -975,7 +975,7 @@ class _PartnershipPanel extends StatelessWidget {
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(34),
               textStyle: const TextStyle(
-                fontSize: 8,
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),
               shape: RoundedRectangleBorder(
@@ -1101,7 +1101,7 @@ class _TransactionsPanel extends StatelessWidget {
                   'Nothing to show just yet',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1133,7 +1133,7 @@ class _TableHeading extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: Color(0xFF8EA3C7),
-          fontSize: 6,
+          fontSize: 8,
           letterSpacing: 0.7,
           fontWeight: FontWeight.w700,
         ),
@@ -1310,7 +1310,7 @@ class _Tag extends StatelessWidget {
             label,
             style: TextStyle(
               color: color,
-              fontSize: 7,
+              fontSize: 9,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
             ),
@@ -1361,7 +1361,7 @@ class _HintBar extends StatelessWidget {
             'History →',
             style: TextStyle(
               color: Color(0xFF68A8FF),
-              fontSize: 7,
+              fontSize: 9,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1384,7 +1384,7 @@ class _Label extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       style: const TextStyle(
         color: Color(0xFFAABAD2),
-        fontSize: 7,
+        fontSize: 9,
         letterSpacing: 0.6,
         fontWeight: FontWeight.w800,
       ),

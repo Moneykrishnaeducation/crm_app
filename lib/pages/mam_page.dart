@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../app_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../widgets/mam_master_node_workspace.dart';
 import '../widgets/mam_modals.dart';
+import 'mam_investor_page.dart';
 
 export '../widgets/mam_master_node_workspace.dart' show MamMasterAccount;
 export '../widgets/mam_modals.dart';
+export 'mam_investor_page.dart' show MamInvestorPage;
 
 // -----------------------------------------------------------------------------
 // DYNAMIC THEME COLORS HELPER
@@ -28,8 +31,10 @@ class _MamColors {
     required this.goldBorder,
     required this.green,
     required this.greenLight,
+    required this.greenBorder,
     required this.red,
     required this.redLight,
+    required this.redBorder,
     required this.navy,
   });
 
@@ -48,8 +53,10 @@ class _MamColors {
   final Color goldBorder;
   final Color green;
   final Color greenLight;
+  final Color greenBorder;
   final Color red;
   final Color redLight;
+  final Color redBorder;
   final Color navy;
 
   factory _MamColors.of(BuildContext context) {
@@ -74,8 +81,14 @@ class _MamColors {
           : const Color(0xFFFEF08A),
       green: const Color(0xFF10B981),
       greenLight: isDark ? const Color(0xFF132D28) : const Color(0xFFECFDF5),
+      greenBorder: isDark
+          ? const Color(0xFF10B981).withValues(alpha: 0.35)
+          : const Color(0xFFA7F3D0),
       red: const Color(0xFFEF4444),
       redLight: isDark ? const Color(0xFF3B2028) : const Color(0xFFFEF2F2),
+      redBorder: isDark
+          ? const Color(0xFFEF4444).withValues(alpha: 0.35)
+          : const Color(0xFFFECACA),
       navy: isDark ? const Color(0xFF1E3A8A) : const Color(0xFF10264A),
     );
   }
@@ -230,6 +243,13 @@ class _MamPageState extends State<MamPage> {
 
   // Data Lists
   MamMasterAccount? _selectedMasterDetail;
+  MamInvestmentSubscription? _selectedInvestorDetail;
+  int _investorSubView = 0; // 0: Account 3511 Overview Workspace, 1: Active Subscriptions List
+  double _account3511Balance = 0.00;
+  bool _account3511IsCopying = true;
+  String _account3511ScalingMethod = 'BALANCE RATIO';
+  double _account3511Factor = 1.00;
+  bool _account3511OrderCloning = false;
   late List<MamMasterAccount> _masters;
   late List<MamInvestmentSubscription> _investments;
   late List<AvailableMamPool> _availablePools;
@@ -454,6 +474,11 @@ class _MamPageState extends State<MamPage> {
     return '\$${val.toStringAsFixed(0)}';
   }
 
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    showAppMessage('$label copied: $text');
+  }
+
   void _handleBack() {
     if (widget.onBack != null) {
       widget.onBack!();
@@ -490,6 +515,37 @@ class _MamPageState extends State<MamPage> {
                   if (idx != -1) {
                     _masters[idx] = updatedMaster;
                   }
+                });
+              },
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_selectedInvestorDetail != null) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          setState(() {
+            _selectedInvestorDetail = null;
+          });
+        },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: SafeArea(
+            child: MamInvestorPage(
+              showBackButton: true,
+              onBack: () {
+                setState(() {
+                  _selectedInvestorDetail = null;
+                });
+              },
+              onExploreAvailable: () {
+                setState(() {
+                  _selectedInvestorDetail = null;
+                  _tab = 2;
                 });
               },
             ),
@@ -1464,18 +1520,2325 @@ class _MamPageState extends State<MamPage> {
   // ---------------------------------------------------------------------------
   List<Widget> _buildInvestorTab() {
     return [
-      _buildInvestorExploreBanner(),
+      _buildInvestorSubViewSelector(),
       const SizedBox(height: 12),
-      _buildInvestorSummaryMetrics(),
-      const SizedBox(height: 14),
-      if (_investments.isEmpty)
-        _buildInvestorEmptyState()
-      else
-        for (final item in _investments) ...[
-          _buildSubscriptionCard(item),
-          const SizedBox(height: 10),
-        ],
+      if (_investorSubView == 0) ...[
+        _buildAccount3511Workspace(),
+      ] else ...[
+        _buildInvestorExploreBanner(),
+        const SizedBox(height: 12),
+        _buildInvestorSummaryMetrics(),
+        const SizedBox(height: 14),
+        if (_investments.isEmpty)
+          _buildInvestorEmptyState()
+        else
+          for (final item in _investments) ...[
+            _buildSubscriptionCard(item),
+            const SizedBox(height: 10),
+          ],
+      ],
     ];
+  }
+
+  Widget _buildInvestorSubViewSelector() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _c.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 44,
+              child: InkWell(
+                onTap: () => setState(() => _investorSubView = 0),
+                borderRadius: BorderRadius.circular(9),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    color: _investorSubView == 0 ? _brandBlue : Colors.transparent,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        LucideIcons.barChart2,
+                        size: 15,
+                        color: _investorSubView == 0 ? Colors.white : _c.muted,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Account 3511 Overview',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: _investorSubView == 0 ? FontWeight.w700 : FontWeight.w600,
+                            color: _investorSubView == 0 ? Colors.white : _c.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: SizedBox(
+              height: 44,
+              child: InkWell(
+                onTap: () => setState(() => _investorSubView = 1),
+                borderRadius: BorderRadius.circular(9),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    color: _investorSubView == 1 ? _brandBlue : Colors.transparent,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        LucideIcons.layers,
+                        size: 15,
+                        color: _investorSubView == 1 ? Colors.white : _c.muted,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Active Pools (${_investments.length})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: _investorSubView == 1 ? FontWeight.w700 : FontWeight.w600,
+                            color: _investorSubView == 1 ? Colors.white : _c.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccount3511Workspace() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildAccount3511HeaderBanner(),
+        const SizedBox(height: 12),
+        _buildAccount3511HeroBalanceCard(),
+        const SizedBox(height: 14),
+        _buildAccount3511AllocationSpecsCard(),
+        const SizedBox(height: 14),
+        _buildAccount3511SecurityCredentialsCard(),
+        const SizedBox(height: 14),
+        _buildAccount3511LiveOrdersCard(),
+        const SizedBox(height: 16),
+        _buildAccount3511FullscreenCta(),
+      ],
+    );
+  }
+
+  Widget _buildAccount3511HeaderBanner() {
+    final statusColor = _account3511IsCopying ? _c.green : _c.gold;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _c.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: _c.blueLight,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _c.blueBorder),
+            ),
+            child: Icon(LucideIcons.activity, color: _c.blue, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Account 3511 Workspace',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          color: _c.text,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _account3511IsCopying ? _c.greenLight : _c.goldLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _account3511IsCopying ? 'COPYING' : 'PAUSED',
+                        style: GoogleFonts.inter(
+                          color: statusColor,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Connected to Master #3510 • VTIndex-Live',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: _c.muted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 44,
+            child: FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  _selectedInvestorDetail = _investments.first;
+                });
+              },
+              icon: const Icon(LucideIcons.externalLink, size: 14),
+              label: Text(
+                'Fullscreen',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: _brandBlue,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(96, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccount3511HeroBalanceCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _c.isDark ? 0.25 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Alias Badge & ID with copy
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.wallet, size: 12, color: _c.blue),
+                    const SizedBox(width: 5),
+                    Text(
+                      'TESTTEST1 - INVESTMENT',
+                      style: GoogleFonts.inter(
+                        color: _c.blue,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () => _copyToClipboard('3511', 'Account ID'),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'ID: 3511',
+                        style: GoogleFonts.inter(
+                          color: _c.muted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(LucideIcons.copy, size: 13, color: _c.muted),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Label: NET AVAILABLE BALANCE
+          Text(
+            'NET AVAILABLE BALANCE',
+            style: GoogleFonts.inter(
+              color: _c.muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // Large Balance Display
+          Text(
+            '\$${_account3511Balance.toStringAsFixed(2)} USD',
+            style: GoogleFonts.inter(
+              color: _c.text,
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.6,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 3 Action Buttons (touch height >= 44px)
+          Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: SizedBox(
+                  height: 44,
+                  child: FilledButton.icon(
+                    onPressed: _openAccount3511DepositModal,
+                    icon: const Icon(LucideIcons.plusCircle, size: 14),
+                    label: Text(
+                      'Deposit Funds',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brandBlue,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _account3511IsCopying = !_account3511IsCopying;
+                      });
+                      showAppMessage(_account3511IsCopying
+                          ? 'Trade copying resumed for Account 3511'
+                          : 'Trade copying paused for Account 3511');
+                    },
+                    icon: Icon(
+                      _account3511IsCopying ? LucideIcons.circleSlash : LucideIcons.play,
+                      size: 14,
+                      color: _account3511IsCopying ? _c.gold : _c.green,
+                    ),
+                    label: Text(
+                      _account3511IsCopying ? 'Pause Copy' : 'Resume Copy',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: _account3511IsCopying ? _c.gold : _c.green,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      side: BorderSide(
+                        color: _account3511IsCopying ? _c.goldBorder : _c.greenLight,
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: _openAccount3511WithdrawModal,
+                    icon: Icon(LucideIcons.arrowUpRight, size: 14, color: _c.text),
+                    label: Text(
+                      'Withdraw Funds',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(color: _c.text, fontSize: 11.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      side: BorderSide(color: _c.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 2x2 Key Metrics Grid
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _metricBox(
+                        label: 'TOTAL PROFIT',
+                        value: '\$0.00',
+                        valueColor: _c.green,
+                        icon: LucideIcons.trendingUp,
+                      ),
+                    ),
+                    Container(width: 1, height: 36, color: _c.subBorder),
+                    Expanded(
+                      child: _metricBox(
+                        label: 'PROFIT SHARE',
+                        value: '10%',
+                        valueColor: _c.blue,
+                        icon: LucideIcons.percent,
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(height: 16, thickness: 1, color: _c.subBorder),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _metricBox(
+                        label: 'RISK LEVEL',
+                        value: 'Medium',
+                        valueColor: _c.gold,
+                        trailing: const _RiskMeter(level: 2),
+                        icon: LucideIcons.shieldAlert,
+                      ),
+                    ),
+                    Container(width: 1, height: 36, color: _c.subBorder),
+                    Expanded(
+                      child: _metricBox(
+                        label: 'LEVERAGE',
+                        value: '1:1',
+                        valueColor: _c.text,
+                        icon: LucideIcons.scale,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccount3511AllocationSpecsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                child: Icon(LucideIcons.slidersHorizontal, color: _c.blue, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Allocation Specifications',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Investor node connection parameters',
+                      style: TextStyle(color: _c.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Specs Table
+          Container(
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              children: [
+                _specItemRow('Account ID', '3511', copyable: true),
+                Divider(height: 1, thickness: 1, color: _c.subBorder),
+                _specItemRow('Master Account ID', '3510', copyable: true),
+                Divider(height: 1, thickness: 1, color: _c.subBorder),
+                _specItemRow('Account Alias', 'testtest1 - Investment'),
+                Divider(height: 1, thickness: 1, color: _c.subBorder),
+                _specItemRow('Trading Platform', 'MetaTrader 5 (MT5)'),
+                Divider(height: 1, thickness: 1, color: _c.subBorder),
+                _specItemRow('Server', 'VTIndex-Live', copyable: true),
+                Divider(height: 1, thickness: 1, color: _c.subBorder),
+                _specItemRow(
+                  'Status',
+                  _account3511IsCopying ? 'Active Copying' : 'Copying Paused',
+                  isBadge: true,
+                  badgeColor: _account3511IsCopying ? _c.green : _c.gold,
+                ),
+                Divider(height: 1, thickness: 1, color: _c.subBorder),
+                _specItemRow('Leverage', '1:1'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccount3511SecurityCredentialsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _c.greenLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.greenBorder),
+                ),
+                child: Icon(LucideIcons.shieldCheck, color: _c.green, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Security & Credentials',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Investor sub-account credentials',
+                      style: TextStyle(color: _c.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Sub-card 1: Investor Password Settings
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(LucideIcons.keyRound, size: 16, color: _c.blue),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'TERMINAL ACCESS CREDENTIALS',
+                            style: GoogleFonts.inter(
+                              color: _c.muted,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Update your investor terminal password anytime. This does not interfere with the master manager\'s trade execution.',
+                            style: TextStyle(color: _c.text, fontSize: 11.5, height: 1.35),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: _openAccount3511PasswordModal,
+                    icon: Icon(LucideIcons.settings, size: 15, color: _c.text),
+                    label: Text(
+                      'Investor Password Settings',
+                      style: TextStyle(color: _c.text, fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      side: BorderSide(color: _c.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Sub-card 2: Multiplier Scaling
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(LucideIcons.sliders, size: 16, color: _c.gold),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'MULTIPLIER SCALING',
+                                style: GoogleFonts.inter(
+                                  color: _c.muted,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _c.goldLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: _c.goldBorder),
+                                ),
+                                child: Text(
+                                  _account3511ScalingMethod == 'BALANCE RATIO'
+                                      ? 'Balance Ratio'
+                                      : '${_account3511Factor.toStringAsFixed(2)}x Ratio',
+                                  style: GoogleFonts.inter(
+                                    color: _c.gold,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Customize proportional trade volume or enable multi-order execution cloning.',
+                            style: TextStyle(color: _c.text, fontSize: 11.5, height: 1.35),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      showEditCopyMultipliersModal(
+                        context,
+                        accountId: '3511',
+                        initialMethod: _account3511ScalingMethod,
+                        initialFactor: _account3511Factor,
+                        initialOrderCloning: _account3511OrderCloning,
+                        onDeploy: (method, factor, orderCloning) {
+                          setState(() {
+                            _account3511ScalingMethod = method;
+                            _account3511Factor = factor;
+                            _account3511OrderCloning = orderCloning;
+                          });
+                          showAppMessage('Configuration deployed to Account 3511!');
+                        },
+                      );
+                    },
+                    icon: Icon(LucideIcons.arrowLeftRight, size: 15, color: _c.blue),
+                    label: Text(
+                      'Edit Copy Multipliers',
+                      style: TextStyle(color: _c.blue, fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      side: BorderSide(color: _c.blueBorder),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccount3511LiveOrdersCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                child: Icon(LucideIcons.activity, color: _c.blue, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Live Orders & Trades',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Real-time exposure & manager positions',
+                      style: TextStyle(color: _c.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Tile 1: Investor Live Trades
+          _account3511NavTile(
+            icon: LucideIcons.barChart2,
+            iconColor: _c.blue,
+            title: 'Investor Live Trades',
+            subtitle: 'Your open positions & floating P&L',
+            badgeText: '3 Open',
+            badgeColor: _c.green,
+            onTap: _openAccount3511LiveTradesModal,
+          ),
+          const SizedBox(height: 10),
+
+          // Tile 2: Master Manager Trades
+          _account3511NavTile(
+            icon: LucideIcons.usersRound,
+            iconColor: _c.gold,
+            title: 'Master Manager Trades',
+            subtitle: 'Source orders executed by master node',
+            badgeText: '5 Master Tickets',
+            badgeColor: _c.blue,
+            onTap: _openAccount3511MasterTradesModal,
+          ),
+          const SizedBox(height: 10),
+
+          // Tile 3: Trade Pattern Analysis
+          _account3511NavTile(
+            icon: LucideIcons.lineChart,
+            iconColor: _c.green,
+            title: 'Trade Pattern Analysis',
+            subtitle: 'AI behavioral metrics & win rate',
+            badgeText: '78.4% Win',
+            badgeColor: _c.green,
+            onTap: _openAccount3511PatternModal,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccount3511FullscreenCta() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: _brandBlue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(LucideIcons.maximize2, size: 16, color: _brandBlue),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dedicated Investor Workspace',
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Open the fullscreen view with multi-account switching',
+                      style: TextStyle(color: _c.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  _selectedInvestorDetail = _investments.first;
+                });
+              },
+              icon: const Icon(LucideIcons.externalLink, size: 16),
+              label: Text(
+                'Open Fullscreen Workspace',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: _brandBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _specItemRow(
+    String label,
+    String value, {
+    bool copyable = false,
+    bool isBadge = false,
+    Color? badgeColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: _c.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isBadge)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: (badgeColor ?? _c.green).withValues(alpha: _c.isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: (badgeColor ?? _c.green).withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: badgeColor ?? _c.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        value,
+                        style: GoogleFonts.inter(
+                          color: badgeColor ?? _c.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    color: _c.text,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              if (copyable) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () => _copyToClipboard(value, label),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                    alignment: Alignment.center,
+                    child: Icon(LucideIcons.copy, size: 14, color: _c.blue),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _account3511NavTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required Color badgeColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: _c.subCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _c.subBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: _c.isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 16, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      color: _c.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 1.5),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: _c.muted, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: badgeColor.withValues(alpha: _c.isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: badgeColor.withValues(alpha: 0.35)),
+              ),
+              child: Text(
+                badgeText,
+                style: GoogleFonts.inter(
+                  color: badgeColor,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(LucideIcons.chevronRight, size: 16, color: _c.muted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _metricBox({
+    required String label,
+    required String value,
+    required Color valueColor,
+    required IconData icon,
+    Widget? trailing,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: valueColor.withValues(alpha: _c.isDark ? 0.16 : 0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 15, color: valueColor),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: _c.muted,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      value,
+                      style: GoogleFonts.inter(
+                        color: valueColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (trailing != null) ...[
+                      const SizedBox(width: 6),
+                      trailing,
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openAccount3511DepositModal() {
+    final amountController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final presets = [100, 250, 500, 1000, 2500];
+
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: _c.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(color: _c.border),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _c.muted.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Deposit Funds',
+                          style: GoogleFonts.inter(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: _c.text,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Fund Account #3511 (testtest1 - Investment)',
+                      style: TextStyle(fontSize: 12, color: _c.muted),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Available Balance
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Current Available Balance', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text(
+                            '\$${_account3511Balance.toStringAsFixed(2)} USD',
+                            style: GoogleFonts.inter(
+                              color: _c.blue,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Presets
+                    Text(
+                      'QUICK PRESETS',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _c.muted,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: presets.map((amt) {
+                        final isSel = amountController.text == amt.toString();
+                        return InkWell(
+                          onTap: () {
+                            setModalState(() {
+                              amountController.text = amt.toString();
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 44, minWidth: 64),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSel ? _c.blue : _c.subCard,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isSel ? _c.blue : _c.border,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '\$$amt',
+                              style: GoogleFonts.inter(
+                                color: isSel ? Colors.white : _c.text,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Amount input
+                    Text(
+                      'DEPOSIT AMOUNT (USD)',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _c.muted,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: _c.text,
+                      ),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(LucideIcons.dollarSign, size: 18, color: _c.blue),
+                        hintText: '0.00',
+                        hintStyle: TextStyle(color: _c.muted),
+                        filled: true,
+                        fillColor: _c.subCard,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.blue, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          final depositAmt = double.tryParse(amountController.text) ?? 0.0;
+                          if (depositAmt <= 0) {
+                            showAppMessage('Please enter a valid deposit amount');
+                            return;
+                          }
+                          Navigator.pop(ctx);
+                          setState(() {
+                            _account3511Balance += depositAmt;
+                          });
+                          showAppMessage(
+                            'Successfully deposited \$${depositAmt.toStringAsFixed(2)} to Account #3511!',
+                          );
+                        },
+                        icon: const Icon(LucideIcons.plusCircle, size: 18),
+                        label: Text(
+                          'Confirm & Deposit Funds',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _brandBlue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openAccount3511WithdrawModal() {
+    final amountController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: _c.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(color: _c.border),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _c.muted.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Withdraw Funds',
+                          style: GoogleFonts.inter(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: _c.text,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Transfer funds from Account #3511',
+                      style: TextStyle(fontSize: 12, color: _c.muted),
+                    ),
+                    const SizedBox(height: 14),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Available Net Balance', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text(
+                            '\$${_account3511Balance.toStringAsFixed(2)} USD',
+                            style: GoogleFonts.inter(
+                              color: _c.text,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Quick Percent Chips
+                    Row(
+                      children: [25, 50, 75, 100].map((pct) {
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: SizedBox(
+                              height: 44,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  final calc = (_account3511Balance * (pct / 100.0));
+                                  setModalState(() {
+                                    amountController.text = calc.toStringAsFixed(2);
+                                  });
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  side: BorderSide(color: _c.border),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: Text(
+                                  '$pct%',
+                                  style: GoogleFonts.inter(
+                                    color: _c.text,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Amount input
+                    Text(
+                      'WITHDRAWAL AMOUNT (USD)',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _c.muted,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: _c.text,
+                      ),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(LucideIcons.dollarSign, size: 18, color: _c.text),
+                        hintText: '0.00',
+                        hintStyle: TextStyle(color: _c.muted),
+                        filled: true,
+                        fillColor: _c.subCard,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: _c.blue, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          final withdrawAmt = double.tryParse(amountController.text) ?? 0.0;
+                          if (withdrawAmt <= 0) {
+                            showAppMessage('Please enter a valid withdrawal amount');
+                            return;
+                          }
+                          if (withdrawAmt > _account3511Balance) {
+                            showAppMessage('Insufficient available balance');
+                            return;
+                          }
+                          Navigator.pop(ctx);
+                          setState(() {
+                            _account3511Balance -= withdrawAmt;
+                          });
+                          showAppMessage(
+                            'Withdrawal request for \$${withdrawAmt.toStringAsFixed(2)} submitted!',
+                          );
+                        },
+                        icon: const Icon(LucideIcons.arrowUpRight, size: 18),
+                        label: Text(
+                          'Confirm Withdrawal',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _brandBlue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openAccount3511PasswordModal() {
+    bool showTrading = false;
+    bool showInvestor = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: _c.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(color: _c.border),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _c.muted.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: _c.greenLight,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: _c.green.withValues(alpha: 0.35)),
+                              ),
+                              child: Icon(LucideIcons.keyRound, size: 17, color: _c.green),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Investor Credentials',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _c.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Security keys for Account #3511 (VTIndex-Live)',
+                      style: TextStyle(fontSize: 11.5, color: _c.muted),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password Card 1: Trading Password
+                    _accountCredentialCard(
+                      label: 'INVESTOR TRADING PASSWORD',
+                      value: showTrading ? 'AlphaTrader@2025' : '••••••••••••',
+                      description: 'Used for terminal execution permissions and account verification.',
+                      isMasked: !showTrading,
+                      onToggleVisibility: () {
+                        setModalState(() {
+                          showTrading = !showTrading;
+                        });
+                      },
+                      onCopy: () => _copyToClipboard('AlphaTrader@2025', 'Investor Trading Password'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Password Card 2: Read-Only Investor Password
+                    _accountCredentialCard(
+                      label: 'READ-ONLY (INVESTOR) PASSWORD',
+                      value: showInvestor ? 'InvestView#8841' : '••••••••••••',
+                      description: 'Safe for third-party auditing tools (Myfxbook, FXBlue, etc.).',
+                      isMasked: !showInvestor,
+                      onToggleVisibility: () {
+                        setModalState(() {
+                          showInvestor = !showInvestor;
+                        });
+                      },
+                      onCopy: () => _copyToClipboard('InvestView#8841', 'Read-Only Password'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Auth Token Card
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'MT5 AUTH TOKEN',
+                                style: GoogleFonts.inter(
+                                  color: _c.muted,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => _copyToClipboard('tok_live_3511_98a72b', 'MT5 Auth Token'),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                                  alignment: Alignment.center,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Copy',
+                                        style: GoogleFonts.inter(
+                                          color: _c.blue,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(LucideIcons.copy, size: 13, color: _c.blue),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'tok_live_3511_98a72b',
+                            style: GoogleFonts.firaCode(
+                              fontSize: 12.5,
+                              color: _c.text,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _brandBlue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(
+                          'Close Credentials',
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _accountCredentialCard({
+    required String label,
+    required String value,
+    required String description,
+    required bool isMasked,
+    required VoidCallback onToggleVisibility,
+    required VoidCallback onCopy,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _c.subCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _c.subBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: _c.muted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      isMasked ? LucideIcons.eye : LucideIcons.eyeOff,
+                      size: 16,
+                      color: _c.muted,
+                    ),
+                    onPressed: onToggleVisibility,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                  IconButton(
+                    icon: Icon(LucideIcons.copy, size: 16, color: _c.blue),
+                    onPressed: onCopy,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              color: _c.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            description,
+            style: TextStyle(color: _c.muted, fontSize: 10.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openAccount3511LiveTradesModal() {
+    final trades = [
+      {'symbol': 'EURUSD', 'type': 'BUY', 'lots': '0.20', 'open': '1.08450', 'curr': '1.08720', 'pnl': '+54.00', 'ticket': '98201', 'isPos': true},
+      {'symbol': 'GBPUSD', 'type': 'SELL', 'lots': '0.15', 'open': '1.29800', 'curr': '1.29610', 'pnl': '+28.50', 'ticket': '98208', 'isPos': true},
+      {'symbol': 'XAUUSD', 'type': 'BUY', 'lots': '0.05', 'open': '2685.10', 'curr': '2685.44', 'pnl': '+1.70', 'ticket': '98214', 'isPos': true},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.80),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _c.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: _c.muted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: _c.blueLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _c.blueBorder),
+                        ),
+                        child: Icon(LucideIcons.barChart2, size: 17, color: _c.blue),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Investor Live Trades',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _c.text,
+                            ),
+                          ),
+                          Text(
+                            'Account #3511 • 3 Active Orders',
+                            style: TextStyle(fontSize: 11, color: _c.muted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _c.greenLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'TOTAL FLOATING P&L',
+                      style: GoogleFonts.inter(color: _c.green, fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      '+\$84.20 USD',
+                      style: GoogleFonts.inter(color: _c.green, fontSize: 14, fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Expanded(
+                child: ListView.separated(
+                  itemCount: trades.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final t = trades[index];
+                    final isPos = t['isPos'] as bool;
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: t['type'] == 'BUY' ? _c.blueLight : _c.redLight,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${t['type']} ${t['lots']}',
+                              style: GoogleFonts.inter(
+                                color: t['type'] == 'BUY' ? _c.blue : _c.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  t['symbol'] as String,
+                                  style: GoogleFonts.inter(color: _c.text, fontSize: 13, fontWeight: FontWeight.w700),
+                                ),
+                                Text(
+                                  '#${t['ticket']} • ${t['open']} → ${t['curr']}',
+                                  style: TextStyle(color: _c.muted, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '\$${t['pnl']}',
+                            style: GoogleFonts.inter(
+                              color: isPos ? _c.green : _c.red,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openAccount3511MasterTradesModal() {
+    final masterTrades = [
+      {'symbol': 'EURUSD', 'type': 'BUY', 'lots': '5.00', 'ticket': '9812044', 'pnl': '+270.00'},
+      {'symbol': 'GBPUSD', 'type': 'SELL', 'lots': '3.50', 'ticket': '9812110', 'pnl': '+133.00'},
+      {'symbol': 'USDJPY', 'type': 'BUY', 'lots': '2.00', 'ticket': '9812239', 'pnl': '-18.00'},
+      {'symbol': 'XAUUSD', 'type': 'BUY', 'lots': '2.00', 'ticket': '9812301', 'pnl': '+35.00'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.80),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _c.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: _c.muted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: _c.goldLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _c.goldBorder),
+                        ),
+                        child: Icon(LucideIcons.usersRound, size: 17, color: _c.gold),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Master Manager Trades',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _c.text,
+                            ),
+                          ),
+                          Text(
+                            'Source Node #3510 • 4 Open Trades',
+                            style: TextStyle(fontSize: 11, color: _c.muted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              Expanded(
+                child: ListView.separated(
+                  itemCount: masterTrades.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final mt = masterTrades[index];
+                    final isPos = (mt['pnl'] as String).startsWith('+');
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.subCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _c.subBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                            decoration: BoxDecoration(
+                              color: mt['type'] == 'BUY' ? _c.blueLight : _c.redLight,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${mt['type']} ${mt['lots']}',
+                              style: GoogleFonts.inter(
+                                color: mt['type'] == 'BUY' ? _c.blue : _c.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  mt['symbol'] as String,
+                                  style: GoogleFonts.inter(color: _c.text, fontSize: 13, fontWeight: FontWeight.w700),
+                                ),
+                                Text(
+                                  'Master Ticket #${mt['ticket']}',
+                                  style: TextStyle(color: _c.muted, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '\$${mt['pnl']}',
+                            style: GoogleFonts.inter(
+                              color: isPos ? _c.green : _c.red,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openAccount3511PatternModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.80),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: _c.border),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _c.muted.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: _c.greenLight,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: _c.greenBorder),
+                          ),
+                          child: Icon(LucideIcons.lineChart, size: 17, color: _c.green),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Trade Pattern Analysis',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _c.text,
+                              ),
+                            ),
+                            Text(
+                              'AI Behavioral Metrics & Historical Alpha',
+                              style: TextStyle(fontSize: 11, color: _c.muted),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _c.subCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _c.subBorder),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Win Rate', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text('78.4%', style: GoogleFonts.inter(color: _c.green, fontWeight: FontWeight.w800, fontSize: 13)),
+                        ],
+                      ),
+                      Divider(height: 14, thickness: 1, color: _c.subBorder),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Profit Factor', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text('2.41', style: GoogleFonts.inter(color: _c.text, fontWeight: FontWeight.w800, fontSize: 13)),
+                        ],
+                      ),
+                      Divider(height: 14, thickness: 1, color: _c.subBorder),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Sharpe Ratio', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text('1.84', style: GoogleFonts.inter(color: _c.blue, fontWeight: FontWeight.w800, fontSize: 13)),
+                        ],
+                      ),
+                      Divider(height: 14, thickness: 1, color: _c.subBorder),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Max Drawdown', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text('6.2%', style: GoogleFonts.inter(color: _c.gold, fontWeight: FontWeight.w800, fontSize: 13)),
+                        ],
+                      ),
+                      Divider(height: 14, thickness: 1, color: _c.subBorder),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Avg Trade Duration', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text('4h 12m', style: GoogleFonts.inter(color: _c.text, fontWeight: FontWeight.w800, fontSize: 13)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brandBlue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      'Close Analysis',
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildInvestorExploreBanner() {

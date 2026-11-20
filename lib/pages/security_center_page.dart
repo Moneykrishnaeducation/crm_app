@@ -161,42 +161,158 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: _isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF7F9FC),
       child: SafeArea(
         top: false,
         bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: ListView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
-              children: [
-                // 1. Hero Header: Security Hub & Health Overview
-                _buildSecurityHeroBanner(),
-                const SizedBox(height: 18),
-
-                // 2. Unified Inset Card 1: SIGN-IN PROTECTION
-                _buildSignInProtectionUnifiedCard(),
-                const SizedBox(height: 22),
-
-                // 3. Section Header: Trusted Devices
-                _buildTrustedDevicesHeader(),
-                const SizedBox(height: 12),
-
-                // 4. Unified Inset Card 2: Active Trusted Device
-                _buildActiveTrustedDeviceCard(),
-                const SizedBox(height: 20),
-
-                // 5. Footer Actions & Revoke Note
-                _buildSecurityFooterActions(),
-              ],
+        child: Column(
+          children: [
+            SizedBox(
+              height: 58,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Text('Security Center', style: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.w800)),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      onPressed: widget.onBack,
+                      tooltip: 'Back',
+                      icon: Icon(LucideIcons.chevronLeft, color: _textColor, size: 25),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                children: [
+                  _securitySectionLabel('Account Security'),
+                  const SizedBox(height: 14),
+                  _securityActionRow(
+                    title: 'Email',
+                    trailing: 't****harasan344@gmail.com',
+                    onTap: null,
+                  ),
+                  _securityActionRow(
+                    title: 'Login Password',
+                    trailing: 'Change',
+                    onTap: () => _showSecurityAction('Change Login Password', 'Password change is a secure account action. Connect the password update endpoint to enable submission.'),
+                  ),
+                  _securityActionRow(
+                    title: 'Fund Password',
+                    trailing: 'Set Up',
+                    trailingColor: _blueRoyal,
+                    onTap: () => _showSecurityAction('Set Up Fund Password', 'A fund password adds an additional verification step to funding actions.'),
+                  ),
+                  _securityActionRow(
+                    title: 'Passkey (Biometrics)',
+                    trailing: 'Add',
+                    trailingColor: _blueRoyal,
+                    subtitle: 'Use Apple Passkey or Google Passkey to secure your account',
+                    onTap: () => _openSecuritySubPage('Passkey'),
+                  ),
+                  _securityActionRow(
+                    title: 'Authenticator App',
+                    trailing: 'Bind',
+                    trailingColor: _blueRoyal,
+                    subtitle: 'Use Google Authenticator / Microsoft Authenticator to secure your account',
+                    onTap: () => _showSecurityAction('Authenticator App', 'Authenticator binding requires a server-generated setup key and QR code.'),
+                    showDivider: false,
+                  ),
+                  const SizedBox(height: 28),
+                  _securitySectionLabel('Other Settings'),
+                  const SizedBox(height: 14),
+                  _securityActionRow(title: 'Account Logs', trailing: '', onTap: () => _openSecuritySubPage('Account Logs')),
+                  _securityActionRow(title: 'Device Management', trailing: '', onTap: () => _openSecuritySubPage('Device Management')),
+                  _securityActionRow(title: 'Account Management', trailing: '', onTap: () => _openSecuritySubPage('Account Management'), showDivider: false),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _securitySectionLabel(String title) => Row(
+    children: [
+      Container(width: 3, height: 17, decoration: BoxDecoration(color: _blueRoyal, borderRadius: BorderRadius.circular(4))),
+      const SizedBox(width: 10),
+      Text(title, style: TextStyle(color: _mutedColor, fontSize: 14, fontWeight: FontWeight.w600)),
+    ],
+  );
+
+  Widget _securityActionRow({
+    required String title,
+    required String trailing,
+    String? subtitle,
+    Color? trailingColor,
+    required VoidCallback? onTap,
+    bool showDivider = true,
+  }) => InkWell(
+    onTap: onTap,
+    child: Container(
+      padding: EdgeInsets.only(top: subtitle == null ? 19 : 17, bottom: subtitle == null ? 19 : 17),
+      decoration: BoxDecoration(
+        border: showDivider ? Border(bottom: BorderSide(color: _isDark ? const Color(0xFF24364D) : const Color(0xFFE6ECF4), width: .8)) : null,
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(color: _textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+              if (subtitle != null) ...[
+                const SizedBox(height: 5),
+                Text(subtitle, style: TextStyle(color: _mutedColor, fontSize: 12.5, height: 1.35)),
+              ],
+            ],
+          )),
+          if (trailing.isNotEmpty)
+            Text(trailing, style: TextStyle(color: trailingColor ?? _mutedColor, fontSize: 14, fontWeight: FontWeight.w500)),
+          if (onTap != null) ...[
+            const SizedBox(width: 8),
+            Icon(LucideIcons.chevronRight, color: _mutedColor, size: 19),
+          ],
+        ],
+      ),
+    ),
+  );
+
+  void _showSecurityAction(String title, String message) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 28),
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 10),
+            Text(message, style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
+            const SizedBox(height: 18),
+            SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _openSecuritySubPage(String page) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => _SecurityReferenceSubPage(title: page),
+    ));
   }
 
   Widget _buildSecurityHeroBanner() {
@@ -1883,5 +1999,141 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
         ),
       ),
     );
+  }
+}
+
+class _SecurityReferenceSubPage extends StatelessWidget {
+  const _SecurityReferenceSubPage({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final muted = scheme.onSurfaceVariant;
+    final surface = dark ? scheme.surface : const Color(0xFFF5F8FF);
+    return Scaffold(
+      backgroundColor: surface,
+      appBar: AppBar(
+        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        centerTitle: true,
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+        children: [
+          if (title == 'Passkey') ...[
+            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Google Password Manager', style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Wrap(spacing: 6, children: [
+                _tag('Cross-device', const Color(0xFFEAF1FF), const Color(0xFF245BFF)),
+                _tag('Google Passkey', const Color(0xFFF0F0F0), const Color(0xFF666666)),
+              ]),
+              const SizedBox(height: 18),
+              _dateRow('Added At', '2026-11-20 17:26:59', muted),
+              const SizedBox(height: 14),
+              _dateRow('Last Used At', '2026-11-20 17:26:59', muted),
+              const SizedBox(height: 20),
+              Row(children: [
+                Expanded(child: _actionButton(context, 'Reset Passkey', () => _message(context, 'Passkey reset is not connected yet.'))),
+                const SizedBox(width: 9),
+                Expanded(child: _actionButton(context, 'Rename', () => _message(context, 'Passkey rename is not connected yet.'))),
+              ]),
+              const SizedBox(height: 8),
+              SizedBox(width: double.infinity, child: _dangerButton(context, 'Delete', () => _message(context, 'Passkey deletion is not connected yet.'))),
+            ])),
+          ] else if (title == 'Device Management') ...[
+            for (final device in const [
+              ('Android / App 2.19.1', 'Current Device', 'Logged In', 'Primary Device', '2026/10/29 12:16:30', '210.18.*.*', 'India Chennai', '968200012202147840', true),
+              ('Windows / Chrome 153.0.0.0', 'Logged Out', '', '', '2026/09/26 16:14:54', '2a00:f29:10e0:31ec:947:e027:***:*', 'United Arab Emirates Dubai', '961725672053043200', false),
+              ('Windows / Edge 153.0.0.0', 'Logged Out', '', '', '2026/09/26 10:30:18', '210.18.*.*', 'India Chennai', '962373710482104320', false),
+              ('Windows / Edge 153.0.0.0', 'Logged Out', '', '', '2026/09/25 15:42:02', '210.18.*.*', 'India Chennai', '962088947942121472', false),
+            ]) _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(width: 58, height: 58, decoration: BoxDecoration(color: device.$9 ? const Color(0xFFE3FFF3) : const Color(0xFFEAF1FF), borderRadius: BorderRadius.circular(16)), child: Icon(device.$9 ? LucideIcons.smartphone : LucideIcons.monitor, color: device.$9 ? const Color(0xFF00B96B) : const Color(0xFF245BFF), size: 29)),
+                const SizedBox(width: 14),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(device.$1, style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    _tag(device.$2, device.$9 ? const Color(0xFFE0FFF1) : const Color(0xFFFFF0F0), device.$9 ? const Color(0xFF00B96B) : const Color(0xFFFF3152)),
+                    if (device.$3.isNotEmpty) _tag(device.$3, const Color(0xFFEAF1FF), const Color(0xFF245BFF)),
+                    if (device.$4.isNotEmpty) _tag(device.$4, const Color(0xFFE0FFF1), const Color(0xFF00B96B)),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(device.$5, style: TextStyle(color: muted, fontSize: 11)),
+                ])),
+              ]),
+              const Divider(height: 24),
+              _dateRow('IP', device.$6, muted),
+              const SizedBox(height: 12),
+              _dateRow('Region', device.$7, muted),
+              const SizedBox(height: 12),
+              _dateRow('Device ID', device.$8, muted),
+              if (!device.$9) ...[
+                const SizedBox(height: 14),
+                SizedBox(width: double.infinity, child: _dangerButton(context, 'Remove', () => _message(context, 'Device removal is not connected yet.'))),
+              ],
+            ])),
+          ] else if (title == 'Account Management') ...[
+            _subCard(context, Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: const Color(0xFFFFE8E8), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.shieldAlert, color: Color(0xFFFF1744), size: 25)),
+              const SizedBox(width: 13),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Delete Account', style: TextStyle(color: Color(0xFFFF1744), fontSize: 17, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 9),
+                Text('Once your account is deleted, it cannot be recovered. You will lose access to your account and all historical data. If you create a new account later, identity verification may take longer.', style: TextStyle(color: muted, fontSize: 13, height: 1.5)),
+              ])),
+            ])),
+            const SizedBox(height: 18),
+            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [const Icon(LucideIcons.alertCircle, color: Color(0xFFEA7B22)), const SizedBox(width: 9), Text('Before you continue', style: TextStyle(color: scheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800))]),
+              const SizedBox(height: 14),
+              for (final line in ['You will permanently lose access to your account and all your data.', 'Your personal information, settings, and history will be deleted and cannot be recovered.', 'If you create a new account later, identity verification may take longer.'])
+                Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('•  ', style: TextStyle(color: muted)), Expanded(child: Text(line, style: TextStyle(color: muted, fontSize: 13, height: 1.45))),
+                ])),
+            ])),
+            const SizedBox(height: 26),
+            Text('This action cannot be undone. Please proceed carefully.', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 12)),
+            const SizedBox(height: 12),
+            SizedBox(height: 54, child: FilledButton(onPressed: () => _message(context, 'Account deletion request is not connected. No deletion was submitted.'), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF245BFF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))), child: const Text('Request Account Deletion', style: TextStyle(fontWeight: FontWeight.w800)))),
+          ] else ...[
+            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Recent account activity', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w800, fontSize: 16)),
+              const SizedBox(height: 10),
+              Text('No account log records are connected in this preview.', style: TextStyle(color: muted, fontSize: 13)),
+            ])),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static Widget _subCard(BuildContext context, Widget child) => Container(
+    width: double.infinity, margin: const EdgeInsets.only(bottom: 18), padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18)),
+    child: child,
+  );
+
+  static Widget _tag(String text, Color bg, Color fg) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(7)),
+    child: Text(text, style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w600)),
+  );
+
+  static Widget _dateRow(String label, String value, Color muted) => Row(children: [
+    Expanded(child: Text(label, style: TextStyle(color: muted, fontSize: 13))),
+    Flexible(child: Text(value, textAlign: TextAlign.end, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+  ]);
+
+  static Widget _actionButton(BuildContext context, String label, VoidCallback onTap) => SizedBox(height: 46, child: FilledButton.tonal(onPressed: onTap, style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: Text(label, textAlign: TextAlign.center)));
+
+  static Widget _dangerButton(BuildContext context, String label, VoidCallback onTap) => SizedBox(height: 48, child: FilledButton(onPressed: onTap, style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFFE4E4), foregroundColor: const Color(0xFFFF1744), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: Text(label)));
+
+  static void _message(BuildContext context, String text) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 }

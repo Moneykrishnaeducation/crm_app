@@ -296,6 +296,7 @@ class _AppShellState extends State<AppShell> {
   ThemeMode get _effectiveThemeMode => _currentThemeMode ?? widget.themeMode;
   String _selectedPage = 'Dashboard';
   final List<String> _navigationHistory = <String>[];
+  final GlobalKey<MamPageState> _mamKey = GlobalKey<MamPageState>();
   BrokerAccount? _selectedAccount;
   String _accountDetailsReturnPage = 'Trading Accounts';
   bool _balanceVisible = true;
@@ -422,6 +423,10 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _handleBack() {
+    if (_mamKey.currentState?.popSubView() == true) {
+      return;
+    }
+
     if (_navigationHistory.isNotEmpty) {
       final prev = _navigationHistory.removeLast();
       setState(() {
@@ -655,22 +660,27 @@ class _AppShellState extends State<AppShell> {
         'Tickets' => const BrokerTicketsPage(),
         'Privacy Policy' => const BrokerPrivacyPolicyPage(),
         'MAM' || 'MAM Account' => MamPage(
+            key: _mamKey,
             initialTab: 0,
             onBack: _handleBack,
           ),
         'MAM Manager' => MamPage(
+            key: _mamKey,
             initialTab: 0,
             onBack: _handleBack,
           ),
         'MAM Investor' => MamPage(
+            key: _mamKey,
             initialTab: 1,
             onBack: _handleBack,
           ),
         'Available MAM' || 'MAM Available' => MamPage(
+            key: _mamKey,
             initialTab: 2,
             onBack: _handleBack,
           ),
         'Social Trading' => MamPage(
+            key: _mamKey,
             initialTab: 0,
             onBack: _handleBack,
           ),
@@ -722,7 +732,9 @@ class _AppShellState extends State<AppShell> {
     final primaryIndex = _primaryTabIndex;
     return PopScope(
       key: const Key('app_shell_pop_scope'),
-      canPop: _selectedPage == 'Dashboard' && _navigationHistory.isEmpty,
+      canPop: _selectedPage == 'Dashboard' &&
+          _navigationHistory.isEmpty &&
+          !(_mamKey.currentState?.hasActiveSubView ?? false),
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         _handleBack();

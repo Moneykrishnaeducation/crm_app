@@ -3,10 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crm_app/pages/mam_page.dart';
 
 void main() {
-  testWidgets('investor tab lists accounts before opening account details', (
+  testWidgets('investor tab lists accounts before opening account details, without duplicate second header', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: MamPage(initialTab: 1)));
+    final mamKey = GlobalKey<MamPageState>();
+    await tester.pumpWidget(MaterialApp(home: MamPage(key: mamKey, initialTab: 1)));
     await tester.pumpAndSettle();
 
     expect(find.text('Investor Accounts'), findsOneWidget);
@@ -17,16 +18,20 @@ void main() {
     await tester.tap(find.text('Account Details').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('MAM Account'), findsOneWidget);
-    expect(find.byTooltip('Back to investor accounts'), findsOneWidget);
+    // Verify the second duplicate header with 'Back to investor accounts' is removed
+    expect(find.byTooltip('Back to investor accounts'), findsNothing);
+    expect(mamKey.currentState!.hasActiveSubView, isTrue);
+    expect(find.text('TESTTEST1 - INVESTMENT'), findsOneWidget);
     expect(find.text('Investment Overview'), findsNothing);
     expect(find.text('Manage investment account 3511.'), findsNothing);
 
-    await tester.tap(find.byTooltip('Back to investor accounts'));
+    // Popping subview (via PopScope or top app bar) transitions back to Investor Accounts
+    final handled = await tester.binding.handlePopRoute();
+    expect(handled, isTrue);
     await tester.pumpAndSettle();
 
+    expect(mamKey.currentState!.hasActiveSubView, isFalse);
     expect(find.text('Investor Accounts'), findsOneWidget);
-    expect(find.text('MAM Account'), findsNothing);
   });
 
   testWidgets('position clone count supports 1x through 5x', (tester) async {

@@ -252,10 +252,10 @@ class MamPage extends StatefulWidget {
   final bool showBackButton;
 
   @override
-  State<MamPage> createState() => _MamPageState();
+  State<MamPage> createState() => MamPageState();
 }
 
-class _MamPageState extends State<MamPage> {
+class MamPageState extends State<MamPage> {
   late int _tab;
 
   // Search & Filter controllers
@@ -541,7 +541,32 @@ class _MamPageState extends State<MamPage> {
     showAppMessage('$label copied: $text');
   }
 
+  bool get hasActiveSubView =>
+      _selectedMasterDetail != null ||
+      _selectedInvestorAccountId != null ||
+      _selectedInvestorDetail != null;
+
+  bool popSubView() {
+    if (_selectedMasterDetail != null) {
+      setState(() {
+        _selectedMasterDetail = null;
+      });
+      return true;
+    }
+    if (_selectedInvestorAccountId != null || _selectedInvestorDetail != null) {
+      setState(() {
+        _selectedInvestorDetail = null;
+        _selectedInvestorAccountId = null;
+      });
+      return true;
+    }
+    return false;
+  }
+
   void _handleBack() {
+    if (popSubView()) {
+      return;
+    }
     if (widget.onBack != null) {
       widget.onBack!();
     } else if (Navigator.canPop(context)) {
@@ -556,20 +581,14 @@ class _MamPageState extends State<MamPage> {
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
-          setState(() {
-            _selectedMasterDetail = null;
-          });
+          popSubView();
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: MamMasterNodeWorkspace(
               master: _selectedMasterDetail!,
-              onBack: () {
-                setState(() {
-                  _selectedMasterDetail = null;
-                });
-              },
+              onBack: () => popSubView(),
               onUpdate: (updatedMaster) {
                 setState(() {
                   _selectedMasterDetail = updatedMaster;
@@ -592,126 +611,84 @@ class _MamPageState extends State<MamPage> {
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
-          setState(() {
-            _selectedInvestorDetail = null;
-            _selectedInvestorAccountId = null;
-          });
+          popSubView();
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
-            child: Column(
-              children: [
-                _buildInvestorDetailTopBar(),
-                Expanded(
-                  child: MamInvestorPage(
-                    showBackButton: false,
-                    initialAccountId: _selectedInvestorAccountId ?? '3511',
-                    onBack: () {
-                      setState(() {
-                        _selectedInvestorDetail = null;
-                        _selectedInvestorAccountId = null;
-                      });
-                    },
-                    onExploreAvailable: () {
-                      setState(() {
-                        _selectedInvestorDetail = null;
-                        _selectedInvestorAccountId = null;
-                        _tab = 2;
-                      });
-                    },
-                  ),
-                ),
-              ],
+            child: MamInvestorPage(
+              showBackButton: false,
+              initialAccountId: _selectedInvestorAccountId ?? '3511',
+              onBack: () => popSubView(),
+              onExploreAvailable: () {
+                setState(() {
+                  _selectedInvestorDetail = null;
+                  _selectedInvestorAccountId = null;
+                  _tab = 2;
+                });
+              },
             ),
           ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 580),
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
+    return PopScope(
+      canPop: !hasActiveSubView,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 580),
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
+                      children: [
+                        if (_tab == 0) ..._buildManagerTab(),
+                        if (_tab == 1) ..._buildInvestorTab(),
+                        if (_tab == 2) ..._buildAvailableTab(),
+                      ],
                     ),
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
-                    children: [
-                      if (_tab == 0) ..._buildManagerTab(),
-                      if (_tab == 1) ..._buildInvestorTab(),
-                      if (_tab == 2) ..._buildAvailableTab(),
-                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: _tab == 0
-          ? FloatingActionButton.extended(
-              onPressed: _openCreateMasterSheet,
-              backgroundColor: _brandBlue,
-              foregroundColor: Colors.white,
-              elevation: 4,
-              icon: const Icon(LucideIcons.plus, size: 18),
-              label: Text(
-                'Create Master Node',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
+        floatingActionButton: _tab == 0
+            ? FloatingActionButton.extended(
+                onPressed: _openCreateMasterSheet,
+                backgroundColor: _brandBlue,
+                foregroundColor: Colors.white,
+                elevation: 4,
+                icon: const Icon(LucideIcons.plus, size: 18),
+                label: Text(
+                  'Create Master Node',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-            )
-          : null,
+              )
+            : null,
+      ),
     );
   }
 
   // ---------------------------------------------------------------------------
   // TOP BAR
   // ---------------------------------------------------------------------------
-  Widget _buildInvestorDetailTopBar() {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: _c.card,
-        border: Border(bottom: BorderSide(color: _c.border)),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _selectedInvestorDetail = null;
-                _selectedInvestorAccountId = null;
-              });
-            },
-            icon: Icon(LucideIcons.arrowLeft, color: _c.text, size: 20),
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-            tooltip: 'Back to investor accounts',
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'MAM Account',
-            style: GoogleFonts.inter(
-              color: _c.text,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildTopBar() {
     final labels = ['Manager', 'Investor', 'Available'];

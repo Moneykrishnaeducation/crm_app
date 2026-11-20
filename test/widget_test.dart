@@ -26,7 +26,7 @@ void main() {
 
     // Verify Dashboard is displayed
     expect(find.text('Dashboard'), findsWidgets);
-    expect(find.text('Total portfolio balance'), findsOneWidget);
+    expect(find.text('Total balance'), findsOneWidget);
   });
 
   testWidgets('AppShell dashboard displays portfolio and can hide balance', (
@@ -45,8 +45,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Dashboard'), findsWidgets);
-    expect(find.text('Total portfolio balance'), findsOneWidget);
-    expect(find.text('\$125,800.00'), findsOneWidget);
+    expect(find.text('Total balance'), findsOneWidget);
+    expect(find.text(r'$12,450.00'), findsOneWidget);
 
     await tester.tap(find.byIcon(LucideIcons.eye).first);
     await tester.pumpAndSettle();

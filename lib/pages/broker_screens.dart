@@ -48,20 +48,22 @@ class BrokerDashboardPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _BrokerBalance(
-                        visible: balanceVisible,
-                        onToggle: onToggleBalance,
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _BrokerBalance(
+                          visible: balanceVisible,
+                          onToggle: onToggleBalance,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _FloatingPnlCard(visible: balanceVisible),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _FloatingPnlCard(visible: balanceVisible),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const _PortfolioPerformance(),
@@ -132,7 +134,7 @@ class _BrokerBalance extends StatelessWidget {
         ),
         const SizedBox(height: 9),
         Text(
-          visible ? r'\$12,450.00' : '••••••••',
+          visible ? r'$12,450.00' : '••••••••',
           style: GoogleFonts.inter(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.5),
         ),
         const SizedBox(height: 7),
@@ -192,7 +194,7 @@ class _FloatingPnlCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            visible ? r'+\$245.80' : '••••••',
+            visible ? r'+$245.80' : '••••••',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -260,7 +262,7 @@ class _PortfolioPerformanceState extends State<_PortfolioPerformance> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(r'\$12,695.80', style: GoogleFonts.inter(color: foreground, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.6)),
+                    Text(r'$12,695.80', style: GoogleFonts.inter(color: foreground, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.6)),
                     const SizedBox(height: 4),
                     const Text('Illustrative data  ·  +2.1%', style: TextStyle(color: Color(0xFF16A36A), fontSize: 10, fontWeight: FontWeight.w700)),
                   ],

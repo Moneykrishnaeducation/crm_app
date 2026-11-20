@@ -35,7 +35,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // 1. Initial page is Dashboard, canPop should be true
-        expect(find.text('Total portfolio balance'), findsOneWidget);
+        expect(find.text('Total balance'), findsOneWidget);
         expect(getPopScope(tester).canPop, isTrue);
 
         // 2. Navigate to Trading Accounts
@@ -66,7 +66,7 @@ void main() {
         expect(handledOnAccounts, isTrue);
         await tester.pumpAndSettle();
 
-        expect(find.text('Total portfolio balance'), findsOneWidget);
+        expect(find.text('Total balance'), findsOneWidget);
         expect(getPopScope(tester).canPop, isTrue);
 
         // 6. On Dashboard with empty history, canPop is true allowing system pop
@@ -118,7 +118,7 @@ void main() {
         // 6. Press back third time -> returns to Dashboard
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(find.text('Total portfolio balance'), findsOneWidget);
+        expect(find.text('Total balance'), findsOneWidget);
 
         // 7. On Dashboard, canPop is true
         expect(getPopScope(tester).canPop, isTrue);
@@ -146,7 +146,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Quick actions'), findsNothing);
-        expect(find.text('Total portfolio balance'), findsOneWidget);
+        expect(find.text('Total balance'), findsOneWidget);
         expect(getPopScope(tester).canPop, isTrue);
       },
     );
@@ -177,7 +177,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('CREATE DEMO ACCOUNT'), findsNothing);
-        expect(find.text('Total portfolio balance'), findsOneWidget);
+        expect(find.text('Total balance'), findsOneWidget);
         expect(getPopScope(tester).canPop, isTrue);
       },
     );
@@ -205,7 +205,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Verify back on Dashboard
-        expect(find.text('Total portfolio balance'), findsOneWidget);
+        expect(find.text('Total balance'), findsOneWidget);
         expect(getPopScope(tester).canPop, isTrue);
       },
     );

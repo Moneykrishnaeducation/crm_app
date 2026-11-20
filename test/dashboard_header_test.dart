@@ -32,20 +32,21 @@ void main() {
 
     // 2. Dashboard components:
     // Hero Balance Card
-    expect(find.text('Total Balance'), findsOneWidget);
-    expect(find.text(r'$125,800.00'), findsOneWidget);
+    expect(find.text('Total balance'), findsOneWidget);
+    expect(find.text(r'$12,450.00'), findsOneWidget);
     final dashboardEye = find.descendant(
       of: find.byType(BrokerDashboardPage),
       matching: find.byIcon(LucideIcons.eye),
     );
     expect(dashboardEye, findsOneWidget);
-    expect(find.textContaining('Position Total P&L:'), findsOneWidget);
+    expect(find.text('Floating P&L'), findsOneWidget);
+    expect(find.text(r'+$245.80'), findsOneWidget);
 
     // Toggle balance eye
     await tester.tap(dashboardEye);
     await tester.pumpAndSettle();
     expect(find.text('••••••••'), findsOneWidget);
-    expect(find.textContaining('****** USD'), findsOneWidget);
+    expect(find.text('••••••'), findsOneWidget);
     final dashboardEyeOff = find.descendant(
       of: find.byType(BrokerDashboardPage),
       matching: find.byIcon(LucideIcons.eyeOff),
@@ -55,7 +56,8 @@ void main() {
     // Toggle back
     await tester.tap(dashboardEyeOff);
     await tester.pumpAndSettle();
-    expect(find.text(r'$125,800.00'), findsOneWidget);
+    expect(find.text(r'$12,450.00'), findsOneWidget);
+    expect(find.text(r'+$245.80'), findsOneWidget);
 
     // 4 Quick Actions
     expect(find.text('Deposit'), findsWidgets);

@@ -258,7 +258,17 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
         {'from': 'Support team', 'time': 'Yesterday, 04:12 PM', 'body': 'We have received your request. Our verification team is reviewing the account details. We will update you here if any additional information is required.', 'attachments': ['Profile_update_guide.pdf']},
       ]);
     } else {
-      _messages.add({'from': 'You', 'time': widget.ticket['updated'] ?? 'Recently', 'body': 'I am following up on this request. Please let me know if you need any further information.'});
+      final isClosed = widget.ticket['status'] == 'Closed';
+      _messages.add({
+        'from': 'You',
+        'time': widget.ticket['updated'] ?? 'Recently',
+        'body': isClosed
+            ? 'I have attached the relevant document for reference. Please review the details.'
+            : 'I am following up on this request. Please let me know if you need any further information.',
+        'attachments': isClosed
+            ? ['Withdrawal_confirmation.pdf', 'Transaction_screenshot.png']
+            : ['Supporting_document.pdf', 'Issue_screenshot.png'],
+      });
     }
   }
 

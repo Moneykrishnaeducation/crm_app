@@ -1309,114 +1309,100 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Color title,
     bool isDark,
   ) {
+    return _buildAnalyticsPanel(
+      title: 'Equity Curve',
+      subtitle: 'Historical account equity',
+      bg: bg,
+      border: border,
+      titleColor: title,
+      isDark: isDark,
+      icon: LucideIcons.activity,
+      message: 'No equity history available',
+      detail: 'Equity history will appear here when account data is available.',
+      height: 176,
+      gestureKey: const Key('equity_curve_gesture'),
+    );
+  }
+
+  Widget _buildAnalyticsPanel({
+    required String title,
+    required String subtitle,
+    required Color bg,
+    required Color border,
+    required Color titleColor,
+    required bool isDark,
+    required IconData icon,
+    required String message,
+    required String detail,
+    required double height,
+    required Key gestureKey,
+  }) {
+    final muted = isDark ? const Color(0xFF8190A5) : const Color(0xFF8995A7);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Equity Curve',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: title,
-          ),
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 17, color: const Color(0xFF3B82F6)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w750, color: titleColor,
+                  )),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 11, color: muted)),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         Container(
-          height: 180,
-          padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+          height: height,
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(color: border, width: 0.8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
           ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              const leftMargin = 28.0;
-              final chartWidth = constraints.maxWidth - leftMargin;
-              String? tooltipDate;
-              double? tooltipLeft;
-
-              if (_equityScrubOffset != null && chartWidth > 0) {
-                final clampedX = (_equityScrubOffset!.dx - leftMargin).clamp(0.0, chartWidth);
-                final t = (clampedX / chartWidth).clamp(0.0, 1.0);
-                final dayOffset = (t * 30).round();
-                final baseDate = DateTime(2026, 10, 18).add(Duration(days: dayOffset));
-                final mm = baseDate.month.toString().padLeft(2, '0');
-                final dd = baseDate.day.toString().padLeft(2, '0');
-                tooltipDate = '$mm/$dd';
-                tooltipLeft = (leftMargin + clampedX - 60).clamp(10.0, constraints.maxWidth - 120.0);
-              }
-
-              return GestureDetector(
-                key: const Key('equity_curve_gesture'),
-                behavior: HitTestBehavior.opaque,
-                onTapDown: (details) {
-                  HapticFeedback.selectionClick();
-                  setState(() => _equityScrubOffset = details.localPosition);
-                },
-                onPanDown: (details) {
-                  HapticFeedback.selectionClick();
-                  setState(() => _equityScrubOffset = details.localPosition);
-                },
-                onPanUpdate: (details) {
-                  setState(() => _equityScrubOffset = details.localPosition);
-                },
-                onPanEnd: (_) {
-                  setState(() => _equityScrubOffset = null);
-                },
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    CustomPaint(
-                      size: Size.infinite,
-                      painter: _EquityCurvePainter(
-                        isDark: isDark,
-                        scrubOffset: _equityScrubOffset,
-                      ),
+          child: GestureDetector(
+            key: gestureKey,
+            behavior: HitTestBehavior.opaque,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? const Color(0xFF1D2B42) : const Color(0xFFEFF4FC),
                     ),
-                    if (tooltipDate != null && tooltipLeft != null)
-                      Positioned(
-                        left: tooltipLeft,
-                        top: 2,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFF334155),
-                              width: 0.8,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x33000000),
-                                blurRadius: 6,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            '$tooltipDate • \$0.00 USD',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
+                    child: Icon(LucideIcons.chartNoAxesCombined, size: 20, color: muted),
+                  ),
+                  const SizedBox(height: 11),
+                  Text(message, textAlign: TextAlign.center, style: TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700, color: titleColor,
+                  )),
+                  const SizedBox(height: 4),
+                  Text(detail, textAlign: TextAlign.center, style: TextStyle(
+                    fontSize: 11, height: 1.4, color: muted,
+                  )),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -1434,16 +1420,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Title and Symbol Selector Row
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'P&L Analysis',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: title,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('P&L Analysis', style: TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w750, color: title,
+                  )),
+                  const SizedBox(height: 2),
+                  Text('Profit and loss breakdown', style: TextStyle(fontSize: 11, color: muted)),
+                ],
               ),
             ),
             PopupMenuButton<String>(
@@ -1459,195 +1447,63 @@ class _TradeReportPageState extends State<TradeReportPage> {
                 borderRadius: BorderRadius.circular(14),
                 side: BorderSide(color: border, width: 0.8),
               ),
-              itemBuilder: (ctx) => _symbolOptions
-                  .map(
-                    (s) => PopupMenuItem<String>(
-                      value: s,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: s == _symbolFilter ? const Color(0xFF2563EB) : Colors.transparent,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              s,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: s == _symbolFilter ? FontWeight.w700 : FontWeight.w500,
-                                color: s == _symbolFilter ? const Color(0xFF2563EB) : title,
-                              ),
-                            ),
-                          ),
-                          if (s == _symbolFilter)
-                            const Icon(LucideIcons.check, size: 16, color: Color(0xFF2563EB)),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
+              itemBuilder: (ctx) => _symbolOptions.map((symbol) => PopupMenuItem<String>(
+                value: symbol,
+                child: Row(children: [
+                  Icon(
+                    symbol == _symbolFilter ? LucideIcons.circleCheck : LucideIcons.circle,
+                    size: 15,
+                    color: symbol == _symbolFilter ? const Color(0xFF2563EB) : muted,
+                  ),
+                  const SizedBox(width: 9),
+                  Text(symbol, style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: symbol == _symbolFilter ? FontWeight.w700 : FontWeight.w500,
+                    color: symbol == _symbolFilter ? const Color(0xFF2563EB) : title,
+                  )),
+                ]),
+              )).toList(),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: border, width: 0.8),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: border),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _symbolFilter,
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: title),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(LucideIcons.chevronDown, size: 13, color: muted),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Day / Hour Pill Switch
-        Row(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0).withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(2),
-              child: Row(
-                children: [
-                  _buildTimeframePill('Day', _timeframe == 'Day'),
-                  _buildTimeframePill('Hour', _timeframe == 'Hour'),
-                ],
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(_symbolFilter, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w650, color: title)),
+                  const SizedBox(width: 5),
+                  Icon(LucideIcons.chevronDown, size: 13, color: muted),
+                ]),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-
-        // P&L Chart Container with AnimatedSwitcher
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          child: Container(
-            key: ValueKey('pnl_chart_$_timeframe'),
-            height: 190,
-            padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: border, width: 0.8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                const leftMargin = 28.0;
-                final chartWidth = constraints.maxWidth - leftMargin;
-                final labels = _timeframe == 'Hour'
-                    ? const ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59']
-                    : const [
-                        '10/18',
-                        '10/22',
-                        '10/26',
-                        '10/30',
-                        '11/03',
-                        '11/07',
-                        '11/11',
-                        '11/15',
-                      ];
-
-                String? tooltipLabel;
-                double? tooltipLeft;
-
-                if (_pnlScrubOffset != null && chartWidth > 0) {
-                  final clampedX = (_pnlScrubOffset!.dx - leftMargin).clamp(0.0, chartWidth);
-                  final t = (clampedX / chartWidth).clamp(0.0, 1.0);
-                  final index = (t * (labels.length - 1)).round().clamp(0, labels.length - 1);
-                  tooltipLabel = labels[index];
-                  tooltipLeft = (leftMargin + clampedX - 60).clamp(10.0, constraints.maxWidth - 120.0);
-                }
-
-                return GestureDetector(
-                  key: const Key('pnl_chart_gesture'),
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) {
-                    HapticFeedback.selectionClick();
-                    setState(() => _pnlScrubOffset = details.localPosition);
-                  },
-                  onPanDown: (details) {
-                    HapticFeedback.selectionClick();
-                    setState(() => _pnlScrubOffset = details.localPosition);
-                  },
-                  onPanUpdate: (details) {
-                    setState(() => _pnlScrubOffset = details.localPosition);
-                  },
-                  onPanEnd: (_) {
-                    setState(() => _pnlScrubOffset = null);
-                  },
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      CustomPaint(
-                        size: Size.infinite,
-                        painter: _PnLAnalysisChartPainter(
-                          isDark: isDark,
-                          timeframe: _timeframe,
-                          scrubOffset: _pnlScrubOffset,
-                        ),
-                      ),
-                      if (tooltipLabel != null && tooltipLeft != null)
-                        Positioned(
-                          left: tooltipLeft,
-                          top: 2,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0F172A),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: const Color(0xFF334155),
-                                width: 0.8,
-                              ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x33000000),
-                                  blurRadius: 6,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              '$tooltipLabel • \$0.00 USD',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1B2739) : const Color(0xFFE9EEF6),
+            borderRadius: BorderRadius.circular(11),
           ),
+          child: Row(children: [
+            Expanded(child: _buildTimeframePill('Day', _timeframe == 'Day')),
+            Expanded(child: _buildTimeframePill('Hour', _timeframe == 'Hour')),
+          ]),
+        ),
+        const SizedBox(height: 10),
+        _buildAnalyticsPanel(
+          title: '$_timeframe view',
+          subtitle: '$_symbolFilter · selected reporting period',
+          bg: bg,
+          border: border,
+          titleColor: title,
+          isDark: isDark,
+          icon: LucideIcons.chartLine,
+          message: 'No P&L data for this selection',
+          detail: 'Closed trade results will be plotted here once available.',
+          height: 184,
+          gestureKey: const Key('pnl_chart_gesture'),
         ),
       ],
     );

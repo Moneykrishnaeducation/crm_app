@@ -9,6 +9,62 @@ class BrokerTicketsPage extends StatefulWidget {
 class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
   String _filter = 'All';
 
+  static const List<Map<String, String>> _mockTickets = [
+    {'id': 'TKT-2026-1048', 'subject': 'Deposit not reflected in trading account', 'department': 'Deposit & Payout', 'status': 'Open', 'priority': 'High', 'updated': 'Today, 10:42 AM'},
+    {'id': 'TKT-2026-1036', 'subject': 'Unable to access MT5 trading platform', 'department': 'Trading & MT5', 'status': 'In-progress', 'priority': 'Medium', 'updated': 'Today, 09:15 AM'},
+    {'id': 'TKT-2026-1019', 'subject': 'Request to update profile information', 'department': 'Account & KYC', 'status': 'In-progress', 'priority': 'Low', 'updated': 'Yesterday, 04:30 PM'},
+    {'id': 'TKT-2026-0987', 'subject': 'Withdrawal status clarification', 'department': 'Deposit & Payout', 'status': 'Closed', 'priority': 'Medium', 'updated': '18 Nov 2026'},
+    {'id': 'TKT-2026-0962', 'subject': 'Partner commission statement query', 'department': 'Partnership / IB', 'status': 'Open', 'priority': 'Low', 'updated': '17 Nov 2026'},
+  ];
+
+  List<Map<String, String>> get _visibleTickets => _filter == 'All'
+      ? _mockTickets
+      : _mockTickets.where((ticket) => ticket['status'] == _filter).toList();
+
+  Widget _ticketCard(Map<String, String> ticket, ThemeData theme) {
+    final scheme = theme.colorScheme;
+    final status = ticket['status']!;
+    final statusColor = status == 'Open' ? const Color(0xFFE39A24)
+        : status == 'In-progress' ? const Color(0xFF3989D6) : const Color(0xFF249B72);
+    final priority = ticket['priority']!;
+    final priorityColor = priority == 'High' ? const Color(0xFFE15B5B)
+        : priority == 'Medium' ? const Color(0xFFE39A24) : scheme.onSurfaceVariant;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: .8))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Text(ticket['id']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .45))),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(color: statusColor.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
+            child: Text(status, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900))),
+        ]),
+        const SizedBox(height: 9),
+        Text(ticket['subject']!, style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w800, height: 1.35)),
+        const SizedBox(height: 9),
+        Row(children: [
+          Icon(LucideIcons.folder, size: 12, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 5),
+          Expanded(child: Text(ticket['department']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
+          Container(width: 5, height: 5, decoration: BoxDecoration(color: priorityColor, shape: BoxShape.circle)),
+          const SizedBox(width: 5),
+          Text('${priority} priority', style: TextStyle(color: priorityColor, fontSize: 9, fontWeight: FontWeight.w700)),
+        ]),
+        const SizedBox(height: 11),
+        Divider(height: 1, color: theme.dividerColor.withValues(alpha: .65)),
+        const SizedBox(height: 9),
+        Row(children: [
+          Icon(LucideIcons.clock3, size: 12, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 5),
+          Expanded(child: Text('Updated ${ticket['updated']}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
+          Icon(LucideIcons.chevronRight, size: 16, color: scheme.onSurfaceVariant),
+        ]),
+      ]),
+    );
+  }
+
   Future<void> _openRequestForm() async {
     final submitted = await showModalBottomSheet<bool>(
       context: context, isScrollControlled: true, useSafeArea: true,
@@ -100,6 +156,24 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
             Icon(LucideIcons.listFilter, color: muted, size: 17),
           ]),
           const SizedBox(height: 12),
+          const SizedBox(height: 12),
+          Row(children: [
+            for (final item in [
+              ('Open', _mockTickets.where((t) => t['status'] == 'Open').length, const Color(0xFFE39A24)),
+              ('In progress', _mockTickets.where((t) => t['status'] == 'In-progress').length, const Color(0xFF3989D6)),
+              ('Closed', _mockTickets.where((t) => t['status'] == 'Closed').length, const Color(0xFF249B72)),
+            ])
+              Expanded(child: Container(
+                margin: const EdgeInsets.only(right: 7), padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
+                decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(13), border: Border.all(color: border)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${item.$2}', style: TextStyle(color: item.$3, fontSize: 17, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 2),
+                  Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 8, fontWeight: FontWeight.w700)),
+                ]),
+              )),
+          ]),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
@@ -125,40 +199,12 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
             ]),
           ),
           const SizedBox(height: 13),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 25, 20, 22),
-            decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(19), border: Border.all(color: border)),
-            child: Column(children: [
-              Container(
-                width: 58, height: 58,
-                decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(18)),
-                child: Icon(LucideIcons.inbox, color: scheme.primary, size: 26),
-              ),
-              const SizedBox(height: 14),
-              Text(_filter == 'All' ? 'No support tickets yet' : 'No $_filter tickets', textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.onSurface, fontSize: 14, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 6),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 270),
-                child: Text(
-                  _filter == 'All' ? 'Your support requests will appear here once they are available.' : 'There are no ${_filter.toLowerCase()} requests to display.',
-                  textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 10.5, height: 1.55),
-                ),
-              ),
-              const SizedBox(height: 17),
-              OutlinedButton.icon(
-                onPressed: _openRequestForm,
-                icon: const Icon(LucideIcons.messageCirclePlus, size: 16),
-                label: const Text('Contact support', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: scheme.primary, side: BorderSide(color: scheme.primary.withValues(alpha: .35)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-                ),
-              ),
-            ]),
-          ),
+          if (_visibleTickets.isEmpty)
+            Container(padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)),
+              child: Center(child: Text('No tickets in this status.', style: TextStyle(color: muted, fontSize: 11))))
+          else
+            for (final ticket in _visibleTickets) _ticketCard(ticket, theme),
           const SizedBox(height: 12),
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(LucideIcons.info, color: muted, size: 13),

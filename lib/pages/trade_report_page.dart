@@ -1464,7 +1464,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
       const SizedBox(height: 13),
       Row(children: [
         Expanded(child: _buildMetricTile(label: 'Net closed P&L',
-          value: '${totalProfit < 0 ? '-' : ''}$ ${totalProfit.abs().toStringAsFixed(2)}',
+          value: '${totalProfit < 0 ? '-' : ''}$currency ${totalProfit.abs().toStringAsFixed(2)}',
           helper: '${trades.length} supplied trade records', bg: bg, border: border,
           title: title, muted: muted, isDark: isDark, valueColor: pnlColor)),
         const SizedBox(width: 9),
@@ -1477,12 +1477,12 @@ class _TradeReportPageState extends State<TradeReportPage> {
       const SizedBox(height: 9),
       Row(children: [
         Expanded(child: _buildMetricTile(label: 'Average win',
-          value: '$ ${averageWin.toStringAsFixed(2)}', helper: 'Per winning trade',
+          value: '$currency ${averageWin.toStringAsFixed(2)}', helper: 'Per winning trade',
           bg: bg, border: border, title: title, muted: muted, isDark: isDark,
           valueColor: const Color(0xFF16A36A))),
         const SizedBox(width: 9),
         Expanded(child: _buildMetricTile(label: 'Average loss',
-          value: '$ ${averageLoss.toStringAsFixed(2)}', helper: 'Per losing trade',
+          value: '$currency ${averageLoss.toStringAsFixed(2)}', helper: 'Per losing trade',
           bg: bg, border: border, title: title, muted: muted, isDark: isDark,
           valueColor: const Color(0xFFEF5350))),
       ]),
@@ -1518,7 +1518,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
       const SizedBox(height: 13),
       Row(children: [
         Expanded(child: Text('Trade P&L breakdown', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: title))),
-        Text('$ $currency', style: TextStyle(fontSize: 10, color: muted)),
+        Text(currency, style: TextStyle(fontSize: 10, color: muted)),
       ]),
       const SizedBox(height: 8),
       Container(

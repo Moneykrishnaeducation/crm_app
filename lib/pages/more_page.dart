@@ -5,91 +5,111 @@ class BrokerMorePage extends StatelessWidget {
   final ValueChanged<String> onSelectPage;
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: Theme.of(context).scaffoldBackgroundColor,
-    child: ListView(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 112),
-      children: [
-        _MoreProfileCard(onTap: () => onSelectPage('Profile')),
-        const SizedBox(height: 24),
-        const _MoreSectionLabel(
-          'INVESTMENT MANAGEMENT & PARTNERSHIPS',
-          subtitle: 'Portfolio management, investor accounts, fund allocations and partner referrals',
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
-
-        _MoreMenuGroup(
-          children: [
-            _MoreMenuRow(
-              icon: LucideIcons.layers,
-              title: 'PAMM',
-              subtitle: 'Managed pools, available pools and my investments',
-              accent: const Color(0xFF365CEB),
-              onTap: () => onSelectPage('PAMM Account'),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
+        children: [
+          Text(
+            'More',
+            style: TextStyle(
+              color: scheme.onSurface,
+              fontSize: 25,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.7,
             ),
-            _MoreMenuRow(
-              icon: LucideIcons.briefcaseBusiness,
-              title: 'MAM',
-              subtitle: 'MAM Manager, MAM Investor and MAM Available',
-              onTap: () => onSelectPage('MAM Account'),
-            ),
-            _MoreMenuRow(
-              icon: LucideIcons.network,
-              title: 'Partnership',
-              subtitle: 'IB overview, referrals and commissions',
-              accent: _brokerGold,
-              onTap: () => onSelectPage('Partnership'),
-              showDivider: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        const _MoreSectionLabel(
-          'PREFERENCES',
-          subtitle: 'Personalise your app experience',
-        ),
-        _MoreMenuGroup(
-          children: [
-            _MoreMenuRow(
-              icon: LucideIcons.download,
-              title: 'Download Center',
-              subtitle: 'Access platform downloads',
-              onTap: () => onSelectPage('Platform'),
-            ),
-            _MoreMenuRow(
-              icon: LucideIcons.shieldCheck,
-              title: 'Security Center',
-              subtitle: 'Account protection and security',
-              onTap: () => onSelectPage('Security Center'),
-              showDivider: false,
-            ),
-            _MoreMenuRow(
-              icon: LucideIcons.settings,
-              title: 'Settings',
-              subtitle: 'Application preferences',
-              onTap: () => onSelectPage('Settings'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        const _MoreSectionLabel(
-          'SUPPORT',
-          subtitle: 'Get help and manage your requests',
-        ),
-        _MoreMenuGroup(
-          children: [
-            _MoreMenuRow(
-              icon: LucideIcons.messageSquare,
-              title: 'Tickets',
-              subtitle: 'View and manage support tickets',
-              onTap: () => onSelectPage('Tickets'),
-              showDivider: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-      ],
-    ),
-  );
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Your account, tools and support in one place',
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5),
+          ),
+          const SizedBox(height: 18),
+          _MoreProfileCard(onTap: () => onSelectPage('Profile')),
+          const SizedBox(height: 24),
+          const _MoreSectionLabel(
+            'INVESTMENT & PARTNERSHIPS',
+            subtitle: 'Manage investments, portfolios and referrals',
+          ),
+          _MoreMenuGroup(
+            children: [
+              _MoreMenuRow(
+                icon: LucideIcons.layers,
+                title: 'PAMM',
+                subtitle: 'Managed pools and your investments',
+                accent: const Color(0xFF365CEB),
+                onTap: () => onSelectPage('PAMM Account'),
+              ),
+              _MoreMenuRow(
+                icon: LucideIcons.briefcaseBusiness,
+                title: 'MAM',
+                subtitle: 'Manager and investor accounts',
+                onTap: () => onSelectPage('MAM Account'),
+              ),
+              _MoreMenuRow(
+                icon: LucideIcons.network,
+                title: 'Partnership',
+                subtitle: 'IB overview, referrals and commissions',
+                accent: _brokerGold,
+                onTap: () => onSelectPage('Partnership'),
+                showDivider: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          const _MoreSectionLabel(
+            'PREFERENCES & SECURITY',
+            subtitle: 'Configure your experience and protect your account',
+          ),
+          _MoreMenuGroup(
+            children: [
+              _MoreMenuRow(
+                icon: LucideIcons.download,
+                title: 'Download Center',
+                subtitle: 'Access platform downloads',
+                onTap: () => onSelectPage('Platform'),
+              ),
+              _MoreMenuRow(
+                icon: LucideIcons.shieldCheck,
+                title: 'Security Center',
+                subtitle: 'Manage account protection and trusted devices',
+                onTap: () => onSelectPage('Security Center'),
+              ),
+              _MoreMenuRow(
+                icon: LucideIcons.settings,
+                title: 'Settings',
+                subtitle: 'Application preferences',
+                onTap: () => onSelectPage('Settings'),
+                showDivider: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          const _MoreSectionLabel(
+            'SUPPORT',
+            subtitle: 'Get assistance and track your requests',
+          ),
+          _MoreMenuGroup(
+            children: [
+              _MoreMenuRow(
+                icon: LucideIcons.messageSquare,
+                title: 'Tickets',
+                subtitle: 'View and manage support tickets',
+                onTap: () => onSelectPage('Tickets'),
+                showDivider: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 }
 
 class _MoreProfileCard extends StatelessWidget {

@@ -2441,10 +2441,16 @@ class _PasswordChangeSuccessSheet extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 66, height: 66,
-            decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF174A8B), Color(0xFF0B2C55)]), shape: BoxShape.circle, border: Border.all(color: _brokerGold, width: 1.5), boxShadow: const [BoxShadow(color: Color(0x1A10264A), blurRadius: 16, offset: Offset(0, 6))]),
-            child: const Icon(LucideIcons.check, color: _brokerGold, size: 34),
+          SizedBox(
+            width: 66,
+            height: 66,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(LucideIcons.circle, color: _bluePrimary, size: 52),
+                const Icon(LucideIcons.check, color: _brokerGold, size: 29),
+              ],
+            ),
           ),
           const SizedBox(height: 18),
           Text('Confirmation complete', style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800), textAlign: TextAlign.center),

@@ -3402,7 +3402,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildOpenPositionsList(BuildContext context, bool isDark) {
-    final positions = _currentOpenPositions;
+    final positions = _currentOpenPositions.where((p) => _matchesActivity('${p.symbol} ${p.id} ${p.isBuy ? 'buy' : 'sell'}', p.openTime)).toList();
     if (positions.isEmpty) return _buildEmptyState(context);
 
     return ListView.builder(
@@ -3606,7 +3606,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildPendingOrdersList(BuildContext context, bool isDark) {
-    final orders = _currentPendingOrders;
+    final orders = _currentPendingOrders.where((o) => _matchesActivity('${o.symbol} ${o.orderType} ${o.id}', o.placedTime)).toList();
     if (orders.isEmpty) return _buildEmptyState(context);
 
     return ListView.builder(
@@ -3786,7 +3786,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildClosedPositionsList(BuildContext context, bool isDark) {
-    final positions = _currentClosedPositions;
+    final positions = _currentClosedPositions.where((p) => _matchesActivity('${p.symbol} ${p.id} ${p.isBuy ? 'buy' : 'sell'}', p.closeTime)).toList();
     if (positions.isEmpty) return _buildEmptyState(context);
 
     return ListView.builder(

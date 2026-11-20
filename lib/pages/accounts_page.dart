@@ -1285,6 +1285,7 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
   }
 }
 
+
 class BrokerAccountDetailsPage extends StatefulWidget {
   const BrokerAccountDetailsPage({super.key, required this.account, required this.onBack, required this.onSelectPage});
   final BrokerAccount account;
@@ -1302,11 +1303,8 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
 
   void _showChangeInvestorPassword(BrokerAccount a) {
     showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
+      context: context, isScrollControlled: true, useSafeArea: true,
+      backgroundColor: Colors.transparent, barrierColor: Colors.black54,
       builder: (_) => _ChangeInvestorPasswordSheet(account: a),
     );
   }
@@ -1314,18 +1312,20 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final a = widget.account;
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     const navy = Color(0xFF071629);
     const panel = Color(0xFF101F34);
     const gold = Color(0xFFFFC533);
     const blue = Color(0xFF39B5FF);
     const green = Color(0xFF08D879);
     const red = Color(0xFFFF6268);
-    final bg = dark ? navy : Theme.of(context).scaffoldBackgroundColor;
+    final bg = dark ? navy : theme.scaffoldBackgroundColor;
     final surface = dark ? panel : Colors.white;
     final border = dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE);
     final fg = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
     final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF718096);
+    final isLive = a.type == 'Live MT5';
     final pnl = a.floatingPnl;
     final pnlColor = pnl == null ? muted : pnl >= 0 ? green : red;
     final trades = a.recentTrades;
@@ -1341,192 +1341,247 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     final rangeCount = switch (_range) { '1D' => 3, '1W' => 5, '1M' => 8, '3M' => 10, 'YTD' => 12, _ => history.length };
     final chartHistory = history.length > rangeCount ? history.sublist(history.length - rangeCount) : history;
     final changePct = chartHistory.length > 1 && chartHistory.first != 0 ? ((chartHistory.last - chartHistory.first) / chartHistory.first) * 100 : 0.0;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = screenWidth < 360 ? 12.0 : 16.0;
+    final bottomNavPadding = 116.0 + MediaQuery.paddingOf(context).bottom;
+    final actionWidth = (screenWidth - horizontalPadding * 2 - 24) / 4;
 
-    Widget metric(String label, String value, {Color? valueColor}) => Expanded(child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 5),
-        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: valueColor ?? fg, fontSize: 19, fontWeight: FontWeight.w800))),
+    Widget metric(String label, String value, {Color? valueColor, bool prominent = false}) => Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: .35)),
+          const SizedBox(height: 6),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: valueColor ?? fg, fontSize: prominent ? 21 : 16, fontWeight: FontWeight.w900, letterSpacing: -.4))),
+        ]),
+      ),
+    );
+
+    Widget infoCell(IconData icon, String label, String value) => Expanded(
+      child: Row(children: [
+        Icon(icon, color: const Color(0xFF8FB5E0), size: 17),
+        const SizedBox(width: 7),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w800)),
+        ])),
       ]),
-    ));
+    );
 
-    Widget infoCell(IconData icon, String label, String value) => Expanded(child: Row(children: [
-      Icon(icon, color: const Color(0xFF8FB5E0), size: 20),
-      const SizedBox(width: 8),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(color: muted, fontSize: 10)),
-        const SizedBox(height: 4),
-        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w700)),
-      ])),
-    ]));
-
-    Widget action(IconData icon, String label, bool primary, VoidCallback onTap) => Expanded(child: SizedBox(
-      height: 64,
+    Widget action(IconData icon, String label, bool primary, VoidCallback onTap, double width) => SizedBox(
+      width: width, height: 68,
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           backgroundColor: primary ? gold : surface,
           foregroundColor: primary ? const Color(0xFF101A29) : fg,
-          side: BorderSide(color: primary ? gold : border, width: 1.2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(horizontal: 2),
+          side: BorderSide(color: primary ? gold : border, width: 1),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 20), const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+          Icon(icon, size: 19), const SizedBox(height: 5),
+          FittedBox(fit: BoxFit.scaleDown, child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800))),
         ]),
       ),
-    ));
+    );
 
     Widget tab(String value) {
       final selected = _tab == value;
-      return Expanded(child: InkWell(
-        onTap: () => setState(() => _tab = value),
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          height: 42,
-          decoration: BoxDecoration(color: selected ? gold : Colors.transparent, borderRadius: BorderRadius.circular(11)),
-          alignment: Alignment.center,
-          child: Text(value, style: TextStyle(color: selected ? const Color(0xFF101A29) : fg, fontSize: 11, fontWeight: FontWeight.w800)),
+      return Expanded(child: Semantics(
+        button: true, selected: selected, label: value + ' tab',
+        child: InkWell(
+          onTap: () => setState(() => _tab = value),
+          borderRadius: BorderRadius.circular(11),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160), height: 42,
+            decoration: BoxDecoration(color: selected ? gold : Colors.transparent, borderRadius: BorderRadius.circular(11)),
+            alignment: Alignment.center,
+            child: Text(value, style: TextStyle(color: selected ? const Color(0xFF101A29) : fg, fontSize: 10, fontWeight: FontWeight.w900)),
+          ),
         ),
       ));
     }
 
     Widget stat(IconData icon, String label, String value, Color accent) => Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(15), border: Border.all(color: border)),
       child: Row(children: [
-        Container(width: 32, height: 32, decoration: BoxDecoration(color: accent.withValues(alpha: .13), shape: BoxShape.circle), child: Icon(icon, color: accent, size: 17)),
-        const SizedBox(width: 9),
+        Container(width: 32, height: 32, decoration: BoxDecoration(color: accent.withValues(alpha: .13), shape: BoxShape.circle), child: Icon(icon, color: accent, size: 16)),
+        const SizedBox(width: 8),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: muted, fontSize: 9)),
+          Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 9, height: 1.2)),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.w800)),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w900))),
         ])),
       ]),
     );
 
-    final bottomNavPadding = 116.0 + MediaQuery.paddingOf(context).bottom;
+    Widget sectionTitle(String title, {String? trailing}) => Row(children: [
+      Expanded(child: Text(title, style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: -.2))),
+      if (trailing != null) Text(trailing, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w700)),
+    ]);
+
+    Widget panelCard({required Widget child, EdgeInsets padding = const EdgeInsets.all(14)}) => Container(
+      padding: padding,
+      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: border)),
+      child: child,
+    );
 
     return Container(
       color: bg,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-        padding: EdgeInsets.fromLTRB(14, 4, 14, bottomNavPadding),
+        padding: EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, bottomNavPadding),
         children: [
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: border)),
-            child: Column(children: [
-              Padding(padding: const EdgeInsets.fromLTRB(12, 11, 12, 10), child: Row(children: [
-                const _AccountLogoBadge(size: 48),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    _AccountPill(label: a.type == 'Live MT5' ? 'Live' : 'Demo', color: a.type == 'Live MT5' ? const Color(0xFF0B9E55) : const Color(0xFF4C91E8), foreground: Colors.white),
-                    const SizedBox(width: 7),
-                    const _AccountPill(label: 'MT5', color: Color(0xFF315D86), foreground: Colors.white),
-                    const SizedBox(width: 9),
-                    Text(a.login, style: TextStyle(color: fg, fontSize: 17, fontWeight: FontWeight.w800)),
-                  ]),
-                  const SizedBox(height: 7),
-                  Text('${a.name} Account', style: TextStyle(color: muted, fontSize: 12)),
-                ])),
-                Icon(LucideIcons.star, color: gold, size: 24),
-              ])),
-              Padding(padding: const EdgeInsets.fromLTRB(7, 2, 7, 10), child: Row(children: [
-                metric('Balance', a.balance),
-                Container(width: 1, height: 42, color: border),
-                metric('Equity', a.equity),
-                Container(width: 1, height: 42, color: border),
-                metric('Floating P/L', pnl == null ? '—' : _money(pnl), valueColor: pnlColor),
-              ])),
-              Container(height: 1, color: border),
-              Padding(padding: const EdgeInsets.fromLTRB(13, 12, 13, 12), child: Row(children: [
-                infoCell(LucideIcons.scale, 'Leverage', a.leverage),
-                Container(width: 1, height: 36, color: border),
-                infoCell(LucideIcons.layers, 'Currency', a.currency),
-                Container(width: 1, height: 36, color: border),
-                infoCell(LucideIcons.server, 'Server', a.server ?? 'Not connected'),
-              ])),
-            ]),
-          ),
-          const SizedBox(height: 12),
-          if (a.type == 'Live MT5') ...[
-            Row(children: [
-              action(LucideIcons.arrowDown, 'Deposit', true, () => widget.onSelectPage('Deposit')),
-              const SizedBox(width: 8),
-              action(LucideIcons.arrowUp, 'Withdraw', false, () => widget.onSelectPage('Withdraw')),
-              const SizedBox(width: 8),
-              action(LucideIcons.arrowLeftRight, 'Transfer', false, () => widget.onSelectPage('Internal Transfer')),
-              const SizedBox(width: 8),
-              action(LucideIcons.settings, 'Settings', false, () => _showChangeInvestorPassword(a)),
-            ]),
-            const SizedBox(height: 14),
-          ] else ...[
-            Row(children: [
-              action(LucideIcons.settings, 'Settings', false, () => _showChangeInvestorPassword(a)),
-            ]),
-            const SizedBox(height: 14),
-          ],
-          Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)), child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')])),
-          const SizedBox(height: 10),
-          if (_tab == 'Overview') ...[
+          Row(children: [
+            Material(
+              color: surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: border)),
+              child: InkWell(onTap: widget.onBack, borderRadius: BorderRadius.circular(12),
+                child: SizedBox(width: 40, height: 40, child: Icon(LucideIcons.arrowLeft, color: fg, size: 19))),
+            ),
+            const SizedBox(width: 11),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('ACCOUNT DETAILS', style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.25)),
+              const SizedBox(height: 3),
+              Text('Trading account', style: TextStyle(color: fg, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: -.4)),
+            ])),
             Container(
-              padding: const EdgeInsets.all(13),
-              decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(19), border: Border.all(color: border)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Icon(LucideIcons.chartNoAxesColumnIncreasing, color: blue, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text('Account Performance', style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w800))),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: (changePct >= 0 ? green : red).withValues(alpha: .14),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${changePct >= 0 ? '+' : ''}${changePct.toStringAsFixed(2)}%',
-                      style: TextStyle(color: changePct >= 0 ? green : red, fontSize: 11, fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 8),
-                if (history.length > 1)
-                  SizedBox(height: MediaQuery.sizeOf(context).height < 760 ? 88 : 108, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: chartHistory, color: green, gridColor: border)))
-                else
-                  SizedBox(height: 112, child: Center(child: Text('Performance history will appear after MT5 sync.', style: TextStyle(color: muted, fontSize: 10)))),
-                const SizedBox(height: 8),
-                Row(children: ['1D', '1W', '1M', '3M', 'YTD', 'All'].map((value) {
-                  final selected = _range == value;
-                  return Expanded(child: InkWell(onTap: () => setState(() => _range = value), borderRadius: BorderRadius.circular(18), child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 7),
-                    decoration: BoxDecoration(color: selected ? gold : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-                    alignment: Alignment.center,
-                    child: Text(value, style: TextStyle(color: selected ? const Color(0xFF101A29) : fg, fontSize: 9, fontWeight: FontWeight.w800)),
-                  )));
-                }).toList()),
-                const SizedBox(height: 9),
-                Row(children: [
-                  Expanded(child: stat(LucideIcons.receiptText, 'Closed trades shown', '${trades.length}', blue)),
-                  const SizedBox(width: 9),
-                  Expanded(child: stat(LucideIcons.target, 'Sample win rate', trades.isEmpty ? '—' : '${winRate.toStringAsFixed(1)}%', blue)),
-                ]),
-                const SizedBox(height: 9),
-                Row(children: [
-                  Expanded(child: stat(LucideIcons.trendingUp, 'Profit trades', '$wins', green)),
-                  const SizedBox(width: 9),
-                  Expanded(child: stat(LucideIcons.trendingDown, 'Loss trades', '$losses', red)),
-                ]),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: (isLive ? green : blue).withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: (isLive ? green : blue).withValues(alpha: .28)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 6, height: 6, decoration: BoxDecoration(color: isLive ? green : blue, shape: BoxShape.circle)),
+                const SizedBox(width: 6),
+                Text(isLive ? 'LIVE' : 'DEMO', style: TextStyle(color: isLive ? green : blue, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .5)),
               ]),
             ),
-            const SizedBox(height: 14),
-            Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)), child: Column(children: [
-              Row(children: [Expanded(child: Text('Account information', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800))), Text('MT5', style: TextStyle(color: muted, fontSize: 9))]),
+          ]),
+          const SizedBox(height: 15),
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: dark ? const [Color(0xFF173B60), Color(0xFF10243D)] : const [Color(0xFF173F68), Color(0xFF102B4B)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(21),
+              border: Border.all(color: const Color(0xFF4A7198).withValues(alpha: .45)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .18 : .08), blurRadius: 18, offset: const Offset(0, 7))],
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(width: 42, height: 42, padding: const EdgeInsets.all(7), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .10), borderRadius: BorderRadius.circular(13)),
+                  child: const _AccountLogoBadge(size: 28)),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(a.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 4),
+                  Text('MT5 ACCOUNT  •  ' + a.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: .45)),
+                ])),
+                Icon(LucideIcons.shieldCheck, color: Colors.white.withValues(alpha: .75), size: 20),
+              ]),
+              const SizedBox(height: 18),
+              Text('ACCOUNT BALANCE', style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.15)),
+              const SizedBox(height: 5),
+              Text(a.balance, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 29, fontWeight: FontWeight.w900, letterSpacing: -.8)),
+              const SizedBox(height: 16),
+              Container(height: 1, color: Colors.white.withValues(alpha: .15)),
               const SizedBox(height: 12),
+              Row(children: [
+                metric('EQUITY', a.equity, valueColor: Colors.white),
+                Container(width: 1, height: 34, color: Colors.white.withValues(alpha: .2)),
+                metric('FLOATING P/L', pnl == null ? '—' : _money(pnl), valueColor: pnlColor == muted ? Colors.white70 : pnlColor),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 13),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            if (isLive) ...[
+              action(LucideIcons.arrowDownToLine, 'Deposit', true, () => widget.onSelectPage('Deposit'), actionWidth),
+              action(LucideIcons.arrowUpFromLine, 'Withdraw', false, () => widget.onSelectPage('Withdraw'), actionWidth),
+              action(LucideIcons.arrowLeftRight, 'Transfer', false, () => widget.onSelectPage('Internal Transfer'), actionWidth),
+            ],
+            action(LucideIcons.settings, 'Settings', false, () => _showChangeInvestorPassword(a), isLive ? actionWidth : (screenWidth - horizontalPadding * 2 - 8) / 2),
+          ]),
+          const SizedBox(height: 17),
+          panelCard(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            child: Row(children: [
+              infoCell(LucideIcons.scale, 'Leverage', a.leverage),
+              Container(width: 1, height: 34, color: border),
+              const SizedBox(width: 9),
+              infoCell(LucideIcons.coins, 'Currency', a.currency),
+              Container(width: 1, height: 34, color: border),
+              const SizedBox(width: 9),
+              infoCell(LucideIcons.server, 'Server', a.server ?? 'Not connected'),
+            ]),
+          ),
+          const SizedBox(height: 17),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(15), border: Border.all(color: border)),
+            child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')]),
+          ),
+          const SizedBox(height: 13),
+          if (_tab == 'Overview') ...[
+            panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(width: 34, height: 34, decoration: BoxDecoration(color: blue.withValues(alpha: .12), borderRadius: BorderRadius.circular(11)), child: const Icon(LucideIcons.chartNoAxesCombined, color: blue, size: 18)),
+                const SizedBox(width: 9),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Account performance', style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.w900)),
+                  Text('Equity history', style: TextStyle(color: muted, fontSize: 9)),
+                ])),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                  decoration: BoxDecoration(color: (changePct >= 0 ? green : red).withValues(alpha: .13), borderRadius: BorderRadius.circular(20)),
+                  child: Text((changePct >= 0 ? '+' : '') + changePct.toStringAsFixed(2) + '%', style: TextStyle(color: changePct >= 0 ? green : red, fontSize: 10, fontWeight: FontWeight.w900)),
+                ),
+              ]),
+              const SizedBox(height: 13),
+              if (history.length > 1)
+                SizedBox(height: MediaQuery.sizeOf(context).height < 760 ? 105 : 125, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: chartHistory, color: green, gridColor: border)))
+              else
+                SizedBox(height: 105, child: Center(child: Text('Performance history will appear after MT5 sync.', style: TextStyle(color: muted, fontSize: 10)))),
+              const SizedBox(height: 8),
+              Row(children: ['1D', '1W', '1M', '3M', 'YTD', 'All'].map((value) {
+                final selected = _range == value;
+                return Expanded(child: Semantics(button: true, selected: selected, label: value + ' performance range', child: InkWell(
+                  onTap: () => setState(() => _range = value),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(color: selected ? gold : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+                    alignment: Alignment.center,
+                    child: Text(value, style: TextStyle(color: selected ? const Color(0xFF101A29) : fg, fontSize: 9, fontWeight: FontWeight.w900)),
+                  ),
+                )));
+              }).toList()),
+            ])),
+            const SizedBox(height: 13),
+            sectionTitle('Trading snapshot', trailing: 'Based on available records'),
+            const SizedBox(height: 9),
+            Row(children: [
+              Expanded(child: stat(LucideIcons.receiptText, 'Closed trades', trades.length.toString(), blue)),
+              const SizedBox(width: 9),
+              Expanded(child: stat(LucideIcons.target, 'Win rate', trades.isEmpty ? '—' : winRate.toStringAsFixed(1) + '%', blue)),
+            ]),
+            const SizedBox(height: 9),
+            Row(children: [
+              Expanded(child: stat(LucideIcons.trendingUp, 'Winning trades', wins.toString(), green)),
+              const SizedBox(width: 9),
+              Expanded(child: stat(LucideIcons.trendingDown, 'Losing trades', losses.toString(), red)),
+            ]),
+            const SizedBox(height: 13),
+            panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              sectionTitle('Account information', trailing: 'MT5'),
+              const SizedBox(height: 9),
               _detailInfoRow(context, LucideIcons.hash, 'Login ID', a.login, fg, muted, border),
               _detailInfoRow(context, LucideIcons.server, 'Server', a.server ?? 'Not provided', fg, muted, border),
               _detailInfoRow(context, LucideIcons.gauge, 'Leverage', a.leverage, fg, muted, border),
@@ -1535,29 +1590,31 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             ])),
           ] else if (_tab == 'Trading Stats') ...[
             Row(children: [
-              Expanded(child: stat(LucideIcons.trendingUp, 'Avg. win (shown)', _money(averageWin), green)),
+              Expanded(child: stat(LucideIcons.trendingUp, 'Average win', _money(averageWin), green)),
               const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.trendingDown, 'Avg. loss (shown)', _money(-averageLoss), red)),
+              Expanded(child: stat(LucideIcons.trendingDown, 'Average loss', _money(-averageLoss), red)),
             ]),
-            const SizedBox(height: 10),
+            const SizedBox(height: 9),
             Row(children: [
               Expanded(child: stat(LucideIcons.chartLine, 'Net P/L (shown trades)', _money(totalProfit), totalProfit >= 0 ? green : red)),
               const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.activity, 'Open positions', '${a.openPositions.length}', blue)),
+              Expanded(child: stat(LucideIcons.activity, 'Open positions', a.openPositions.length.toString(), blue)),
             ]),
-            const SizedBox(height: 10),
-            Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Open positions', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 13),
+            panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              sectionTitle('Open positions', trailing: a.openPositions.length.toString() + ' positions'),
               const SizedBox(height: 8),
-              if (a.openPositions.isEmpty) Text('No open positions.', style: TextStyle(color: muted, fontSize: 10)),
-              ...a.openPositions.map((p) => _detailTradeRow(context, p.symbol, '${p.side.toUpperCase()} • ${p.volume} lots • Entry ${p.openPrice} • Mark ${p.currentPrice}', _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border)),
+              if (a.openPositions.isEmpty)
+                Padding(padding: const EdgeInsets.symmetric(vertical: 17), child: Center(child: Text('No open positions.', style: TextStyle(color: muted, fontSize: 11)))),
+              ...a.openPositions.map((p) => _detailTradeRow(context, p.symbol, p.side.toUpperCase() + ' • ' + p.volume + ' lots • Entry ' + p.openPrice + ' • Mark ' + p.currentPrice, _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border)),
             ])),
           ] else ...[
-            Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Trade history', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w800)),
+            panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              sectionTitle('Trade history', trailing: trades.length.toString() + ' records'),
               const SizedBox(height: 8),
-              if (trades.isEmpty) Text('No closed trades are available in this account preview.', style: TextStyle(color: muted, fontSize: 10)),
-              ...trades.map((t) => _detailTradeRow(context, t.symbol, '${t.side.toUpperCase()} • ${t.volume} lots • ${t.closedAt}', _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border)),
+              if (trades.isEmpty)
+                Padding(padding: const EdgeInsets.symmetric(vertical: 17), child: Center(child: Text('No closed trades are available in this account preview.', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 10)))),
+              ...trades.map((t) => _detailTradeRow(context, t.symbol, t.side.toUpperCase() + ' • ' + t.volume + ' lots • ' + t.closedAt, _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border)),
             ])),
           ],
         ],

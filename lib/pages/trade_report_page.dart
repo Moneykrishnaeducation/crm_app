@@ -1302,114 +1302,115 @@ class _TradeReportPageState extends State<TradeReportPage> {
     );
   }
 
-  // --- Equity Curve Section ---
-  Widget _buildEquityCurveSection(
-    Color bg,
-    Color border,
-    Color title,
-    bool isDark,
-  ) {
-    return _buildAnalyticsPanel(
-      title: 'Equity Curve',
-      subtitle: 'Historical account equity',
-      bg: bg,
-      border: border,
-      titleColor: title,
-      isDark: isDark,
-      icon: LucideIcons.barChart2,
-      message: 'No equity history available',
-      detail: 'Equity history will appear here when account data is available.',
-      height: 176,
-      gestureKey: const Key('equity_curve_gesture'),
+  // --- Data-driven account analytics ---
+  List<BrokerTradeRecord> get _filteredTrades {
+    final trades = _currentAccount.recentTrades;
+    if (_symbolFilter == 'All Symbols') return trades;
+    return trades.where((trade) => trade.symbol == _symbolFilter).toList();
+  }
+
+  double _sumProfit(Iterable<BrokerTradeRecord> trades) =>
+      trades.fold<double>(0, (sum, trade) => sum + trade.profit);
+
+  Widget _buildMetricTile({
+    required String label,
+    required String value,
+    required String helper,
+    required Color bg,
+    required Color border,
+    required Color title,
+    required Color muted,
+    required bool isDark,
+    Color? valueColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: muted, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 7),
+          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -.4,
+              color: valueColor ?? title)),
+          const SizedBox(height: 3),
+          Text(helper, style: TextStyle(fontSize: 10, color: muted)),
+        ],
+      ),
     );
   }
 
-  Widget _buildAnalyticsPanel({
-    required String title,
-    required String subtitle,
-    required Color bg,
-    required Color border,
-    required Color titleColor,
-    required bool isDark,
-    required IconData icon,
-    required String message,
-    required String detail,
-    required double height,
-    required Key gestureKey,
-  }) {
+  Widget _buildEquityCurveSection(Color bg, Color border, Color title, bool isDark) {
+    final history = _currentAccount.equityHistory;
     final muted = isDark ? const Color(0xFF8190A5) : const Color(0xFF8995A7);
+    final start = history.isEmpty ? 0.0 : history.first;
+    final end = history.isEmpty ? 0.0 : history.last;
+    final change = end - start;
+    final changeColor = change > 0 ? const Color(0xFF16A36A)
+        : change < 0 ? const Color(0xFFEF5350) : muted;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 17, color: const Color(0xFF3B82F6)),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700, color: titleColor,
-                  )),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(fontSize: 11, color: muted)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Equity Curve', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: title)),
+            const SizedBox(height: 3),
+            Text('Account-provided equity snapshots', style: TextStyle(fontSize: 11, color: muted)),
+          ])),
+          if (history.length > 1)
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('${change >= 0 ? '+' : '-'}${_currentAccount.currency} ${change.abs().toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: changeColor)),
+              Text('First to latest snapshot', style: TextStyle(fontSize: 9, color: muted)),
+            ]),
+        ]),
+        const SizedBox(height: 11),
         Container(
-          height: height,
-          padding: const EdgeInsets.all(16),
+          height: 205,
+          padding: const EdgeInsets.fromLTRB(12, 16, 14, 12),
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: border, width: 0.8),
+            color: bg, borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: border),
           ),
-          child: GestureDetector(
-            key: gestureKey,
-            behavior: HitTestBehavior.opaque,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark ? const Color(0xFF1D2B42) : const Color(0xFFEFF4FC),
-                    ),
-                    child: Icon(LucideIcons.barChart2, size: 20, color: muted),
+          child: history.length < 2
+              ? _buildChartEmptyState(
+                  'Equity history unavailable',
+                  'This account has not supplied enough equity snapshots to draw a curve.',
+                  isDark, muted,
+                )
+              : CustomPaint(
+                  key: const Key('equity_curve_gesture'),
+                  painter: _TradeReportLinePainter(
+                    values: history,
+                    lineColor: const Color(0xFF3B82F6),
+                    gridColor: isDark ? const Color(0xFF29384D) : const Color(0xFFE9EEF5),
+                    labelColor: muted,
+                    currency: _currentAccount.currency,
                   ),
-                  const SizedBox(height: 11),
-                  Text(message, textAlign: TextAlign.center, style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w700, color: titleColor,
-                  )),
-                  const SizedBox(height: 4),
-                  Text(detail, textAlign: TextAlign.center, style: TextStyle(
-                    fontSize: 11, height: 1.4, color: muted,
-                  )),
-                ],
-              ),
-            ),
-          ),
+                  child: const SizedBox.expand(),
+                ),
         ),
       ],
     );
   }
 
-  // --- P&L Analysis Section ---
+  Widget _buildChartEmptyState(String heading, String detail, bool isDark, Color muted) {
+    final title = isDark ? const Color(0xFFF7FAFF) : const Color(0xFF142033);
+    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(LucideIcons.chartNoAxesCombined, size: 27, color: muted),
+      const SizedBox(height: 9),
+      Text(heading, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: title)),
+      const SizedBox(height: 4),
+      Text(detail, textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 10, height: 1.4, color: muted)),
+    ]));
+  }
+
   Widget _buildPnLAnalysisSection(
     Color bg,
     Color border,
@@ -1417,97 +1418,171 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Color title,
     bool isDark,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('P&L Analysis', style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700, color: title,
-                  )),
-                  const SizedBox(height: 2),
-                  Text('Profit and loss breakdown', style: TextStyle(fontSize: 11, color: muted)),
-                ],
-              ),
-            ),
-            PopupMenuButton<String>(
-              initialValue: _symbolFilter,
-              tooltip: 'Select Symbol',
-              onSelected: (val) {
-                HapticFeedback.lightImpact();
-                setState(() => _symbolFilter = val);
-              },
-              color: bg,
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: border, width: 0.8),
-              ),
-              itemBuilder: (ctx) => _symbolOptions.map((symbol) => PopupMenuItem<String>(
-                value: symbol,
-                child: Row(children: [
-                  Icon(
-                    symbol == _symbolFilter ? LucideIcons.check : LucideIcons.circle,
-                    size: 15,
-                    color: symbol == _symbolFilter ? const Color(0xFF2563EB) : muted,
-                  ),
-                  const SizedBox(width: 9),
-                  Text(symbol, style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: symbol == _symbolFilter ? FontWeight.w700 : FontWeight.w500,
-                    color: symbol == _symbolFilter ? const Color(0xFF2563EB) : title,
-                  )),
-                ]),
-              )).toList(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: border),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(_symbolFilter, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: title)),
-                  const SizedBox(width: 5),
-                  Icon(LucideIcons.chevronDown, size: 13, color: muted),
-                ]),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1B2739) : const Color(0xFFE9EEF6),
-            borderRadius: BorderRadius.circular(11),
+    final trades = _filteredTrades;
+    final winners = trades.where((trade) => trade.profit > 0).toList();
+    final losers = trades.where((trade) => trade.profit < 0).toList();
+    final totalProfit = _sumProfit(trades);
+    final grossProfit = _sumProfit(winners);
+    final grossLoss = _sumProfit(losers).abs();
+    final winRate = trades.isEmpty ? 0.0 : winners.length / trades.length * 100;
+    final averageWin = winners.isEmpty ? 0.0 : grossProfit / winners.length;
+    final averageLoss = losers.isEmpty ? 0.0 : grossLoss / losers.length;
+    final profitFactor = grossLoss == 0 ? (grossProfit > 0 ? null : 0.0) : grossProfit / grossLoss;
+    final pnlColor = totalProfit > 0 ? const Color(0xFF16A36A)
+        : totalProfit < 0 ? const Color(0xFFEF5350) : title;
+    final currency = _currentAccount.currency;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('P&L Analysis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: title)),
+          const SizedBox(height: 3),
+          Text('Closed trade results · ${_symbolFilter}', style: TextStyle(fontSize: 11, color: muted)),
+        ])),
+        PopupMenuButton<String>(
+          initialValue: _symbolFilter,
+          tooltip: 'Filter by symbol',
+          onSelected: (value) => setState(() => _symbolFilter = value),
+          color: bg,
+          itemBuilder: (_) => _symbolOptions.map((symbol) => PopupMenuItem(
+            value: symbol, child: Text(symbol),
+          )).toList(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: border)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text(_symbolFilter, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: title)),
+              const SizedBox(width: 5),
+              Icon(LucideIcons.chevronDown, size: 14, color: muted),
+            ]),
           ),
-          child: Row(children: [
-            Expanded(child: _buildTimeframePill('Day', _timeframe == 'Day')),
-            Expanded(child: _buildTimeframePill('Hour', _timeframe == 'Hour')),
+        ),
+      ]),
+      const SizedBox(height: 13),
+      Row(children: [
+        Expanded(child: _buildMetricTile(label: 'Net closed P&L',
+          value: '${totalProfit < 0 ? '-' : ''}$ ${totalProfit.abs().toStringAsFixed(2)}',
+          helper: '${trades.length} supplied trade records', bg: bg, border: border,
+          title: title, muted: muted, isDark: isDark, valueColor: pnlColor)),
+        const SizedBox(width: 9),
+        Expanded(child: _buildMetricTile(label: 'Win rate',
+          value: '${winRate.toStringAsFixed(1)}%',
+          helper: '${winners.length} wins · ${losers.length} losses',
+          bg: bg, border: border, title: title, muted: muted, isDark: isDark,
+          valueColor: const Color(0xFF16A36A))),
+      ]),
+      const SizedBox(height: 9),
+      Row(children: [
+        Expanded(child: _buildMetricTile(label: 'Average win',
+          value: '$ ${averageWin.toStringAsFixed(2)}', helper: 'Per winning trade',
+          bg: bg, border: border, title: title, muted: muted, isDark: isDark,
+          valueColor: const Color(0xFF16A36A))),
+        const SizedBox(width: 9),
+        Expanded(child: _buildMetricTile(label: 'Average loss',
+          value: '$ ${averageLoss.toStringAsFixed(2)}', helper: 'Per losing trade',
+          bg: bg, border: border, title: title, muted: muted, isDark: isDark,
+          valueColor: const Color(0xFFEF5350))),
+      ]),
+      const SizedBox(height: 9),
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text('Profit factor', style: TextStyle(fontSize: 12, color: muted))),
+            Text(grossLoss == 0 ? (grossProfit > 0 ? 'No losses recorded' : '—') : profitFactor!.toStringAsFixed(2),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: title)),
           ]),
-        ),
-        const SizedBox(height: 10),
-        _buildAnalyticsPanel(
-          title: '$_timeframe view',
-          subtitle: '$_symbolFilter · selected reporting period',
-          bg: bg,
-          border: border,
-          titleColor: title,
-          isDark: isDark,
-          icon: LucideIcons.barChart2,
-          message: 'No P&L data for this selection',
-          detail: 'Closed trade results will be plotted here once available.',
-          height: 184,
-          gestureKey: const Key('pnl_chart_gesture'),
-        ),
-      ],
-    );
+          const SizedBox(height: 10),
+          if (trades.isNotEmpty)
+            ClipRRect(borderRadius: BorderRadius.circular(6), child: Row(children: [
+              if (winners.isNotEmpty) Expanded(flex: winners.length, child: Container(height: 8, color: const Color(0xFF16A36A))),
+              if (losers.isNotEmpty) Expanded(flex: losers.length, child: Container(height: 8, color: const Color(0xFFEF5350))),
+              if (trades.length == winners.length + losers.length && winners.isEmpty && losers.isEmpty)
+                Expanded(child: Container(height: 8, color: muted.withValues(alpha: .35))),
+            ]))
+          else
+            Text('No closed trade records for this symbol.', style: TextStyle(fontSize: 11, color: muted)),
+          const SizedBox(height: 7),
+          Row(children: [
+            _buildLegendDot(const Color(0xFF16A36A), 'Winning trades', muted),
+            const SizedBox(width: 14),
+            _buildLegendDot(const Color(0xFFEF5350), 'Losing trades', muted),
+          ]),
+        ]),
+      ),
+      const SizedBox(height: 13),
+      Row(children: [
+        Expanded(child: Text('Trade P&L breakdown', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: title))),
+        Text('$ $currency', style: TextStyle(fontSize: 10, color: muted)),
+      ]),
+      const SizedBox(height: 8),
+      Container(
+        height: 190,
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(17),
+          border: Border.all(color: border)),
+        child: trades.isEmpty
+            ? _buildChartEmptyState('No trade data for this symbol',
+                'Closed trade results will appear here when supplied by the account.', isDark, muted)
+            : CustomPaint(
+                key: const Key('pnl_chart_gesture'),
+                painter: _TradeReportBarPainter(
+                  values: trades.map((trade) => trade.profit).toList(),
+                  labels: trades.map((trade) => trade.symbol).toList(),
+                  positiveColor: const Color(0xFF16A36A),
+                  negativeColor: const Color(0xFFEF5350),
+                  gridColor: isDark ? const Color(0xFF29384D) : const Color(0xFFE9EEF5),
+                  labelColor: muted,
+                ),
+                child: const SizedBox.expand(),
+              ),
+      ),
+      const SizedBox(height: 13),
+      Text('Recent closed trades', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: title)),
+      const SizedBox(height: 7),
+      if (trades.isEmpty)
+        Text('No recent trades available.', style: TextStyle(fontSize: 11, color: muted))
+      else
+        ...trades.take(5).map((trade) {
+          final positive = trade.profit >= 0;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: border)),
+            child: Row(children: [
+              Container(width: 34, height: 34,
+                decoration: BoxDecoration(color: (positive ? const Color(0xFF16A36A) : const Color(0xFFEF5350)).withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(10)),
+                child: Icon(trade.side.toLowerCase() == 'buy' ? LucideIcons.trendingUp : LucideIcons.trendingDown,
+                  size: 16, color: positive ? const Color(0xFF16A36A) : const Color(0xFFEF5350))),
+              const SizedBox(width: 10),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(trade.symbol, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: title)),
+                const SizedBox(height: 2),
+                Text('${trade.side.toUpperCase()} · ${trade.volume} lots · ${trade.closedAt}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: muted)),
+              ])),
+              Text('${positive ? '+' : '-'}$ ${trade.profit.abs().toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800,
+                  color: positive ? const Color(0xFF16A36A) : const Color(0xFFEF5350))),
+            ]),
+          );
+        }),
+      const SizedBox(height: 6),
+      Text('Analytics are calculated from the trade records and equity snapshots supplied to this account. They are not a substitute for a complete MT5 deal-history feed.',
+        style: TextStyle(fontSize: 9, height: 1.4, color: muted)),
+    ]);
   }
+
+  Widget _buildLegendDot(Color color, String label, Color muted) => Row(mainAxisSize: MainAxisSize.min, children: [
+    Container(width: 7, height: 7, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+    const SizedBox(width: 5),
+    Text(label, style: TextStyle(fontSize: 9, color: muted)),
+  ]);
 
   Widget _buildTimeframePill(String label, bool active) {
     return InkWell(
@@ -1869,4 +1944,105 @@ class _PnLAnalysisChartPainter extends CustomPainter {
       oldDelegate.isDark != isDark ||
       oldDelegate.timeframe != timeframe ||
       oldDelegate.scrubOffset != scrubOffset;
+}
+
+
+class _TradeReportLinePainter extends CustomPainter {
+  const _TradeReportLinePainter({
+    required this.values, required this.lineColor, required this.gridColor,
+    required this.labelColor, required this.currency,
+  });
+  final List<double> values;
+  final Color lineColor, gridColor, labelColor;
+  final String currency;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || size.isEmpty) return;
+    const left = 48.0, right = 5.0, top = 8.0, bottom = 22.0;
+    final chart = Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
+    final minValue = values.reduce(math.min);
+    final maxValue = values.reduce(math.max);
+    final spread = (maxValue - minValue).abs();
+    final pad = spread == 0 ? (maxValue.abs() * .02).clamp(1.0, double.infinity) : spread * .16;
+    final low = minValue - pad, high = maxValue + pad;
+    final y = (double v) => chart.bottom - ((v - low) / (high - low)) * chart.height;
+    final grid = Paint()..color = gridColor..strokeWidth = 1;
+    final textStyle = TextStyle(color: labelColor, fontSize: 9);
+    for (var i = 0; i <= 3; i++) {
+      final gy = chart.top + chart.height * i / 3;
+      canvas.drawLine(Offset(chart.left, gy), Offset(chart.right, gy), grid);
+      final value = high - (high - low) * i / 3;
+      final tp = TextPainter(text: TextSpan(text: value.toStringAsFixed(0), style: textStyle),
+        textDirection: TextDirection.ltr)..layout(maxWidth: left - 5);
+      tp.paint(canvas, Offset(0, gy - tp.height / 2));
+    }
+    final path = Path();
+    for (var i = 0; i < values.length; i++) {
+      final x = chart.left + chart.width * i / (values.length - 1);
+      final point = Offset(x, y(values[i]));
+      if (i == 0) { path.moveTo(point.dx, point.dy); } else { path.lineTo(point.dx, point.dy); }
+    }
+    final fillPath = Path.from(path)..lineTo(chart.right, chart.bottom)..lineTo(chart.left, chart.bottom)..close();
+    canvas.drawPath(fillPath, Paint()..shader = LinearGradient(
+      colors: [lineColor.withValues(alpha: .22), lineColor.withValues(alpha: .01)],
+      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+    ).createShader(chart));
+    canvas.drawPath(path, Paint()..color = lineColor..strokeWidth = 2.4
+      ..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+    for (final index in [0, values.length - 1]) {
+      final x = chart.left + chart.width * index / (values.length - 1);
+      canvas.drawCircle(Offset(x, y(values[index])), 3.5, Paint()..color = lineColor);
+    }
+    final first = TextPainter(text: TextSpan(text: 'First', style: textStyle), textDirection: TextDirection.ltr)..layout();
+    final last = TextPainter(text: TextSpan(text: 'Latest', style: textStyle), textDirection: TextDirection.ltr)..layout();
+    first.paint(canvas, Offset(chart.left, chart.bottom + 7));
+    last.paint(canvas, Offset(chart.right - last.width, chart.bottom + 7));
+  }
+
+  @override
+  bool shouldRepaint(covariant _TradeReportLinePainter old) =>
+      old.values != values || old.lineColor != lineColor || old.gridColor != gridColor;
+}
+
+class _TradeReportBarPainter extends CustomPainter {
+  const _TradeReportBarPainter({
+    required this.values, required this.labels, required this.positiveColor,
+    required this.negativeColor, required this.gridColor, required this.labelColor,
+  });
+  final List<double> values;
+  final List<String> labels;
+  final Color positiveColor, negativeColor, gridColor, labelColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty || size.isEmpty) return;
+    const left = 8.0, right = 6.0, top = 8.0, bottom = 27.0;
+    final chart = Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
+    final maxAbs = values.map((v) => v.abs()).reduce(math.max).clamp(1.0, double.infinity);
+    final zeroY = chart.top + chart.height / 2;
+    final grid = Paint()..color = gridColor..strokeWidth = 1;
+    canvas.drawLine(Offset(chart.left, zeroY), Offset(chart.right, zeroY), grid);
+    final slot = chart.width / values.length;
+    final barWidth = math.min(25.0, slot * .52);
+    for (var i = 0; i < values.length; i++) {
+      final value = values[i];
+      final barHeight = (value.abs() / maxAbs) * (chart.height * .43);
+      final x = chart.left + slot * i + (slot - barWidth) / 2;
+      final rect = value >= 0
+          ? Rect.fromLTWH(x, zeroY - barHeight, barWidth, barHeight)
+          : Rect.fromLTWH(x, zeroY, barWidth, barHeight);
+      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+        Paint()..color = value >= 0 ? positiveColor : negativeColor);
+      final label = labels[i].length > 7 ? labels[i].substring(0, 7) : labels[i];
+      final tp = TextPainter(text: TextSpan(text: label,
+        style: TextStyle(color: labelColor, fontSize: math.min(9, slot * .24))),
+        textDirection: TextDirection.ltr)..layout(maxWidth: slot);
+      tp.paint(canvas, Offset(x + (barWidth - tp.width) / 2, chart.bottom + 7));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TradeReportBarPainter old) =>
+      old.values != values || old.labels != labels || old.gridColor != gridColor;
 }

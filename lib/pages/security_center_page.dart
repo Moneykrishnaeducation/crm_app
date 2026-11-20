@@ -204,10 +204,25 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     onTap: () => _showSecurityAction('Change Login Password', 'Password change is a secure account action. Connect the password update endpoint to enable submission.'),
                   ),
                   _securityActionRow(
-                    title: 'Fund Password',
-                    trailing: 'Set Up',
+                    title: 'Biometrics',
+                    trailing: 'Enable',
                     trailingColor: _blueRoyal,
-                    onTap: () => _showSecurityAction('Set Up Fund Password', 'A fund password adds an additional verification step to funding actions.'),
+                    subtitle: 'Use fingerprint or face recognition for secure sign-in',
+                    onTap: () => _showSecurityAction('Enable Biometrics', 'Biometric sign-in setup will be available when device authentication is connected.'),
+                  ),
+                  _securityActionRow(
+                    title: 'Mail OTP',
+                    trailing: 'Enable',
+                    trailingColor: _blueRoyal,
+                    subtitle: 'Verify sign-ins using a one-time code sent to your email',
+                    onTap: () => _showSecurityAction('Mail OTP', 'Email one-time password verification requires the authentication service.'),
+                  ),
+                  _securityActionRow(
+                    title: 'Captcha',
+                    trailing: 'Enable',
+                    trailingColor: _blueRoyal,
+                    subtitle: 'Add an extra verification step to protect account access',
+                    onTap: () => _showSecurityAction('Captcha Protection', 'Captcha verification requires server-side challenge validation.'),
                   ),
                   _securityActionRow(
                     title: 'Passkey (Biometrics)',
@@ -217,11 +232,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     onTap: () => _openSecuritySubPage('Passkey'),
                   ),
                   _securityActionRow(
-                    title: 'Authenticator App',
-                    trailing: 'Bind',
+                    title: 'Passkey (Biometrics)',
+                    trailing: 'Manage',
                     trailingColor: _blueRoyal,
-                    subtitle: 'Use Google Authenticator / Microsoft Authenticator to secure your account',
-                    onTap: () => _showSecurityAction('Authenticator App', 'Authenticator binding requires a server-generated setup key and QR code.'),
+                    subtitle: 'Use Apple Passkey or Google Passkey to secure your account',
+                    onTap: () => _openSecuritySubPage('Passkey'),
                     showDivider: false,
                   ),
                   const SizedBox(height: 28),
@@ -2078,28 +2093,33 @@ class _SecurityReferenceSubPage extends StatelessWidget {
               ],
             ])),
           ] else if (title == 'Account Management') ...[
-            _subCard(context, Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Container(padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: const Color(0xFFFFE8E8), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.shieldAlert, color: Color(0xFFFF1744), size: 25)),
-              const SizedBox(width: 13),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Delete Account', style: TextStyle(color: Color(0xFFFF1744), fontSize: 17, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 9),
-                Text('Once your account is deleted, it cannot be recovered. You will lose access to your account and all historical data. If you create a new account later, identity verification may take longer.', style: TextStyle(color: muted, fontSize: 13, height: 1.5)),
-              ])),
-            ])),
-            const SizedBox(height: 18),
             _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [const Icon(LucideIcons.alertCircle, color: Color(0xFFEA7B22)), const SizedBox(width: 9), Text('Before you continue', style: TextStyle(color: scheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800))]),
-              const SizedBox(height: 14),
-              for (final line in ['You will permanently lose access to your account and all your data.', 'Your personal information, settings, and history will be deleted and cannot be recovered.', 'If you create a new account later, identity verification may take longer.'])
-                Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('•  ', style: TextStyle(color: muted)), Expanded(child: Text(line, style: TextStyle(color: muted, fontSize: 13, height: 1.45))),
+              Row(children: [
+                Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFFFE8E8), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.shieldAlert, color: Color(0xFFFF1744), size: 24)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Account status', style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text('Manage access to your VTIndex account', style: TextStyle(color: muted, fontSize: 12)),
                 ])),
+                _tag('Active', const Color(0xFFE0FFF1), const Color(0xFF00A968)),
+              ]),
             ])),
-            const SizedBox(height: 26),
-            Text('This action cannot be undone. Please proceed carefully.', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 12)),
-            const SizedBox(height: 12),
-            SizedBox(height: 54, child: FilledButton(onPressed: () => _message(context, 'Account deletion request is not connected. No deletion was submitted.'), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF245BFF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))), child: const Text('Request Account Deletion', style: TextStyle(fontWeight: FontWeight.w800)))),
+            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Deactivate account', style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 7),
+              Text('Temporarily suspend access. You can request reactivation later, subject to account verification.', style: TextStyle(color: muted, fontSize: 13, height: 1.45)),
+              const SizedBox(height: 16),
+              SizedBox(width: double.infinity, child: _actionButton(context, 'Request Deactivation', () => _confirmAccountRequest(context, deactivate: true))),
+            ])),
+            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Delete account', style: const TextStyle(color: Color(0xFFFF1744), fontSize: 16, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 7),
+              Text('Permanently close your account. Deletion may result in loss of access to account history and services.', style: TextStyle(color: muted, fontSize: 13, height: 1.45)),
+              const SizedBox(height: 16),
+              SizedBox(width: double.infinity, child: _dangerButton(context, 'Request Account Deletion', () => _confirmAccountRequest(context, deactivate: false))),
+            ])),
+            Text('Both actions are submitted as requests and require review. No account change occurs from this preview.', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
           ] else ...[
             _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Recent account activity', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w800, fontSize: 16)),
@@ -2110,6 +2130,57 @@ class _SecurityReferenceSubPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+
+  static Future<void> _confirmAccountRequest(BuildContext context, {required bool deactivate}) async {
+    final title = deactivate ? 'Confirm deactivation request' : 'Confirm account deletion request';
+    final description = deactivate
+        ? 'Your account access may be temporarily suspended after the request is reviewed. Do you want to submit a deactivation request?'
+        : 'Account deletion is permanent once approved and may remove access to your account data. Do you want to submit a deletion request?';
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
+        decoration: BoxDecoration(
+          color: Theme.of(sheetContext).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: Theme.of(sheetContext).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(8)))),
+            const SizedBox(height: 22),
+            Row(children: [
+              Icon(deactivate ? LucideIcons.pauseCircle : LucideIcons.trash2, color: const Color(0xFFFF3152), size: 24),
+              const SizedBox(width: 10),
+              Expanded(child: Text(title, style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800))),
+            ]),
+            const SizedBox(height: 12),
+            Text(description, style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(sheetContext, false), child: const Text('Cancel'))),
+              const SizedBox(width: 10),
+              Expanded(child: FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF3152)),
+                onPressed: () => Navigator.pop(sheetContext, true),
+                child: const Text('Confirm Request'),
+              )),
+            ]),
+          ]),
+        ),
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(deactivate
+            ? 'Deactivation request preview confirmed. No request was sent.'
+            : 'Deletion request preview confirmed. No request was sent.'),
+      ));
+    }
   }
 
   static Widget _subCard(BuildContext context, Widget child) => Container(

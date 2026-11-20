@@ -188,7 +188,21 @@ class _ReferenceAccountCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 constraints: const BoxConstraints.tightFor(width: 36, height: 36),
                 padding: EdgeInsets.zero,
-                icon: Icon(LucideIcons.star, color: fav ? gold : muted, size: 19),
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.elasticOut,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) => RotationTransition(
+                    turns: Tween<double>(begin: -.12, end: 0).animate(animation),
+                    child: ScaleTransition(scale: animation, child: child),
+                  ),
+                  child: Icon(
+                    fav ? Icons.star_rounded : Icons.star_outline_rounded,
+                    key: ValueKey<bool>(fav),
+                    color: fav ? gold : muted,
+                    size: 21,
+                  ),
+                ),
               )
             else
               Padding(
@@ -1492,7 +1506,21 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                   visualDensity: VisualDensity.compact,
                   constraints: const BoxConstraints.tightFor(width: 42, height: 42),
                   padding: EdgeInsets.zero,
-                  icon: Icon(LucideIcons.star, color: widget.isFavorite ? gold : Colors.white.withValues(alpha: .75), size: 23),
+                  icon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 280),
+                    switchInCurve: Curves.elasticOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) => RotationTransition(
+                      turns: Tween<double>(begin: -.12, end: 0).animate(animation),
+                      child: ScaleTransition(scale: animation, child: child),
+                    ),
+                    child: Icon(
+                      widget.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                      key: ValueKey<bool>(widget.isFavorite),
+                      color: widget.isFavorite ? gold : Colors.white.withValues(alpha: .75),
+                      size: 25,
+                    ),
+                  ),
                 ),
               ]),
               const SizedBox(height: 18),

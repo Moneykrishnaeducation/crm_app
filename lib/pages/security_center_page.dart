@@ -226,13 +226,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   ),
                   _securityActionRow(
                     title: 'Passkey (Biometrics)',
-                    trailing: 'Add',
-                    trailingColor: _blueRoyal,
-                    subtitle: 'Use Apple Passkey or Google Passkey to secure your account',
-                    onTap: () => _openSecuritySubPage('Passkey'),
-                  ),
-                  _securityActionRow(
-                    title: 'Passkey (Biometrics)',
                     trailing: 'Manage',
                     trailingColor: _blueRoyal,
                     subtitle: 'Use Apple Passkey or Google Passkey to secure your account',

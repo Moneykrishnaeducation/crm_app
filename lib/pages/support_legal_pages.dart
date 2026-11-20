@@ -2,7 +2,6 @@ part of '../main.dart';
 
 class BrokerTicketsPage extends StatefulWidget {
   const BrokerTicketsPage({super.key});
-
   @override
   State<BrokerTicketsPage> createState() => _BrokerTicketsPageState();
 }
@@ -12,9 +11,7 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
 
   Future<void> _openRequestForm() async {
     final submitted = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
+      context: context, isScrollControlled: true, useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const _TicketRequestSheet(),
     );
@@ -27,80 +24,149 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
-    final filters = const ['All', 'Open', 'Closed'];
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
-      children: [
-        Text('SUPPORT', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-        const SizedBox(height: 5),
-        Text('Tickets', style: theme.textTheme.headlineSmall?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 5),
-        Text('Get help with your account or trading services.', style: theme.textTheme.bodySmall?.copyWith(color: muted)),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: _openRequestForm,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Create ticket'),
-            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13)),
-          ),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(child: Text('Your requests', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w800))),
-            Icon(Icons.support_agent, color: theme.colorScheme.primary, size: 19),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          children: [
-            for (final filter in filters)
-              ChoiceChip(
-                label: Text(filter),
-                selected: _filter == filter,
-                onSelected: (_) => setState(() => _filter = filter),
-                showCheckmark: false,
+    final dark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
+    final muted = scheme.onSurfaceVariant;
+    final border = theme.dividerColor.withValues(alpha: dark ? .72 : .85);
+    final surface = scheme.surface;
+    const gold = Color(0xFFFFC533);
+    const filters = ['All', 'Open', 'Closed'];
+
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: EdgeInsets.fromLTRB(16, 14, 16, 116 + MediaQuery.paddingOf(context).bottom),
+        children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('HELP CENTRE', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.45)),
+              const SizedBox(height: 5),
+              Text('Support tickets', style: TextStyle(color: scheme.onSurface, fontSize: 25, height: 1.1, fontWeight: FontWeight.w900, letterSpacing: -.65)),
+              const SizedBox(height: 5),
+              Text('Track your requests and get help from our team.', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
+            ])),
+            const SizedBox(width: 10),
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(15), border: Border.all(color: scheme.primary.withValues(alpha: .16))),
+              child: Icon(LucideIcons.headset, color: scheme.primary, size: 21),
+            ),
+          ]),
+          const SizedBox(height: 19),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: dark ? const [Color(0xFF183B5E), Color(0xFF102943)] : const [Color(0xFF194B78), Color(0xFF123354)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
               ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.dividerColor),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF6D91B3).withValues(alpha: .28)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .16 : .07), blurRadius: 16, offset: const Offset(0, 6))],
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(width: 36, height: 36, decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(11)), child: const Icon(LucideIcons.messageSquareText, color: gold, size: 18)),
+                const SizedBox(width: 10),
+                const Expanded(child: Text('How can we help?', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .10), borderRadius: BorderRadius.circular(20)),
+                  child: const Text('SUPPORT', style: TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: .8)),
+                ),
+              ]),
+              const SizedBox(height: 9),
+              const Text('Create a request for account, trading, payments or technical assistance.', style: TextStyle(color: Colors.white70, fontSize: 10.5, height: 1.5)),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity, height: 45,
+                child: FilledButton.icon(
+                  onPressed: _openRequestForm,
+                  icon: const Icon(LucideIcons.plus, size: 17),
+                  label: const Text('Create a ticket', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+                  style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF17243A), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+                ),
+              ),
+            ]),
           ),
-          child: Column(
-            children: [
+          const SizedBox(height: 23),
+          Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('YOUR REQUESTS', style: TextStyle(color: scheme.onSurface, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: .55)),
+              const SizedBox(height: 3),
+              Text('View and filter your support history', style: TextStyle(color: muted, fontSize: 10)),
+            ])),
+            Icon(LucideIcons.listFilter, color: muted, size: 17),
+          ]),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
+            child: Row(children: [
+              for (final filter in filters)
+                Expanded(child: Semantics(
+                  button: true, selected: _filter == filter, label: '$filter tickets',
+                  child: InkWell(
+                    onTap: () => setState(() => _filter = filter),
+                    borderRadius: BorderRadius.circular(10),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 170), height: 38,
+                      decoration: BoxDecoration(
+                        color: _filter == filter ? scheme.primary.withValues(alpha: .12) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: _filter == filter ? Border.all(color: scheme.primary.withValues(alpha: .20)) : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(filter, style: TextStyle(color: _filter == filter ? scheme.primary : muted, fontSize: 10, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                )),
+            ]),
+          ),
+          const SizedBox(height: 13),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 25, 20, 22),
+            decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(19), border: Border.all(color: border)),
+            child: Column(children: [
               Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: .09), shape: BoxShape.circle),
-                child: Icon(Icons.inbox_outlined, color: theme.colorScheme.primary, size: 25),
+                width: 58, height: 58,
+                decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(18)),
+                child: Icon(LucideIcons.inbox, color: scheme.primary, size: 26),
               ),
-              const SizedBox(height: 13),
-              Text(_filter == 'All' ? 'No support tickets yet' : 'No $_filter tickets', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 14),
+              Text(_filter == 'All' ? 'No support tickets yet' : 'No $_filter tickets', textAlign: TextAlign.center,
+                style: TextStyle(color: scheme.onSurface, fontSize: 14, fontWeight: FontWeight.w900)),
               const SizedBox(height: 6),
-              Text(
-                _filter == 'All' ? 'When you contact support, your requests will appear here.' : 'There are no ${_filter.toLowerCase()} requests to show.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.45),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 270),
+                child: Text(
+                  _filter == 'All' ? 'Your support requests will appear here once they are available.' : 'There are no ${_filter.toLowerCase()} requests to display.',
+                  textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 10.5, height: 1.55),
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 17),
               OutlinedButton.icon(
                 onPressed: _openRequestForm,
-                icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Request support'),
+                icon: const Icon(LucideIcons.messageCirclePlus, size: 16),
+                label: const Text('Contact support', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: scheme.primary, side: BorderSide(color: scheme.primary.withValues(alpha: .35)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+                ),
               ),
-            ],
+            ]),
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(LucideIcons.info, color: muted, size: 13),
+            const SizedBox(width: 7),
+            Expanded(child: Text('Ticket creation is currently a UI preview; requests are not sent to the support system.', style: TextStyle(color: muted, fontSize: 9, height: 1.45))),
+          ]),
+        ],
+      ),
     );
   }
 }

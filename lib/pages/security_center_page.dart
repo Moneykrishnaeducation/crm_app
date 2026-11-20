@@ -343,8 +343,23 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   void _openSecuritySubPage(String page) {
+    final legacyDeviceContent = page == 'Device Management'
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildTrustedDevicesHeader(),
+              const SizedBox(height: 12),
+              _buildActiveTrustedDeviceCard(),
+              const SizedBox(height: 20),
+              _buildSecurityFooterActions(),
+            ],
+          )
+        : null;
     Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => _SecurityReferenceSubPage(title: page),
+      builder: (_) => _SecurityReferenceSubPage(
+        title: page,
+        content: legacyDeviceContent,
+      ),
     ));
   }
 
@@ -2036,8 +2051,9 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
 }
 
 class _SecurityReferenceSubPage extends StatelessWidget {
-  const _SecurityReferenceSubPage({required this.title});
+  const _SecurityReferenceSubPage({required this.title, this.content});
   final String title;
+  final Widget? content;
 
   @override
   Widget build(BuildContext context) {
@@ -2078,6 +2094,8 @@ class _SecurityReferenceSubPage extends StatelessWidget {
               SizedBox(width: double.infinity, child: _dangerButton(context, 'Delete', () => _message(context, 'Passkey deletion is not connected yet.'))),
             ])),
           ] else if (title == 'Device Management') ...[
+            if (content != null) content!,
+            if (content == null) ...[
             for (final device in const [
               ('Android / App 2.19.1', 'Current Device', 'Logged In', 'Primary Device', '2026/10/29 12:16:30', '210.18.*.*', 'India Chennai', '968200012202147840', true),
               ('Windows / Chrome 153.0.0.0', 'Logged Out', '', '', '2026/09/26 16:14:54', '2a00:f29:10e0:31ec:947:e027:***:*', 'United Arab Emirates Dubai', '961725672053043200', false),
@@ -2110,6 +2128,7 @@ class _SecurityReferenceSubPage extends StatelessWidget {
                 SizedBox(width: double.infinity, child: _dangerButton(context, 'Remove', () => _message(context, 'Device removal is not connected yet.'))),
               ],
             ])),
+            ],
           ] else if (title == 'Account Management') ...[
             _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [

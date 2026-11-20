@@ -2603,7 +2603,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _accountBalances[_selectedLogin] =
           (_accountBalances[_selectedLogin] ?? 0.0) + position.profit;
     });
-    showAppMessage('Position ${position.symbol} closed successfully');
+    showAppMessage('Position preview updated for ${position.symbol}. No MT5 close order was submitted.');
   }
 
   Future<void> _cancelPendingOrder(ActivityPendingOrder order) async {
@@ -2723,7 +2723,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     setState(() {
       _accountPendingOrders[_selectedLogin]?.removeWhere((o) => o.id == order.id);
     });
-    showAppMessage('Pending order for ${order.symbol} cancelled');
+    showAppMessage('Cancellation preview updated for ${order.symbol}. No MT5 cancellation was submitted.');
   }
 
   Widget _activityConfirmRow(

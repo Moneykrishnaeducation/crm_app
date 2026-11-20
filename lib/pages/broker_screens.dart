@@ -48,12 +48,21 @@ class BrokerDashboardPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-                _BrokerBalance(
-                  visible: balanceVisible,
-                  onToggle: onToggleBalance,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _BrokerBalance(
+                        visible: balanceVisible,
+                        onToggle: onToggleBalance,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _FloatingPnlCard(visible: balanceVisible),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _FloatingPnlCard(visible: balanceVisible),
                 const SizedBox(height: 16),
                 const _PortfolioPerformance(),
                 const SizedBox(height: 16),
@@ -86,7 +95,7 @@ class _BrokerBalance extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(18, 17, 16, 18),
+    padding: const EdgeInsets.fromLTRB(13, 13, 11, 14),
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(20),
       gradient: const LinearGradient(
@@ -124,12 +133,12 @@ class _BrokerBalance extends StatelessWidget {
         const SizedBox(height: 9),
         Text(
           visible ? r'\$12,450.00' : '••••••••',
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -0.8),
+          style: GoogleFonts.inter(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.5),
         ),
         const SizedBox(height: 7),
         Text(
           'Illustrative data',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 10, fontWeight: FontWeight.w500),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 9, fontWeight: FontWeight.w500),
         ),
       ],
     ),
@@ -144,32 +153,65 @@ class _FloatingPnlCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      padding: const EdgeInsets.fromLTRB(13, 13, 11, 14),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: isDark ? const Color(0xFF253A5B) : const Color(0xFFE5EBF5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(color: const Color(0xFF16A36A).withValues(alpha: 0.11), shape: BoxShape.circle),
-            child: const Icon(LucideIcons.trendingUp, color: Color(0xFF16A36A), size: 17),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: isDark ? const Color(0xFF294365) : const Color(0xFFE2EAF5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.10 : 0.035),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Floating P&L', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 3),
-                Text(visible ? r'+\$245.80' : '••••••', style: const TextStyle(color: Color(0xFF16A36A), fontSize: 19, fontWeight: FontWeight.w800)),
-              ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.trendingUp, color: Color(0xFF16A36A), size: 15),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Floating P&L',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            visible ? r'+\$245.80' : '••••••',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF16A36A),
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
             ),
           ),
-          Text('Illustrative data', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9)),
+          const SizedBox(height: 7),
+          Text(
+            'Illustrative data',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 9,
+            ),
+          ),
         ],
       ),
     );

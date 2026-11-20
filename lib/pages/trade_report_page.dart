@@ -250,7 +250,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
     } else if (action == '7days') {
       setState(() {
         _selectedPreset = '7days';
-        _startDate = now.subtract(const Duration(days: 7));
+        _startDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
         _endDate = now;
       });
     } else if (action == 'month') {
@@ -262,7 +262,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
     } else if (action == '30days') {
       setState(() {
         _selectedPreset = '30days';
-        _startDate = now.subtract(const Duration(days: 30));
+        _startDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29));
         _endDate = now;
       });
     } else if (action == 'custom') {
@@ -1305,10 +1305,32 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }
 
   // --- Data-driven account analytics ---
+  DateTime? _tradeClosedDate(String value) {
+    final normalized = value.trim().toLowerCase();
+    final now = DateTime.now();
+    if (normalized.startsWith('today')) {
+      return DateTime(now.year, now.month, now.day);
+    }
+    if (normalized.startsWith('yesterday')) {
+      final yesterday = now.subtract(const Duration(days: 1));
+      return DateTime(yesterday.year, yesterday.month, yesterday.day);
+    }
+    return DateTime.tryParse(value.trim());
+  }
+
   List<BrokerTradeRecord> get _filteredTrades {
-    final trades = _currentAccount.recentTrades;
-    if (_symbolFilter == 'All Symbols') return trades;
-    return trades.where((trade) => trade.symbol == _symbolFilter).toList();
+    final start = DateTime(_startDate.year, _startDate.month, _startDate.day);
+    final endExclusive = DateTime(_endDate.year, _endDate.month, _endDate.day)
+        .add(const Duration(days: 1));
+    return _currentAccount.recentTrades.where((trade) {
+      if (_symbolFilter != 'All Symbols' && trade.symbol != _symbolFilter) {
+        return false;
+      }
+      final closedDate = _tradeClosedDate(trade.closedAt);
+      if (closedDate == null) return false;
+      final day = DateTime(closedDate.year, closedDate.month, closedDate.day);
+      return !day.isBefore(start) && day.isBefore(endExclusive);
+    }).toList();
   }
 
   double _sumProfit(Iterable<BrokerTradeRecord> trades) =>

@@ -71,7 +71,6 @@ class BrokerDashboardPage extends StatelessWidget {
       ),
     );
   }
-
   String _dashboardGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good morning';

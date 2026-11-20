@@ -1133,7 +1133,7 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Confirm Password Replacement',
+                      'Confirm Password Preview',
                       style: TextStyle(
                         color: cs.onSurface,
                         fontSize: 12,
@@ -1196,7 +1196,7 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Tap "CONFIRM" to apply changes or "CANCEL" to return and edit.',
+                  'Tap "CONFIRM" to create this local preview. No MT5 password change will be submitted.',
                   style: TextStyle(color: muted, fontSize: 10.5, fontWeight: FontWeight.w600),
                 ),
               ),

@@ -97,103 +97,400 @@ class _MoreProfileCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Theme.of(context).colorScheme.surface,
-    borderRadius: BorderRadius.circular(18),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Theme.of(context).dividerColor),
-          boxShadow: const [
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final border = theme.dividerColor;
+
+    // High-end fintech palette adaptive to theme
+    final cardBgStart = isDark ? const Color(0xFF14243B) : Colors.white;
+    final cardBgEnd = isDark ? const Color(0xFF0F1A2C) : const Color(0xFFF8FAFC);
+    final cardBorder = isDark ? const Color(0xFF23364E) : const Color(0xFFE2E8F0);
+
+    final badgeVerifiedBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.16 : 0.10);
+    final badgeVerifiedBorder = const Color(0xFF10B981).withValues(alpha: isDark ? 0.35 : 0.25);
+    final badgeVerifiedText = isDark ? const Color(0xFF34D399) : const Color(0xFF059669);
+
+    final badgeTierBg = _brokerGold.withValues(alpha: isDark ? 0.16 : 0.10);
+    final badgeTierBorder = _brokerGold.withValues(alpha: isDark ? 0.38 : 0.28);
+    final badgeTierText = isDark ? const Color(0xFFF6C84D) : const Color(0xFF9A6E0C);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          if (!isDark) ...[
+            const BoxShadow(
+              color: Color(0x0C0F2748),
+              blurRadius: 18,
+              offset: Offset(0, 6),
+            ),
+            const BoxShadow(
+              color: Color(0x040F2748),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ] else ...[
             BoxShadow(
-              color: Color(0x080F2748),
-              blurRadius: 14,
-              offset: Offset(0, 5),
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
             ),
           ],
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [cardBgStart, cardBgEnd],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: cardBorder, width: 1.2),
+          ),
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onTap();
+            },
+            borderRadius: BorderRadius.circular(22),
+            splashColor: _brokerGold.withValues(alpha: 0.08),
+            highlightColor: cs.primary.withValues(alpha: 0.04),
+            child: Stack(
+              children: [
+                // Subtle decorative radial accent glow at top-right
+                Positioned(
+                  top: -24,
+                  right: -24,
+                  child: IgnorePointer(
+                    child: Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            (isDark ? _brokerGold : const Color(0xFF3B82F6))
+                                .withValues(alpha: isDark ? 0.08 : 0.05),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Row: Avatar + User Info + Chevron
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Enhanced Avatar with Gold & Blue Gradient Ring
+                          _buildAvatar(isDark),
+                          const SizedBox(width: 14),
+                          // Identity Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        'INR-DEVOP B',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: cs.onSurface,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(
+                                      LucideIcons.badgeCheck,
+                                      color: _brokerGold,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'iyyanar@vtindex.com',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: cs.onSurfaceVariant,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                // Client ID Chip
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF1E2D44)
+                                        : const Color(0xFFEEF2F8),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? const Color(0xFF283B55)
+                                          : const Color(0xFFDFE6F1),
+                                      width: 0.9,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.idCard,
+                                        size: 11,
+                                        color: isDark
+                                            ? const Color(0xFF90A3BF)
+                                            : const Color(0xFF5A6E88),
+                                      ),
+                                      const SizedBox(width: 4.5),
+                                      Flexible(
+                                        child: Text(
+                                          'Client ID: #331589',
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? const Color(0xFFBAC7D9)
+                                                : const Color(0xFF384961),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Circular action chevron button
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark
+                                  ? const Color(0xFF1A2A42)
+                                  : const Color(0xFFF1F5F9),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF263A58)
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                LucideIcons.chevronRight,
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      // Sleek Divider line
+                      Container(
+                        height: 1,
+                        color: border.withValues(alpha: isDark ? 0.4 : 0.6),
+                      ),
+                      const SizedBox(height: 12),
+                      // Bottom Row: Status Badges & Quick Action Link
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                // KYC Status Pill
+                                _buildStatusPill(
+                                  icon: LucideIcons.shieldCheck,
+                                  label: 'Verified',
+                                  bgColor: badgeVerifiedBg,
+                                  borderColor: badgeVerifiedBorder,
+                                  textColor: badgeVerifiedText,
+                                ),
+                                // Account Tier Pill
+                                _buildStatusPill(
+                                  icon: LucideIcons.crown,
+                                  label: 'Live MT5 Trader',
+                                  bgColor: badgeTierBg,
+                                  borderColor: badgeTierBorder,
+                                  textColor: badgeTierText,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // View profile link with subtle arrow
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'View profile',
+                                style: TextStyle(
+                                  color: cs.primary,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              Icon(
+                                LucideIcons.chevronRight,
+                                size: 13,
+                                color: cs.primary,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 49,
-              height: 49,
+      ),
+    );
+  }
+
+  Widget _buildAvatar(bool isDark) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Outer gradient ring container
+        Container(
+          width: 52,
+          height: 52,
+          padding: const EdgeInsets.all(2.2), // Ring thickness
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFE5B842), // Gold
+                Color(0xFF38BDF8), // Sky Blue
+                Color(0xFF1D4ED8), // Deep Blue
+              ],
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark ? const Color(0xFF0F1A2C) : Colors.white,
+            ),
+            padding: const EdgeInsets.all(1.8), // Inner separation
+            child: Container(
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [Color(0xFF244D80), Color(0xFF4979A9)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF16325C), // Navy
+                    Color(0xFF254B85), // Broker Blue
+                  ],
                 ),
               ),
               child: const Center(
                 child: Text(
-                  'I',
+                  'IB',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 17,
                     fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'INR-DEVOP B',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      const Icon(
-                        LucideIcons.badgeCheck,
-                        color: _brokerGold,
-                        size: 15,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'iyyanar@vtindex.com',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 10,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'View profile',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+          ),
+        ),
+        // Active status indicator dot
+        Positioned(
+          bottom: 1,
+          right: 1,
+          child: Container(
+            width: 13,
+            height: 13,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF10B981),
+              border: Border.all(
+                color: isDark ? const Color(0xFF14243B) : Colors.white,
+                width: 2,
               ),
             ),
-            const Icon(
-              LucideIcons.chevronRight,
-              color: Color(0xFF8290A6),
-              size: 20,
-            ),
-          ],
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildStatusPill({
+    required IconData icon,
+    required String label,
+    required Color bgColor,
+    required Color borderColor,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: 0.9),
       ),
-    ),
-  );
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10.5, color: textColor),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _MoreSectionLabel extends StatelessWidget {

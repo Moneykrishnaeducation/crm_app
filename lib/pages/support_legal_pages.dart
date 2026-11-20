@@ -30,7 +30,7 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
     final border = theme.dividerColor.withValues(alpha: dark ? .72 : .85);
     final surface = scheme.surface;
     const gold = Color(0xFFFFC533);
-    const filters = ['All', 'Open', 'Closed'];
+    const filters = ['All', 'Open', 'In-progress', 'Closed'];
 
     return Container(
       color: theme.scaffoldBackgroundColor,

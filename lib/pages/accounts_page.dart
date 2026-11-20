@@ -79,14 +79,6 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
             ))),
           ]),
           const SizedBox(height: 21),
-          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('LIVE ACCOUNTS', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: .5)),
-              const SizedBox(height: 3),
-              Text('Select an account to view its details', style: TextStyle(color: muted, fontSize: 10)),
-            ])),
-            Text('${filtered.length} shown', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700)),
-          ]),
           const SizedBox(height: 11),
           TextField(
             controller: _searchController,

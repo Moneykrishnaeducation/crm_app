@@ -2431,36 +2431,80 @@ class _SecurityReferenceSubPage extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Container(
-        padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
-        decoration: BoxDecoration(
-          color: Theme.of(sheetContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: Theme.of(sheetContext).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(8)))),
-            const SizedBox(height: 22),
-            Row(children: [
-              Icon(deactivate ? LucideIcons.pauseCircle : LucideIcons.trash2, color: const Color(0xFFFF3152), size: 24),
-              const SizedBox(width: 10),
-              Expanded(child: Text(title, style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800))),
-            ]),
-            const SizedBox(height: 12),
-            Text(description, style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
-            const SizedBox(height: 20),
-            Row(children: [
-              Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(sheetContext, false), child: const Text('Cancel'))),
-              const SizedBox(width: 10),
-              Expanded(child: FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF3152)),
-                onPressed: () => Navigator.pop(sheetContext, true),
-                child: const Text('Confirm Request'),
-              )),
-            ]),
-          ]),
-        ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          bool isVerifying = false;
+          return Container(
+            padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
+            decoration: BoxDecoration(
+              color: Theme.of(sheetContext).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: Theme.of(sheetContext).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(8)))),
+                const SizedBox(height: 22),
+                Row(children: [
+                  Icon(deactivate ? LucideIcons.pauseCircle : LucideIcons.trash2, color: const Color(0xFFFF3152), size: 24),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(title, style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800))),
+                ]),
+                const SizedBox(height: 12),
+                Text(description, style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
+                const SizedBox(height: 20),
+                Row(children: [
+                  Expanded(child: OutlinedButton(
+                    onPressed: isVerifying ? null : () => Navigator.pop(sheetContext, false),
+                    child: const Text('Cancel'),
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF3152)),
+                    onPressed: isVerifying ? null : () async {
+                      setSheetState(() => isVerifying = true);
+                      try {
+                        final biometric = BiometricSignIn.instance;
+                        final biometricEnabled = await biometric.isEnabled();
+                        if (biometricEnabled) {
+                          final available = await biometric.isAvailable();
+                          if (!available) {
+                            if (sheetContext.mounted) {
+                              setSheetState(() => isVerifying = false);
+                              showAppMessage('Biometric authentication is enabled but unavailable on this device.');
+                            }
+                            return;
+                          }
+                          final authenticated = await biometric.authenticate(
+                            localizedReason: deactivate
+                                ? 'Authenticate to confirm your account deactivation request'
+                                : 'Authenticate to confirm your account deletion request',
+                          );
+                          if (!authenticated) {
+                            if (sheetContext.mounted) {
+                              setSheetState(() => isVerifying = false);
+                              showAppMessage('Biometric verification was not completed. No request was confirmed.');
+                            }
+                            return;
+                          }
+                        }
+                        if (sheetContext.mounted) Navigator.pop(sheetContext, true);
+                      } catch (_) {
+                        if (sheetContext.mounted) {
+                          setSheetState(() => isVerifying = false);
+                          showAppMessage('Biometric verification failed. No request was confirmed.');
+                        }
+                      }
+                    },
+                    child: isVerifying
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Confirm Request'),
+                  )),
+                ]),
+              ]),
+            ),
+          );
+        },
       ),
     );
     if (confirmed == true && context.mounted) {

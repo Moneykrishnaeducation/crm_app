@@ -281,8 +281,8 @@ class _PortfolioLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
-    final minValue = values.reduce(math.min);
-    final maxValue = values.reduce(math.max);
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
     final range = (maxValue - minValue).abs() < 0.001 ? 1.0 : maxValue - minValue;
     final points = List<Offset>.generate(values.length, (index) {
       final x = size.width * index / (values.length - 1);

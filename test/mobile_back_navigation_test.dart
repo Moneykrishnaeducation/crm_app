@@ -137,15 +137,15 @@ void main() {
         await tester.pumpAndSettle();
 
         // Open quick actions bottom sheet
-        await tester.tap(find.byIcon(LucideIcons.plus));
+        await tester.tap(find.byIcon(LucideIcons.plus).last);
         await tester.pumpAndSettle();
-        expect(find.text('Quick actions'), findsOneWidget);
+        expect(find.byType(BottomSheet), findsOneWidget);
 
         // Mobile back dismisses bottom sheet
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
 
-        expect(find.text('Quick actions'), findsNothing);
+        expect(find.byType(BottomSheet), findsNothing);
         expect(find.text('Total balance'), findsOneWidget);
         expect(getPopScope(tester).canPop, isTrue);
       },
@@ -163,7 +163,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Open quick actions then Create Demo Account
-        await tester.tap(find.byIcon(LucideIcons.plus));
+        await tester.tap(find.byIcon(LucideIcons.plus).last);
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Create demo account'));
@@ -194,6 +194,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Tap Deposit quick action on Dashboard
+        await tester.ensureVisible(find.text('Deposit').first);
         await tester.tap(find.text('Deposit').first);
         await tester.pumpAndSettle();
 

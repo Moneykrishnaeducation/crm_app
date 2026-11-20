@@ -113,11 +113,21 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
 }
 
 class _ReferenceAccountCard extends StatelessWidget {
-  const _ReferenceAccountCard({required this.account, required this.isFavorite, required this.onToggleFavorite, required this.onTap});
+  const _ReferenceAccountCard({
+    required this.account,
+    this.isFavorite = false,
+    this.onToggleFavorite,
+    required this.onTap,
+    bool? selected,
+  }) : _legacySelected = selected;
+
   final BrokerAccount account;
   final bool isFavorite;
-  final VoidCallback onToggleFavorite;
+  final bool? _legacySelected;
+  final VoidCallback? onToggleFavorite;
   final VoidCallback onTap;
+
+  bool get effectiveFavorite => isFavorite || (_legacySelected ?? false);
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +141,8 @@ class _ReferenceAccountCard extends StatelessWidget {
     final pnlColor = pnl > 0 ? green : pnl < 0 ? red : theme.colorScheme.onSurface;
     final fg = theme.colorScheme.onSurface;
     final muted = theme.colorScheme.onSurfaceVariant;
-    final border = isFavorite ? gold.withValues(alpha: .9) : theme.dividerColor.withValues(alpha: dark ? .75 : .9);
+    final fav = effectiveFavorite;
+    final border = fav ? gold.withValues(alpha: .9) : theme.dividerColor.withValues(alpha: dark ? .75 : .9);
     final equity = account.equityHistory.isNotEmpty ? account.equityHistory : <double>[1, 1.1, 1.04, 1.2, 1.13, 1.3, 1.26, 1.4];
     final sparkWidth = MediaQuery.sizeOf(context).width < 380 ? 48.0 : 70.0;
 
@@ -141,10 +152,10 @@ class _ReferenceAccountCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: border, width: isFavorite ? 1.6 : 1),
+          border: Border.all(color: border, width: fav ? 1.6 : 1),
           boxShadow: [
             BoxShadow(color: Colors.black.withValues(alpha: dark ? .10 : .035), blurRadius: 14, offset: const Offset(0, 5)),
-            if (isFavorite) BoxShadow(color: gold.withValues(alpha: dark ? .08 : .06), blurRadius: 14),
+            if (fav) BoxShadow(color: gold.withValues(alpha: dark ? .08 : .06), blurRadius: 14),
           ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -170,14 +181,20 @@ class _ReferenceAccountCard extends StatelessWidget {
             ])),
             SizedBox(width: sparkWidth, height: 35, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
             const SizedBox(width: 2),
-            IconButton(
-              tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
-              onPressed: onToggleFavorite,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              padding: EdgeInsets.zero,
-              icon: Icon(LucideIcons.star, color: isFavorite ? gold : muted, size: 19),
-            ),
+            if (onToggleFavorite != null)
+              IconButton(
+                tooltip: fav ? 'Remove from favorites' : 'Add to favorites',
+                onPressed: onToggleFavorite,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                padding: EdgeInsets.zero,
+                icon: Icon(LucideIcons.star, color: fav ? gold : muted, size: 19),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Icon(fav ? LucideIcons.star : LucideIcons.chevronRight, color: fav ? gold : muted, size: 19),
+              ),
           ]),
           const SizedBox(height: 13),
           Container(height: 1, color: theme.dividerColor.withValues(alpha: .65)),

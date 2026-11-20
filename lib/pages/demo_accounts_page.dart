@@ -179,7 +179,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
           else
             ...filtered.map((account) => _ReferenceAccountCard(
               account: account,
-              selected: false,
+              isFavorite: false,
               onTap: () => widget.onAccountSelected(account),
             )),
         ],

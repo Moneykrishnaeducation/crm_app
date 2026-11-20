@@ -2965,7 +2965,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -3085,7 +3085,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Text(
@@ -3116,12 +3116,12 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                     equityText,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 27,
+                      fontSize: 25,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
@@ -3184,64 +3184,98 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildTabBar(BuildContext context, int openCount, int pendingCount) {
+    final scheme = Theme.of(context).colorScheme;
     final tabs = [
-      'Open $openCount',
-      'Pending $pendingCount',
-      'Closed',
-      'Funds',
+      ('Open', openCount),
+      ('Pending', pendingCount),
+      ('Closed', _currentClosedPositions.length),
+      ('Funds', _currentFunds.length),
     ];
 
-    return Container(
-      margin: const EdgeInsets.only(top: 18),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.62),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.65)),
         ),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < tabs.length; i++)
-            Expanded(
-              child: InkWell(
-                onTap: () => setState(() => _activeTab = i),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      child: Text(
-                        tabs[i],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: _activeTab == i
-                              ? const Color(0xFF1658C9)
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 13,
-                          fontWeight: _activeTab == i
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      height: 2.5,
-                      width: _activeTab == i ? 36 : 0,
+        child: Row(
+          children: [
+            for (var i = 0; i < tabs.length; i++)
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  selected: _activeTab == i,
+                  label: '${tabs[i].$1} activity',
+                  child: InkWell(
+                    onTap: () => setState(() => _activeTab = i),
+                    borderRadius: BorderRadius.circular(11),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      constraints: const BoxConstraints(minHeight: 42),
+                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
                       decoration: BoxDecoration(
-                        color: _activeTab == i
-                            ? const Color(0xFF1658C9)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(2),
+                        color: _activeTab == i ? scheme.surface : Colors.transparent,
+                        borderRadius: BorderRadius.circular(11),
+                        boxShadow: _activeTab == i
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(
+                                    alpha: Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.055,
+                                  ),
+                                  blurRadius: 7,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              tabs[i].$1,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: _activeTab == i ? scheme.primary : scheme.onSurfaceVariant,
+                                fontSize: 11.5,
+                                fontWeight: _activeTab == i ? FontWeight.w800 : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: _activeTab == i
+                                  ? scheme.primary.withValues(alpha: 0.12)
+                                  : scheme.onSurfaceVariant.withValues(alpha: 0.09),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${tabs[i].$2}',
+                              style: TextStyle(
+                                color: _activeTab == i ? scheme.primary : scheme.onSurfaceVariant,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

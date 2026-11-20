@@ -132,6 +132,10 @@ void main() {
         findsOneWidget,
       );
 
+      // When fingerprint is disabled, the fingerprint button must NOT be shown
+      expect(find.text('Use Fingerprint instead'), findsNothing);
+      expect(find.byIcon(LucideIcons.fingerprint), findsNothing);
+
       // Empty submission shows error
       await tester.tap(find.text('Verify & Continue'));
       await tester.pumpAndSettle();

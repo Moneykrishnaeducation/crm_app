@@ -53,6 +53,7 @@ Future<bool?> showSecurityPasswordModal(
     builder: (sheetContext) => VerifySecurityPasswordModal(
       biometricSignIn: bio,
       isBiometricAvailable: isAvailable,
+      isBiometricEnabled: isEnabled,
     ),
   );
 
@@ -1005,10 +1006,12 @@ class VerifySecurityPasswordModal extends StatefulWidget {
     super.key,
     this.biometricSignIn,
     this.isBiometricAvailable = false,
+    this.isBiometricEnabled = false,
   });
 
   final BiometricSignIn? biometricSignIn;
   final bool isBiometricAvailable;
+  final bool isBiometricEnabled;
 
   @override
   State<VerifySecurityPasswordModal> createState() => _VerifySecurityPasswordModalState();
@@ -1227,8 +1230,8 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                     ),
                   ],
 
-                  // Fingerprint shortcut if available
-                  if (widget.isBiometricAvailable) ...[
+                  // Fingerprint shortcut only if available on device and enabled by user
+                  if (widget.isBiometricAvailable && widget.isBiometricEnabled) ...[
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       onPressed: _handleBiometricAuth,

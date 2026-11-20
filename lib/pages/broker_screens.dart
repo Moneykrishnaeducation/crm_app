@@ -3513,8 +3513,17 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   DateTime? _activityDate(String value) {
-    if (value.toLowerCase() == 'just now') return DateTime.now();
-    return DateTime.tryParse(value);
+    final normalized = value.trim().toLowerCase();
+    final now = DateTime.now();
+    if (normalized == 'just now') return now;
+    if (normalized.startsWith('today')) {
+      return DateTime(now.year, now.month, now.day);
+    }
+    if (normalized.startsWith('yesterday')) {
+      final yesterday = now.subtract(const Duration(days: 1));
+      return DateTime(yesterday.year, yesterday.month, yesterday.day);
+    }
+    return DateTime.tryParse(value.trim());
   }
 
   bool _matchesActivity(String query, String dateValue) {
@@ -3524,7 +3533,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     }
 
     final date = _activityDate(dateValue);
-    if (date == null || _activityDateFilter == 'All time') return true;
+    if (_activityDateFilter == 'All time') return true;
+    if (date == null) return false;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final activityDay = DateTime(date.year, date.month, date.day);

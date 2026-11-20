@@ -1371,6 +1371,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
         ]),
         const SizedBox(height: 11),
         Container(
+          key: const Key('equity_curve_gesture'),
           height: 205,
           padding: const EdgeInsets.fromLTRB(12, 16, 14, 12),
           decoration: BoxDecoration(
@@ -1384,7 +1385,6 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   isDark, muted,
                 )
               : CustomPaint(
-                  key: const Key('equity_curve_gesture'),
                   painter: _TradeReportLinePainter(
                     values: history,
                     lineColor: const Color(0xFF3B82F6),
@@ -1520,15 +1520,15 @@ class _TradeReportPageState extends State<TradeReportPage> {
       ]),
       const SizedBox(height: 8),
       Container(
+        key: const Key('pnl_chart_gesture'),
         height: 190,
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(17),
           border: Border.all(color: border)),
         child: trades.isEmpty
-            ? _buildChartEmptyState('No trade data for this symbol',
+            ? _buildChartEmptyState('No P&L data for this selection',
                 'Closed trade results will appear here when supplied by the account.', isDark, muted)
             : CustomPaint(
-                key: const Key('pnl_chart_gesture'),
                 painter: _TradeReportBarPainter(
                   values: trades.map((trade) => trade.profit).toList(),
                   labels: trades.map((trade) => trade.symbol).toList(),

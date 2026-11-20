@@ -186,9 +186,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: _isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF7F9FC),
+      color: _isDark ? const Color(0xFF081526) : const Color(0xFFF4F7FC),
       child: SafeArea(
         top: false,
         bottom: false,
@@ -199,7 +198,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Text('Security Center', style: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text('Security Center', style: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -.2)),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: IconButton(
@@ -214,44 +213,85 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 30),
                 children: [
-                  _securitySectionLabel('Account Security'),
-                  const SizedBox(height: 14),
-                  _securityActionRow(
-                    title: 'Email',
-                    trailing: 't****harasan344@gmail.com',
-                    onTap: null,
+                  _buildSecurityIntro(),
+                  const SizedBox(height: 22),
+                  _securitySectionLabel('ACCOUNT SECURITY'),
+                  const SizedBox(height: 10),
+                  _securityPanel([
+                    _securityActionRow(
+                      title: 'Email address',
+                      subtitle: 'Your registered account email',
+                      trailing: 't****harasan344@gmail.com',
+                      icon: LucideIcons.mail,
+                      onTap: null,
+                    ),
+                    _securityActionRow(
+                      title: 'Login password',
+                      subtitle: 'Update your password regularly',
+                      trailing: 'Change',
+                      trailingColor: _brokerGold,
+                      icon: LucideIcons.lockKeyhole,
+                      onTap: _showChangeLoginPassword,
+                    ),
+                    _securityToggleRow(
+                      title: 'Mail OTP',
+                      subtitle: 'One-time sign-in code sent to your email',
+                      value: _email2faEnabled,
+                      icon: LucideIcons.mailCheck,
+                      onChanged: (value) => setState(() => _email2faEnabled = value),
+                    ),
+                    _securityToggleRow(
+                      title: 'Captcha',
+                      subtitle: 'Additional check during account sign-in',
+                      value: _loginCaptchaEnabled,
+                      icon: LucideIcons.scanFace,
+                      onChanged: (value) => setState(() => _loginCaptchaEnabled = value),
+                    ),
+                    _securityToggleRow(
+                      title: 'Biometrics',
+                      subtitle: 'Use fingerprint or Face ID on this device',
+                      value: _biometricEnabled,
+                      icon: LucideIcons.fingerprint,
+                      onChanged: _toggleBiometric,
+                      showDivider: false,
+                    ),
+                  ]),
+                  const SizedBox(height: 22),
+                  _securitySectionLabel('DEVICE & ACCOUNT'),
+                  const SizedBox(height: 10),
+                  _securityPanel([
+                    _securityActionRow(
+                      title: 'Device Management',
+                      subtitle: 'Review devices that have accessed your account',
+                      trailing: '',
+                      icon: LucideIcons.monitorSmartphone,
+                      onTap: () => _openSecuritySubPage('Device Management'),
+                    ),
+                    _securityActionRow(
+                      title: 'Account Management',
+                      subtitle: 'Manage account status and closure requests',
+                      trailing: '',
+                      icon: LucideIcons.userRoundCog,
+                      onTap: () => _openSecuritySubPage('Account Management'),
+                      showDivider: false,
+                    ),
+                  ]),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(LucideIcons.info, size: 14, color: _mutedColor),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          'Keep your contact details current and enable multiple sign-in protections for better account security.',
+                          style: TextStyle(color: _mutedColor, fontSize: 11.5, height: 1.45),
+                        ),
+                      ),
+                    ],
                   ),
-                  _securityActionRow(
-                    title: 'Login Password',
-                    trailing: 'Change',
-                    onTap: _showChangeLoginPassword,
-                  ),
-                  _securityToggleRow(
-                    title: 'Mail OTP',
-                    subtitle: 'Verify sign-ins using a one-time code sent to your email',
-                    value: _email2faEnabled,
-                    onChanged: (value) => setState(() => _email2faEnabled = value),
-                  ),
-                  _securityToggleRow(
-                    title: 'Captcha',
-                    subtitle: 'Add an extra verification step to protect account access',
-                    value: _loginCaptchaEnabled,
-                    onChanged: (value) => setState(() => _loginCaptchaEnabled = value),
-                  ),
-                  _securityToggleRow(
-                    title: 'Biometrics',
-                    subtitle: 'Use your device fingerprint or Face ID to secure sign-in',
-                    value: _biometricEnabled,
-                    onChanged: _toggleBiometric,
-                    showDivider: false,
-                  ),
-                  const SizedBox(height: 28),
-                  _securitySectionLabel('Other Settings'),
-                  const SizedBox(height: 14),
-                  _securityActionRow(title: 'Device Management', trailing: '', onTap: () => _openSecuritySubPage('Device Management')),
-                  _securityActionRow(title: 'Account Management', trailing: '', onTap: () => _openSecuritySubPage('Account Management'), showDivider: false),
                 ],
               ),
             ),
@@ -261,11 +301,94 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
+  Widget _buildSecurityIntro() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF123B70), Color(0xFF0A2850), Color(0xFF071C38)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _brokerGold.withValues(alpha: .55), width: 1),
+        boxShadow: const [
+          BoxShadow(color: Color(0x2010244A), blurRadius: 20, offset: Offset(0, 8)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: _brokerGold.withValues(alpha: .14),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _brokerGold.withValues(alpha: .65)),
+                ),
+                child: const Icon(LucideIcons.shieldCheck, color: _brokerGold, size: 25),
+              ),
+              const SizedBox(width: 13),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Protect your account', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -.25)),
+                    SizedBox(height: 4),
+                    Text('Manage your sign-in and device security', style: TextStyle(color: Color(0xFFD6E3F4), fontSize: 12, height: 1.35)),
+                  ],
+                ),
+              ),
+              Icon(LucideIcons.shieldCheck, color: _brokerGold.withValues(alpha: .9), size: 22),
+            ],
+          ),
+          const SizedBox(height: 17),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: Colors.white.withValues(alpha: .13)),
+            ),
+            child: Row(
+              children: [
+                Container(width: 7, height: 7, decoration: const BoxDecoration(color: _brokerGold, shape: BoxShape.circle)),
+                const SizedBox(width: 9),
+                const Expanded(child: Text('Security settings', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700))),
+                Text('REVIEW REGULARLY', style: TextStyle(color: _brokerGold, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: .8)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _securityPanel(List<Widget> children) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
+    decoration: BoxDecoration(
+      color: _isDark ? const Color(0xFF101F33) : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: _isDark ? const Color(0xFF263B57) : const Color(0xFFE1E9F3)),
+      boxShadow: [
+        BoxShadow(
+          color: _isDark ? Colors.black.withValues(alpha: .12) : const Color(0x0B17365C),
+          blurRadius: 16,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    ),
+    child: Column(children: children),
+  );
+
   Widget _securitySectionLabel(String title) => Row(
     children: [
-      Container(width: 3, height: 17, decoration: BoxDecoration(color: _blueRoyal, borderRadius: BorderRadius.circular(4))),
-      const SizedBox(width: 10),
-      Text(title, style: TextStyle(color: _mutedColor, fontSize: 14, fontWeight: FontWeight.w600)),
+      Container(width: 4, height: 16, decoration: BoxDecoration(color: _brokerGold, borderRadius: BorderRadius.circular(4))),
+      const SizedBox(width: 9),
+      Text(title, style: TextStyle(color: _mutedColor, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.05)),
     ],
   );
 
@@ -274,28 +397,29 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     required String subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
+    required IconData icon,
     bool showDivider = true,
   }) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 15),
+    padding: const EdgeInsets.symmetric(vertical: 14),
     decoration: BoxDecoration(
       border: showDivider
-          ? Border(bottom: BorderSide(
-              color: _isDark ? const Color(0xFF24364D) : const Color(0xFFE6ECF4),
-              width: .8,
-            ))
+          ? Border(bottom: BorderSide(color: _isDark ? const Color(0xFF26384F) : const Color(0xFFEDF1F6), width: .8))
           : null,
     ),
     child: Row(children: [
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: TextStyle(color: _textColor, fontSize: 15, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 5),
-        Text(subtitle, style: TextStyle(color: _mutedColor, fontSize: 12.5, height: 1.35)),
-      ])),
+      _securityLeadingIcon(icon),
       const SizedBox(width: 12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: TextStyle(color: _textColor, fontSize: 14, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text(subtitle, style: TextStyle(color: _mutedColor, fontSize: 11.5, height: 1.35)),
+      ])),
+      const SizedBox(width: 8),
       Switch.adaptive(
         value: value,
         onChanged: onChanged,
-        activeColor: _blueRoyal,
+        activeColor: _brokerGold,
+        activeTrackColor: _blueRoyal,
       ),
     ]),
   );
@@ -306,35 +430,50 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     String? subtitle,
     Color? trailingColor,
     required VoidCallback? onTap,
+    required IconData icon,
     bool showDivider = true,
   }) => InkWell(
     onTap: onTap,
+    borderRadius: BorderRadius.circular(13),
     child: Container(
-      padding: EdgeInsets.only(top: subtitle == null ? 19 : 17, bottom: subtitle == null ? 19 : 17),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
-        border: showDivider ? Border(bottom: BorderSide(color: _isDark ? const Color(0xFF24364D) : const Color(0xFFE6ECF4), width: .8)) : null,
+        border: showDivider ? Border(bottom: BorderSide(color: _isDark ? const Color(0xFF26384F) : const Color(0xFFEDF1F6), width: .8)) : null,
       ),
       child: Row(
         children: [
+          _securityLeadingIcon(icon),
+          const SizedBox(width: 12),
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(color: _textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(title, style: TextStyle(color: _textColor, fontSize: 14, fontWeight: FontWeight.w700)),
               if (subtitle != null) ...[
-                const SizedBox(height: 5),
-                Text(subtitle, style: TextStyle(color: _mutedColor, fontSize: 12.5, height: 1.35)),
+                const SizedBox(height: 4),
+                Text(subtitle, style: TextStyle(color: _mutedColor, fontSize: 11.5, height: 1.35)),
               ],
             ],
           )),
           if (trailing.isNotEmpty)
-            Text(trailing, style: TextStyle(color: trailingColor ?? _mutedColor, fontSize: 14, fontWeight: FontWeight.w500)),
+            Flexible(child: Text(trailing, textAlign: TextAlign.end, style: TextStyle(color: trailingColor ?? _mutedColor, fontSize: 11, fontWeight: FontWeight.w700))),
           if (onTap != null) ...[
-            const SizedBox(width: 8),
-            Icon(LucideIcons.chevronRight, color: _mutedColor, size: 19),
+            const SizedBox(width: 7),
+            Icon(LucideIcons.chevronRight, color: _brokerGold, size: 19),
           ],
         ],
       ),
     ),
+  );
+
+  Widget _securityLeadingIcon(IconData icon) => Container(
+    width: 39,
+    height: 39,
+    decoration: BoxDecoration(
+      color: _isDark ? const Color(0xFF1A3555) : const Color(0xFFEAF2FC),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: _isDark ? const Color(0xFF345274) : const Color(0xFFD6E4F5)),
+    ),
+    child: Icon(icon, color: _isDark ? const Color(0xFF9BC5F4) : _bluePrimary, size: 18),
   );
 
   void _showSecurityAction(String title, String message) {

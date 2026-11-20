@@ -1480,7 +1480,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                   child: const _AccountLogoBadge(size: 46)),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('MT5 ACCOUNT  •  ' + a.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: .45)),
+                  Text(a.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: .45)),
                   const SizedBox(height: 5),
                   Text(a.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
                 ])),

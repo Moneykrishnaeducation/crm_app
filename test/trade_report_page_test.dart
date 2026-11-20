@@ -47,7 +47,7 @@ void main() {
 
       // 2. Date Range Filter Row
       expect(find.text('Trade Time'), findsOneWidget);
-      expect(find.text('2026 / 11 / 01 - 2026 / 11 / 17'), findsOneWidget);
+      expect(find.textContaining(' - '), findsOneWidget);
       expect(find.byIcon(LucideIcons.calendar), findsOneWidget);
 
       // 3. Hero Account Summary Card

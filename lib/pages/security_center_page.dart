@@ -2029,23 +2029,27 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: _isDark ? const Color(0xFF162744) : _blueLight,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _brokerGold.withValues(alpha: 0.5),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            LucideIcons.shieldCheck,
-                            color: _brokerGold,
-                            size: 22,
-                          ),
+                      const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.shield,
+                              color: _blueRoyal,
+                              size: 39,
+                            ),
+                            Positioned(
+                              right: 5,
+                              bottom: 7,
+                              child: Icon(
+                                LucideIcons.check,
+                                color: _brokerGold,
+                                size: 15,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       IconButton(
@@ -2399,7 +2403,21 @@ class _PasswordChangeConfirmSheet extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(8)))),
           const SizedBox(height: 22),
-          Container(width: 62, height: 62, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF174A8B), Color(0xFF0B2C55)]), borderRadius: BorderRadius.circular(19), border: Border.all(color: _brokerGold), boxShadow: const [BoxShadow(color: Color(0x1A10264A), blurRadius: 14, offset: Offset(0, 5))]), child: const Icon(LucideIcons.shieldCheck, color: _brokerGold, size: 29)),
+          const SizedBox(
+            width: 66,
+            height: 66,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(LucideIcons.shield, color: _blueRoyal, size: 53),
+                Positioned(
+                  right: 9,
+                  bottom: 11,
+                  child: Icon(LucideIcons.check, color: _brokerGold, size: 19),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           Text('Review password change', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),

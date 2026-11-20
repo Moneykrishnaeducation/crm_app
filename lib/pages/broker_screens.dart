@@ -454,16 +454,21 @@ class _PortfolioPerformanceState extends State<_PortfolioPerformance> {
             ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 112,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: _PortfolioLinePainter(
-                values: _series[_period],
-                lineColor: isDark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8),
-                fillColor: (isDark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8)).withValues(alpha: 0.10),
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final chartHeight = (constraints.maxWidth * 0.30).clamp(92.0, 124.0);
+              return SizedBox(
+                height: chartHeight,
+                width: double.infinity,
+                child: CustomPaint(
+                  painter: _PortfolioLinePainter(
+                    values: _series[_period],
+                    lineColor: isDark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8),
+                    fillColor: (isDark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8)).withValues(alpha: 0.10),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 10),
           Row(
@@ -674,14 +679,19 @@ class _QuickActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+    return Semantics(
+      button: true,
+      label: label,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 72, minWidth: 48),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             Container(
               width: 44,
               height: 44,
@@ -707,7 +717,9 @@ class _QuickActionItem extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1475,93 +1487,109 @@ class _MarketQuoteRow extends StatelessWidget {
     final changeColor =
         isChangePositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: _border,
-              width: 0.6,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            badge,
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 380;
+        final priceWidth = compact ? 64.0 : 72.0;
+        final priceGap = compact ? 6.0 : 10.0;
+        return Semantics(
+          button: true,
+          label: '$symbol, change $change, sell $sell, buy $buy',
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: _border, width: 0.6),
+                ),
+              ),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        symbol,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: onSurface,
+                  badge,
+                  SizedBox(width: compact ? 6 : 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                symbol,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: compact ? 12 : 13.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: onSurface,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                change,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: compact ? 9.5 : 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: changeColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        change,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: changeColor,
+                        const SizedBox(height: 2),
+                        Text(
+                          time,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    time,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  SizedBox(
+                    width: priceWidth,
+                    child: Text(
+                      sell,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.inter(
+                        fontSize: compact ? 10 : 12,
+                        fontWeight: FontWeight.w700,
+                        color: sellColor ?? onSurface,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: priceGap),
+                  SizedBox(
+                    width: priceWidth,
+                    child: Text(
+                      buy,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.inter(
+                        fontSize: compact ? 10 : 12,
+                        fontWeight: FontWeight.w700,
+                        color: buyColor ?? onSurface,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(
-              width: 72,
-              child: Text(
-                sell,
-                maxLines: 1,
-                overflow: TextOverflow.fade,
-                softWrap: false,
-                textAlign: TextAlign.right,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: sellColor ?? onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            SizedBox(
-              width: 72,
-              child: Text(
-                buy,
-                maxLines: 1,
-                overflow: TextOverflow.fade,
-                softWrap: false,
-                textAlign: TextAlign.right,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: buyColor ?? onSurface,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -663,20 +663,20 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                           const SizedBox(height: 10),
                           _buildSummaryRow(
                             label: 'Fee',
-                            value: 'Free (\$0.00)',
+                            value: 'Not verified',
                             valueColor: const Color(0xFF10B981),
                             isBold: true,
                           ),
                           const SizedBox(height: 8),
                           _buildSummaryRow(
                             label: 'Execution',
-                            value: 'Instant (0-5s)',
+                            value: 'Not submitted',
                             valueColor: brandPrimary,
                           ),
                           const SizedBox(height: 8),
                           _buildSummaryRow(
                             label: 'Exchange Rate',
-                            value: '1 USD = 1.00 USD',
+                            value: 'Not applicable',
                             valueColor: muted,
                           ),
                           Padding(
@@ -1135,13 +1135,13 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildGuidelineItem(
-              'Zero Commission',
-              'Internal transfers between your VTIndex live MT5 trading accounts are completely free of charge with 0% fee.',
+              'Transfer Fees',
+              'Fees are not verified in this local preview. Check the server-side transfer rules before making a real transfer.',
             ),
             const SizedBox(height: 12),
             _buildGuidelineItem(
               'Instant Settlement',
-              'This screen currently updates local preview balances only. A server-side transfer is not submitted.',
+              'This screen updates local preview balances only. A server-side transfer is not submitted.',
             ),
             const SizedBox(height: 12),
             _buildGuidelineItem(
@@ -1457,7 +1457,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Transfer Preview Completed',
+                  'Transfer Preview Ready',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                     fontSize: 20,

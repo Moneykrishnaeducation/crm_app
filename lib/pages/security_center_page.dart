@@ -203,26 +203,23 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     trailing: 'Change',
                     onTap: () => _showSecurityAction('Change Login Password', 'Password change is a secure account action. Connect the password update endpoint to enable submission.'),
                   ),
-                  _securityActionRow(
+                  _securityToggleRow(
                     title: 'Biometrics',
-                    trailing: 'Enable',
-                    trailingColor: _blueRoyal,
                     subtitle: 'Use fingerprint or face recognition for secure sign-in',
-                    onTap: () => _showSecurityAction('Enable Biometrics', 'Biometric sign-in setup will be available when device authentication is connected.'),
+                    value: _biometricEnabled,
+                    onChanged: (value) => setState(() => _biometricEnabled = value),
                   ),
-                  _securityActionRow(
+                  _securityToggleRow(
                     title: 'Mail OTP',
-                    trailing: 'Enable',
-                    trailingColor: _blueRoyal,
                     subtitle: 'Verify sign-ins using a one-time code sent to your email',
-                    onTap: () => _showSecurityAction('Mail OTP', 'Email one-time password verification requires the authentication service.'),
+                    value: _email2faEnabled,
+                    onChanged: (value) => setState(() => _email2faEnabled = value),
                   ),
-                  _securityActionRow(
+                  _securityToggleRow(
                     title: 'Captcha',
-                    trailing: 'Enable',
-                    trailingColor: _blueRoyal,
                     subtitle: 'Add an extra verification step to protect account access',
-                    onTap: () => _showSecurityAction('Captcha Protection', 'Captcha verification requires server-side challenge validation.'),
+                    value: _loginCaptchaEnabled,
+                    onChanged: (value) => setState(() => _loginCaptchaEnabled = value),
                   ),
                   _securityActionRow(
                     title: 'Passkey (Biometrics)',
@@ -253,6 +250,34 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       const SizedBox(width: 10),
       Text(title, style: TextStyle(color: _mutedColor, fontSize: 14, fontWeight: FontWeight.w600)),
     ],
+  );
+
+  Widget _securityToggleRow({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 15),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(
+        color: _isDark ? const Color(0xFF24364D) : const Color(0xFFE6ECF4),
+        width: .8,
+      )),
+    ),
+    child: Row(children: [
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: TextStyle(color: _textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 5),
+        Text(subtitle, style: TextStyle(color: _mutedColor, fontSize: 12.5, height: 1.35)),
+      ])),
+      const SizedBox(width: 12),
+      Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        activeColor: _blueRoyal,
+      ),
+    ]),
   );
 
   Widget _securityActionRow({

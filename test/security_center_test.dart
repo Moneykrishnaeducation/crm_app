@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:crm_app/biometric_sign_in.dart';
 import 'package:crm_app/main.dart';
 import 'package:crm_app/pages/security_center_page.dart';
 
@@ -241,5 +242,58 @@ void main() {
     expect(find.text('Security & Devices'), findsOneWidget);
     expect(find.byIcon(LucideIcons.shieldCheck), findsWidgets);
     expect(find.byIcon(LucideIcons.shield), findsWidgets);
+  });
+
+  testWidgets('SecurityCenterPage renders hero banner with health score, chips and biometric access toggle', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final fakeBio = BiometricSignIn();
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
+        themeMode: ThemeMode.dark,
+        home: Scaffold(
+          body: SecurityCenterPage(
+            onBack: () {},
+            onSelectPage: (_) {},
+            biometricSignIn: fakeBio,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify hero banner elements
+    expect(find.text('Security Status: Excellent'), findsOneWidget);
+    expect(find.text('98% Protected'), findsOneWidget);
+    expect(find.textContaining('Maximum Protection Active'), findsOneWidget);
+    expect(find.text('2FA Active'), findsOneWidget);
+    expect(find.text('Device Verified'), findsOneWidget);
+    expect(find.text('256-Bit SSL'), findsOneWidget);
+
+    // Verify Biometric Access toggle
+    expect(find.text('Biometric Access'), findsOneWidget);
+    expect(
+      find.text('Use Fingerprint or Face ID for fast and secure access without entering your CRM password each time.'),
+      findsOneWidget,
+    );
+
+    // Toggle Biometric Access
+    await tester.tap(find.text('Biometric Access'));
+    await tester.pumpAndSettle();
+
+    final isBioEnabled = await fakeBio.isEnabled();
+    expect(isBioEnabled, isTrue);
+
+    // Toggle off
+    await tester.tap(find.text('Biometric Access'));
+    await tester.pumpAndSettle();
+    expect(await fakeBio.isEnabled(), isFalse);
   });
 }

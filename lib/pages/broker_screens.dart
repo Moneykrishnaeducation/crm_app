@@ -1065,30 +1065,6 @@ class _MarketsSection extends StatefulWidget {
 
 class _MarketsSectionState extends State<_MarketsSection> {
   int _selectedTabIndex = 0;
-  final ScrollController _tabScrollController = ScrollController();
-  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
-
-  @override
-  void dispose() {
-    _tabScrollController.dispose();
-    super.dispose();
-  }
-
-  void _selectTab(int index) {
-    setState(() => _selectedTabIndex = index);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tabContext = _tabKeys[index].currentContext;
-      if (tabContext != null && mounted) {
-        Scrollable.ensureVisible(
-          tabContext,
-          alignment: 0.5,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-        );
-      }
-    });
-  }
-
   final List<String> _tabs = [
     'Favorites',
     'Metals',
@@ -1104,6 +1080,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
     final compactLayout = MediaQuery.sizeOf(context).width < 380;
     final quoteColumnWidth = compactLayout ? 64.0 : 72.0;
     final quoteColumnGap = compactLayout ? 6.0 : 10.0;
+    final hasQuotes = _selectedTabIndex != 3 && _selectedTabIndex != 5;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1154,46 +1131,52 @@ class _MarketsSectionState extends State<_MarketsSection> {
           ],
         ),
         const SizedBox(height: 14),
-        SingleChildScrollView(
-          controller: _tabScrollController,
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: List.generate(_tabs.length, (index) {
-              final active = _selectedTabIndex == index;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: InkWell(
-                  onTap: () => _selectTab(index),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    key: _tabKeys[index],
-                    constraints: const BoxConstraints(minHeight: 40),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: List.generate(_tabs.length, (index) {
+            final active = _selectedTabIndex == index;
+            return Semantics(
+              button: true,
+              selected: active,
+              label: '${_tabs[index]} market category',
+              child: InkWell(
+                onTap: () => setState(() => _selectedTabIndex = index),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 40),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compactLayout ? 11 : 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? (isDark ? const Color(0xFF1B3158) : const Color(0xFFEBF2FF))
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
                       color: active
-                          ? (isDark ? const Color(0xFF1B3158) : const Color(0xFFEBF2FF))
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
+                          ? (isDark ? const Color(0xFF294A7B) : const Color(0xFFD6E4FF))
+                          : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.45),
                     ),
-                    child: Text(
-                      _tabs[index],
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active
-                            ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF))
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  ),
+                  child: Text(
+                    _tabs[index],
+                    style: TextStyle(
+                      fontSize: compactLayout ? 12 : 13,
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                      color: active
+                          ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D5AFF))
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
-              );
-            }),
-          ),
+              ),
+            );
+          }),
         ),
         const SizedBox(height: 16),
-        Padding(
+        if (hasQuotes) Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
@@ -1234,8 +1217,8 @@ class _MarketsSectionState extends State<_MarketsSection> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        const Divider(height: 1, thickness: 0.8, color: _border),
+        if (hasQuotes) const SizedBox(height: 8),
+        if (hasQuotes) const Divider(height: 1, thickness: 0.8, color: _border),
         ..._buildQuotesForTab(context),
         const SizedBox(height: 12),
         Text(

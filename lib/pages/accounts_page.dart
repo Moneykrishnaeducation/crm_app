@@ -104,10 +104,6 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
             _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() => _query = ''); })
           else
             ...filtered.map((account) => _ReferenceAccountCard(account: account, selected: liveAccounts.isNotEmpty && account.login == liveAccounts.first.login, onTap: () => widget.onAccountSelected(account))),
-          if (liveAccounts.isNotEmpty) ...[
-            const SizedBox(height: 1),
-            Center(child: Text('Balances are shown in the account currency.', style: TextStyle(color: muted, fontSize: 9))),
-          ],
         ],
       ),
     );

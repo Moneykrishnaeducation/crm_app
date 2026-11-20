@@ -2160,6 +2160,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   bool _hideEquity = false;
   int _activeTab = 0; // 0: Open, 1: Pending, 2: Closed, 3: Funds
   String _fundsFilter = 'All'; // 'All', 'Deposits', 'Withdrawals'
+  String _activitySearch = '';
+  String _activityDateFilter = 'All time';
 
   late final Map<String, List<ActivityOpenPosition>> _accountOpenPositions;
   late final Map<String, List<ActivityPendingOrder>> _accountPendingOrders;
@@ -3307,6 +3309,98 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     );
   }
 
+  DateTime? _activityDate(String value) {
+    if (value.toLowerCase() == 'just now') return DateTime.now();
+    return DateTime.tryParse(value);
+  }
+
+  bool _matchesActivity(String query, String dateValue) {
+    final normalizedQuery = _activitySearch.trim().toLowerCase();
+    if (normalizedQuery.isNotEmpty && !query.toLowerCase().contains(normalizedQuery)) {
+      return false;
+    }
+
+    final date = _activityDate(dateValue);
+    if (date == null || _activityDateFilter == 'All time') return true;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final activityDay = DateTime(date.year, date.month, date.day);
+    switch (_activityDateFilter) {
+      case 'Today':
+        return activityDay == today;
+      case '7 days':
+        return !activityDay.isBefore(today.subtract(const Duration(days: 6))) &&
+            !activityDay.isAfter(today);
+      case '30 days':
+        return !activityDay.isBefore(today.subtract(const Duration(days: 29))) &&
+            !activityDay.isAfter(today);
+      default:
+        return true;
+    }
+  }
+
+  Widget _buildActivityFilters(BuildContext context, bool isDark) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        children: [
+          TextField(
+            onChanged: (value) => setState(() => _activitySearch = value),
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Search symbol, order, method or ID',
+              prefixIcon: const Icon(LucideIcons.search, size: 18),
+              suffixIcon: _activitySearch.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Clear search',
+                      onPressed: () => setState(() => _activitySearch = ''),
+                      icon: const Icon(LucideIcons.x, size: 17),
+                    ),
+              isDense: true,
+              filled: true,
+              fillColor: isDark ? const Color(0xFF162238) : Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: scheme.outlineVariant),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: scheme.outlineVariant),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(LucideIcons.calendarDays, size: 16, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text('Date range', style: TextStyle(
+                color: scheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600,
+              )),
+              const Spacer(),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _activityDateFilter,
+                  isDense: true,
+                  borderRadius: BorderRadius.circular(12),
+                  items: const ['All time', 'Today', '7 days', '30 days']
+                      .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) setState(() => _activityDateFilter = value);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOpenPositionsList(BuildContext context, bool isDark) {
     final positions = _currentOpenPositions;
     if (positions.isEmpty) return _buildEmptyState(context);
@@ -3863,7 +3957,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildFundsTab(BuildContext context, bool isDark) {
-    final allFunds = _currentFunds;
+    final allFunds = _currentFunds.where((f) => _matchesActivity('${f.method} ${f.id} ${f.status} ${f.sourceLogin ?? ''} ${f.destinationLogin ?? ''}', f.date)).toList();
     final filteredFunds = switch (_fundsFilter) {
       'Deposits' => allFunds.where((f) => f.isDeposit && !f.isTransfer && f.method != 'Internal Transfer').toList(),
       'Withdrawals' => allFunds.where((f) => !f.isDeposit && !f.isTransfer && f.method != 'Internal Transfer').toList(),
@@ -4114,6 +4208,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               ),
               // 4-Tab Navigation Bar
               _buildTabBar(context, openCount, pendingCount),
+              _buildActivityFilters(context, isDark),
               // Tab Content Area
               switch (_activeTab) {
                 0 => _buildOpenPositionsList(context, isDark),

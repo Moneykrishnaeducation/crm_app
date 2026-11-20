@@ -54,13 +54,23 @@ class BrokerDashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 const _PortfolioPerformance(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 22),
+                _DashboardSectionHeading(
+                  title: 'Quick actions',
+                  subtitle: 'Manage your trading funds',
+                ),
+                const SizedBox(height: 10),
                 _QuickActionsRow(onSelectPage: onSelectPage),
-                const SizedBox(height: 14),
+                const SizedBox(height: 20),
+                _DashboardSectionHeading(
+                  title: 'Explore',
+                  subtitle: 'Tools and opportunities',
+                ),
+                const SizedBox(height: 10),
                 _DualFeatureCards(onSelectPage: onSelectPage),
                 const SizedBox(height: 14),
                 const _MarketInsightsBanner(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 _MarketsSection(onSelectPage: onSelectPage),
               ],
             ),
@@ -541,6 +551,49 @@ class _PortfolioLinePainter extends CustomPainter {
       oldDelegate.values != values || oldDelegate.lineColor != lineColor || oldDelegate.fillColor != fillColor;
 }
 
+class _DashboardSectionHeading extends StatelessWidget {
+  const _DashboardSectionHeading({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.25,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _QuickActionsRow extends StatelessWidget {
   const _QuickActionsRow({required this.onSelectPage});
   final ValueChanged<String> onSelectPage;
@@ -1011,15 +1064,52 @@ class _MarketsSectionState extends State<_MarketsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Markets',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Markets',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.35,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Explore instruments and indicative prices',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF382F1C) : const Color(0xFFFFF5DD),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'SAMPLE QUOTES',
+                style: TextStyle(
+                  color: isDark ? const Color(0xFFFFD98A) : const Color(0xFF956300),
+                  fontSize: 8,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.45,
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
@@ -1100,6 +1190,15 @@ class _MarketsSectionState extends State<_MarketsSection> {
         const SizedBox(height: 8),
         const Divider(height: 1, thickness: 0.8, color: _border),
         ..._buildQuotesForTab(context),
+        const SizedBox(height: 12),
+        Text(
+          'Indicative sample prices only. Quotes are not connected to a live market feed.',
+          style: TextStyle(
+            fontSize: 10,
+            height: 1.35,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 22),
         Center(
           child: Text(

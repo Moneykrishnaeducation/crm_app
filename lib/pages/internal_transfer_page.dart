@@ -1141,7 +1141,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
             const SizedBox(height: 12),
             _buildGuidelineItem(
               'Instant Settlement',
-              'Transfers are credited immediately without waiting for banking hours or manual approvals.',
+              'This screen currently updates local preview balances only. A server-side transfer is not submitted.',
             ),
             const SizedBox(height: 12),
             _buildGuidelineItem(

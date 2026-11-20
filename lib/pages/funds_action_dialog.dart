@@ -1788,7 +1788,7 @@ class _DepositResponseSheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Deposit Request Initiated',
+            'Deposit Preview Created',
             style: TextStyle(
               color: isDark ? Colors.white : _fundInk,
               fontSize: 19,

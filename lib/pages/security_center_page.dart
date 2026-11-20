@@ -2527,28 +2527,143 @@ class _SecurityReferenceSubPage extends StatelessWidget {
             ])),
             ],
           ] else if (title == 'Account Management') ...[
-            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFFFE8E8), borderRadius: BorderRadius.circular(13)), child: const Icon(LucideIcons.shieldAlert, color: Color(0xFFFF1744), size: 24)),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Account status', style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 4),
-                  Text('Manage access to your VTIndex account', style: TextStyle(color: muted, fontSize: 12)),
-                ])),
-                _tag('Active', const Color(0xFFE0FFF1), const Color(0xFF00A968)),
-              ]),
-            ])),
-            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Account requests', style: TextStyle(color: scheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 5),
-              Text('Select an action to review its details and submit a request.', style: TextStyle(color: muted, fontSize: 12, height: 1.4)),
-              const SizedBox(height: 10),
-              _accountRequestRow(context, title: 'Deactivate account', subtitle: 'Temporarily suspend account access', icon: LucideIcons.pauseCircle, destructive: false, onTap: () => _confirmAccountRequest(context, deactivate: true)),
-              Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: .65)),
-              _accountRequestRow(context, title: 'Delete account', subtitle: 'Permanently close your account', icon: LucideIcons.trash2, destructive: true, onTap: () => _confirmAccountRequest(context, deactivate: false)),
-            ])),
-            Text('Requests require review. Your account remains active unless a request is approved and processed.', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF123B70), Color(0xFF0A2850), Color(0xFF071C38)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFF4C84A).withValues(alpha: .55)),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x1810244A), blurRadius: 16, offset: Offset(0, 6)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF4C84A).withValues(alpha: .14),
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(color: const Color(0xFFF4C84A).withValues(alpha: .55)),
+                        ),
+                        child: const Icon(LucideIcons.shieldCheck, color: Color(0xFFF4C84A), size: 23),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Account status', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 3),
+                            Text('Your VTIndex account access', style: TextStyle(color: Colors.white.withValues(alpha: .72), fontSize: 11.5)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16845B).withValues(alpha: .22),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF6EE7B7).withValues(alpha: .65)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.checkCircle2, color: Color(0xFF6EE7B7), size: 13),
+                            SizedBox(width: 5),
+                            Text('Active', style: TextStyle(color: Color(0xFFB7F7D8), fontSize: 11, fontWeight: FontWeight.w800)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: .07), borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.info, color: Color(0xFFF4C84A), size: 15),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Your account remains active until a request is reviewed and approved.',
+                            style: TextStyle(color: Colors.white.withValues(alpha: .86), fontSize: 11, height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 22),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Account actions', style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text('Choose how you want to manage account access', style: TextStyle(color: muted, fontSize: 11.5, height: 1.4)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(LucideIcons.settings2, color: Color(0xFFB18418), size: 20),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _accountRequestRow(
+              context,
+              title: 'Deactivate account',
+              subtitle: 'Temporarily suspend account access',
+              icon: LucideIcons.pauseCircle,
+              destructive: false,
+              onTap: () => _confirmAccountRequest(context, deactivate: true),
+            ),
+            const SizedBox(height: 10),
+            _accountRequestRow(
+              context,
+              title: 'Delete account',
+              subtitle: 'Permanently close your account',
+              icon: LucideIcons.trash2,
+              destructive: true,
+              onTap: () => _confirmAccountRequest(context, deactivate: false),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: dark ? const Color(0xFF18283D) : const Color(0xFFFFF8E8),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: dark ? const Color(0xFF354760) : const Color(0xFFF0DFAF)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(LucideIcons.lockKeyhole, color: Color(0xFFB18418), size: 17),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'Both actions require confirmation. Account requests are shown as a preview and are not submitted to the server.',
+                      style: TextStyle(color: muted, fontSize: 11, height: 1.45),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ] else ...[
             _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Recent account activity', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w800, fontSize: 16)),

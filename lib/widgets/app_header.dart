@@ -398,11 +398,47 @@ class CustomerSupportBottomSheet extends StatelessWidget {
                           iconColor: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
                           iconBg: (isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9)).withValues(alpha: 0.10),
                           title: 'Email Support',
-                          subtitle: 'support@vtindex.com • Direct desk',
-                          trailingIcon: LucideIcons.copy,
-                          onTap: () {
-                            Clipboard.setData(const ClipboardData(text: 'support@vtindex.com'));
-                            showAppMessage('Support email copied: support@vtindex.com');
+                          subtitle: 'support@vtindex.com • Open in mail app',
+                          trailingWidget: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Copy email address',
+                                visualDensity: VisualDensity.compact,
+                                constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                                padding: EdgeInsets.zero,
+                                icon: Icon(LucideIcons.copy, size: 15, color: muted.withValues(alpha: 0.8)),
+                                onPressed: () {
+                                  Clipboard.setData(const ClipboardData(text: 'support@vtindex.com'));
+                                  showAppMessage('Support email copied: support@vtindex.com');
+                                },
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                LucideIcons.arrowUpRight,
+                                size: 16,
+                                color: (isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9)),
+                              ),
+                            ],
+                          ),
+                          onTap: () async {
+                            final uri = Uri(
+                              scheme: 'mailto',
+                              path: 'support@vtindex.com',
+                              queryParameters: {
+                                'subject': 'VT Index Support Request',
+                              },
+                            );
+                            try {
+                              final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              if (!launched) {
+                                await Clipboard.setData(const ClipboardData(text: 'support@vtindex.com'));
+                                showAppMessage('Support email copied: support@vtindex.com');
+                              }
+                            } catch (_) {
+                              await Clipboard.setData(const ClipboardData(text: 'support@vtindex.com'));
+                              showAppMessage('Support email copied: support@vtindex.com');
+                            }
                           },
                         ),
                         const SizedBox(height: 14),
@@ -446,7 +482,7 @@ class _SupportActionCard extends StatelessWidget {
     required this.subtitle,
     this.badge,
     this.badgeColor,
-    this.trailingIcon = LucideIcons.chevronRight,
+    this.trailingWidget,
     required this.onTap,
   });
 
@@ -457,7 +493,7 @@ class _SupportActionCard extends StatelessWidget {
   final String subtitle;
   final String? badge;
   final Color? badgeColor;
-  final IconData trailingIcon;
+  final Widget? trailingWidget;
   final VoidCallback onTap;
 
   @override
@@ -535,7 +571,10 @@ class _SupportActionCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(trailingIcon, size: 16, color: muted.withValues(alpha: 0.7)),
+              if (trailingWidget != null)
+                trailingWidget!
+              else
+                Icon(LucideIcons.chevronRight, size: 16, color: muted.withValues(alpha: 0.7)),
             ],
           ),
         ),

@@ -15,117 +15,134 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   String _query = '';
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  void dispose() { _searchController.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    const navy = Color(0xFF071629);
-    const panel = Color(0xFF101F34);
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     const gold = Color(0xFFFFC533);
     const blue = Color(0xFF35A9F5);
+    const green = Color(0xFF0B9E68);
     final liveAccounts = widget.accounts.where((a) => a.type == 'Live MT5').toList();
-    final filtered = liveAccounts.where((a) {
-      final q = _query.trim().toLowerCase();
-      return q.isEmpty || a.login.toLowerCase().contains(q) || a.name.toLowerCase().contains(q);
-    }).toList();
+    final query = _query.trim().toLowerCase();
+    final filtered = liveAccounts.where((a) => query.isEmpty || a.login.toLowerCase().contains(query) || a.name.toLowerCase().contains(query)).toList();
     final totalBalance = liveAccounts.fold<double>(0, (sum, a) => sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
-    final surface = dark ? panel : Colors.white;
-    final border = dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE);
-    final text = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
-    final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF6F7F95);
-
-
-
-    final bottomNavPadding = 110.0 + MediaQuery.paddingOf(context).bottom;
+    final surface = theme.colorScheme.surface;
+    final border = theme.dividerColor.withValues(alpha: dark ? .72 : .8);
+    final fg = theme.colorScheme.onSurface;
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final bottomNavPadding = 116.0 + MediaQuery.paddingOf(context).bottom;
 
     return Container(
-      color: dark ? navy : Theme.of(context).scaffoldBackgroundColor,
+      color: theme.scaffoldBackgroundColor,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-        padding: EdgeInsets.fromLTRB(14, 12, 14, bottomNavPadding),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, bottomNavPadding),
         children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('ACCOUNTS', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
+              Text('MY PORTFOLIO', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+              const SizedBox(height: 6),
+              Text('Trading accounts', style: TextStyle(color: fg, fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.7)),
               const SizedBox(height: 5),
-              Text('Trading Accounts', style: TextStyle(color: text, fontSize: 26, height: 1.12, fontWeight: FontWeight.w800, letterSpacing: -.65)),
-              const SizedBox(height: 5),
-              Text('Your live MT5 trading accounts', style: TextStyle(color: muted, fontSize: 12, height: 1.35)),
+              Text('Manage your MT5 accounts in one place', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
             ])),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9), decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: border)), child: Row(children: [
-              const Icon(LucideIcons.walletCards, color: blue, size: 15), const SizedBox(width: 6),
-              Text('${liveAccounts.length} Live', style: TextStyle(color: text, fontSize: 10, fontWeight: FontWeight.w800)),
-            ])),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+              decoration: BoxDecoration(color: green.withValues(alpha: dark ? .16 : .09), borderRadius: BorderRadius.circular(30), border: Border.all(color: green.withValues(alpha: .25))),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 7, height: 7, decoration: const BoxDecoration(color: green, shape: BoxShape.circle)),
+                const SizedBox(width: 7),
+                Text('\${liveAccounts.length} LIVE', style: const TextStyle(color: green, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .5)),
+              ]),
+            ),
           ]),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(17),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                colors: dark ? const [Color(0xFF183B64), Color(0xFF10243C), Color(0xFF101B2D)] : const [Color(0xFF173F70), Color(0xFF245B91), Color(0xFF173B68)]),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white.withValues(alpha: .10)),
+              boxShadow: [BoxShadow(color: const Color(0xFF173F70).withValues(alpha: dark ? .20 : .13), blurRadius: 20, offset: const Offset(0, 8))],
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Icon(LucideIcons.walletCards, color: Color(0xFFD7E9FF), size: 17),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('TOTAL LIVE BALANCE', style: TextStyle(color: Color(0xFFD7E9FF), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.1))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
+                  child: Text('\${liveAccounts.length} \${liveAccounts.length == 1 ? 'account' : 'accounts'}', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700))),
+              ]),
+              const SizedBox(height: 10),
+              Text(liveAccounts.isEmpty ? '—' : '\$\${totalBalance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 29, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.8)),
+              const SizedBox(height: 13),
+              Container(height: 1, color: Colors.white.withValues(alpha: .15)),
+              const SizedBox(height: 12),
+              Row(children: [
+                const Icon(LucideIcons.shieldCheck, color: Color(0xFFB8D9F7), size: 14),
+                const SizedBox(width: 7),
+                const Expanded(child: Text('Live MT5 portfolio overview', style: TextStyle(color: Color(0xFFD7E9FF), fontSize: 10, fontWeight: FontWeight.w600))),
+                Text('\${liveAccounts.length} active', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+              ]),
+            ]),
+          ),
           const SizedBox(height: 14),
           Row(children: [
-            Expanded(child: SizedBox(
-              height: 48,
-              child: FilledButton.icon(
-                onPressed: () => showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  isDismissible: true,
-                  useSafeArea: true,
-                  backgroundColor: Colors.transparent,
-                  barrierColor: Colors.black54,
-                  builder: (_) => _OpenLiveAccountSheet(onCreated: widget.onAccountCreated),
-                ),
-                style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF101A29), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
-                icon: const Icon(LucideIcons.plusCircle, size: 18),
-                label: const Text('Open Account', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-              ),
-            )),
+            Expanded(child: SizedBox(height: 48, child: FilledButton.icon(
+              onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, isDismissible: true, useSafeArea: true, backgroundColor: Colors.transparent, barrierColor: Colors.black54,
+                builder: (_) => _OpenLiveAccountSheet(onCreated: widget.onAccountCreated)),
+              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF17243A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), elevation: 0),
+              icon: const Icon(LucideIcons.plus, size: 17),
+              label: const Text('Open live account', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+            ))),
             const SizedBox(width: 10),
-            Expanded(child: SizedBox(
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: () => widget.onSelectPage('Demo Accounts'),
-                style: OutlinedButton.styleFrom(foregroundColor: text, side: BorderSide(color: border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                icon: const Icon(LucideIcons.flaskConical, size: 18),
-                label: const Text('Demo Accounts', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-              ),
-            )),
+            Expanded(child: SizedBox(height: 48, child: OutlinedButton.icon(
+              onPressed: () => widget.onSelectPage('Demo Accounts'),
+              style: OutlinedButton.styleFrom(foregroundColor: fg, backgroundColor: surface, side: BorderSide(color: border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+              icon: const Icon(LucideIcons.flaskConical, size: 17, color: blue),
+              label: const Text('Demo accounts', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+            ))),
           ]),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: TextField(
-              controller: _searchController,
-              onChanged: (v) => setState(() => _query = v),
-              style: TextStyle(color: text, fontSize: 12),
-              decoration: InputDecoration(
-                hintText: 'Search by account number, name...',
-                hintStyle: TextStyle(color: muted, fontSize: 11),
-                prefixIcon: Icon(LucideIcons.search, color: muted, size: 19),
-                filled: true, fillColor: surface, isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide(color: border)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: blue, width: 1.3)),
-              ),
-            )),
-
+          const SizedBox(height: 21),
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('LIVE ACCOUNTS', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: .5)),
+              const SizedBox(height: 3),
+              Text('Select an account to view its details', style: TextStyle(color: muted, fontSize: 10)),
+            ])),
+            Text('\${filtered.length} shown', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700)),
           ]),
+          const SizedBox(height: 11),
+          TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _query = value),
+            style: TextStyle(color: fg, fontSize: 12),
+            decoration: InputDecoration(
+              hintText: 'Search name or account number', hintStyle: TextStyle(color: muted, fontSize: 11),
+              prefixIcon: Icon(LucideIcons.search, color: muted, size: 18),
+              suffixIcon: _query.isEmpty ? null : IconButton(tooltip: 'Clear search', onPressed: () { _searchController.clear(); setState(() => _query = ''); }, icon: Icon(LucideIcons.x, color: muted, size: 16)),
+              filled: true, fillColor: surface, isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: border)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: blue, width: 1.4)),
+            ),
+          ),
           const SizedBox(height: 12),
           if (filtered.isEmpty)
-            _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() { _query = ''; }); })
+            _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() => _query = ''); })
           else
-            ...filtered.map((account) => _ReferenceAccountCard(
-              account: account,
-              selected: liveAccounts.isNotEmpty && account.login == liveAccounts.first.login,
-              onTap: () => widget.onAccountSelected(account),
-            )),
-          const SizedBox(height: 7),
-          Text('Combined live balance  ${liveAccounts.isEmpty ? '—' : String.fromCharCode(36) + totalBalance.toStringAsFixed(2)}', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 9)),
+            ...filtered.map((account) => _ReferenceAccountCard(account: account, selected: liveAccounts.isNotEmpty && account.login == liveAccounts.first.login, onTap: () => widget.onAccountSelected(account))),
+          if (liveAccounts.isNotEmpty) ...[
+            const SizedBox(height: 1),
+            Center(child: Text('Balances are shown in the account currency.', style: TextStyle(color: muted, fontSize: 9))),
+          ],
         ],
       ),
     );
   }
 }
-
 
 class _ReferenceAccountCard extends StatelessWidget {
   const _ReferenceAccountCard({required this.account, required this.selected, required this.onTap});
@@ -135,66 +152,82 @@ class _ReferenceAccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     const gold = Color(0xFFFFC533);
-    const green = Color(0xFF08D879);
-    const red = Color(0xFFFF6268);
+    const green = Color(0xFF08B779);
+    const red = Color(0xFFE45C68);
     final live = account.type == 'Live MT5';
     final pnl = account.floatingPnl ?? 0;
-    final pnlColor = pnl > 0 ? green : pnl < 0 ? red : (dark ? Colors.white : const Color(0xFF10213A));
-    final bg = dark ? const Color(0xFF101F34) : Colors.white;
-    final fg = dark ? const Color(0xFFF5F7FC) : const Color(0xFF10213A);
-    final muted = dark ? const Color(0xFFA9B9CE) : const Color(0xFF718096);
-    final border = selected ? gold : (dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE));
+    final pnlColor = pnl > 0 ? green : pnl < 0 ? red : theme.colorScheme.onSurface;
+    final fg = theme.colorScheme.onSurface;
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final border = selected ? gold.withValues(alpha: .9) : theme.dividerColor.withValues(alpha: dark ? .75 : .9);
     final equity = account.equityHistory.isNotEmpty ? account.equityHistory : <double>[1, 1.1, 1.04, 1.2, 1.13, 1.3, 1.26, 1.4];
-    final sparkWidth = MediaQuery.sizeOf(context).width < 380 ? 54.0 : 82.0;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(19),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 11),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(19),
-              border: Border.all(color: border, width: selected ? 1.8 : 1.2),
-              boxShadow: selected && dark ? [BoxShadow(color: gold.withValues(alpha: .13), blurRadius: 13, spreadRadius: 1)] : null,
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const _AccountLogoBadge(size: 46),
-                const SizedBox(width: 11),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    _AccountPill(label: live ? 'Live' : 'Demo', color: live ? const Color(0xFF0B9E55) : const Color(0xFF4C91E8), foreground: Colors.white),
-                    const SizedBox(width: 6),
-                    const _AccountPill(label: 'MT5', color: Color(0xFF315D86), foreground: Colors.white),
-                    const SizedBox(width: 9),
-                    Flexible(child: Text(account.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w800))),
-                  ]),
-                  const SizedBox(height: 7),
-                  Text('${account.name}  •  ${account.leverage}', style: TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w500)),
-                ])),
-                SizedBox(width: sparkWidth, height: 42, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
-                const SizedBox(width: 5),
-                Icon(selected ? Icons.star : Icons.star_border, color: selected ? gold : muted, size: 22),
-              ]),
-              const SizedBox(height: 11),
-              Row(children: [
-                Expanded(child: _ReferenceMetric(label: 'Balance', value: account.balance, color: fg, muted: muted)),
-                Container(width: 1, height: 35, color: dark ? const Color(0xFF29415F) : const Color(0xFFE0E7F0)),
-                Expanded(child: _ReferenceMetric(label: 'Equity', value: account.equity, color: fg, muted: muted)),
-                Container(width: 1, height: 35, color: dark ? const Color(0xFF29415F) : const Color(0xFFE0E7F0)),
-                Expanded(child: _ReferenceMetric(label: 'P/L', value: account.floatingPnl == null ? '—' : (pnl > 0 ? '+' : pnl < 0 ? '-' : '') + r'$' + pnl.abs().toStringAsFixed(2), color: pnlColor, muted: muted)),
-              ]),
-            ]),
-          ),
+    final sparkWidth = MediaQuery.sizeOf(context).width < 380 ? 48.0 : 70.0;
+
+    return Padding(padding: const EdgeInsets.only(bottom: 11), child: Material(
+      color: theme.colorScheme.surface, borderRadius: BorderRadius.circular(20),
+      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(20), child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: border, width: selected ? 1.6 : 1),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: dark ? .10 : .035), blurRadius: 14, offset: const Offset(0, 5)),
+            if (selected) BoxShadow(color: gold.withValues(alpha: dark ? .08 : .06), blurRadius: 14),
+          ],
         ),
-      ),
-    );
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(width: 43, height: 43, padding: const EdgeInsets.all(7), decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF1B4E82), Color(0xFF102B4B)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(14)),
+              child: Image.network('https://image.vtindex.com/Logo-img.png', fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/vtindex_logo_img.png', fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: Color(0xFF39B5FF)))),
+            ),
+            const SizedBox(width: 11),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                _AccountPill(label: live ? 'LIVE' : 'DEMO', color: live ? const Color(0xFF0B9E68) : const Color(0xFF4C91E8), foreground: Colors.white),
+                const SizedBox(width: 6),
+                const _AccountPill(label: 'MT5', color: Color(0xFF315D86), foreground: Colors.white),
+                const SizedBox(width: 7),
+                Flexible(child: Text(account.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: .1))),
+              ]),
+              const SizedBox(height: 5),
+              Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
+            ])),
+            SizedBox(width: sparkWidth, height: 35, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
+            const SizedBox(width: 5),
+            Icon(selected ? LucideIcons.star : LucideIcons.chevronRight, color: selected ? gold : muted, size: 19),
+          ]),
+          const SizedBox(height: 13),
+          Container(height: 1, color: theme.dividerColor.withValues(alpha: .65)),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _ReferenceMetric(label: 'BALANCE', value: account.balance, color: fg, muted: muted)),
+            Container(width: 1, height: 34, color: theme.dividerColor),
+            Expanded(child: _ReferenceMetric(label: 'EQUITY', value: account.equity, color: fg, muted: muted)),
+            Container(width: 1, height: 34, color: theme.dividerColor),
+            Expanded(child: _ReferenceMetric(label: 'FLOATING P/L', value: account.floatingPnl == null ? '—' : '\${pnl > 0 ? '+' : pnl < 0 ? '-' : ''}\$\${pnl.abs().toStringAsFixed(2)}', color: pnlColor, muted: muted)),
+          ]),
+          const SizedBox(height: 10),
+          Row(children: [
+            Icon(LucideIcons.gauge, color: muted, size: 13),
+            const SizedBox(width: 5),
+            Text(account.leverage, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w600)),
+            if (account.server != null && account.server!.isNotEmpty) ...[
+              const SizedBox(width: 11), Icon(LucideIcons.server, color: muted, size: 12), const SizedBox(width: 5),
+              Expanded(child: Text(account.server!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w600))),
+            ] else const Spacer(),
+            Text('View details', style: TextStyle(color: theme.colorScheme.primary, fontSize: 9, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 3), Icon(LucideIcons.arrowUpRight, color: theme.colorScheme.primary, size: 13),
+          ]),
+        ]),
+      )),
+    ));
   }
 }
 

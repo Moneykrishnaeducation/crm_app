@@ -118,12 +118,37 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   Future<void> _toggleBiometric(bool value) async {
     HapticFeedback.lightImpact();
-    setState(() => _biometricEnabled = value);
-    try {
-      final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
-      await bio.setEnabled(value);
-      _showSnack(value ? 'Biometric access enabled' : 'Biometric access disabled');
-    } catch (_) {}
+    final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
+    if (value) {
+      try {
+        if (!await bio.isAvailable()) {
+          _showSnack('No fingerprint or Face ID is enrolled on this device.');
+          return;
+        }
+        final verified = await bio.authenticate(
+          localizedReason: 'Verify your identity to enable biometric sign-in',
+        );
+        if (!verified) {
+          _showSnack('Biometric verification was not completed.');
+          return;
+        }
+        await bio.setEnabled(true);
+        if (mounted) setState(() => _biometricEnabled = true);
+        _showSnack('Biometric sign-in enabled');
+      } on PlatformException catch (error) {
+        _showSnack(error.message ?? 'Biometric authentication failed.');
+      } catch (_) {
+        _showSnack('Could not enable biometric sign-in.');
+      }
+    } else {
+      try {
+        await bio.setEnabled(false);
+        if (mounted) setState(() => _biometricEnabled = false);
+        _showSnack('Biometric sign-in disabled');
+      } catch (_) {
+        _showSnack('Could not disable biometric sign-in.');
+      }
+    }
   }
 
   void _showSnack(String message) {
@@ -215,12 +240,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     value: _loginCaptchaEnabled,
                     onChanged: (value) => setState(() => _loginCaptchaEnabled = value),
                   ),
-                  _securityActionRow(
-                    title: 'Passkey (Biometrics)',
-                    trailing: 'Manage',
-                    trailingColor: _blueRoyal,
-                    subtitle: 'Use Apple Passkey or Google Passkey to secure your account',
-                    onTap: () => _openSecuritySubPage('Passkey'),
+                  _securityToggleRow(
+                    title: 'Biometrics',
+                    subtitle: 'Use your device fingerprint or Face ID to secure sign-in',
+                    value: _biometricEnabled,
+                    onChanged: _toggleBiometric,
                     showDivider: false,
                   ),
                   const SizedBox(height: 28),
@@ -2066,28 +2090,7 @@ class _SecurityReferenceSubPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
         children: [
-          if (title == 'Passkey') ...[
-            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Google Password Manager', style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Wrap(spacing: 6, children: [
-                _tag('Cross-device', const Color(0xFFEAF1FF), const Color(0xFF245BFF)),
-                _tag('Google Passkey', const Color(0xFFF0F0F0), const Color(0xFF666666)),
-              ]),
-              const SizedBox(height: 18),
-              _dateRow('Added At', '2026-11-20 17:26:59', muted),
-              const SizedBox(height: 14),
-              _dateRow('Last Used At', '2026-11-20 17:26:59', muted),
-              const SizedBox(height: 20),
-              Row(children: [
-                Expanded(child: _actionButton(context, 'Reset Passkey', () => _message(context, 'Passkey reset is not connected yet.'))),
-                const SizedBox(width: 9),
-                Expanded(child: _actionButton(context, 'Rename', () => _message(context, 'Passkey rename is not connected yet.'))),
-              ]),
-              const SizedBox(height: 8),
-              SizedBox(width: double.infinity, child: _dangerButton(context, 'Delete', () => _message(context, 'Passkey deletion is not connected yet.'))),
-            ])),
-          ] else if (title == 'Device Management') ...[
+          if (title == 'Device Management') ...[
             if (content != null) content!,
             if (content == null) ...[
             for (final device in const [

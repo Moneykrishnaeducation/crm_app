@@ -1160,26 +1160,26 @@ class _MarketsSectionState extends State<_MarketsSection> {
               ),
               Spacer(),
               SizedBox(
-                width: 82,
+                width: 72,
                 child: Text(
                   'Sell',
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
-              SizedBox(width: 24),
+              const SizedBox(width: 10),
               SizedBox(
-                width: 82,
+                width: 72,
                 child: Text(
                   'Buy',
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -1452,25 +1452,31 @@ class _MarketQuoteRow extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 82,
+              width: 72,
               child: Text(
                 sell,
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                softWrap: false,
                 textAlign: TextAlign.right,
                 style: GoogleFonts.inter(
-                  fontSize: 13.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: sellColor ?? onSurface,
                 ),
               ),
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: 10),
             SizedBox(
-              width: 82,
+              width: 72,
               child: Text(
                 buy,
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                softWrap: false,
                 textAlign: TextAlign.right,
                 style: GoogleFonts.inter(
-                  fontSize: 13.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: buyColor ?? onSurface,
                 ),
@@ -1750,7 +1756,39 @@ void _showQuickTradeDialog(
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF382F1C) : const Color(0xFFFFF5DD),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF66501F) : const Color(0xFFF2D99B),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      LucideIcons.info,
+                      size: 15,
+                      color: isDark ? const Color(0xFFFFD98A) : const Color(0xFF956300),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Demo ticket only. Orders are not submitted to a trading account.',
+                        style: TextStyle(
+                          color: isDark ? const Color(0xFFFFD98A) : const Color(0xFF805700),
+                          fontSize: 10.5,
+                          height: 1.3,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -1764,7 +1802,7 @@ void _showQuickTradeDialog(
                       ),
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        showAppMessage('Instant SELL ${lotSize.toStringAsFixed(2)} $symbol @ ${sellPrice.toStringAsFixed(5)} executed');
+                        showAppMessage('Demo preview only — no SELL order was placed.');
                       },
                       child: Column(
                         children: [
@@ -1793,7 +1831,7 @@ void _showQuickTradeDialog(
                       ),
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        showAppMessage('Instant BUY ${lotSize.toStringAsFixed(2)} $symbol @ ${buyPrice.toStringAsFixed(5)} executed');
+                        showAppMessage('Demo preview only — no BUY order was placed.');
                       },
                       child: Column(
                         children: [

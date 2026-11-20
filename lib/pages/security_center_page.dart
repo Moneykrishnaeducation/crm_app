@@ -1653,27 +1653,46 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   Future<void> _showChangeLoginPassword() async {
     final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
-    bool available = false;
-    bool enabled = false;
-    try {
-      available = await bio.isAvailable();
-      enabled = await bio.isEnabled();
-    } catch (_) {}
-    if (!mounted) return;
-    await showModalBottomSheet<void>(
+
+    // Popup 1: reuse the Security Center's existing identity-verification UI.
+    final verified = await showSecurityPasswordModal(
+      context,
+      biometricSignIn: bio,
+    );
+    if (!mounted || verified != true) return;
+
+    // Popup 2: collect and validate the new password.
+    final draft = await showModalBottomSheet<_PasswordDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.65),
-      builder: (_) => _ChangeLoginPasswordSheet(
-        biometricSignIn: bio,
-        isBiometricAvailable: available,
-        isBiometricEnabled: enabled,
-      ),
+      builder: (_) => const _NewPasswordFormSheet(),
     );
-  }
-}
+    if (!mounted || draft == null) return;
+
+    // Popup 3: explicit final confirmation.
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (_) => const _PasswordChangeConfirmSheet(),
+    );
+    if (!mounted || confirmed != true) return;
+
+    // Popup 4: success state. This remains a UI preview until the backend
+    // password-update endpoint is connected.
+    await showModalBottomSheet<void>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _PasswordChangeSuccessSheet(),
+    );
+  }}
 
 class _LaptopSecurityGraphic extends StatelessWidget {
   const _LaptopSecurityGraphic();
@@ -2093,26 +2112,21 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
   }
 }
 
-class _ChangeLoginPasswordSheet extends StatefulWidget {
-  const _ChangeLoginPasswordSheet({
-    required this.biometricSignIn,
-    required this.isBiometricAvailable,
-    required this.isBiometricEnabled,
-  });
-  final BiometricSignIn biometricSignIn;
-  final bool isBiometricAvailable;
-  final bool isBiometricEnabled;
-
-  @override
-  State<_ChangeLoginPasswordSheet> createState() => _ChangeLoginPasswordSheetState();
+class _PasswordDraft {
+  const _PasswordDraft(this.newPassword);
+  final String newPassword;
 }
 
-class _ChangeLoginPasswordSheetState extends State<_ChangeLoginPasswordSheet> {
-  final _current = TextEditingController();
+class _NewPasswordFormSheet extends StatefulWidget {
+  const _NewPasswordFormSheet({super.key});
+
+  @override
+  State<_NewPasswordFormSheet> createState() => _NewPasswordFormSheetState();
+}
+
+class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
   final _newPassword = TextEditingController();
   final _confirm = TextEditingController();
-  bool _busy = false;
-  bool _hideCurrent = true;
   bool _hideNew = true;
   bool _hideConfirm = true;
   String? _error;
@@ -2120,57 +2134,21 @@ class _ChangeLoginPasswordSheetState extends State<_ChangeLoginPasswordSheet> {
   bool get _dark => Theme.of(context).brightness == Brightness.dark;
   Color get _text => Theme.of(context).colorScheme.onSurface;
   Color get _muted => Theme.of(context).colorScheme.onSurfaceVariant;
-  Color get _field => _dark ? const Color(0xFF16253D) : const Color(0xFFF4F7FC);
 
   @override
   void dispose() {
-    _current.dispose();
     _newPassword.dispose();
     _confirm.dispose();
     super.dispose();
   }
 
-  Future<void> _verifyBiometric() async {
-    if (_busy) return;
-    setState(() { _busy = true; _error = null; });
-    try {
-      final ok = await widget.biometricSignIn.authenticate(
-        localizedReason: 'Verify your identity to change your login password',
-      );
-      if (!mounted) return;
-      if (!ok) setState(() => _error = 'Biometric verification was not completed.');
-    } on PlatformException catch (e) {
-      if (mounted) setState(() => _error = e.message ?? 'Biometric verification failed.');
-    } catch (_) {
-      if (mounted) setState(() => _error = 'Biometric verification failed. Try your password.');
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  void _submitChange() {
-    if (_current.text.trim().isEmpty) {
-      setState(() => _error = 'Enter your current password.');
-    } else if (_newPassword.text.length < 8) {
-      setState(() => _error = 'Use at least 8 characters for your new password.');
-    } else if (_newPassword.text != _confirm.text) {
-      setState(() => _error = 'The new passwords do not match.');
-    } else if (_newPassword.text == _current.text) {
-      setState(() => _error = 'Choose a password different from your current password.');
-    } else {
-      // UI preview only: no secure password verification or update endpoint is connected.
-      Navigator.of(context).pop();
-      showAppMessage('Password change preview completed. No account password was changed.');
-    }
-  }
-
-  Widget _fieldInput(String label, String hint, TextEditingController controller, bool hidden, VoidCallback toggle) {
+  Widget _passwordField(String label, String hint, TextEditingController controller, bool hidden, VoidCallback toggle) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w600)),
       const SizedBox(height: 8),
       Container(
         decoration: BoxDecoration(
-          color: _field,
+          color: _dark ? const Color(0xFF16253D) : const Color(0xFFF4F7FC),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: _dark ? const Color(0xFF2A3A53) : const Color(0xFFE2E8F0)),
         ),
@@ -2195,6 +2173,16 @@ class _ChangeLoginPasswordSheetState extends State<_ChangeLoginPasswordSheet> {
     ]);
   }
 
+  void _continue() {
+    if (_newPassword.text.length < 8) {
+      setState(() => _error = 'Use at least 8 characters for your new password.');
+    } else if (_newPassword.text != _confirm.text) {
+      setState(() => _error = 'The new passwords do not match.');
+    } else {
+      Navigator.of(context).pop(_PasswordDraft(_newPassword.text));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -2213,48 +2201,113 @@ class _ChangeLoginPasswordSheetState extends State<_ChangeLoginPasswordSheet> {
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _muted.withValues(alpha: .35), borderRadius: BorderRadius.circular(8)))),
               const SizedBox(height: 18),
               Row(children: [
-                const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 24),
+                const Icon(LucideIcons.lockKeyhole, color: _bluePrimary, size: 23),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Change Login Password', style: TextStyle(color: _text, fontSize: 17, fontWeight: FontWeight.w800)),
-                  Text('Update your account password', style: TextStyle(color: _muted, fontSize: 12)),
+                  Text('Set New Password', style: TextStyle(color: _text, fontSize: 17, fontWeight: FontWeight.w800)),
+                  Text('Create a new password for your account', style: TextStyle(color: _muted, fontSize: 12)),
                 ])),
                 IconButton(onPressed: () => Navigator.pop(context), icon: Icon(LucideIcons.x, color: _muted)),
               ]),
-              const SizedBox(height: 18),
-              _fieldInput('Current password', 'Enter your current password', _current, _hideCurrent, () => setState(() => _hideCurrent = !_hideCurrent)),
-              if (widget.isBiometricAvailable && widget.isBiometricEnabled) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: _busy ? null : _verifyBiometric,
-                    icon: const Icon(LucideIcons.fingerprint, size: 18),
-                    label: const Text('Verify with fingerprint / Face ID'),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              _fieldInput('New password', 'At least 8 characters', _newPassword, _hideNew, () => setState(() => _hideNew = !_hideNew)),
+              const SizedBox(height: 20),
+              _passwordField('New password', 'At least 8 characters', _newPassword, _hideNew, () => setState(() => _hideNew = !_hideNew)),
               const SizedBox(height: 16),
-              _fieldInput('Confirm new password', 'Re-enter your new password', _confirm, _hideConfirm, () => setState(() => _hideConfirm = !_hideConfirm)),
+              _passwordField('Confirm new password', 'Re-enter your new password', _confirm, _hideConfirm, () => setState(() => _hideConfirm = !_hideConfirm)),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: const TextStyle(color: _redAccent, fontSize: 12.5, fontWeight: FontWeight.w600)),
               ],
               const SizedBox(height: 20),
               SizedBox(height: 50, child: FilledButton(
-                onPressed: _busy ? null : _submitChange,
+                onPressed: _continue,
                 style: FilledButton.styleFrom(backgroundColor: _bluePrimary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                child: _busy
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Change Password', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                child: const Text('Continue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
               )),
-              const SizedBox(height: 12),
-              Text('Your password is never displayed in plain text.', textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 11)),
             ]),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PasswordChangeConfirmSheet extends StatelessWidget {
+  const _PasswordChangeConfirmSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: dark ? const Color(0xFF23354E) : const Color(0xFFE2E8F0)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(8)))),
+          const SizedBox(height: 22),
+          const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 32),
+          const SizedBox(height: 12),
+          Text('Confirm Password Change', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Text('Are you sure you want to proceed with changing your login password?', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
+          const SizedBox(height: 22),
+          Row(children: [
+            Expanded(child: OutlinedButton(
+              onPressed: () => Navigator.pop(context, false),
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+              child: const Text('Cancel'),
+            )),
+            const SizedBox(width: 10),
+            Expanded(child: FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(backgroundColor: _bluePrimary, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+              child: const Text('Confirm'),
+            )),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+class _PasswordChangeSuccessSheet extends StatelessWidget {
+  const _PasswordChangeSuccessSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 26),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        border: Border.all(color: dark ? const Color(0xFF23354E) : const Color(0xFFE2E8F0)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 66, height: 66,
+            decoration: BoxDecoration(color: _greenLight, shape: BoxShape.circle, border: Border.all(color: _greenBorder)),
+            child: const Icon(LucideIcons.check, color: _greenAccent, size: 34),
+          ),
+          const SizedBox(height: 18),
+          Text('Password Change Confirmed', style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text('Your password change has been confirmed in this preview. The account password has not been updated because the secure password service is not connected.', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
+          const SizedBox(height: 22),
+          SizedBox(width: double.infinity, height: 48, child: FilledButton(
+            onPressed: () => Navigator.pop(context),
+            style: FilledButton.styleFrom(backgroundColor: _bluePrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+            child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w700)),
+          )),
+        ]),
       ),
     );
   }

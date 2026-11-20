@@ -452,80 +452,120 @@ class _TradeReportPageState extends State<TradeReportPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
     final cardBg = isDark ? const Color(0xFF131D2E) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-    final mutedText = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final titleText = isDark ? Colors.white : const Color(0xFF0F172A);
-
+    final cardBorder = isDark ? const Color(0xFF243247) : const Color(0xFFE7ECF3);
+    final mutedText = isDark ? const Color(0xFF91A0B5) : const Color(0xFF718096);
+    final titleText = isDark ? const Color(0xFFF7FAFF) : const Color(0xFF142033);
     final currentAcc = _currentAccount;
     final balanceStr = _formatCurrency(currentAcc.balance);
     final equityStr = _formatCurrency(currentAcc.equity);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: pageBg,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: pageBg,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(LucideIcons.chevronLeft),
           onPressed: _handleBack,
         ),
         title: Text(
           'Trade Report',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: titleText,
-          ),
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: titleText),
         ),
       ),
       body: RefreshIndicator(
-        color: const Color(0xFF2563EB),
+        color: const Color(0xFF3B82F6),
         backgroundColor: cardBg,
         onRefresh: () async {
           HapticFeedback.lightImpact();
-          await Future.delayed(const Duration(milliseconds: 600));
+          await Future.delayed(const Duration(milliseconds: 350));
           if (mounted) setState(() {});
         },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 1. Date Range Filter Row
-              _buildDateRangeFilterRow(cardBg, cardBorder, mutedText, titleText),
-              const SizedBox(height: 12),
-
-              // 2. Hero Account Summary Card (Royal Blue Gradient with Ambient Glow)
-              _buildHeroAccountCard(currentAcc, balanceStr, equityStr),
-              const SizedBox(height: 16),
-
-              // 3. Closed Order Statistics Section
-              _buildClosedOrderStatisticsSection(cardBg, cardBorder, mutedText, titleText, isDark),
-              const SizedBox(height: 16),
-
-              // 4. Order P&L & Total P&L Card
-              _buildOrderAndTotalPnLCard(cardBg, cardBorder, mutedText, titleText, isDark),
-              const SizedBox(height: 16),
-
-              // 5. Deposit / Withdraw 2x2 Grid Cards
-              _buildDepositWithdrawGrid(cardBg, cardBorder, mutedText, titleText, isDark),
-              const SizedBox(height: 20),
-
-              // 6. Equity Curve Section
-              _buildEquityCurveSection(cardBg, cardBorder, titleText, isDark),
-              const SizedBox(height: 20),
-
-              // 7. P&L Analysis Section
-              _buildPnLAnalysisSection(cardBg, cardBorder, mutedText, titleText, isDark),
-            ],
-          ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildDateRangeFilterRow(cardBg, cardBorder, mutedText, titleText),
+                  const SizedBox(height: 14),
+                  _buildHeroAccountCard(currentAcc, balanceStr, equityStr),
+                  const SizedBox(height: 22),
+                  _buildReportSectionHeading(
+                    'Trading activity',
+                    'Closed orders and execution costs',
+                    isDark,
+                  ),
+                  const SizedBox(height: 11),
+                  _buildClosedOrderStatisticsSection(
+                    cardBg, cardBorder, mutedText, titleText, isDark,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildOrderAndTotalPnLCard(
+                    cardBg, cardBorder, mutedText, titleText, isDark,
+                  ),
+                  const SizedBox(height: 22),
+                  _buildReportSectionHeading(
+                    'Cash flow',
+                    'Deposits and withdrawals for this period',
+                    isDark,
+                  ),
+                  const SizedBox(height: 11),
+                  _buildDepositWithdrawGrid(
+                    cardBg, cardBorder, mutedText, titleText, isDark,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildReportSectionHeading(
+                    'Performance',
+                    'Track account value and trading results',
+                    isDark,
+                  ),
+                  const SizedBox(height: 11),
+                  _buildEquityCurveSection(cardBg, cardBorder, titleText, isDark),
+                  const SizedBox(height: 18),
+                  _buildPnLAnalysisSection(
+                    cardBg, cardBorder, mutedText, titleText, isDark,
+                  ),
+                ]),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReportSectionHeading(String heading, String subtitle, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            heading,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+              color: isDark ? const Color(0xFFF7FAFF) : const Color(0xFF142033),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: isDark ? const Color(0xFF8190A5) : const Color(0xFF8995A7),
+            ),
+          ),
+        ],
       ),
     );
   }

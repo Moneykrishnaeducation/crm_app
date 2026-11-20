@@ -2364,20 +2364,15 @@ class _SecurityReferenceSubPage extends StatelessWidget {
               ]),
             ])),
             _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Deactivate account', style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 7),
-              Text('Temporarily suspend access. You can request reactivation later, subject to account verification.', style: TextStyle(color: muted, fontSize: 13, height: 1.45)),
-              const SizedBox(height: 16),
-              SizedBox(width: double.infinity, child: _actionButton(context, 'Request Deactivation', () => _confirmAccountRequest(context, deactivate: true))),
+              Text('Account requests', style: TextStyle(color: scheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 5),
+              Text('Select an action to review its details and submit a request.', style: TextStyle(color: muted, fontSize: 12, height: 1.4)),
+              const SizedBox(height: 10),
+              _accountRequestRow(context, title: 'Deactivate account', subtitle: 'Temporarily suspend account access', icon: LucideIcons.pauseCircle, destructive: false, onTap: () => _confirmAccountRequest(context, deactivate: true)),
+              Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: .65)),
+              _accountRequestRow(context, title: 'Delete account', subtitle: 'Permanently close your account', icon: LucideIcons.trash2, destructive: true, onTap: () => _confirmAccountRequest(context, deactivate: false)),
             ])),
-            _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Delete account', style: const TextStyle(color: Color(0xFFFF1744), fontSize: 16, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 7),
-              Text('Permanently close your account. Deletion may result in loss of access to account history and services.', style: TextStyle(color: muted, fontSize: 13, height: 1.45)),
-              const SizedBox(height: 16),
-              SizedBox(width: double.infinity, child: _dangerButton(context, 'Request Account Deletion', () => _confirmAccountRequest(context, deactivate: false))),
-            ])),
-            Text('Both actions are submitted as requests and require review. No account change occurs from this preview.', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
+            Text('Requests require review. Your account remains active unless a request is approved and processed.', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
           ] else ...[
             _subCard(context, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Recent account activity', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w800, fontSize: 16)),
@@ -2390,6 +2385,40 @@ class _SecurityReferenceSubPage extends StatelessWidget {
     );
   }
 
+
+  static Widget _accountRequestRow(BuildContext context, {required String title, required String subtitle, required IconData icon, required bool destructive, required VoidCallback onTap}) {
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = destructive ? const Color(0xFFE04452) : scheme.onSurface;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 2),
+          child: Row(children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: destructive ? const Color(0xFFFFEEEE) : scheme.primary.withValues(alpha: .09),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: destructive ? const Color(0xFFE04452) : scheme.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: TextStyle(color: foreground, fontSize: 14, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+            ])),
+            Text('Request', style: TextStyle(color: scheme.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+            const SizedBox(width: 5),
+            Icon(LucideIcons.chevronRight, color: scheme.onSurfaceVariant, size: 18),
+          ]),
+        ),
+      ),
+    );
+  }
 
   static Future<void> _confirmAccountRequest(BuildContext context, {required bool deactivate}) async {
     final title = deactivate ? 'Confirm deactivation request' : 'Confirm account deletion request';

@@ -6,30 +6,14 @@ class BrokerMorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
         children: [
-          Text(
-            'More',
-            style: TextStyle(
-              color: scheme.onSurface,
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.7,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Your account, tools and support in one place',
-            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5),
-          ),
-          const SizedBox(height: 18),
           _MoreProfileCard(onTap: () => onSelectPage('Profile')),
           const SizedBox(height: 24),
           const _MoreSectionLabel(
@@ -49,6 +33,7 @@ class BrokerMorePage extends StatelessWidget {
                 icon: LucideIcons.briefcaseBusiness,
                 title: 'MAM',
                 subtitle: 'Manager and investor accounts',
+                accent: const Color(0xFF365CEB),
                 onTap: () => onSelectPage('MAM Account'),
               ),
               _MoreMenuRow(
@@ -72,18 +57,21 @@ class BrokerMorePage extends StatelessWidget {
                 icon: LucideIcons.download,
                 title: 'Download Center',
                 subtitle: 'Access platform downloads',
+                accent: const Color(0xFF365CEB),
                 onTap: () => onSelectPage('Platform'),
               ),
               _MoreMenuRow(
                 icon: LucideIcons.shieldCheck,
                 title: 'Security Center',
                 subtitle: 'Manage account protection and trusted devices',
+                accent: _brokerGold,
                 onTap: () => onSelectPage('Security Center'),
               ),
               _MoreMenuRow(
                 icon: LucideIcons.settings,
                 title: 'Settings',
                 subtitle: 'Application preferences',
+                accent: const Color(0xFF365CEB),
                 onTap: () => onSelectPage('Settings'),
                 showDivider: false,
               ),
@@ -100,6 +88,7 @@ class BrokerMorePage extends StatelessWidget {
                 icon: LucideIcons.messageSquare,
                 title: 'Tickets',
                 subtitle: 'View and manage support tickets',
+                accent: _brokerGold,
                 onTap: () => onSelectPage('Tickets'),
                 showDivider: false,
               ),

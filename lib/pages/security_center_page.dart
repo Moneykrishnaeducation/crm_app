@@ -2482,10 +2482,19 @@ class _SecurityReferenceSubPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: surface,
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-        centerTitle: true,
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: Icon(LucideIcons.arrowLeft, color: scheme.onSurface, size: 21),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+        centerTitle: false,
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
@@ -2547,15 +2556,20 @@ class _SecurityReferenceSubPage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
+                      const SizedBox(
                         width: 44,
                         height: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF4C84A).withValues(alpha: .14),
-                          borderRadius: BorderRadius.circular(13),
-                          border: Border.all(color: const Color(0xFFF4C84A).withValues(alpha: .55)),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Icon(LucideIcons.shield, color: Color(0xFFF4C84A), size: 37),
+                            Positioned(
+                              right: 5,
+                              bottom: 7,
+                              child: Icon(LucideIcons.check, color: Color(0xFF8FD9B5), size: 13),
+                            ),
+                          ],
                         ),
-                        child: const Icon(LucideIcons.shieldCheck, color: Color(0xFFF4C84A), size: 23),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

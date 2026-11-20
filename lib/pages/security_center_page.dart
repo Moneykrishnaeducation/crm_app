@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../app_notifications.dart';
+import '../biometric_sign_in.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 const _securityNavy = Color(0xFF10264A);
@@ -19,11 +21,39 @@ const _textSecondary = Color(0xFF62738E);
 Future<bool?> showSecurityPasswordModal(
   BuildContext context, {
   VoidCallback? onVerified,
+  BiometricSignIn? biometricSignIn,
 }) async {
-  final verified = await showDialog<bool>(
+  final bio = biometricSignIn ?? BiometricSignIn.instance;
+  final isEnabled = await bio.isEnabled();
+  final isAvailable = await bio.isAvailable();
+
+  if (isEnabled && isAvailable) {
+    try {
+      final authenticated = await bio.authenticate(
+        localizedReason: 'Authenticate to access Security Center',
+      );
+      if (authenticated) {
+        onVerified?.call();
+        return true;
+      }
+      showAppMessage('Biometric verification not completed. Verify with password.');
+    } catch (_) {
+      // Fallback to password modal
+    }
+  }
+
+  if (!context.mounted) return null;
+
+  final verified = await showModalBottomSheet<bool>(
     context: context,
-    barrierDismissible: true,
-    builder: (ctx) => const VerifySecurityPasswordModal(),
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.65),
+    builder: (sheetContext) => VerifySecurityPasswordModal(
+      biometricSignIn: bio,
+      isBiometricAvailable: isAvailable,
+    ),
   );
 
   if (verified == true && onVerified != null) {
@@ -971,22 +1001,35 @@ class _LaptopSecurityGraphic extends StatelessWidget {
 }
 
 class VerifySecurityPasswordModal extends StatefulWidget {
-  const VerifySecurityPasswordModal({super.key});
+  const VerifySecurityPasswordModal({
+    super.key,
+    this.biometricSignIn,
+    this.isBiometricAvailable = false,
+  });
+
+  final BiometricSignIn? biometricSignIn;
+  final bool isBiometricAvailable;
 
   @override
   State<VerifySecurityPasswordModal> createState() => _VerifySecurityPasswordModalState();
 }
 
+typedef VerifySecurityPasswordSheet = VerifySecurityPasswordModal;
+
 class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModal> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _errorMessage;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _modalSurface => Theme.of(context).colorScheme.surface;
-  Color get _modalText => Theme.of(context).colorScheme.onSurface;
-  Color get _modalMuted => Theme.of(context).colorScheme.onSurfaceVariant;
-  Color get _modalBorder => Theme.of(context).dividerColor;
-  Color get _fieldSurface => _isDark ? const Color(0xFF1E2E48) : _bgLight;
+  Color get _surfaceColor => _isDark ? const Color(0xFF101D31) : Colors.white;
+  Color get _textColor => _isDark ? const Color(0xFFF2F5FA) : const Color(0xFF10264A);
+  Color get _mutedColor => _isDark ? const Color(0xFF94A3B8) : const Color(0xFF62738E);
+  Color get _borderColor => _isDark ? const Color(0xFF23354E) : const Color(0xFFE2E8F0);
+  Color get _fieldBg => _isDark ? const Color(0xFF16253D) : _bgLight;
+  Color get _fieldBorder => _errorMessage != null
+      ? _redAccent
+      : (_isDark ? const Color(0xFF2A3A53) : const Color(0xFFCBD5E1));
 
   @override
   void dispose() {
@@ -995,230 +1038,286 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
   }
 
   void _handleVerify() {
-    // Temporary UI-only flow. Replace with backend password verification later.
+    final password = _passwordController.text.trim();
+    if (password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Password cannot be empty';
+      });
+      return;
+    }
     Navigator.of(context).pop(true);
+  }
+
+  Future<void> _handleBiometricAuth() async {
+    final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
+    try {
+      final authenticated = await bio.authenticate(
+        localizedReason: 'Authenticate to access Security Center',
+      );
+      if (authenticated && mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (_) {
+      // Fallback or ignore
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 440,
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _surfaceColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(color: _borderColor, width: 1),
         ),
-        child: SingleChildScrollView(
-          child: Container(
-          decoration: BoxDecoration(
-            color: _modalSurface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: _modalBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1E0F172A),
-                blurRadius: 28,
-                offset: Offset(0, 12),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header: Royal Blue with Gold/White accents
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [_blueDark, Color(0xFF1E3A8A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: _goldAccent.withValues(alpha: 0.5)),
-                          ),
-                          child: const Icon(
-                            LucideIcons.lock,
-                            color: Color(0xFFFDE68A),
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Security Verification',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Top drag handle bar (40x4px pill, rounded)
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(false),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
+                  ),
+
+                  // Header top row with shield badge and close button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
+                          color: _isDark ? const Color(0xFF162744) : _blueLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _goldAccent.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
                         ),
-                        child: const Icon(
+                        child: const Center(
+                          child: Icon(
+                            LucideIcons.shieldCheck,
+                            color: _goldAccent,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.of(context).pop(false);
+                        },
+                        icon: Icon(
                           LucideIcons.x,
-                          color: Colors.white,
+                          color: _mutedColor,
+                          size: 20,
+                        ),
+                        splashRadius: 20,
+                        tooltip: 'Close',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Title & Subtitle
+                  Text(
+                    'Security Verification',
+                    style: TextStyle(
+                      color: _textColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Enter your CRM password to access Security Center.',
+                    style: TextStyle(
+                      color: _mutedColor,
+                      fontSize: 13.5,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Password Label: "CRM Password"
+                  Text(
+                    'CRM Password',
+                    style: TextStyle(
+                      color: _textColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Password input container
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _fieldBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _fieldBorder,
+                        width: 1.2,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      style: TextStyle(color: _textColor, fontSize: 14),
+                      onChanged: (_) {
+                        if (_errorMessage != null) {
+                          setState(() {
+                            _errorMessage = null;
+                          });
+                        }
+                      },
+                      onSubmitted: (_) => _handleVerify(),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(
+                          LucideIcons.lockKeyhole,
+                          color: _mutedColor,
                           size: 18,
                         ),
+                        hintText: 'Enter your current password',
+                        hintStyle: TextStyle(
+                          color: _mutedColor.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
+                            color: _mutedColor,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              // Body: Pure white
-              Container(
-                color: _modalSurface,
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Verify it's you",
-                      style: TextStyle(
-                        color: _modalText,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  ),
+                  if (_errorMessage != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Enter your CRM password to continue to Security Center.',
-                      style: TextStyle(
-                        color: _modalMuted,
-                        fontSize: 13.5,
-                        height: 1.4,
+                      _errorMessage!,
+                      style: const TextStyle(
+                        color: _redAccent,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'CRM password',
-                      style: TextStyle(
-                        color: _modalText,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                  ],
+
+                  // Fingerprint shortcut if available
+                  if (widget.isBiometricAvailable) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _handleBiometricAuth,
+                      icon: Icon(
+                        LucideIcons.fingerprint,
+                        size: 18,
+                        color: _isDark ? const Color(0xFF60A5FA) : _bluePrimary,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: _fieldSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _modalBorder,
-                          width: 1.2,
+                      label: Text(
+                        'Use Fingerprint instead',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _isDark ? const Color(0xFF60A5FA) : _bluePrimary,
                         ),
                       ),
-                      child: TextField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        style: TextStyle(color: _modalText, fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: 'Enter your current password',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
-                              color: _modalMuted,
-                              size: 18,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        side: BorderSide(
+                          color: _isDark ? const Color(0xFF2A3A53) : const Color(0xFFDCE5F1),
                         ),
-                        onSubmitted: (_) => _handleVerify(),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: _isDark ? const Color(0xFF1E3A5F) : _blueLight,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 14),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Your password is protected and is not stored.',
-                            style: TextStyle(
-                              color: _modalMuted,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _handleVerify,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _bluePrimary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Verify password',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(LucideIcons.arrowRight, size: 16, color: Colors.white),
-                            ],
-                          ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                     ),
                   ],
-                ),
+                  const SizedBox(height: 18),
+
+                  // Action button: "Verify & Continue"
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _handleVerify,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _bluePrimary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Verify & Continue',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          Icon(LucideIcons.arrowRight, size: 16, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Security footnote
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: _isDark ? const Color(0xFF1E3A5F) : _blueLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 14),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Protected by 256-bit encryption. Your password is not stored.',
+                          style: TextStyle(
+                            color: _mutedColor,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
           ),
         ),
       ),

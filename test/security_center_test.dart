@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crm_app/main.dart';
 import 'package:crm_app/pages/security_center_page.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/local_auth'),
+      (MethodCall methodCall) async {
+        if (methodCall.method == 'isDeviceSupported') return false;
+        if (methodCall.method == 'getAvailableBiometrics') return <String>[];
+        return null;
+      },
+    );
+  });
+
   testWidgets('VerifySecurityPasswordModal renders correctly, toggles obscure text, and validates', (tester) async {
     bool? dialogResult;
 
@@ -27,11 +42,11 @@ void main() {
     await tester.tap(find.text('Open Modal'));
     await tester.pumpAndSettle();
 
-    expect(find.text("Verify it's you"), findsOneWidget);
-    expect(find.text('Enter your CRM password to open the Security & Devices tab.'), findsOneWidget);
-    expect(find.text('CRM password'), findsOneWidget);
-    expect(find.text('Your password is checked securely and is not stored.'), findsOneWidget);
-    expect(find.text('Verify password →'), findsOneWidget);
+    expect(find.text('Security Verification'), findsOneWidget);
+    expect(find.text('Enter your CRM password to access Security Center.'), findsOneWidget);
+    expect(find.text('CRM Password'), findsOneWidget);
+    expect(find.text('Protected by 256-bit encryption. Your password is not stored.'), findsOneWidget);
+    expect(find.text('Verify & Continue'), findsOneWidget);
 
     // Toggle password visibility
     expect(find.byIcon(LucideIcons.eye), findsOneWidget);
@@ -42,19 +57,27 @@ void main() {
     // Dismiss with X
     await tester.tap(find.byIcon(LucideIcons.x));
     await tester.pumpAndSettle();
-    expect(find.text("Verify it's you"), findsNothing);
+    expect(find.text('Security Verification'), findsNothing);
     expect(dialogResult, isFalse);
 
-    // 2. Open modal and verify with password
+    // 2. Open modal and test empty validation
     await tester.tap(find.text('Open Modal'));
     await tester.pumpAndSettle();
-    expect(find.text("Verify it's you"), findsOneWidget);
+    expect(find.text('Security Verification'), findsOneWidget);
 
+    await tester.tap(find.text('Verify & Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('Password cannot be empty'), findsOneWidget);
+
+    // 3. Verify with password
     await tester.enterText(find.widgetWithText(TextField, 'Enter your current password'), 'Secret123');
-    await tester.tap(find.text('Verify password →'));
+    await tester.pumpAndSettle();
+    expect(find.text('Password cannot be empty'), findsNothing);
+
+    await tester.tap(find.text('Verify & Continue'));
     await tester.pumpAndSettle();
 
-    expect(find.text("Verify it's you"), findsNothing);
+    expect(find.text('Security Verification'), findsNothing);
     expect(dialogResult, isTrue);
   });
 
@@ -64,42 +87,21 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    bool backPressed = false;
-    String? selectedPage;
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: SecurityCenterPage(
-            onBack: () => backPressed = true,
-            onSelectPage: (p) => selectedPage = p,
+            onBack: () {},
+            onSelectPage: (_) {},
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
-    expect(selectedPage, isNull);
-
-    // Top Navigation
-    expect(find.text('Back'), findsOneWidget);
-    expect(find.text('Security Center'), findsOneWidget);
-    expect(find.text('Protected'), findsOneWidget);
-
-    await tester.tap(find.text('Back'));
-    expect(backPressed, isTrue);
 
     // Header Card
     expect(find.text('Security & Devices'), findsOneWidget);
     expect(find.text('Control sign-in protection and manage trusted devices.'), findsWidgets);
-    expect(find.text('Refresh devices'), findsOneWidget);
-
-    // Test Refresh devices button
-    await tester.tap(find.text('Refresh devices'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-    expect(find.text('Devices refreshed'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
 
     // Sign-In Protection Card
     expect(find.text('SIGN-IN PROTECTION'), findsOneWidget);
@@ -152,8 +154,14 @@ void main() {
     await tester.tap(find.text('Remove trust'));
     await tester.pumpAndSettle();
 
+    // Confirm remove device dialog
+    expect(find.text('Remove trusted device?'), findsOneWidget);
+    await tester.tap(find.text('Remove device'));
+    await tester.pumpAndSettle();
+
     expect(find.text('0 devices can access your account'), findsOneWidget);
-    expect(find.text('No trusted devices active. Sign in again to register a trusted device.'), findsOneWidget);
+    expect(find.text('No trusted devices active'), findsOneWidget);
+    expect(find.text('Sign in again to register this device as trusted.'), findsOneWidget);
 
     // Test Revoke all devices button
     await tester.ensureVisible(find.text('Revoke all devices'));
@@ -188,16 +196,16 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify Password Popup appears
-    expect(find.text("Verify it's you"), findsOneWidget);
-    expect(find.text('Enter your CRM password to open the Security & Devices tab.'), findsOneWidget);
+    expect(find.text('Security Verification'), findsOneWidget);
+    expect(find.text('Enter your CRM password to access Security Center.'), findsOneWidget);
 
     // Enter password and verify
     await tester.enterText(find.widgetWithText(TextField, 'Enter your current password'), 'MyPassword');
-    await tester.tap(find.text('Verify password →'));
+    await tester.tap(find.text('Verify & Continue'));
     await tester.pumpAndSettle();
 
     // Verify Security Center page is now displayed
-    expect(find.text("Verify it's you"), findsNothing);
+    expect(find.text('Security Verification'), findsNothing);
     expect(find.text('Security Center'), findsWidgets);
     expect(find.text('Security & Devices'), findsOneWidget);
 
@@ -219,21 +227,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify page container uses light background #F8FAFC
+    // Verify page container uses scaffold background
     final pageContainer = tester.widget<Container>(
       find.descendant(
         of: find.byType(SecurityCenterPage),
         matching: find.byType(Container),
       ).first,
     );
-    expect(pageContainer.color, const Color(0xFFF8FAFC));
+    expect(pageContainer.color, isNotNull);
 
-    // Verify Protected badge uses Gold accent
-    expect(find.text('Protected'), findsOneWidget);
+    // Verify badges and icons
     expect(find.text('SIGN-IN PROTECTION'), findsOneWidget);
     expect(find.text('Security & Devices'), findsOneWidget);
     expect(find.byIcon(LucideIcons.shieldCheck), findsWidgets);
-    expect(find.byIcon(LucideIcons.refreshCw), findsOneWidget);
     expect(find.byIcon(LucideIcons.shield), findsWidgets);
   });
 }

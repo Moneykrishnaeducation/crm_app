@@ -28,8 +28,12 @@ class BiometricSignIn {
       return false;
     }
 
-    if (!await _localAuth.isDeviceSupported()) return false;
-    return (await _localAuth.getAvailableBiometrics()).isNotEmpty;
+    try {
+      if (!await _localAuth.isDeviceSupported()) return false;
+      return (await _localAuth.getAvailableBiometrics()).isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> authenticate({required String localizedReason}) {

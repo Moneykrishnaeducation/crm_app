@@ -237,7 +237,9 @@ class _MockTicketDetailsPage extends StatefulWidget {
 
 class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
   final TextEditingController _replyController = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [];\n  final List<PlatformFile> _replyAttachments = [];\n  bool _pickingReplyAttachment = false;
+  final List<Map<String, dynamic>> _messages = [];
+  final List<PlatformFile> _replyAttachments = [];
+  bool _pickingReplyAttachment = false;
 
   bool get _canReply => widget.ticket['status'] == 'In-progress';
 
@@ -271,7 +273,7 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
     setState(() => _pickingReplyAttachment = true);
     try {
       final files = await FilePicker.pickFiles(
-        type: FileType.custom, allowMultiple: true,
+        type: FileType.custom,
         allowedExtensions: const ['png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'],
       );
       if (!mounted || files.isEmpty) return;

@@ -528,9 +528,9 @@ class _MoreSectionLabel extends StatelessWidget {
           label,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w800,
-            letterSpacing: .8,
+            letterSpacing: .9,
           ),
         ),
         if (subtitle != null) ...[
@@ -554,10 +554,10 @@ class _MoreMenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 13),
+    padding: const EdgeInsets.symmetric(horizontal: 14),
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       border: Border.all(color: Theme.of(context).dividerColor),
       boxShadow: [
         if (Theme.of(context).brightness == Brightness.light)
@@ -597,17 +597,17 @@ class _MoreMenuRow extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(11),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 13),
             child: Row(
               children: [
                 Container(
-                  width: 35,
-                  height: 35,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: .09),
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(13),
                   ),
-                  child: Center(child: Icon(icon, color: accent, size: 16)),
+                  child: Center(child: Icon(icon, color: accent, size: 19)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -618,7 +618,7 @@ class _MoreMenuRow extends StatelessWidget {
                         title,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 12,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -652,7 +652,7 @@ class _MoreMenuRow extends StatelessWidget {
         Divider(
           height: 1,
           thickness: 1,
-          indent: 49,
+          indent: 54,
           color: Theme.of(context).dividerColor,
         ),
     ],

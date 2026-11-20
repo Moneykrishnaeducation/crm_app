@@ -16,45 +16,76 @@ class BrokerDashboardPage extends StatelessWidget {
   final ValueChanged<String> onSelectPage;
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: Theme.of(context).scaffoldBackgroundColor,
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 580),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-          const SizedBox(
-            width: 0,
-            height: 0,
-            child: Text(
-              'Dashboard',
-              style: TextStyle(fontSize: 0, color: Colors.transparent),
+  Widget build(BuildContext context) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 112),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  _dashboardGreeting(),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.7,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Your trading portfolio at a glance',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _BrokerBalance(
+                        visible: balanceVisible,
+                        onToggle: onToggleBalance,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _FloatingPnlCard(visible: balanceVisible),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const _PortfolioPerformance(),
+                const SizedBox(height: 16),
+                _QuickActionsRow(onSelectPage: onSelectPage),
+                const SizedBox(height: 14),
+                _DualFeatureCards(onSelectPage: onSelectPage),
+                const SizedBox(height: 14),
+                const _MarketInsightsBanner(),
+                const SizedBox(height: 20),
+                _MarketsSection(onSelectPage: onSelectPage),
+              ],
             ),
           ),
-          _BrokerBalance(
-            visible: balanceVisible,
-            onToggle: onToggleBalance,
-          ),
-          const SizedBox(height: 14),
-          _QuickActionsRow(onSelectPage: onSelectPage),
-          const SizedBox(height: 14),
-          _DualFeatureCards(onSelectPage: onSelectPage),
-          const SizedBox(height: 14),
-          const _MarketInsightsBanner(),
-          const SizedBox(height: 20),
-          _MarketsSection(onSelectPage: onSelectPage),
-        ],
+        ),
       ),
-    ),
-  ),
-),
-);
+    );
+  }
+  String _dashboardGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
 }
 
 class _BrokerBalance extends StatelessWidget {
@@ -64,56 +95,28 @@ class _BrokerBalance extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(20, 18, 18, 18),
+    padding: const EdgeInsets.fromLTRB(13, 13, 11, 14),
     decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       gradient: const LinearGradient(
-        colors: [
-          Color(0xFF0B2256),
-          Color(0xFF0F3678),
-          Color(0xFF144EA1),
-        ],
+        colors: [Color(0xFF102B63), Color(0xFF174F9F)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      border: Border.all(
-        color: const Color(0xFF2A579A).withValues(alpha: 0.4),
-        width: 1,
-      ),
       boxShadow: const [
-        BoxShadow(
-          color: Color(0x330A1D45),
-          blurRadius: 20,
-          offset: Offset(0, 8),
-        ),
+        BoxShadow(color: Color(0x220A1D45), blurRadius: 16, offset: Offset(0, 6)),
       ],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  'Total Balance',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(
-                  width: 0,
-                  height: 0,
-                  child: Text(
-                    'Total portfolio balance',
-                    style: TextStyle(fontSize: 0, color: Colors.transparent),
-                  ),
-                ),
-              ],
+            const Expanded(
+              child: Text(
+                'Total balance',
+                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
             ),
             InkWell(
               onTap: onToggle,
@@ -121,54 +124,229 @@ class _BrokerBalance extends StatelessWidget {
               child: Container(
                 width: 32,
                 height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  visible ? LucideIcons.eye : LucideIcons.eyeOff,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                child: Icon(visible ? LucideIcons.eye : LucideIcons.eyeOff, color: Colors.white, size: 16),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 9),
         Text(
-          visible ? '\$125,800.00' : '••••••••',
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            letterSpacing: visible ? -0.5 : 2.5,
-          ),
+          visible ? r'\$12,450.00' : '••••••••',
+          style: GoogleFonts.inter(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.5),
         ),
-        const SizedBox(height: 16),
-        Text.rich(
-          TextSpan(
-            style: const TextStyle(
-              color: Color(0xFFD4E2F8),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-            ),
-            children: [
-              const TextSpan(text: 'Position Total P&L: '),
-              TextSpan(
-                text: visible ? '+\$1,248.50 USD' : '****** USD',
-                style: TextStyle(
-                  color: visible
-                      ? const Color(0xFF4ADE80)
-                      : const Color(0xFFD4E2F8),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
+        const SizedBox(height: 7),
+        Text(
+          'Illustrative data',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 9, fontWeight: FontWeight.w500),
         ),
       ],
     ),
   );
+}
+
+class _FloatingPnlCard extends StatelessWidget {
+  const _FloatingPnlCard({required this.visible});
+  final bool visible;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(13, 13, 11, 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: isDark ? const Color(0xFF294365) : const Color(0xFFE2EAF5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.10 : 0.035),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.trendingUp, color: Color(0xFF16A36A), size: 15),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Floating P&L',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            visible ? r'+\$245.80' : '••••••',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF16A36A),
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'Illustrative data',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 9,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PortfolioPerformance extends StatefulWidget {
+  const _PortfolioPerformance();
+
+  @override
+  State<_PortfolioPerformance> createState() => _PortfolioPerformanceState();
+}
+
+class _PortfolioPerformanceState extends State<_PortfolioPerformance> {
+  int _period = 1;
+
+  static const _periods = ['1D', '1W', '1M', '3M'];
+  static const _series = [
+    [2.0, 2.5, 2.2, 3.0, 2.8, 3.5, 3.2, 4.1, 3.8, 4.5, 4.2, 5.0],
+    [1.0, 1.8, 1.5, 2.3, 2.0, 2.9, 2.5, 3.4, 3.0, 3.9, 3.6, 4.6],
+    [0.8, 1.3, 1.1, 2.0, 1.7, 2.5, 2.2, 3.2, 2.9, 3.7, 3.4, 4.2],
+    [0.5, 1.0, 0.9, 1.5, 1.3, 2.2, 1.9, 2.8, 2.5, 3.3, 3.0, 4.1],
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final foreground = Theme.of(context).colorScheme.onSurface;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? const Color(0xFF253A5B) : const Color(0xFFE5EBF5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Portfolio performance', style: TextStyle(color: foreground, fontSize: 14, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(r'\$12,695.80', style: GoogleFonts.inter(color: foreground, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.6)),
+                    const SizedBox(height: 4),
+                    const Text('Illustrative data  ·  +2.1%', style: TextStyle(color: Color(0xFF16A36A), fontSize: 10, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              Text('Illustrative', style: TextStyle(color: muted, fontSize: 9)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 112,
+            width: double.infinity,
+            child: CustomPaint(
+              painter: _PortfolioLinePainter(
+                values: _series[_period],
+                lineColor: isDark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8),
+                fillColor: (isDark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8)).withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: List.generate(_periods.length, (index) {
+              final selected = _period == index;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: index == _periods.length - 1 ? 0 : 7),
+                  child: InkWell(
+                    onTap: () => setState(() => _period = index),
+                    borderRadius: BorderRadius.circular(9),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected ? (isDark ? const Color(0xFF1D3B68) : const Color(0xFFEAF1FF)) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(_periods[index], style: TextStyle(color: selected ? (isDark ? const Color(0xFF9CC3FF) : const Color(0xFF2459C7)) : muted, fontSize: 11, fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          Text('Illustrative performance trend — not connected to live trading data.', style: TextStyle(color: muted, fontSize: 9)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PortfolioLinePainter extends CustomPainter {
+  const _PortfolioLinePainter({required this.values, required this.lineColor, required this.fillColor});
+  final List<double> values;
+  final Color lineColor;
+  final Color fillColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty) return;
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    final range = (maxValue - minValue).abs() < 0.001 ? 1.0 : maxValue - minValue;
+    final points = List<Offset>.generate(values.length, (index) {
+      final x = size.width * index / (values.length - 1);
+      final y = size.height - 8 - ((values[index] - minValue) / range) * (size.height - 20);
+      return Offset(x, y);
+    });
+    final line = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final point in points.skip(1)) {
+      line.lineTo(point.dx, point.dy);
+    }
+    final area = Path.from(line)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(area, Paint()..color = fillColor);
+    canvas.drawPath(line, Paint()..color = lineColor..style = PaintingStyle.stroke..strokeWidth = 2.5..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+    canvas.drawCircle(points.last, 4, Paint()..color = lineColor);
+    canvas.drawCircle(points.last, 7, Paint()..color = lineColor.withValues(alpha: 0.16));
+  }
+
+  @override
+  bool shouldRepaint(covariant _PortfolioLinePainter oldDelegate) =>
+      oldDelegate.values != values || oldDelegate.lineColor != lineColor || oldDelegate.fillColor != fillColor;
 }
 
 class _QuickActionsRow extends StatelessWidget {

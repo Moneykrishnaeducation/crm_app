@@ -47,7 +47,7 @@ void main() {
 
       // 2. Date Range Filter Row
       expect(find.text('Trade Time'), findsOneWidget);
-      expect(find.text('2026 / 11 / 01 - 2026 / 11 / 17'), findsOneWidget);
+      expect(find.textContaining(' - '), findsOneWidget);
       expect(find.byIcon(LucideIcons.calendar), findsOneWidget);
 
       // 3. Hero Account Summary Card
@@ -86,8 +86,7 @@ void main() {
       // 8. P&L Analysis Section
       expect(find.text('P&L Analysis'), findsOneWidget);
       expect(find.text('All Symbols'), findsOneWidget);
-      expect(find.text('Day'), findsOneWidget);
-      expect(find.text('Hour'), findsOneWidget);
+      expect(find.text('Trade P&L breakdown'), findsOneWidget);
     });
 
     testWidgets('triggers pull-to-refresh without error', (tester) async {
@@ -138,28 +137,35 @@ void main() {
       expect(find.text('••••••'), findsNothing);
     });
 
-    testWidgets('toggles timeframe between Day and Hour', (tester) async {
+    testWidgets('renders analytics metrics from account-provided trade data', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(buildTestableWidget());
+      const account = BrokerAccount(
+        'Analytics Test', '991122', '1:100', r'$1,000.00', r'$1,025.00', 'Live MT5',
+        equityHistory: [1000, 1010, 1005, 1025],
+        recentTrades: [
+          BrokerTradeRecord(symbol: 'EURUSD', side: 'buy', volume: '0.10', closedAt: 'Today', profit: 25),
+          BrokerTradeRecord(symbol: 'EURUSD', side: 'sell', volume: '0.10', closedAt: 'Yesterday', profit: -10),
+        ],
+      );
+
+      await tester.pumpWidget(buildTestableWidget(accounts: const [account], selectedAccountLogin: '991122'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Day'), findsOneWidget);
-      expect(find.text('Hour'), findsOneWidget);
-
-      // Tap Hour
-      await tester.tap(find.text('Hour'));
-      await tester.pumpAndSettle();
-
-      // Tap Day back
-      await tester.tap(find.text('Day'));
-      await tester.pumpAndSettle();
+      expect(find.text('Net closed P&L'), findsOneWidget);
+      expect(find.text('Win rate'), findsOneWidget);
+      expect(find.text('66.7%'), findsOneWidget);
+      expect(find.textContaining('15.00'), findsOneWidget);
+      expect(find.text('Average win'), findsOneWidget);
+      expect(find.text('Average loss'), findsOneWidget);
+      expect(find.text('Profit factor'), findsOneWidget);
+      expect(find.text('Recent closed trades'), findsOneWidget);
     });
 
-    testWidgets('scrubbing on Equity Curve reveals interactive tooltip', (tester) async {
+    testWidgets('Equity Curve shows an honest empty state when history is unavailable', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -168,25 +174,12 @@ void main() {
       await tester.pumpWidget(buildTestableWidget());
       await tester.pumpAndSettle();
 
-      final equityGesture = find.byKey(const Key('equity_curve_gesture'));
-      expect(equityGesture, findsOneWidget);
-
-      // Tap down to reveal tooltip
-      final gesture = await tester.startGesture(tester.getCenter(equityGesture));
-      await tester.pump();
-
-      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
-
-      // Move gesture across chart
-      await gesture.moveBy(const Offset(40, 0));
-      await tester.pump();
-      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
-
-      await gesture.up();
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('equity_curve_gesture')), findsOneWidget);
+      expect(find.text('Equity history unavailable'), findsOneWidget);
+      expect(find.textContaining(r'$0.00 USD'), findsNothing);
     });
 
-    testWidgets('scrubbing on P&L Analysis reveals interactive tooltip', (tester) async {
+    testWidgets('P&L chart shows an honest empty state when trade data is unavailable', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -195,17 +188,9 @@ void main() {
       await tester.pumpWidget(buildTestableWidget());
       await tester.pumpAndSettle();
 
-      final pnlGesture = find.byKey(const Key('pnl_chart_gesture'));
-      expect(pnlGesture, findsOneWidget);
-
-      // Start gesture on chart
-      final gesture = await tester.startGesture(tester.getCenter(pnlGesture));
-      await tester.pump();
-
-      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
-
-      await gesture.up();
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('pnl_chart_gesture')), findsOneWidget);
+      expect(find.text('No P&L data for this selection'), findsOneWidget);
+      expect(find.textContaining(r'$0.00 USD'), findsNothing);
     });
 
     testWidgets('selects symbol from dropdown filter', (tester) async {

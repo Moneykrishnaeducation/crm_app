@@ -1358,7 +1358,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w750, color: titleColor,
+                    fontSize: 14, fontWeight: FontWeight.w700, color: titleColor,
                   )),
                   const SizedBox(height: 2),
                   Text(subtitle, style: TextStyle(fontSize: 11, color: muted)),
@@ -1427,7 +1427,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('P&L Analysis', style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w750, color: title,
+                    fontSize: 14, fontWeight: FontWeight.w700, color: title,
                   )),
                   const SizedBox(height: 2),
                   Text('Profit and loss breakdown', style: TextStyle(fontSize: 11, color: muted)),
@@ -1451,7 +1451,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                 value: symbol,
                 child: Row(children: [
                   Icon(
-                    symbol == _symbolFilter ? LucideIcons.circleCheck : LucideIcons.circle,
+                    symbol == _symbolFilter ? LucideIcons.check : LucideIcons.circle,
                     size: 15,
                     color: symbol == _symbolFilter ? const Color(0xFF2563EB) : muted,
                   ),
@@ -1471,7 +1471,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   border: Border.all(color: border),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(_symbolFilter, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w650, color: title)),
+                  Text(_symbolFilter, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: title)),
                   const SizedBox(width: 5),
                   Icon(LucideIcons.chevronDown, size: 13, color: muted),
                 ]),

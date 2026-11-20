@@ -89,7 +89,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+      padding: const EdgeInsets.fromLTRB(17, 16, 17, 17),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
@@ -105,9 +105,44 @@ class _PortfolioSummaryCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Row(
+            children: [
+              const Text(
+                'PORTFOLIO SUMMARY',
+                style: TextStyle(
+                  color: Color(0xFFBBD1F4),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                ),
+                child: const Text(
+                  'USD  ·  SAMPLE DATA',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,6 +253,8 @@ class _PortfolioSummaryCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+            ],
           ),
         ],
       ),
@@ -467,16 +504,34 @@ class _PortfolioLinePainter extends CustomPainter {
       final y = size.height - 8 - ((values[index] - minValue) / range) * (size.height - 20);
       return Offset(x, y);
     });
+    final guidePaint = Paint()
+      ..color = lineColor.withValues(alpha: 0.10)
+      ..strokeWidth = 1;
+    for (var row = 0; row < 3; row++) {
+      final y = size.height * (row + 1) / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), guidePaint);
+    }
     final line = Path()..moveTo(points.first.dx, points.first.dy);
-    for (final point in points.skip(1)) {
-      line.lineTo(point.dx, point.dy);
+    for (var i = 1; i < points.length; i++) {
+      final previous = points[i - 1];
+      final current = points[i];
+      final midpoint = (previous.dx + current.dx) / 2;
+      line.cubicTo(midpoint, previous.dy, midpoint, current.dy, current.dx, current.dy);
     }
     final area = Path.from(line)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
     canvas.drawPath(area, Paint()..color = fillColor);
-    canvas.drawPath(line, Paint()..color = lineColor..style = PaintingStyle.stroke..strokeWidth = 2.5..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = lineColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
     canvas.drawCircle(points.last, 4, Paint()..color = lineColor);
     canvas.drawCircle(points.last, 7, Paint()..color = lineColor.withValues(alpha: 0.16));
   }

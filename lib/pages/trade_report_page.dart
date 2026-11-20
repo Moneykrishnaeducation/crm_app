@@ -2026,7 +2026,7 @@ class _TradeReportBarPainter extends CustomPainter {
     final grid = Paint()..color = gridColor..strokeWidth = 1;
     canvas.drawLine(Offset(chart.left, zeroY), Offset(chart.right, zeroY), grid);
     final slot = chart.width / values.length;
-    final barWidth = math.min(25.0, slot * .52);
+    final barWidth = math.min(25.0, slot * .52).toDouble();
     for (var i = 0; i < values.length; i++) {
       final value = values[i];
       final barHeight = (value.abs() / maxAbs) * (chart.height * .43);
@@ -2038,7 +2038,7 @@ class _TradeReportBarPainter extends CustomPainter {
         Paint()..color = value >= 0 ? positiveColor : negativeColor);
       final label = labels[i].length > 7 ? labels[i].substring(0, 7) : labels[i];
       final tp = TextPainter(text: TextSpan(text: label,
-        style: TextStyle(color: labelColor, fontSize: math.min(9.0, slot * .24))),
+        style: TextStyle(color: labelColor, fontSize: math.min(9.0, slot * .24).toDouble())),
         textDirection: TextDirection.ltr)..layout(maxWidth: slot);
       tp.paint(canvas, Offset(x + (barWidth - tp.width) / 2, chart.bottom + 7));
     }

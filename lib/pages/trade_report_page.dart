@@ -1568,7 +1568,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                 Text('${trade.side.toUpperCase()} · ${trade.volume} lots · ${trade.closedAt}',
                   maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: muted)),
               ])),
-              Text('${positive ? '+' : '-'}$ ${trade.profit.abs().toStringAsFixed(2)}',
+              Text('${positive ? '+' : '-'}\$${trade.profit.abs().toStringAsFixed(2)}',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800,
                   color: positive ? const Color(0xFF16A36A) : const Color(0xFFEF5350))),
             ]),

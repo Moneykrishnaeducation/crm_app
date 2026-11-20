@@ -2677,35 +2677,75 @@ class _SecurityReferenceSubPage extends StatelessWidget {
   }
 
 
-  static Widget _accountRequestRow(BuildContext context, {required String title, required String subtitle, required IconData icon, required bool destructive, required VoidCallback onTap}) {
+  static Widget _accountRequestRow(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool destructive,
+    required VoidCallback onTap,
+  }) {
     final scheme = Theme.of(context).colorScheme;
-    final foreground = destructive ? const Color(0xFFE04452) : scheme.onSurface;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final accent = destructive ? const Color(0xFFE04452) : const Color(0xFF174A8B);
     return Material(
-      color: Colors.transparent,
+      color: scheme.surface,
+      borderRadius: BorderRadius.circular(17),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(13),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 2),
-          child: Row(children: [
-            Container(
-              width: 42, height: 42,
-              decoration: BoxDecoration(
-                color: destructive ? const Color(0xFFFFEEEE) : scheme.primary.withValues(alpha: .09),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: destructive ? const Color(0xFFE04452) : scheme.primary, size: 20),
+        borderRadius: BorderRadius.circular(17),
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(
+              color: destructive
+                  ? const Color(0xFFE04452).withValues(alpha: dark ? .42 : .24)
+                  : (dark ? const Color(0xFF344A65) : const Color(0xFFDCE5F1)),
             ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: TextStyle(color: foreground, fontSize: 14, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-            ])),
-            Text('Request', style: TextStyle(color: scheme.primary, fontSize: 12, fontWeight: FontWeight.w700)),
-            const SizedBox(width: 5),
-            Icon(LucideIcons.chevronRight, color: scheme.onSurfaceVariant, size: 18),
-          ]),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: dark ? .10 : .035),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: dark ? .18 : .09),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: accent.withValues(alpha: .16)),
+                ),
+                child: Icon(icon, color: accent, size: 21),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(color: destructive ? accent : scheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5, height: 1.35)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: dark ? .16 : .08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(LucideIcons.chevronRight, color: accent, size: 18),
+              ),
+            ],
+          ),
         ),
       ),
     );

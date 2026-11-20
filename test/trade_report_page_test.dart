@@ -159,7 +159,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('scrubbing on Equity Curve reveals interactive tooltip', (tester) async {
+    testWidgets('Equity Curve shows an honest empty state when history is unavailable', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -168,25 +168,12 @@ void main() {
       await tester.pumpWidget(buildTestableWidget());
       await tester.pumpAndSettle();
 
-      final equityGesture = find.byKey(const Key('equity_curve_gesture'));
-      expect(equityGesture, findsOneWidget);
-
-      // Tap down to reveal tooltip
-      final gesture = await tester.startGesture(tester.getCenter(equityGesture));
-      await tester.pump();
-
-      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
-
-      // Move gesture across chart
-      await gesture.moveBy(const Offset(40, 0));
-      await tester.pump();
-      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
-
-      await gesture.up();
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('equity_curve_gesture')), findsOneWidget);
+      expect(find.text('No equity history available'), findsOneWidget);
+      expect(find.textContaining(r'$0.00 USD'), findsNothing);
     });
 
-    testWidgets('scrubbing on P&L Analysis reveals interactive tooltip', (tester) async {
+    testWidgets('P&L chart shows an honest empty state when trade data is unavailable', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -195,17 +182,9 @@ void main() {
       await tester.pumpWidget(buildTestableWidget());
       await tester.pumpAndSettle();
 
-      final pnlGesture = find.byKey(const Key('pnl_chart_gesture'));
-      expect(pnlGesture, findsOneWidget);
-
-      // Start gesture on chart
-      final gesture = await tester.startGesture(tester.getCenter(pnlGesture));
-      await tester.pump();
-
-      expect(find.textContaining(r'$0.00 USD'), findsWidgets);
-
-      await gesture.up();
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('pnl_chart_gesture')), findsOneWidget);
+      expect(find.text('No P&L data for this selection'), findsOneWidget);
+      expect(find.textContaining(r'$0.00 USD'), findsNothing);
     });
 
     testWidgets('selects symbol from dropdown filter', (tester) async {

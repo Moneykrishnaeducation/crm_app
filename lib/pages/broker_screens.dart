@@ -16,45 +16,106 @@ class BrokerDashboardPage extends StatelessWidget {
   final ValueChanged<String> onSelectPage;
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: Theme.of(context).scaffoldBackgroundColor,
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 580),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-          const SizedBox(
-            width: 0,
-            height: 0,
-            child: Text(
-              'Dashboard',
-              style: TextStyle(fontSize: 0, color: Colors.transparent),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'CLIENT OVERVIEW',
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFF8DBBFF) : const Color(0xFF2459C7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Dashboard',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF172B49) : const Color(0xFFEAF1FF),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF29466F) : const Color(0xFFD8E5FF),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF22C58B),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'OVERVIEW',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.7,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _BrokerBalance(
+                  visible: balanceVisible,
+                  onToggle: onToggleBalance,
+                ),
+                const SizedBox(height: 16),
+                _QuickActionsRow(onSelectPage: onSelectPage),
+                const SizedBox(height: 16),
+                _DualFeatureCards(onSelectPage: onSelectPage),
+                const SizedBox(height: 16),
+                const _MarketInsightsBanner(),
+                const SizedBox(height: 22),
+                _MarketsSection(onSelectPage: onSelectPage),
+              ],
             ),
           ),
-          _BrokerBalance(
-            visible: balanceVisible,
-            onToggle: onToggleBalance,
-          ),
-          const SizedBox(height: 14),
-          _QuickActionsRow(onSelectPage: onSelectPage),
-          const SizedBox(height: 14),
-          _DualFeatureCards(onSelectPage: onSelectPage),
-          const SizedBox(height: 14),
-          const _MarketInsightsBanner(),
-          const SizedBox(height: 20),
-          _MarketsSection(onSelectPage: onSelectPage),
-        ],
+        ),
       ),
-    ),
-  ),
-),
-);
+    );
+  }
+}
 }
 
 class _BrokerBalance extends StatelessWidget {

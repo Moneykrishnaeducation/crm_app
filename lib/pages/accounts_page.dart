@@ -724,14 +724,14 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
     });
 
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Investor Password Changed (#${widget.account.login})',
-      body: 'Investor password for MT5 account #${widget.account.login} was updated successfully.',
+      title: 'Investor Password Preview (#${widget.account.login})',
+      body: 'A new investor password was prepared locally for account #${widget.account.login}. No MT5 password change was submitted.',
       category: 'Security',
       icon: LucideIcons.keyRound,
       isGold: true,
       sendToMobilePanel: true,
     ));
-    showAppMessage('Investor password updated for account #${widget.account.login}.');
+    showAppMessage('Password preview prepared. No MT5 password change was submitted.');
   }
 
   @override
@@ -1243,14 +1243,14 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
         const SizedBox(height: 14),
         Center(
           child: Text(
-            'Investor Password Changed!',
+            'Investor Password Preview Ready',
             style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800),
           ),
         ),
         const SizedBox(height: 4),
         Center(
           child: Text(
-            'Account #${widget.account.login} now has a new investor password.',
+            'This password is shown for preview only and has not been applied to MT5.',
             style: TextStyle(color: muted, fontSize: 11),
           ),
         ),

@@ -164,9 +164,15 @@ void main() {
     expect(find.text('No trusted devices active'), findsOneWidget);
     expect(find.text('Sign in again to register this device as trusted.'), findsOneWidget);
 
-    // Test Revoke all devices button
+    // Test Revoke all devices button with confirmation bottom popup
     await tester.ensureVisible(find.text('Revoke all devices'));
     await tester.tap(find.text('Revoke all devices'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(find.text('Revoke all trusted devices?'), findsOneWidget);
+    await tester.tap(find.descendant(
+      of: find.byType(ElevatedButton),
+      matching: find.text('Revoke all devices'),
+    ));
     await tester.pumpAndSettle();
     expect(find.text('0 devices can access your account'), findsOneWidget);
   });

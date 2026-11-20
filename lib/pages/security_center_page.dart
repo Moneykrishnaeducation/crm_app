@@ -1321,6 +1321,109 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
+  Future<void> _confirmRevokeAllDevices() async {
+    HapticFeedback.lightImpact();
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+          border: Border.all(
+            color: _isDark ? const Color(0xFF23354E) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: _isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _isDark ? const Color(0xFF382326) : const Color(0xFFFEE2E2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(LucideIcons.shieldAlert, color: _redAccent, size: 28),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Revoke all trusted devices?',
+                style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This will sign out all active sessions across all devices. You will need to verify with an email one-time code the next time you sign in.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: const Size.fromHeight(46),
+                      ),
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _redAccent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: const Size.fromHeight(46),
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Revoke all devices'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirmed == true && mounted) {
+      HapticFeedback.mediumImpact();
+      setState(() => _isDeviceRevoked = true);
+      _showSnack('All trusted devices have been revoked');
+    }
+  }
+
   Widget _buildSecurityFooterActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1331,11 +1434,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         ),
         const SizedBox(height: 14),
         InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            setState(() => _isDeviceRevoked = true);
-            _showSnack('All trusted devices have been revoked');
-          },
+          onTap: _confirmRevokeAllDevices,
           borderRadius: BorderRadius.circular(14),
           child: Container(
             width: double.infinity,

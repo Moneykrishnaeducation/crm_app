@@ -204,12 +204,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     onTap: () => _showSecurityAction('Change Login Password', 'Password change is a secure account action. Connect the password update endpoint to enable submission.'),
                   ),
                   _securityToggleRow(
-                    title: 'Biometrics',
-                    subtitle: 'Use fingerprint or face recognition for secure sign-in',
-                    value: _biometricEnabled,
-                    onChanged: (value) => setState(() => _biometricEnabled = value),
-                  ),
-                  _securityToggleRow(
                     title: 'Mail OTP',
                     subtitle: 'Verify sign-ins using a one-time code sent to your email',
                     value: _email2faEnabled,

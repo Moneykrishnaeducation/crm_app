@@ -1065,6 +1065,29 @@ class _MarketsSection extends StatefulWidget {
 
 class _MarketsSectionState extends State<_MarketsSection> {
   int _selectedTabIndex = 0;
+  final ScrollController _tabScrollController = ScrollController();
+  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
+
+  @override
+  void dispose() {
+    _tabScrollController.dispose();
+    super.dispose();
+  }
+
+  void _selectTab(int index) {
+    setState(() => _selectedTabIndex = index);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tabContext = _tabKeys[index].currentContext;
+      if (tabContext != null && mounted) {
+        Scrollable.ensureVisible(
+          tabContext,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
 
   final List<String> _tabs = [
     'Favorites',
@@ -1132,6 +1155,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
         ),
         const SizedBox(height: 14),
         SingleChildScrollView(
+          controller: _tabScrollController,
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
           child: Row(
@@ -1140,10 +1164,12 @@ class _MarketsSectionState extends State<_MarketsSection> {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: InkWell(
-                  onTap: () => setState(() => _selectedTabIndex = index),
+                  onTap: () => _selectTab(index),
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    key: _tabKeys[index],
+                    constraints: const BoxConstraints(minHeight: 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: active
                           ? (isDark ? const Color(0xFF1B3158) : const Color(0xFFEBF2FF))
@@ -1220,17 +1246,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 22),
-        Center(
-          child: Text(
-            'No more data',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
+
       ],
     );
   }
@@ -1279,34 +1295,79 @@ class _MarketsSectionState extends State<_MarketsSection> {
       final category = _selectedTabIndex == 3 ? 'FX Minors' : 'Cryptos';
       return [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
-          child: Column(
-            children: [
-              Icon(
-                _selectedTabIndex == 3 ? LucideIcons.coins : LucideIcons.bitcoin,
-                size: 25,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 156),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.sizeOf(context).width < 380 ? 14 : 22,
+              vertical: 20,
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor.withValues(alpha: 0.48),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.55),
               ),
-              const SizedBox(height: 9),
-              Text(
-                'No $category sample instruments',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _selectedTabIndex == 3 ? LucideIcons.coins : LucideIcons.bitcoin,
+                    size: 21,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Instruments will appear here when market data is connected.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 10.5,
-                  height: 1.35,
+                const SizedBox(height: 11),
+                Text(
+                  'No $category instruments yet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 5),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 280),
+                  child: Text(
+                    'This category will populate when its market feed is available.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 11),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'AWAITING MARKET FEED',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.45,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ];

@@ -198,7 +198,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Text('Security Center', style: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -.2)),
                 ],
               ),
             ),

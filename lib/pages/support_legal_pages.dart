@@ -21,6 +21,12 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
       ? _mockTickets
       : _mockTickets.where((ticket) => ticket['status'] == _filter).toList();
 
+  void _openTicketDetails(Map<String, String> ticket) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => _MockTicketDetailsPage(ticket: ticket),
+    ));
+  }
+
   Widget _ticketCard(Map<String, String> ticket, ThemeData theme) {
     final scheme = theme.colorScheme;
     final status = ticket['status']!;
@@ -29,39 +35,42 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
     final priority = ticket['priority']!;
     final priorityColor = priority == 'High' ? const Color(0xFFE15B5B)
         : priority == 'Medium' ? const Color(0xFFE39A24) : scheme.onSurfaceVariant;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: .8))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(child: Text(ticket['id']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .45))),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            decoration: BoxDecoration(color: statusColor.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
-            child: Text(status, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900))),
+    return InkWell(
+      onTap: () => _openTicketDetails(ticket),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: .8))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(ticket['id']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .45))),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(color: statusColor.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
+              child: Text(status, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900))),
+          ]),
+          const SizedBox(height: 9),
+          Text(ticket['subject']!, style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w800, height: 1.35)),
+          const SizedBox(height: 9),
+          Row(children: [
+            Icon(LucideIcons.folder, size: 12, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 5),
+            Expanded(child: Text(ticket['department']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
+            Container(width: 5, height: 5, decoration: BoxDecoration(color: priorityColor, shape: BoxShape.circle)),
+            const SizedBox(width: 5),
+            Text('${priority} priority', style: TextStyle(color: priorityColor, fontSize: 9, fontWeight: FontWeight.w700)),
+          ]),
+          const SizedBox(height: 11),
+          Divider(height: 1, color: theme.dividerColor.withValues(alpha: .65)),
+          const SizedBox(height: 9),
+          Row(children: [
+            Icon(LucideIcons.clock3, size: 12, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 5),
+            Expanded(child: Text('Updated ${ticket['updated']}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
+            Icon(LucideIcons.chevronRight, size: 16, color: scheme.onSurfaceVariant),
+          ]),
         ]),
-        const SizedBox(height: 9),
-        Text(ticket['subject']!, style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w800, height: 1.35)),
-        const SizedBox(height: 9),
-        Row(children: [
-          Icon(LucideIcons.folder, size: 12, color: scheme.onSurfaceVariant),
-          const SizedBox(width: 5),
-          Expanded(child: Text(ticket['department']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
-          Container(width: 5, height: 5, decoration: BoxDecoration(color: priorityColor, shape: BoxShape.circle)),
-          const SizedBox(width: 5),
-          Text('${priority} priority', style: TextStyle(color: priorityColor, fontSize: 9, fontWeight: FontWeight.w700)),
-        ]),
-        const SizedBox(height: 11),
-        Divider(height: 1, color: theme.dividerColor.withValues(alpha: .65)),
-        const SizedBox(height: 9),
-        Row(children: [
-          Icon(LucideIcons.clock3, size: 12, color: scheme.onSurfaceVariant),
-          const SizedBox(width: 5),
-          Expanded(child: Text('Updated ${ticket['updated']}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
-          Icon(LucideIcons.chevronRight, size: 16, color: scheme.onSurfaceVariant),
-        ]),
-      ]),
+      ),
     );
   }
 
@@ -212,6 +221,196 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
             Expanded(child: Text('Ticket creation is currently a UI preview; requests are not sent to the support system.', style: TextStyle(color: muted, fontSize: 9, height: 1.45))),
           ]),
         ],
+      ),
+    );
+  }
+}
+
+
+class _MockTicketDetailsPage extends StatefulWidget {
+  final Map<String, String> ticket;
+  const _MockTicketDetailsPage({required this.ticket});
+
+  @override
+  State<_MockTicketDetailsPage> createState() => _MockTicketDetailsPageState();
+}
+
+class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
+  final TextEditingController _replyController = TextEditingController();
+  final List<Map<String, String>> _messages = [];
+
+  bool get _canReply => widget.ticket['status'] == 'In-progress';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.ticket['id'] == 'TKT-2026-1036') {
+      _messages.addAll([
+        {'from': 'You', 'time': 'Today, 08:42 AM', 'body': 'I am unable to sign in to my MT5 account. The platform keeps showing an authorization error.'},
+        {'from': 'Support team', 'time': 'Today, 09:02 AM', 'body': 'Thank you for contacting us. Please confirm the MT5 login ID and the server name displayed in your account details. Do not share your password.'},
+        {'from': 'You', 'time': 'Today, 09:15 AM', 'body': 'My login ID is 8201456. The server shown is VTIndex-Live.'},
+      ]);
+    } else if (widget.ticket['id'] == 'TKT-2026-1019') {
+      _messages.addAll([
+        {'from': 'You', 'time': 'Yesterday, 03:55 PM', 'body': 'I need to correct the phone number registered on my profile.'},
+        {'from': 'Support team', 'time': 'Yesterday, 04:12 PM', 'body': 'We have received your request. Our verification team is reviewing the account details. We will update you here if any additional information is required.'},
+      ]);
+    } else {
+      _messages.add({'from': 'You', 'time': widget.ticket['updated'] ?? 'Recently', 'body': 'I am following up on this request. Please let me know if you need any further information.'});
+    }
+  }
+
+  @override
+  void dispose() {
+    _replyController.dispose();
+    super.dispose();
+  }
+
+  void _sendReply() {
+    final body = _replyController.text.trim();
+    if (body.isEmpty || !_canReply) return;
+    setState(() {
+      _messages.add({'from': 'You', 'time': 'Just now', 'body': body});
+      _replyController.clear();
+    });
+    FocusScope.of(context).unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final muted = scheme.onSurfaceVariant;
+    final ticket = widget.ticket;
+    final status = ticket['status']!;
+    final statusColor = status == 'Open' ? const Color(0xFFE39A24)
+        : status == 'In-progress' ? const Color(0xFF3989D6) : const Color(0xFF249B72);
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('Ticket details', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: Column(children: [
+        Expanded(child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: .8))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(child: Text(ticket['id']!, style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .6))),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(color: statusColor.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
+                    child: Text(status, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w900))),
+                ]),
+                const SizedBox(height: 12),
+                Text(ticket['subject']!, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w900, height: 1.3)),
+                const SizedBox(height: 13),
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  _detailChip(LucideIcons.folder, ticket['department'] ?? '', theme),
+                  _detailChip(LucideIcons.flag, '${ticket['priority']} priority', theme),
+                ]),
+                const SizedBox(height: 13),
+                Divider(height: 1, color: theme.dividerColor.withValues(alpha: .7)),
+                const SizedBox(height: 10),
+                Row(children: [
+                  Icon(LucideIcons.clock3, size: 13, color: muted),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text('Last updated ${ticket['updated']}', style: TextStyle(color: muted, fontSize: 10))),
+                ]),
+              ]),
+            ),
+            const SizedBox(height: 22),
+            Row(children: [
+              Expanded(child: Text('CONVERSATION', style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: .7))),
+              Text('${_messages.length} messages', style: TextStyle(color: muted, fontSize: 10)),
+            ]),
+            const SizedBox(height: 13),
+            for (final message in _messages) _messageBubble(message, theme),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .07), borderRadius: BorderRadius.circular(13)),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(LucideIcons.info, size: 14, color: scheme.primary),
+                const SizedBox(width: 8),
+                Expanded(child: Text(
+                  _canReply ? 'You can reply to this in-progress ticket. Replies are added to this local preview only.'
+                    : 'Replies are available only while a ticket is in progress. This ticket is read-only.',
+                  style: TextStyle(color: muted, fontSize: 10, height: 1.45),
+                )),
+              ]),
+            ),
+          ],
+        )),
+        SafeArea(top: false, child: Container(
+          padding: EdgeInsets.fromLTRB(14, 10, 14, 10 + MediaQuery.viewInsetsOf(context).bottom),
+          decoration: BoxDecoration(color: scheme.surface, border: Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: .7)))),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Expanded(child: TextField(
+              controller: _replyController, enabled: _canReply, minLines: 1, maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                hintText: _canReply ? 'Write a reply...' : 'Replies are disabled',
+                filled: true, fillColor: theme.scaffoldBackgroundColor,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              ),
+            )),
+            const SizedBox(width: 9),
+            SizedBox(width: 46, height: 46, child: FilledButton(
+              onPressed: _canReply ? _sendReply : null,
+              style: FilledButton.styleFrom(padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              child: const Icon(LucideIcons.send, size: 17),
+            )),
+          ]),
+        )),
+      ]),
+    );
+  }
+
+  Widget _detailChip(IconData icon, String label, ThemeData theme) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+    decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: .55), borderRadius: BorderRadius.circular(9)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+      const SizedBox(width: 5),
+      Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w700)),
+    ]),
+  );
+
+  Widget _messageBubble(Map<String, String> message, ThemeData theme) {
+    final isUser = message['from'] == 'You';
+    final scheme = theme.colorScheme;
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .84),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 11), padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isUser ? scheme.primary.withValues(alpha: .11) : scheme.surface,
+            borderRadius: BorderRadius.only(topLeft: const Radius.circular(15), topRight: const Radius.circular(15),
+              bottomLeft: Radius.circular(isUser ? 15 : 4), bottomRight: Radius.circular(isUser ? 4 : 15)),
+            border: Border.all(color: theme.dividerColor.withValues(alpha: .55)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Text(message['from']!, style: TextStyle(color: isUser ? scheme.primary : scheme.onSurface, fontSize: 10, fontWeight: FontWeight.w900)),
+              const SizedBox(width: 8),
+              Text(message['time']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 8)),
+            ]),
+            const SizedBox(height: 7),
+            Text(message['body']!, style: TextStyle(color: scheme.onSurface, fontSize: 11, height: 1.5)),
+          ]),
+        ),
       ),
     );
   }

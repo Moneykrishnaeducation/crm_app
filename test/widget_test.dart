@@ -77,8 +77,8 @@ void main() {
     // Navigate to More
     await tester.tap(find.text('More').first);
     await tester.pumpAndSettle();
-    expect(find.text('YOUR ACCOUNT'), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('INVESTMENT MANAGEMENT & PARTNERSHIPS'), findsOneWidget);
+    expect(find.text('View profile'), findsOneWidget);
     expect(find.text('Security Center'), findsOneWidget);
   });
 }

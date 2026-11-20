@@ -295,6 +295,7 @@ class _AppShellState extends State<AppShell> {
   ThemeMode? _currentThemeMode;
   ThemeMode get _effectiveThemeMode => _currentThemeMode ?? widget.themeMode;
   String _selectedPage = 'Dashboard';
+  final List<String> _navigationHistory = <String>[];
   BrokerAccount? _selectedAccount;
   String _accountDetailsReturnPage = 'Trading Accounts';
   bool _balanceVisible = true;
@@ -394,7 +395,56 @@ class _AppShellState extends State<AppShell> {
     showAppMessage('Demo account ${account.login} created successfully.');
   }
 
+  String _getDefaultParentPage(String page) {
+    return switch (page) {
+      'Profile' ||
+      'Security Center' ||
+      'Settings' ||
+      'MAM' ||
+      'MAM Account' ||
+      'MAM Manager' ||
+      'MAM Investor' ||
+      'Available MAM' ||
+      'MAM Available' ||
+      'Social Trading' ||
+      'PAMM Account' ||
+      'Platform' ||
+      'Tickets' ||
+      'Partnership' ||
+      'Internal Transfer' => 'More',
+      'Theme Mode' || 'Privacy Policy' => 'Settings',
+      'Account Details' => _accountDetailsReturnPage,
+      'Demo Accounts' => 'Trading Accounts',
+      'Deposit' || 'Withdraw' => 'Dashboard',
+      'Trade Report' => 'Transactions',
+      _ => 'Dashboard',
+    };
+  }
+
+  void _handleBack() {
+    if (_navigationHistory.isNotEmpty) {
+      final prev = _navigationHistory.removeLast();
+      setState(() {
+        _selectedPage = prev;
+      });
+      return;
+    }
+    final fallback = _getDefaultParentPage(_selectedPage);
+    if (fallback != _selectedPage) {
+      setState(() {
+        _selectedPage = fallback;
+      });
+      return;
+    }
+    if (_selectedPage != 'Dashboard') {
+      setState(() {
+        _selectedPage = 'Dashboard';
+      });
+    }
+  }
+
   void _openAccount(BrokerAccount account) {
+    _navigationHistory.add(_selectedPage);
     setState(() {
       _selectedAccount = account;
       _accountDetailsReturnPage = 'Trading Accounts';
@@ -403,6 +453,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _openDemoAccount(BrokerAccount account) {
+    _navigationHistory.add(_selectedPage);
     setState(() {
       _selectedAccount = account;
       _accountDetailsReturnPage = 'Demo Accounts';
@@ -410,7 +461,10 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  void _selectPage(String page) {
+  void _selectPage(String rawPage) {
+    final page = rawPage == 'activity' ? 'Transactions' : rawPage;
+    if (page == _selectedPage) return;
+
     if (page == 'Open Account') {
       showModalBottomSheet<void>(
         context: context,
@@ -435,10 +489,6 @@ class _AppShellState extends State<AppShell> {
       );
       return;
     }
-    if (page == 'Deposit' || page == 'Withdraw') {
-      setState(() => _selectedPage = page);
-      return;
-    }
     if (page == 'Logout') {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(
@@ -456,10 +506,19 @@ class _AppShellState extends State<AppShell> {
         context,
         onVerified: () {
           if (!mounted) return;
+          if (_selectedPage == 'Security Center') return;
+          _navigationHistory.add(_selectedPage);
           setState(() => _selectedPage = 'Security Center');
         },
       );
       return;
+    }
+
+    switch (page) {
+      case 'Dashboard' || 'Transactions' || 'Trading Accounts' || 'More':
+        _navigationHistory.clear();
+      default:
+        _navigationHistory.add(_selectedPage);
     }
     setState(() => _selectedPage = page);
   }
@@ -478,21 +537,21 @@ class _AppShellState extends State<AppShell> {
       child: switch (page) {
         'Deposit' => BrokerFundsPage(
             withdrawal: false,
-            onBack: () => setState(() => _selectedPage = 'Dashboard'),
+            onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
         'Withdraw' => BrokerFundsPage(
             withdrawal: true,
-            onBack: () => setState(() => _selectedPage = 'Dashboard'),
+            onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
         'Partnership' => const BrokerPartnershipPage(),
         'PAMM Account' => PammPage(
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
           ),
         'Internal Transfer' => BrokerInternalTransferPage(
             accounts: _accounts,
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
             onSelectPage: _selectPage,
             onTransferCompleted: (fromLogin, toLogin, amount) {
               setState(() {
@@ -571,16 +630,16 @@ class _AppShellState extends State<AppShell> {
         'Demo Accounts' => BrokerDemoAccountsPage(
             accounts: _demoAccounts,
             onAccountCreated: _addDemoAccount,
-            onOpenLiveAccounts: () => setState(() => _selectedPage = 'Trading Accounts'),
+            onOpenLiveAccounts: () => _selectPage('Trading Accounts'),
             onAccountSelected: _openDemoAccount,
           ),
         'Account Details' when _selectedAccount != null => BrokerAccountDetailsPage(
             account: _selectedAccount!,
-            onBack: () => setState(() => _selectedPage = _accountDetailsReturnPage),
+            onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
         'Profile' => BrokerProfilePage(
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
         'Platform' => const BrokerDownloadCenterPage(),
@@ -597,26 +656,26 @@ class _AppShellState extends State<AppShell> {
         'Privacy Policy' => const BrokerPrivacyPolicyPage(),
         'MAM' || 'MAM Account' => MamPage(
             initialTab: 0,
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
           ),
         'MAM Manager' => MamPage(
             initialTab: 0,
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
           ),
         'MAM Investor' => MamPage(
             initialTab: 1,
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
           ),
         'Available MAM' || 'MAM Available' => MamPage(
             initialTab: 2,
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
           ),
         'Social Trading' => MamPage(
             initialTab: 0,
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
           ),
         'Security Center' => SecurityCenterPage(
-            onBack: () => setState(() => _selectedPage = 'More'),
+            onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
         'Trade Report' => TradeReportPage(
@@ -631,7 +690,7 @@ class _AppShellState extends State<AppShell> {
                 _selectedAccount = acc;
               });
             },
-            onBack: () => setState(() => _selectedPage = 'Transactions'),
+            onBack: _handleBack,
           ),
         _ => _SectionPage(title: page),
       },
@@ -661,121 +720,115 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final primaryIndex = _primaryTabIndex;
-    return Scaffold(
-      appBar: _AppHeader(
-        title: _selectedPage == 'Platform' ? 'Download Center' : _selectedPage,
-        onBack: switch (_selectedPage) {
-          'Profile' ||
-          'Security Center' ||
-          'Settings' ||
-          'MAM' ||
-          'MAM Account' ||
-          'MAM Manager' ||
-          'MAM Investor' ||
-          'Available MAM' ||
-          'MAM Available' ||
-          'Social Trading' ||
-          'PAMM Account' ||
-          'Tickets' => () => setState(() => _selectedPage = 'More'),
-          'Theme Mode' => () => setState(() => _selectedPage = 'Settings'),
-          'Privacy Policy' => () => setState(() => _selectedPage = 'Settings'),
-          'Account Details' => () => setState(() => _selectedPage = 'Trading Accounts'),
-          'Deposit' || 'Withdraw' => () => setState(() => _selectedPage = 'Dashboard'),
-          'Trade Report' => () => setState(() => _selectedPage = 'Transactions'),
-          'Platform' => () => setState(() => _selectedPage = 'More'),
-          _ => null,
-        },
-        onSelectPage: _selectPage,
-      ),
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: RepaintBoundary(
-                child: LayoutBuilder(
-                  builder: (context, constraints) => Center(
-                    child: SizedBox(
-                      width: constraints.maxWidth.clamp(0.0, 1280.0),
-                      height: constraints.maxHeight,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Offstage(
-                            offstage: primaryIndex == -1,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                _buildPrimaryTabLayer(
-                                  index: 0,
-                                  activeIndex: primaryIndex,
-                                  child: BrokerDashboardPage(
-                                    balanceVisible: _balanceVisible,
-                                    onToggleBalance: () => setState(
-                                      () => _balanceVisible = !_balanceVisible,
+    return PopScope(
+      key: const Key('app_shell_pop_scope'),
+      canPop: _selectedPage == 'Dashboard' && _navigationHistory.isEmpty,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
+        appBar: _AppHeader(
+          title: _selectedPage == 'Platform' ? 'Download Center' : _selectedPage,
+          onBack: switch (_selectedPage) {
+            'Dashboard' ||
+            'Transactions' ||
+            'Trading Accounts' ||
+            'More' => null,
+            _ => _handleBack,
+          },
+          onSelectPage: _selectPage,
+        ),
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => Center(
+                      child: SizedBox(
+                        width: constraints.maxWidth.clamp(0.0, 1280.0),
+                        height: constraints.maxHeight,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Offstage(
+                              offstage: primaryIndex == -1,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  _buildPrimaryTabLayer(
+                                    index: 0,
+                                    activeIndex: primaryIndex,
+                                    child: BrokerDashboardPage(
+                                      balanceVisible: _balanceVisible,
+                                      onToggleBalance: () => setState(
+                                        () => _balanceVisible = !_balanceVisible,
+                                      ),
+                                      onSelectPage: _selectPage,
                                     ),
-                                    onSelectPage: _selectPage,
                                   ),
-                                ),
-                                _buildPrimaryTabLayer(
-                                  index: 1,
-                                  activeIndex: primaryIndex,
-                                  child: BrokerTransactionsPage(
-                                    accounts: _accounts,
-                                    externalFundTransactions: _appFundTransactions,
+                                  _buildPrimaryTabLayer(
+                                    index: 1,
+                                    activeIndex: primaryIndex,
+                                    child: BrokerTransactionsPage(
+                                      accounts: _accounts,
+                                      externalFundTransactions: _appFundTransactions,
+                                    ),
                                   ),
-                                ),
-                                _buildPrimaryTabLayer(
-                                  index: 2,
-                                  activeIndex: primaryIndex,
-                                  child: BrokerAccountsPage(
-                                    onSelectPage: _selectPage,
-                                    accounts: _accounts,
-                                    onAccountCreated: _addAccount,
-                                    onAccountSelected: _openAccount,
+                                  _buildPrimaryTabLayer(
+                                    index: 2,
+                                    activeIndex: primaryIndex,
+                                    child: BrokerAccountsPage(
+                                      onSelectPage: _selectPage,
+                                      accounts: _accounts,
+                                      onAccountCreated: _addAccount,
+                                      onAccountSelected: _openAccount,
+                                    ),
                                   ),
-                                ),
-                                _buildPrimaryTabLayer(
-                                  index: 3,
-                                  activeIndex: primaryIndex,
-                                  child: BrokerMorePage(onSelectPage: _selectPage),
-                                ),
-                              ],
+                                  _buildPrimaryTabLayer(
+                                    index: 3,
+                                    activeIndex: primaryIndex,
+                                    child: BrokerMorePage(onSelectPage: _selectPage),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          if (primaryIndex == -1)
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 280),
-                              reverseDuration: const Duration(milliseconds: 200),
-                              switchInCurve: Curves.easeOutCubic,
-                              switchOutCurve: Curves.easeInCubic,
-                              transitionBuilder: (child, animation) {
-                                return FadeTransition(opacity: animation, child: child);
-                              },
-                              child: _buildSecondaryPage(_selectedPage),
-                            ),
-                        ],
+                            if (primaryIndex == -1)
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 280),
+                                reverseDuration: const Duration(milliseconds: 200),
+                                switchInCurve: Curves.easeOutCubic,
+                                switchOutCurve: Curves.easeInCubic,
+                                transitionBuilder: (child, animation) {
+                                  return FadeTransition(opacity: animation, child: child);
+                                },
+                                child: _buildSecondaryPage(_selectedPage),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            if (!const {'Settings', 'Theme Mode', 'Privacy Policy'}
-                .contains(_selectedPage))
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: RepaintBoundary(
-                  child: BrokerBottomNavigation(
-                    selectedPage: _selectedPage,
-                    onSelect: _selectPage,
+              if (!const {'Settings', 'Theme Mode', 'Privacy Policy'}
+                  .contains(_selectedPage))
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: RepaintBoundary(
+                    child: BrokerBottomNavigation(
+                      selectedPage: _selectedPage,
+                      onSelect: _selectPage,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

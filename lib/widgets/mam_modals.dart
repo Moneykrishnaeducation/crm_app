@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+
 import '../app_notifications.dart';
 import 'mam_master_node_workspace.dart';
 
@@ -135,22 +136,20 @@ class MamManagerProfileData {
 // MODAL A: ESTABLISH MASTER MAM SHEET
 // =============================================================================
 class EstablishMasterMamSheet extends StatefulWidget {
-  const EstablishMasterMamSheet({
-    super.key,
-    required this.onCreated,
-  });
+  const EstablishMasterMamSheet({super.key, required this.onCreated});
 
   final ValueChanged<MamMasterAccount> onCreated;
 
   @override
-  State<EstablishMasterMamSheet> createState() => _EstablishMasterMamSheetState();
+  State<EstablishMasterMamSheet> createState() =>
+      _EstablishMasterMamSheetState();
 }
 
 class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
-  final _strategyNameController =
-      TextEditingController(text: 'Apex Global Alpha Pool');
-  final _profitShareController =
-      TextEditingController(text: '20');
+  final _strategyNameController = TextEditingController(
+    text: 'Apex Global Alpha Pool',
+  );
+  final _profitShareController = TextEditingController(text: '20');
 
   String _selectedRisk = 'Medium';
   String _selectedLeverage = '1:500';
@@ -179,8 +178,8 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
         : _strategyNameController.text.trim();
     final profitShare =
         double.tryParse(_profitShareController.text.trim()) ?? 20.0;
-    final randSuffix =
-        (DateTime.now().millisecondsSinceEpoch % 900000 + 100000).toString();
+    final randSuffix = (DateTime.now().millisecondsSinceEpoch % 900000 + 100000)
+        .toString();
     final login = '2100$randSuffix';
     final cleanPayout = _selectedPayout.replaceAll(' (Default)', '');
 
@@ -225,20 +224,25 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
       top: false,
       bottom: false,
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: Align(
           alignment: Alignment.bottomCenter,
           heightFactor: 1,
           child: ConstrainedBox(
-            constraints:
-                BoxConstraints(maxWidth: 560, maxHeight: screen.height * .92),
+            constraints: BoxConstraints(
+              maxWidth: 560,
+              maxHeight: screen.height * .92,
+            ),
             child: Container(
               width: double.infinity,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: cs.surface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(26)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(26),
+                ),
                 border: Border.all(color: border),
                 boxShadow: [
                   BoxShadow(
@@ -295,10 +299,7 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
                               const SizedBox(height: 3),
                               Text(
                                 'Configure your new MAM master trading pool',
-                                style: TextStyle(
-                                  color: muted,
-                                  fontSize: 11,
-                                ),
+                                style: TextStyle(color: muted, fontSize: 11),
                               ),
                             ],
                           ),
@@ -361,10 +362,7 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
                             ),
                           ),
                           const SizedBox(height: 18),
-                          _sectionHeading(
-                            'TRADING & RISK CONFIGURATION',
-                            '02',
-                          ),
+                          _sectionHeading('TRADING & RISK CONFIGURATION', '02'),
                           const SizedBox(height: 10),
                           _fieldLabel('Risk profile'),
                           const SizedBox(height: 7),
@@ -476,7 +474,11 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(LucideIcons.shieldCheck, color: muted, size: 12),
+                            Icon(
+                              LucideIcons.shieldCheck,
+                              color: muted,
+                              size: 12,
+                            ),
                             const SizedBox(width: 5),
                             Text(
                               'Real-time MT5 allocation engine • Regulated STP',
@@ -523,13 +525,13 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
   }
 
   Widget _fieldLabel(String value) => Text(
-        value,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      );
+    value,
+    style: TextStyle(
+      color: Theme.of(context).colorScheme.onSurface,
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+    ),
+  );
 
   Widget _riskCard(String level, String label, ColorScheme cs, Color border) {
     final isSelected = _selectedRisk == level;
@@ -594,7 +596,9 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
             duration: const Duration(milliseconds: 160),
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? cs.primary.withValues(alpha: .10) : cs.surface,
+              color: isSelected
+                  ? cs.primary.withValues(alpha: .10)
+                  : cs.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? cs.primary : border,
@@ -623,33 +627,31 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
     Color border,
     Color muted, {
     String? suffixText,
-  }) =>
-      InputDecoration(
-        prefixIcon: Icon(icon, size: 17, color: muted),
-        suffixText: suffixText,
-        suffixStyle: TextStyle(
-          color: cs.primary,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
-        hintText: hint,
-        hintStyle: TextStyle(color: muted, fontSize: 11),
-        filled: true,
-        fillColor: cs.surfaceContainerHighest.withValues(
-          alpha: Theme.of(context).brightness == Brightness.dark ? .45 : .55,
-        ),
-        isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide(color: border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide(color: cs.primary, width: 1.4),
-        ),
-      );
+  }) => InputDecoration(
+    prefixIcon: Icon(icon, size: 17, color: muted),
+    suffixText: suffixText,
+    suffixStyle: TextStyle(
+      color: cs.primary,
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+    ),
+    hintText: hint,
+    hintStyle: TextStyle(color: muted, fontSize: 11),
+    filled: true,
+    fillColor: cs.surfaceContainerHighest.withValues(
+      alpha: Theme.of(context).brightness == Brightness.dark ? .45 : .55,
+    ),
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: BorderSide(color: border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: BorderSide(color: cs.primary, width: 1.4),
+    ),
+  );
 }
 
 // =============================================================================
@@ -726,7 +728,10 @@ class ManagerPerformanceProfileModal extends StatelessWidget {
                 IconButton(
                   icon: Icon(LucideIcons.x, color: c.muted, size: 20),
                   onPressed: () => Navigator.pop(context),
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
                 ),
               ],
             ),
@@ -753,7 +758,11 @@ class ManagerPerformanceProfileModal extends StatelessWidget {
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: c.blue.withValues(alpha: 0.15),
-                          child: Icon(LucideIcons.user, color: c.blue, size: 24),
+                          child: Icon(
+                            LucideIcons.user,
+                            color: c.blue,
+                            size: 24,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -795,12 +804,15 @@ class ManagerPerformanceProfileModal extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 7, vertical: 2),
+                                      horizontal: 7,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: c.green.withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(
-                                          color: c.green.withValues(alpha: 0.3)),
+                                        color: c.green.withValues(alpha: 0.3),
+                                      ),
                                     ),
                                     child: Text(
                                       'LIVE MANAGER',
@@ -830,7 +842,8 @@ class ManagerPerformanceProfileModal extends StatelessWidget {
                         child: _buildStatBox(
                           c: c,
                           label: 'ACCOUNT BALANCE',
-                          value: '\$${manager.accountBalance.toStringAsFixed(2)}',
+                          value:
+                              '\$${manager.accountBalance.toStringAsFixed(2)}',
                           valueColor: c.text,
                         ),
                       ),
@@ -839,7 +852,8 @@ class ManagerPerformanceProfileModal extends StatelessWidget {
                         child: _buildStatBox(
                           c: c,
                           label: 'CURRENT EQUITY',
-                          value: '\$${manager.currentEquity.toStringAsFixed(2)}',
+                          value:
+                              '\$${manager.currentEquity.toStringAsFixed(2)}',
                           valueColor: c.text,
                         ),
                       ),
@@ -848,7 +862,8 @@ class ManagerPerformanceProfileModal extends StatelessWidget {
                         child: _buildStatBox(
                           c: c,
                           label: 'PERFORMANCE FEE',
-                          value: '${manager.performanceFee.toStringAsFixed(0)}%',
+                          value:
+                              '${manager.performanceFee.toStringAsFixed(0)}%',
                           valueColor: c.gold,
                         ),
                       ),
@@ -1007,7 +1022,8 @@ class InvestInManagerModal extends StatefulWidget {
 
 class _InvestInManagerModalState extends State<InvestInManagerModal> {
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _showPassword = false;
   bool _showConfirmPassword = false;
@@ -1034,7 +1050,9 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
 
     Navigator.pop(context);
     widget.onConfirmed(password);
-    showAppMessage('Successfully allocated to Manager (${widget.manager.login})!');
+    showAppMessage(
+      'Successfully allocated to Manager (${widget.manager.login})!',
+    );
   }
 
   @override
@@ -1099,7 +1117,10 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
                 IconButton(
                   icon: Icon(LucideIcons.x, color: c.muted, size: 20),
                   onPressed: () => Navigator.pop(context),
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
                 ),
               ],
             ),
@@ -1130,7 +1151,11 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
                             CircleAvatar(
                               radius: 22,
                               backgroundColor: c.blue.withValues(alpha: 0.15),
-                              child: Icon(LucideIcons.user, color: c.blue, size: 20),
+                              child: Icon(
+                                LucideIcons.user,
+                                color: c.blue,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -1150,12 +1175,21 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
                                       const SizedBox(width: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 7, vertical: 2),
+                                          horizontal: 7,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: c.green.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(6),
+                                          color: c.green.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                           border: Border.all(
-                                              color: c.green.withValues(alpha: 0.3)),
+                                            color: c.green.withValues(
+                                              alpha: 0.3,
+                                            ),
+                                          ),
                                         ),
                                         child: Text(
                                           '• VERIFIED MAM',
@@ -1238,8 +1272,10 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
                       hintStyle: TextStyle(color: c.muted, fontSize: 13),
                       filled: true,
                       fillColor: c.subCard,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: c.border),
@@ -1290,8 +1326,10 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
                       hintStyle: TextStyle(color: c.muted, fontSize: 13),
                       filled: true,
                       fillColor: c.subCard,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: c.border),
@@ -1306,12 +1344,15 @@ class _InvestInManagerModalState extends State<InvestInManagerModal> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _showConfirmPassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                          _showConfirmPassword
+                              ? LucideIcons.eyeOff
+                              : LucideIcons.eye,
                           color: c.muted,
                           size: 18,
                         ),
                         onPressed: () => setState(
-                            () => _showConfirmPassword = !_showConfirmPassword),
+                          () => _showConfirmPassword = !_showConfirmPassword,
+                        ),
                       ),
                     ),
                   ),
@@ -1414,6 +1455,7 @@ class EditCopyMultipliersModal extends StatefulWidget {
     this.initialMethod = 'BALANCE RATIO',
     this.initialFactor = 1.00,
     this.initialOrderCloning = false,
+    this.initialCloneCount = 1,
     this.onDeploy,
   });
 
@@ -1421,16 +1463,25 @@ class EditCopyMultipliersModal extends StatefulWidget {
   final String initialMethod;
   final double initialFactor;
   final bool initialOrderCloning;
-  final void Function(String method, double factor, bool orderCloning)? onDeploy;
+  final int initialCloneCount;
+  final void Function(
+    String method,
+    double factor,
+    bool orderCloning,
+    int cloneCount,
+  )?
+  onDeploy;
 
   @override
-  State<EditCopyMultipliersModal> createState() => _EditCopyMultipliersModalState();
+  State<EditCopyMultipliersModal> createState() =>
+      _EditCopyMultipliersModalState();
 }
 
 class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
   late String _method;
   late double _factor;
   late bool _orderCloning;
+  int _cloneCount = 1;
   late final TextEditingController _factorController;
 
   static const List<double> _presets = [0.50, 1.00, 1.50, 2.00, 3.00];
@@ -1441,6 +1492,11 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
     _method = widget.initialMethod;
     _factor = widget.initialFactor;
     _orderCloning = widget.initialOrderCloning;
+    _cloneCount = widget.initialCloneCount < 1
+        ? 1
+        : widget.initialCloneCount > 5
+        ? 5
+        : widget.initialCloneCount;
     _factorController = TextEditingController(text: _factor.toStringAsFixed(2));
   }
 
@@ -1452,7 +1508,7 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
 
   void _deploy() {
     Navigator.pop(context);
-    widget.onDeploy?.call(_method, _factor, _orderCloning);
+    widget.onDeploy?.call(_method, _factor, _orderCloning, _cloneCount);
   }
 
   @override
@@ -1502,9 +1558,15 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                         decoration: BoxDecoration(
                           color: c.blue.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: c.blue.withValues(alpha: 0.25)),
+                          border: Border.all(
+                            color: c.blue.withValues(alpha: 0.25),
+                          ),
                         ),
-                        child: Icon(LucideIcons.shieldCheck, size: 18, color: c.blue),
+                        child: Icon(
+                          LucideIcons.shieldCheck,
+                          size: 18,
+                          color: c.blue,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1525,7 +1587,10 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                 IconButton(
                   icon: Icon(LucideIcons.x, color: c.muted, size: 20),
                   onPressed: () => Navigator.pop(context),
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
                 ),
               ],
             ),
@@ -1539,7 +1604,10 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                 children: [
                   // Target Account Banner
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: c.subCard,
                       borderRadius: BorderRadius.circular(12),
@@ -1558,7 +1626,11 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: c.border),
                               ),
-                              child: Icon(LucideIcons.sliders, size: 16, color: c.muted),
+                              child: Icon(
+                                LucideIcons.sliders,
+                                size: 16,
+                                color: c.muted,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Column(
@@ -1587,11 +1659,18 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                            color: const Color(0xFFF59E0B)
+                                .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                            border: Border.all(
+                              color: const Color(0xFFF59E0B)
+                                  .withValues(alpha: 0.4),
+                            ),
                           ),
                           child: Text(
                             'STP RISK ENGINE',
@@ -1641,7 +1720,9 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                             child: Container(
                               constraints: const BoxConstraints(minHeight: 44),
                               decoration: BoxDecoration(
-                                color: _method == 'BALANCE RATIO' ? c.blue : Colors.transparent,
+                                color: _method == 'BALANCE RATIO'
+                                    ? c.blue
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
@@ -1650,7 +1731,9 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: _method == 'BALANCE RATIO' ? Colors.white : c.muted,
+                                  color: _method == 'BALANCE RATIO'
+                                      ? Colors.white
+                                      : c.muted,
                                 ),
                               ),
                             ),
@@ -1668,7 +1751,9 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                             child: Container(
                               constraints: const BoxConstraints(minHeight: 44),
                               decoration: BoxDecoration(
-                                color: _method == 'FIXED RATIO' ? c.blue : Colors.transparent,
+                                color: _method == 'FIXED RATIO'
+                                    ? c.blue
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
@@ -1677,7 +1762,9 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: _method == 'FIXED RATIO' ? Colors.white : c.muted,
+                                  color: _method == 'FIXED RATIO'
+                                      ? Colors.white
+                                      : c.muted,
                                 ),
                               ),
                             ),
@@ -1756,9 +1843,14 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
 
                           // Field box
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              color: c.isDark ? const Color(0xFF0C1625) : Colors.white,
+                              color: c.isDark
+                                  ? const Color(0xFF0C1625)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: c.border),
                             ),
@@ -1767,7 +1859,10 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                                 Expanded(
                                   child: TextField(
                                     controller: _factorController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
                                     style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
@@ -1807,17 +1902,22 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                               final isSel = (_factor - f).abs() < 0.01;
                               return Expanded(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 2.5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 2.5,
+                                  ),
                                   child: InkWell(
                                     onTap: () {
                                       setState(() {
                                         _factor = f;
-                                        _factorController.text = f.toStringAsFixed(2);
+                                        _factorController.text = f
+                                            .toStringAsFixed(2);
                                       });
                                     },
                                     borderRadius: BorderRadius.circular(8),
                                     child: Container(
-                                      constraints: const BoxConstraints(minHeight: 44),
+                                      constraints: const BoxConstraints(
+                                        minHeight: 44,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: isSel ? c.blue : c.card,
                                         borderRadius: BorderRadius.circular(8),
@@ -1848,45 +1948,112 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
 
                   // Order Cloning (Multi-Execution) Tile
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: c.subCard,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: c.subBorder),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Order Cloning (Multi-Execution)',
-                                style: GoogleFonts.inter(
-                                  color: c.text,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Order Cloning (Multi-Execution)',
+                                    style: GoogleFonts.inter(
+                                      color: c.text,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Clone each executed position into multiple distinct tickets',
+                                    style: GoogleFonts.inter(
+                                      color: c.muted,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Clone each executed position into multiple distinct tickets',
-                                style: GoogleFonts.inter(
-                                  color: c.muted,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
+                            ),
+                            Switch.adaptive(
+                              value: _orderCloning,
+                              activeThumbColor: c.blue,
+                              onChanged: (val) {
+                                setState(() {
+                                  _orderCloning = val;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'POSITION CLONE COUNT',
+                          style: GoogleFonts.inter(
+                            color: c.muted,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        Switch.adaptive(
-                          value: _orderCloning,
-                          activeColor: c.blue,
-                          onChanged: (val) {
-                            setState(() {
-                              _orderCloning = val;
-                            });
-                          },
+                        const SizedBox(height: 8),
+                        Opacity(
+                          opacity: _orderCloning ? 1 : 0.55,
+                          child: Row(
+                            children: [
+                              for (var count = 1; count <= 5; count++) ...[
+                                if (count > 1) const SizedBox(width: 8),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 44,
+                                    child: OutlinedButton(
+                                      onPressed: _orderCloning
+                                          ? () => setState(
+                                              () => _cloneCount = count,
+                                            )
+                                          : null,
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: _cloneCount == count
+                                            ? c.blue
+                                            : c.card,
+                                        foregroundColor: _cloneCount == count
+                                            ? Colors.white
+                                            : c.text,
+                                        side: BorderSide(
+                                          color: _cloneCount == count
+                                              ? c.blue
+                                              : c.border,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '${count}x',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -1941,7 +2108,9 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                             style: FilledButton.styleFrom(
                               backgroundColor: c.blue,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -2005,10 +2174,8 @@ void showInvestInManagerModal(
     isScrollControlled: true,
     isDismissible: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => InvestInManagerModal(
-      manager: manager,
-      onConfirmed: onConfirmed,
-    ),
+    builder: (ctx) =>
+        InvestInManagerModal(manager: manager, onConfirmed: onConfirmed),
   );
 }
 
@@ -2018,7 +2185,14 @@ void showEditCopyMultipliersModal(
   String initialMethod = 'BALANCE RATIO',
   double initialFactor = 1.00,
   bool initialOrderCloning = false,
-  void Function(String method, double factor, bool orderCloning)? onDeploy,
+  int initialCloneCount = 1,
+  void Function(
+    String method,
+    double factor,
+    bool orderCloning,
+    int cloneCount,
+  )?
+  onDeploy,
 }) {
   showModalBottomSheet(
     context: context,
@@ -2030,6 +2204,7 @@ void showEditCopyMultipliersModal(
       initialMethod: initialMethod,
       initialFactor: initialFactor,
       initialOrderCloning: initialOrderCloning,
+      initialCloneCount: initialCloneCount,
       onDeploy: onDeploy,
     ),
   );

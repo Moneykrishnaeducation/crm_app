@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+
 import '../app_notifications.dart';
 import '../widgets/mam_modals.dart';
 
@@ -107,6 +108,7 @@ class InvestorAccountData {
     this.scalingMethod = 'BALANCE RATIO',
     this.multiplicationFactor = 1.00,
     this.orderCloning = false,
+    this.cloneCount = 1,
     this.tradingPassword = '••••••••••',
     this.investorPassword = '••••••••••',
     this.authToken = 'VT-MT5-LIVE-TOKEN-994102-SECURE',
@@ -126,6 +128,7 @@ class InvestorAccountData {
   String scalingMethod; // 'BALANCE RATIO' or 'FIXED RATIO'
   double multiplicationFactor;
   bool orderCloning;
+  int cloneCount;
   String tradingPassword;
   String investorPassword;
   String authToken;
@@ -159,8 +162,9 @@ class MamInvestmentSubscription {
   bool isMirroringActive;
   final String riskLevel;
 
-  double get returnPercentage =>
-      initialCapital == 0 ? 0 : ((currentEquity - initialCapital) / initialCapital) * 100;
+  double get returnPercentage => initialCapital == 0
+      ? 0
+      : ((currentEquity - initialCapital) / initialCapital) * 100;
 }
 
 // -----------------------------------------------------------------------------
@@ -203,7 +207,9 @@ class _RiskMeter extends StatelessWidget {
             decoration: BoxDecoration(
               color: i < level
                   ? activeColor
-                  : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                  : (isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFCBD5E1)),
               borderRadius: BorderRadius.circular(1.5),
             ),
           ),
@@ -221,11 +227,13 @@ class MamInvestorPage extends StatefulWidget {
     this.onBack,
     this.onExploreAvailable,
     this.showBackButton = true,
+    this.initialAccountId,
   });
 
   final VoidCallback? onBack;
   final VoidCallback? onExploreAvailable;
   final bool showBackButton;
+  final String? initialAccountId;
 
   @override
   State<MamInvestorPage> createState() => _MamInvestorPageState();
@@ -254,6 +262,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
         scalingMethod: 'BALANCE RATIO',
         multiplicationFactor: 1.00,
         orderCloning: false,
+        cloneCount: 1,
       ),
       InvestorAccountData(
         accountId: '3520',
@@ -270,9 +279,18 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
         scalingMethod: 'FIXED RATIO',
         multiplicationFactor: 1.50,
         orderCloning: true,
+        cloneCount: 3,
       ),
     ];
     _selectedAccountIndex = 0;
+    if (widget.initialAccountId != null) {
+      final index = _accounts.indexWhere(
+        (account) => account.accountId == widget.initialAccountId,
+      );
+      if (index >= 0) {
+        _selectedAccountIndex = index;
+      }
+    }
   }
 
   InvestorAccountData get _currentAccount => _accounts[_selectedAccountIndex];
@@ -293,7 +311,6 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             constraints: const BoxConstraints(maxWidth: 680),
             child: Column(
               children: [
-                _buildTopHeader(),
                 Expanded(
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(
@@ -315,183 +332,6 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // 1. TOP HEADER
-  // ---------------------------------------------------------------------------
-  Widget _buildTopHeader() {
-    final isCopying = _currentAccount.isCopying;
-    final statusColor = isCopying ? _c.green : _c.gold;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      decoration: BoxDecoration(
-        color: _c.card,
-        border: Border(bottom: BorderSide(color: _c.border)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (widget.showBackButton && (widget.onBack != null || Navigator.canPop(context)))
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: IconButton(
-                    icon: Icon(LucideIcons.arrowLeft, color: _c.text, size: 20),
-                    onPressed: () {
-                      if (widget.onBack != null) {
-                        widget.onBack!();
-                      } else if (Navigator.canPop(context)) {
-                        Navigator.pop(context);
-                      }
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                    tooltip: 'Back',
-                  ),
-                ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Investment Overview',
-                      style: GoogleFonts.inter(
-                        color: _c.text,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 1.5),
-                    Text(
-                      'Manage investment account ${_currentAccount.accountId}.',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: _c.muted,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (widget.onExploreAvailable != null)
-                SizedBox(
-                  height: 38,
-                  child: FilledButton.icon(
-                    onPressed: widget.onExploreAvailable,
-                    icon: const Icon(LucideIcons.compass, size: 14),
-                    label: const Text(
-                      'Explore Managers',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _c.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 11),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Secondary Row: Status Badge & Account Switcher Chips
-          Row(
-            children: [
-              // Copy State Status Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-                decoration: BoxDecoration(
-                  color: isCopying ? _c.greenLight : _c.goldLight,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isCopying ? _c.greenBorder : _c.goldBorder,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: statusColor.withValues(alpha: 0.6),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isCopying ? 'Copy State: • Copying Active' : 'Copy State: • Paused',
-                      style: GoogleFonts.inter(
-                        color: statusColor,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-
-              // Account Selector Chips
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(_accounts.length, (index) {
-                  final acc = _accounts[index];
-                  final isSelected = index == _selectedAccountIndex;
-                  return Padding(
-                    padding: EdgeInsets.only(left: index > 0 ? 6.0 : 0.0),
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _selectedAccountIndex = index;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: isSelected ? _c.blue : _c.subCard,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isSelected ? _c.blue : _c.border,
-                          ),
-                        ),
-                        child: Text(
-                          'Account ${acc.accountId}',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: isSelected ? Colors.white : _c.muted,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -525,7 +365,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4.5,
+                ),
                 decoration: BoxDecoration(
                   color: _c.blueLight,
                   borderRadius: BorderRadius.circular(8),
@@ -552,8 +395,14 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                 onTap: () => _copyToClipboard(acc.accountId, 'Account ID'),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  constraints: const BoxConstraints(
+                    minHeight: 44,
+                    minWidth: 44,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   alignment: Alignment.center,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -613,12 +462,17 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                     icon: const Icon(LucideIcons.plusCircle, size: 15),
                     label: const Text(
                       'Deposit Funds',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: _c.blue,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       elevation: 0,
                     ),
@@ -637,12 +491,16 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       setState(() {
                         acc.isCopying = !acc.isCopying;
                       });
-                      showAppMessage(acc.isCopying
-                          ? 'Trade copying resumed for Account ${acc.accountId}'
-                          : 'Trade copying paused for Account ${acc.accountId}');
+                      showAppMessage(
+                        acc.isCopying
+                            ? 'Trade copying resumed for Account ${acc.accountId}'
+                            : 'Trade copying paused for Account ${acc.accountId}',
+                      );
                     },
                     icon: Icon(
-                      acc.isCopying ? LucideIcons.circleSlash : LucideIcons.play,
+                      acc.isCopying
+                          ? LucideIcons.circleSlash
+                          : LucideIcons.play,
                       size: 14,
                       color: acc.isCopying ? _c.gold : _c.green,
                     ),
@@ -658,7 +516,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       side: BorderSide(
                         color: acc.isCopying ? _c.goldBorder : _c.greenBorder,
                       ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                     ),
                   ),
@@ -673,14 +533,24 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   height: 44,
                   child: OutlinedButton.icon(
                     onPressed: _openWithdrawModal,
-                    icon: Icon(LucideIcons.arrowUpRight, size: 14, color: _c.text),
+                    icon: Icon(
+                      LucideIcons.arrowUpRight,
+                      size: 14,
+                      color: _c.text,
+                    ),
                     label: Text(
                       'Withdraw Funds',
-                      style: TextStyle(color: _c.text, fontSize: 12, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        color: _c.text,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: _c.border),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                     ),
                   ),
@@ -707,7 +577,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         label: 'TOTAL PROFIT',
                         value: '\$${acc.totalProfit.toStringAsFixed(2)}',
                         valueColor: isPos ? _c.green : _c.red,
-                        icon: isPos ? LucideIcons.trendingUp : LucideIcons.trendingDown,
+                        icon: isPos
+                            ? LucideIcons.trendingUp
+                            : LucideIcons.trendingDown,
                       ),
                     ),
                     Container(width: 1, height: 36, color: _c.subBorder),
@@ -842,7 +714,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: _c.blueBorder),
                 ),
-                child: Icon(LucideIcons.slidersHorizontal, color: _c.blue, size: 18),
+                child: Icon(
+                  LucideIcons.slidersHorizontal,
+                  color: _c.blue,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -879,7 +755,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               children: [
                 _specRow('Account ID', acc.accountId, copyable: true),
                 _specDivider(),
-                _specRow('Master Account ID', acc.masterAccountId, copyable: true),
+                _specRow(
+                  'Master Account ID',
+                  acc.masterAccountId,
+                  copyable: true,
+                ),
                 _specDivider(),
                 _specRow('Account Alias', acc.alias),
                 _specDivider(),
@@ -903,7 +783,8 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     );
   }
 
-  Widget _specDivider() => Divider(height: 1, thickness: 1, color: _c.subBorder);
+  Widget _specDivider() =>
+      Divider(height: 1, thickness: 1, color: _c.subBorder);
 
   Widget _specRow(
     String label,
@@ -930,9 +811,14 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             children: [
               if (isBadge)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    color: (badgeColor ?? _c.green).withValues(alpha: _c.isDark ? 0.2 : 0.1),
+                    color: (badgeColor ?? _c.green).withValues(
+                      alpha: _c.isDark ? 0.2 : 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: (badgeColor ?? _c.green).withValues(alpha: 0.35),
@@ -976,7 +862,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   onTap: () => _copyToClipboard(value, label),
                   borderRadius: BorderRadius.circular(6),
                   child: Container(
-                    constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                    constraints: const BoxConstraints(
+                      minHeight: 44,
+                      minWidth: 44,
+                    ),
                     alignment: Alignment.center,
                     child: Icon(LucideIcons.copy, size: 14, color: _c.blue),
                   ),
@@ -1071,7 +960,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                           const SizedBox(height: 4),
                           Text(
                             'Update your investor terminal password anytime. This does not interfere with the master manager\'s trade execution.',
-                            style: TextStyle(color: _c.text, fontSize: 11.5, height: 1.35),
+                            style: TextStyle(
+                              color: _c.text,
+                              fontSize: 11.5,
+                              height: 1.35,
+                            ),
                           ),
                         ],
                       ),
@@ -1087,11 +980,17 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                     icon: Icon(LucideIcons.settings, size: 15, color: _c.text),
                     label: Text(
                       'Investor Password Settings',
-                      style: TextStyle(color: _c.text, fontSize: 12.5, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        color: _c.text,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: _c.border),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -1133,14 +1032,18 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _c.goldLight,
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(color: _c.goldBorder),
                                 ),
                                 child: Text(
-                                  _currentAccount.scalingMethod == 'BALANCE RATIO'
+                                  _currentAccount.scalingMethod ==
+                                          'BALANCE RATIO'
                                       ? 'Balance Ratio'
                                       : '${_currentAccount.multiplicationFactor.toStringAsFixed(2)}x Ratio',
                                   style: GoogleFonts.inter(
@@ -1155,7 +1058,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                           const SizedBox(height: 4),
                           Text(
                             'Customize proportional trade volume or enable multi-order execution cloning.',
-                            style: TextStyle(color: _c.text, fontSize: 11.5, height: 1.35),
+                            style: TextStyle(
+                              color: _c.text,
+                              fontSize: 11.5,
+                              height: 1.35,
+                            ),
                           ),
                         ],
                       ),
@@ -1168,14 +1075,24 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   height: 44,
                   child: OutlinedButton.icon(
                     onPressed: _openScalingModal,
-                    icon: Icon(LucideIcons.arrowLeftRight, size: 15, color: _c.blue),
+                    icon: Icon(
+                      LucideIcons.arrowLeftRight,
+                      size: 15,
+                      color: _c.blue,
+                    ),
                     label: Text(
                       'Edit Copy Multipliers',
-                      style: TextStyle(color: _c.blue, fontSize: 12.5, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        color: _c.blue,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: _c.blueBorder),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -1365,11 +1282,13 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       initialMethod: acc.scalingMethod,
       initialFactor: acc.multiplicationFactor,
       initialOrderCloning: acc.orderCloning,
-      onDeploy: (method, factor, orderCloning) {
+      initialCloneCount: acc.cloneCount,
+      onDeploy: (method, factor, orderCloning, cloneCount) {
         setState(() {
           acc.scalingMethod = method;
           acc.multiplicationFactor = factor;
           acc.orderCloning = orderCloning;
+          acc.cloneCount = cloneCount;
         });
         showAppMessage('Configuration deployed to Account ${acc.accountId}!');
       },
@@ -1401,7 +1320,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               ),
               decoration: BoxDecoration(
                 color: _c.card,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 border: Border.all(color: _c.border),
               ),
               child: SingleChildScrollView(
@@ -1434,7 +1355,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         IconButton(
                           icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
                           onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
                         ),
                       ],
                     ),
@@ -1455,7 +1379,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Available Balance', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text(
+                            'Available Balance',
+                            style: TextStyle(color: _c.muted, fontSize: 12),
+                          ),
                           Text(
                             '\$${acc.balance.toStringAsFixed(2)} USD',
                             style: GoogleFonts.inter(
@@ -1493,12 +1420,20 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                           },
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
-                            constraints: const BoxConstraints(minHeight: 44, minWidth: 64),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            constraints: const BoxConstraints(
+                              minHeight: 44,
+                              minWidth: 64,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: isSel ? _c.blue : _c.subCard,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: isSel ? _c.blue : _c.border),
+                              border: Border.all(
+                                color: isSel ? _c.blue : _c.border,
+                              ),
                             ),
                             child: Center(
                               child: Text(
@@ -1518,7 +1453,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
 
                     TextField(
                       controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1556,9 +1493,12 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       height: 48,
                       child: FilledButton.icon(
                         onPressed: () {
-                          final depositAmt = double.tryParse(amountController.text) ?? 0.0;
+                          final depositAmt =
+                              double.tryParse(amountController.text) ?? 0.0;
                           if (depositAmt <= 0) {
-                            showAppMessage('Please enter a valid deposit amount');
+                            showAppMessage(
+                              'Please enter a valid deposit amount',
+                            );
                             return;
                           }
                           Navigator.pop(ctx);
@@ -1572,12 +1512,17 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         icon: const Icon(LucideIcons.plusCircle, size: 18),
                         label: Text(
                           'Confirm & Deposit Funds',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: _c.blue,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -1614,7 +1559,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               ),
               decoration: BoxDecoration(
                 color: _c.card,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 border: Border.all(color: _c.border),
               ),
               child: SingleChildScrollView(
@@ -1647,7 +1594,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         IconButton(
                           icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
                           onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
                         ),
                       ],
                     ),
@@ -1667,7 +1617,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Available Net Balance', style: TextStyle(color: _c.muted, fontSize: 12)),
+                          Text(
+                            'Available Net Balance',
+                            style: TextStyle(color: _c.muted, fontSize: 12),
+                          ),
                           Text(
                             '\$${acc.balance.toStringAsFixed(2)} USD',
                             style: GoogleFonts.inter(
@@ -1693,7 +1646,8 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                 onPressed: () {
                                   final calc = (acc.balance * (pct / 100.0));
                                   setModalState(() {
-                                    amountController.text = calc.toStringAsFixed(2);
+                                    amountController.text = calc
+                                        .toStringAsFixed(2);
                                   });
                                 },
                                 style: OutlinedButton.styleFrom(
@@ -1721,7 +1675,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
 
                     TextField(
                       controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1759,13 +1715,16 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       height: 48,
                       child: FilledButton.icon(
                         onPressed: () {
-                          final withdrawAmt = double.tryParse(amountController.text) ?? 0.0;
+                          final withdrawAmt =
+                              double.tryParse(amountController.text) ?? 0.0;
                           if (withdrawAmt <= 0) {
                             showAppMessage('Please enter a valid amount');
                             return;
                           }
                           if (withdrawAmt > acc.balance) {
-                            showAppMessage('Insufficient available balance for withdrawal');
+                            showAppMessage(
+                              'Insufficient available balance for withdrawal',
+                            );
                             return;
                           }
                           Navigator.pop(ctx);
@@ -1779,12 +1738,17 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         icon: const Icon(LucideIcons.arrowUpRight, size: 18),
                         label: Text(
                           'Submit Withdrawal',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: _c.navy,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -1822,7 +1786,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               ),
               decoration: BoxDecoration(
                 color: _c.card,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 border: Border.all(color: _c.border),
               ),
               child: SingleChildScrollView(
@@ -1854,7 +1820,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: _c.greenBorder),
                               ),
-                              child: Icon(LucideIcons.keyRound, size: 17, color: _c.green),
+                              child: Icon(
+                                LucideIcons.keyRound,
+                                size: 17,
+                                color: _c.green,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -1870,7 +1840,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         IconButton(
                           icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
                           onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
                         ),
                       ],
                     ),
@@ -1940,15 +1913,25 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                 ),
                               ),
                               InkWell(
-                                onTap: () => _copyToClipboard(acc.authToken, 'MT5 Auth Token'),
+                                onTap: () => _copyToClipboard(
+                                  acc.authToken,
+                                  'MT5 Auth Token',
+                                ),
                                 borderRadius: BorderRadius.circular(6),
                                 child: Container(
-                                  constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                                  constraints: const BoxConstraints(
+                                    minHeight: 44,
+                                    minWidth: 44,
+                                  ),
                                   alignment: Alignment.center,
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(LucideIcons.copy, size: 13, color: _c.blue),
+                                      Icon(
+                                        LucideIcons.copy,
+                                        size: 13,
+                                        color: _c.blue,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Copy Token',
@@ -1989,11 +1972,16 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         style: FilledButton.styleFrom(
                           backgroundColor: _c.blue,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         child: Text(
                           'Done',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -2047,12 +2035,18 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       color: _c.muted,
                     ),
                     onPressed: onToggleVisibility,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                   ),
                   IconButton(
                     icon: Icon(LucideIcons.copy, size: 16, color: _c.blue),
                     onPressed: onCopy,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                   ),
                 ],
               ),
@@ -2067,10 +2061,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            description,
-            style: TextStyle(color: _c.muted, fontSize: 10.5),
-          ),
+          Text(description, style: TextStyle(color: _c.muted, fontSize: 10.5)),
         ],
       ),
     );
@@ -2161,7 +2152,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: _c.blueBorder),
                         ),
-                        child: Icon(LucideIcons.barChart2, size: 17, color: _c.blue),
+                        child: Icon(
+                          LucideIcons.barChart2,
+                          size: 17,
+                          color: _c.blue,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Column(
@@ -2186,7 +2181,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   IconButton(
                     icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
                     onPressed: () => Navigator.pop(ctx),
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                   ),
                 ],
               ),
@@ -2194,7 +2192,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
 
               // Summary Bar
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: _c.greenLight,
                   borderRadius: BorderRadius.circular(10),
@@ -2241,9 +2242,14 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: t['type'] == 'BUY' ? _c.blueLight : _c.redLight,
+                              color: t['type'] == 'BUY'
+                                  ? _c.blueLight
+                                  : _c.redLight,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -2270,7 +2276,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                 ),
                                 Text(
                                   '#${t['ticket']} • ${t['openPrice']} → ${t['currentPrice']}',
-                                  style: TextStyle(color: _c.muted, fontSize: 11),
+                                  style: TextStyle(
+                                    color: _c.muted,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ],
                             ),
@@ -2308,10 +2317,34 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final masterTrades = [
-          {'symbol': 'EURUSD', 'type': 'BUY', 'lots': '5.00', 'ticket': '9812044', 'pnl': '+270.00'},
-          {'symbol': 'GBPUSD', 'type': 'SELL', 'lots': '3.50', 'ticket': '9812110', 'pnl': '+133.00'},
-          {'symbol': 'USDJPY', 'type': 'BUY', 'lots': '2.00', 'ticket': '9812239', 'pnl': '-18.00'},
-          {'symbol': 'XAUUSD', 'type': 'BUY', 'lots': '2.00', 'ticket': '9812301', 'pnl': '+35.00'},
+          {
+            'symbol': 'EURUSD',
+            'type': 'BUY',
+            'lots': '5.00',
+            'ticket': '9812044',
+            'pnl': '+270.00',
+          },
+          {
+            'symbol': 'GBPUSD',
+            'type': 'SELL',
+            'lots': '3.50',
+            'ticket': '9812110',
+            'pnl': '+133.00',
+          },
+          {
+            'symbol': 'USDJPY',
+            'type': 'BUY',
+            'lots': '2.00',
+            'ticket': '9812239',
+            'pnl': '-18.00',
+          },
+          {
+            'symbol': 'XAUUSD',
+            'type': 'BUY',
+            'lots': '2.00',
+            'ticket': '9812301',
+            'pnl': '+35.00',
+          },
         ];
 
         return Container(
@@ -2352,7 +2385,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: _c.goldBorder),
                         ),
-                        child: Icon(LucideIcons.usersRound, size: 17, color: _c.gold),
+                        child: Icon(
+                          LucideIcons.usersRound,
+                          size: 17,
+                          color: _c.gold,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Column(
@@ -2377,7 +2414,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   IconButton(
                     icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
                     onPressed: () => Navigator.pop(ctx),
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                   ),
                 ],
               ),
@@ -2385,7 +2425,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
 
               // Overview Banner
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: _c.subCard,
                   borderRadius: BorderRadius.circular(10),
@@ -2394,10 +2437,17 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Total Master Volume: 12.50 Lots', style: TextStyle(color: _c.muted, fontSize: 11.5)),
+                    Text(
+                      'Total Master Volume: 12.50 Lots',
+                      style: TextStyle(color: _c.muted, fontSize: 11.5),
+                    ),
                     Text(
                       'Master Float: +\$420.00',
-                      style: GoogleFonts.inter(color: _c.green, fontSize: 12, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.inter(
+                        color: _c.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -2421,9 +2471,14 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3.5,
+                            ),
                             decoration: BoxDecoration(
-                              color: mt['type'] == 'BUY' ? _c.blueLight : _c.redLight,
+                              color: mt['type'] == 'BUY'
+                                  ? _c.blueLight
+                                  : _c.redLight,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -2450,7 +2505,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                 ),
                                 Text(
                                   'Master Ticket #${mt['ticket']}',
-                                  style: TextStyle(color: _c.muted, fontSize: 11),
+                                  style: TextStyle(
+                                    color: _c.muted,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ],
                             ),
@@ -2524,7 +2582,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: _c.greenBorder),
                           ),
-                          child: Icon(LucideIcons.lineChart, size: 17, color: _c.green),
+                          child: Icon(
+                            LucideIcons.lineChart,
+                            size: 17,
+                            color: _c.green,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Column(
@@ -2549,7 +2611,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                     IconButton(
                       icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
                       onPressed: () => Navigator.pop(ctx),
-                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                     ),
                   ],
                 ),
@@ -2590,7 +2655,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: _c.greenLight,
                           borderRadius: BorderRadius.circular(8),
@@ -2634,11 +2702,19 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: _patternStat('Profit Factor', '2.45', _c.blue),
+                            child: _patternStat(
+                              'Profit Factor',
+                              '2.45',
+                              _c.blue,
+                            ),
                           ),
                           Container(width: 1, height: 32, color: _c.subBorder),
                           Expanded(
-                            child: _patternStat('Sharpe Ratio', '1.89', _c.green),
+                            child: _patternStat(
+                              'Sharpe Ratio',
+                              '1.89',
+                              _c.green,
+                            ),
                           ),
                         ],
                       ),
@@ -2646,11 +2722,19 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: _patternStat('Max Drawdown', '4.2%', _c.gold),
+                            child: _patternStat(
+                              'Max Drawdown',
+                              '4.2%',
+                              _c.gold,
+                            ),
                           ),
                           Container(width: 1, height: 32, color: _c.subBorder),
                           Expanded(
-                            child: _patternStat('Avg Trade Duration', '3h 42m', _c.text),
+                            child: _patternStat(
+                              'Avg Trade Duration',
+                              '3h 42m',
+                              _c.text,
+                            ),
                           ),
                         ],
                       ),
@@ -2658,11 +2742,19 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: _patternStat('Total Closed Trades', '342', _c.text),
+                            child: _patternStat(
+                              'Total Closed Trades',
+                              '342',
+                              _c.text,
+                            ),
                           ),
                           Container(width: 1, height: 32, color: _c.subBorder),
                           Expanded(
-                            child: _patternStat('Avg Win / Loss', '2.1x', _c.blue),
+                            child: _patternStat(
+                              'Avg Win / Loss',
+                              '2.1x',
+                              _c.blue,
+                            ),
                           ),
                         ],
                       ),
@@ -2711,11 +2803,16 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                     style: FilledButton.styleFrom(
                       backgroundColor: _c.blue,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: Text(
                       'Close Analysis',
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -2755,7 +2852,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           width: 60,
           child: Text(
             symbol,
-            style: GoogleFonts.inter(color: _c.text, fontSize: 12, fontWeight: FontWeight.w700),
+            style: GoogleFonts.inter(
+              color: _c.text,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -2765,7 +2866,9 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             child: LinearProgressIndicator(
               value: fraction,
               minHeight: 8,
-              backgroundColor: _c.isDark ? const Color(0xFF263750) : const Color(0xFFE2E8F0),
+              backgroundColor: _c.isDark
+                  ? const Color(0xFF263750)
+                  : const Color(0xFFE2E8F0),
               valueColor: AlwaysStoppedAnimation<Color>(_c.blue),
             ),
           ),
@@ -2776,7 +2879,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           child: Text(
             pct,
             textAlign: TextAlign.end,
-            style: TextStyle(color: _c.muted, fontSize: 11.5, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: _c.muted,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],

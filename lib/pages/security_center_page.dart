@@ -2427,13 +2427,13 @@ class _SecurityReferenceSubPage extends StatelessWidget {
     final description = deactivate
         ? 'Your account access may be temporarily suspended after the request is reviewed. Do you want to submit a deactivation request?'
         : 'Account deletion is permanent once approved and may remove access to your account data. Do you want to submit a deletion request?';
+    bool isVerifying = false;
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) {
-          bool isVerifying = false;
           return Container(
             padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
             decoration: BoxDecoration(

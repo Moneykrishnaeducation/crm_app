@@ -125,7 +125,7 @@ class _DashboardIntro extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
-                LucideIcons.layoutDashboard,
+                LucideIcons.chartPie,
                 color: Color(0xFF8EBEFF),
                 size: 20,
               ),

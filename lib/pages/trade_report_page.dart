@@ -1402,7 +1402,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   Widget _buildChartEmptyState(String heading, String detail, bool isDark, Color muted) {
     final title = isDark ? const Color(0xFFF7FAFF) : const Color(0xFF142033);
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Icon(LucideIcons.chartNoAxesCombined, size: 27, color: muted),
+      Icon(LucideIcons.barChart2, size: 27, color: muted),
       const SizedBox(height: 9),
       Text(heading, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: title)),
       const SizedBox(height: 4),
@@ -1964,7 +1964,7 @@ class _TradeReportLinePainter extends CustomPainter {
     final minValue = values.reduce(math.min);
     final maxValue = values.reduce(math.max);
     final spread = (maxValue - minValue).abs();
-    final pad = spread == 0 ? (maxValue.abs() * .02).clamp(1.0, double.infinity) : spread * .16;
+    final pad = spread == 0 ? math.max(1.0, maxValue.abs() * .02).toDouble() : spread * .16;
     final low = minValue - pad, high = maxValue + pad;
     final y = (double v) => chart.bottom - ((v - low) / (high - low)) * chart.height;
     final grid = Paint()..color = gridColor..strokeWidth = 1;

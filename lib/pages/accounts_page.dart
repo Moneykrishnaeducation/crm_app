@@ -1476,13 +1476,13 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Container(width: 42, height: 42, padding: const EdgeInsets.all(7), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .10), borderRadius: BorderRadius.circular(13)),
-                  child: const _AccountLogoBadge(size: 28)),
-                const SizedBox(width: 10),
+                Container(width: 56, height: 56, padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)),
+                  child: const _AccountLogoBadge(size: 46)),
+                const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(a.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 4),
-                  Text('MT5 ACCOUNT  •  ' + a.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: .45)),
+                  Text('MT5 ACCOUNT  •  ' + a.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: .45)),
+                  const SizedBox(height: 5),
+                  Text(a.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
                 ])),
                 Icon(LucideIcons.shieldCheck, color: Colors.white.withValues(alpha: .75), size: 20),
               ]),

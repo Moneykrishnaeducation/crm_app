@@ -477,17 +477,23 @@ class _PortfolioPerformanceState extends State<_PortfolioPerformance> {
               return Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(right: index == _periods.length - 1 ? 0 : 7),
-                  child: InkWell(
-                    onTap: () => setState(() => _period = index),
-                    borderRadius: BorderRadius.circular(9),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Semantics(
+                    button: true,
+                    selected: selected,
+                    label: '${_periods[index]} performance period',
+                    child: InkWell(
+                      onTap: () => setState(() => _period = index),
+                      borderRadius: BorderRadius.circular(9),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 40),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: selected ? (isDark ? const Color(0xFF1D3B68) : const Color(0xFFEAF1FF)) : Colors.transparent,
                         borderRadius: BorderRadius.circular(9),
                       ),
                       alignment: Alignment.center,
-                      child: Text(_periods[index], style: TextStyle(color: selected ? (isDark ? const Color(0xFF9CC3FF) : const Color(0xFF2459C7)) : muted, fontSize: 11, fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
+                        child: Text(_periods[index], style: TextStyle(color: selected ? (isDark ? const Color(0xFF9CC3FF) : const Color(0xFF2459C7)) : muted, fontSize: 11, fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
+                      ),
                     ),
                   ),
                 ),
@@ -1072,6 +1078,9 @@ class _MarketsSectionState extends State<_MarketsSection> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final compactLayout = MediaQuery.sizeOf(context).width < 380;
+    final quoteColumnWidth = compactLayout ? 64.0 : 72.0;
+    final quoteColumnGap = compactLayout ? 6.0 : 10.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1172,7 +1181,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
               ),
               Spacer(),
               SizedBox(
-                width: 72,
+                width: quoteColumnWidth,
                 child: Text(
                   'Sell',
                   textAlign: TextAlign.right,
@@ -1183,9 +1192,9 @@ class _MarketsSectionState extends State<_MarketsSection> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: quoteColumnGap),
               SizedBox(
-                width: 72,
+                width: quoteColumnWidth,
                 child: Text(
                   'Buy',
                   textAlign: TextAlign.right,

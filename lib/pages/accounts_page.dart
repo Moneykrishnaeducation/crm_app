@@ -59,36 +59,6 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
             ),
           ]),
           const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(17),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-                colors: dark ? const [Color(0xFF183B64), Color(0xFF10243C), Color(0xFF101B2D)] : const [Color(0xFF173F70), Color(0xFF245B91), Color(0xFF173B68)]),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withValues(alpha: .10)),
-              boxShadow: [BoxShadow(color: const Color(0xFF173F70).withValues(alpha: dark ? .20 : .13), blurRadius: 20, offset: const Offset(0, 8))],
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const Icon(LucideIcons.walletCards, color: Color(0xFFD7E9FF), size: 17),
-                const SizedBox(width: 8),
-                const Expanded(child: Text('TOTAL LIVE BALANCE', style: TextStyle(color: Color(0xFFD7E9FF), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.1))),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
-                  child: Text('${liveAccounts.length} ${liveAccounts.length == 1 ? "account" : "accounts"}', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700))),
-              ]),
-              const SizedBox(height: 10),
-              Text(liveAccounts.isEmpty ? '—' : '\$${totalBalance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 29, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.8)),
-              const SizedBox(height: 13),
-              Container(height: 1, color: Colors.white.withValues(alpha: .15)),
-              const SizedBox(height: 12),
-              Row(children: [
-                const Icon(LucideIcons.shieldCheck, color: Color(0xFFB8D9F7), size: 14),
-                const SizedBox(width: 7),
-                const Expanded(child: Text('Live MT5 portfolio overview', style: TextStyle(color: Color(0xFFD7E9FF), fontSize: 10, fontWeight: FontWeight.w600))),
-                Text('${liveAccounts.length} active', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-              ]),
-            ]),
-          ),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: SizedBox(height: 48, child: FilledButton.icon(

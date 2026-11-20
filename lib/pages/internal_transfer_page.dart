@@ -1397,8 +1397,8 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
 
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Internal Transfer Completed (\$${amount.toStringAsFixed(2)})',
-      body: 'Transferred \$${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin instantly. Ref: ${record.id}.',
+      title: 'Internal Transfer Preview (\${amount.toStringAsFixed(2)})',
+      body: 'Local preview only: \${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin. No server-side transfer was submitted. Ref: ${record.id}.',
       category: 'Funds',
       icon: LucideIcons.arrowLeftRight,
       isGold: false,

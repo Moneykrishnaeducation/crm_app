@@ -2466,116 +2466,285 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     widget.onAccountChanged?.call(login);
   }
 
-  void _closePosition(ActivityOpenPosition position) {
-    showDialog<void>(
+  Future<void> _closePosition(ActivityOpenPosition position) async {
+    final scheme = Theme.of(context).colorScheme;
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text(
-          'Close Position',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to close ${position.symbol} (${position.lots.toStringAsFixed(2)} Lots) at market price ${position.currentPrice}?\n\nRealized P&L: ${position.profit >= 0 ? '+' : '-'}\$${position.profit.abs().toStringAsFixed(2)} USD',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 13,
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1658C9),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              setState(() {
-                _accountOpenPositions[_selectedLogin]?.removeWhere((p) => p.id == position.id);
-                _accountClosedPositions[_selectedLogin]?.insert(
-                  0,
-                  ActivityClosedPosition(
-                    id: 'cls-${DateTime.now().millisecondsSinceEpoch}',
-                    symbol: position.symbol,
-                    isBuy: position.isBuy,
-                    lots: position.lots,
-                    openPrice: position.openPrice,
-                    closePrice: position.currentPrice,
-                    netProfit: position.profit,
-                    closeTime: 'Just now',
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: scheme.surface,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                );
-                _accountBalances[_selectedLogin] =
-                    (_accountBalances[_selectedLogin] ?? 0.0) + position.profit;
-              });
-              showAppMessage('Position ${position.symbol} closed successfully');
-            },
-            child: const Text('Confirm Close'),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(LucideIcons.xCircle, color: Color(0xFFEF4444), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Close Position', style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 3),
+                        Text(position.symbol, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Are you sure you want to close this position at the current market price?',
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.45),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: Column(
+                  children: [
+                    _activityConfirmRow('Volume', '${position.lots.toStringAsFixed(2)} Lots', scheme),
+                    const SizedBox(height: 10),
+                    _activityConfirmRow('Market Price', '${position.currentPrice}', scheme),
+                    const SizedBox(height: 10),
+                    _activityConfirmRow(
+                      'Floating P&L',
+                      '${position.profit >= 0 ? '+' : '-'}\$ ${position.profit.abs().toStringAsFixed(2)} USD',
+                      scheme,
+                      valueColor: position.profit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFEF4444),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        foregroundColor: scheme.onSurface,
+                        side: BorderSide(color: scheme.outlineVariant),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                      ),
+                      child: const Text('Keep Position', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                      ),
+                      child: const Text('Confirm Close', style: TextStyle(fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _accountOpenPositions[_selectedLogin]?.removeWhere((p) => p.id == position.id);
+      _accountClosedPositions[_selectedLogin]?.insert(
+        0,
+        ActivityClosedPosition(
+          id: 'cls-${DateTime.now().millisecondsSinceEpoch}',
+          symbol: position.symbol,
+          isBuy: position.isBuy,
+          lots: position.lots,
+          openPrice: position.openPrice,
+          closePrice: position.currentPrice,
+          netProfit: position.profit,
+          closeTime: 'Just now',
+        ),
+      );
+      _accountBalances[_selectedLogin] =
+          (_accountBalances[_selectedLogin] ?? 0.0) + position.profit;
+    });
+    showAppMessage('Position ${position.symbol} closed successfully');
   }
 
-  void _cancelPendingOrder(ActivityPendingOrder order) {
-    showDialog<void>(
+  Future<void> _cancelPendingOrder(ActivityPendingOrder order) async {
+    final scheme = Theme.of(context).colorScheme;
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text(
-          'Cancel Pending Order',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to cancel ${order.orderType} order for ${order.symbol} (${order.lots.toStringAsFixed(2)} Lots)?',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 13,
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Keep Order',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              setState(() {
-                _accountPendingOrders[_selectedLogin]?.removeWhere((o) => o.id == order.id);
-              });
-              showAppMessage('Pending order for ${order.symbol} cancelled');
-            },
-            child: const Text('Cancel Order'),
-          ),
-        ],
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: scheme.surface,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(LucideIcons.alertCircle, color: Color(0xFFEF4444), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Cancel Pending Order', style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 3),
+                        Text('${order.orderType} • ${order.symbol}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Do you want to cancel this pending order? This action will remove it from your pending orders.',
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.45),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: Column(
+                  children: [
+                    _activityConfirmRow('Order Type', order.orderType, scheme),
+                    const SizedBox(height: 10),
+                    _activityConfirmRow('Volume', '${order.lots.toStringAsFixed(2)} Lots', scheme),
+                    const SizedBox(height: 10),
+                    _activityConfirmRow('Order Price', '${order.orderPrice}', scheme),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        foregroundColor: scheme.onSurface,
+                        side: BorderSide(color: scheme.outlineVariant),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                      ),
+                      child: const Text('Keep Order', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                      ),
+                      child: const Text('Cancel Order', style: TextStyle(fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _accountPendingOrders[_selectedLogin]?.removeWhere((o) => o.id == order.id);
+    });
+    showAppMessage('Pending order for ${order.symbol} cancelled');
+  }
+
+  Widget _activityConfirmRow(
+    String label,
+    String value,
+    ColorScheme scheme, {
+    Color? valueColor,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5, fontWeight: FontWeight.w600)),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(color: valueColor ?? scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w800),
+          ),
+        ),
+      ],
     );
   }
 

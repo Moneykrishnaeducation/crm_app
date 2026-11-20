@@ -1254,6 +1254,83 @@ class _MarketsSectionState extends State<_MarketsSection> {
       ];
     }
 
+    if (_selectedTabIndex == 3 || _selectedTabIndex == 5) {
+      final category = _selectedTabIndex == 3 ? 'FX Minors' : 'Cryptos';
+      return [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+          child: Column(
+            children: [
+              Icon(
+                _selectedTabIndex == 3 ? LucideIcons.coins : LucideIcons.bitcoin,
+                size: 25,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 9),
+              Text(
+                'No $category sample instruments',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Instruments will appear here when market data is connected.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 10.5,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ];
+    }
+
+    if (_selectedTabIndex == 4) {
+      // Index instruments currently available in the sample set.
+      return [
+        _MarketQuoteRow(
+          badge: const _HKFlagBadge(),
+          symbol: 'HK50c',
+          change: '↗ 0.41%',
+          isChangePositive: true,
+          time: '14:35:30',
+          sell: '23,815.24',
+          buy: '23,828.94',
+          sellColor: const Color(0xFF16A34A),
+          buyColor: const Color(0xFF16A34A),
+          onTap: () => _showQuickTradeDialog(
+            context,
+            symbol: 'HK50c',
+            sellPrice: 23815.24,
+            buyPrice: 23828.94,
+          ),
+        ),
+        _MarketQuoteRow(
+          badge: const _USTECHBadge(),
+          symbol: 'USTECHc',
+          change: '↘ 0.98%',
+          isChangePositive: false,
+          time: '14:35:26',
+          sell: '27,535.38',
+          buy: '27,538.16',
+          sellColor: const Color(0xFF16A34A),
+          buyColor: const Color(0xFF16A34A),
+          onTap: () => _showQuickTradeDialog(
+            context,
+            symbol: 'USTECHc',
+            sellPrice: 27535.38,
+            buyPrice: 27538.16,
+          ),
+        ),
+      ];
+    }
+
     if (_selectedTabIndex == 2) {
       // Energy
       return [

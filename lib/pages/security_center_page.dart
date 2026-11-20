@@ -226,7 +226,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   _securityActionRow(
                     title: 'Login Password',
                     trailing: 'Change',
-                    onTap: () => _showSecurityAction('Change Login Password', 'Password change is a secure account action. Connect the password update endpoint to enable submission.'),
+                    onTap: _showChangeLoginPassword,
                   ),
                   _securityToggleRow(
                     title: 'Mail OTP',
@@ -2061,6 +2061,231 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+  Future<void> _showChangeLoginPassword() async {
+    final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
+    bool available = false;
+    bool enabled = false;
+    try {
+      available = await bio.isAvailable();
+      enabled = await bio.isEnabled();
+    } catch (_) {}
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (_) => _ChangeLoginPasswordSheet(
+        biometricSignIn: bio,
+        isBiometricAvailable: available,
+        isBiometricEnabled: enabled,
+      ),
+    );
+  }
+}
+
+class _ChangeLoginPasswordSheet extends StatefulWidget {
+  const _ChangeLoginPasswordSheet({
+    required this.biometricSignIn,
+    required this.isBiometricAvailable,
+    required this.isBiometricEnabled,
+  });
+  final BiometricSignIn biometricSignIn;
+  final bool isBiometricAvailable;
+  final bool isBiometricEnabled;
+
+  @override
+  State<_ChangeLoginPasswordSheet> createState() => _ChangeLoginPasswordSheetState();
+}
+
+class _ChangeLoginPasswordSheetState extends State<_ChangeLoginPasswordSheet> {
+  final _current = TextEditingController();
+  final _newPassword = TextEditingController();
+  final _confirm = TextEditingController();
+  int _step = 0;
+  bool _busy = false;
+  bool _hideCurrent = true;
+  bool _hideNew = true;
+  bool _hideConfirm = true;
+  String? _error;
+
+  bool get _dark => Theme.of(context).brightness == Brightness.dark;
+  Color get _text => Theme.of(context).colorScheme.onSurface;
+  Color get _muted => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get _field => _dark ? const Color(0xFF16253D) : const Color(0xFFF4F7FC);
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _newPassword.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  void _verifyPassword() {
+    if (_current.text.trim().isEmpty) {
+      setState(() => _error = 'Enter your current password.');
+      return;
+    }
+    // This is a UI preview only: no password-verification service is connected.
+    setState(() { _error = null; _step = 1; });
+  }
+
+  Future<void> _verifyBiometric() async {
+    if (_busy) return;
+    setState(() { _busy = true; _error = null; });
+    try {
+      final ok = await widget.biometricSignIn.authenticate(
+        localizedReason: 'Verify your identity to change your login password',
+      );
+      if (!mounted) return;
+      if (ok) {
+        setState(() => _step = 1);
+      } else {
+        setState(() => _error = 'Biometric verification was not completed.');
+      }
+    } on PlatformException catch (e) {
+      if (mounted) setState(() => _error = e.message ?? 'Biometric verification failed.');
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Biometric verification failed. Try your password.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _continue() {
+    if (_newPassword.text.length < 8) {
+      setState(() => _error = 'Use at least 8 characters for your new password.');
+    } else if (_newPassword.text != _confirm.text) {
+      setState(() => _error = 'The new passwords do not match.');
+    } else if (_current.text.isNotEmpty && _newPassword.text == _current.text) {
+      setState(() => _error = 'Choose a password different from your current password.');
+    } else {
+      setState(() { _error = null; _step = 2; });
+    }
+  }
+
+  void _confirmChange() {
+    // No account password is changed until a secure backend endpoint is connected.
+    Navigator.of(context).pop();
+    showAppMessage('Password change preview completed. No account password was changed.');
+  }
+
+  Widget _fieldInput(String label, String hint, TextEditingController controller, bool hidden, VoidCallback toggle) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 7),
+      Container(
+        decoration: BoxDecoration(
+          color: _field,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: _dark ? const Color(0xFF2A3A53) : const Color(0xFFCBD5E1)),
+        ),
+        child: TextField(
+          controller: controller,
+          obscureText: hidden,
+          style: TextStyle(color: _text, fontSize: 14),
+          onChanged: (_) { if (_error != null) setState(() => _error = null); },
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: _muted, fontSize: 13),
+            prefixIcon: Icon(LucideIcons.lockKeyhole, color: _muted, size: 18),
+            suffixIcon: IconButton(onPressed: toggle, icon: Icon(hidden ? LucideIcons.eye : LucideIcons.eyeOff, color: _muted, size: 18)),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _step == 0 ? 'Verify your identity' : _step == 1 ? 'Set your new password' : 'Confirm password change';
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+          border: Border.all(color: _dark ? const Color(0xFF23354E) : const Color(0xFFE2E8F0)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 10, 22, 24),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _muted.withValues(alpha: .35), borderRadius: BorderRadius.circular(8)))),
+              const SizedBox(height: 18),
+              Row(children: [
+                const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 24),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Change Login Password', style: TextStyle(color: _text, fontSize: 17, fontWeight: FontWeight.w800)),
+                  Text(title, style: TextStyle(color: _muted, fontSize: 12)),
+                ])),
+                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(LucideIcons.x, color: _muted)),
+              ]),
+              const SizedBox(height: 16),
+              Row(children: List.generate(3, (i) => Expanded(child: Container(
+                height: 4,
+                margin: EdgeInsets.only(right: i == 2 ? 0 : 6),
+                decoration: BoxDecoration(color: i <= _step ? _blueRoyal : (_dark ? const Color(0xFF2A3A53) : const Color(0xFFE2E8F0)), borderRadius: BorderRadius.circular(8)),
+              )))),
+              const SizedBox(height: 18),
+              if (_step == 0) ...[
+                Text('Verify your identity before changing your login password.', style: TextStyle(color: _muted, fontSize: 13, height: 1.45)),
+                const SizedBox(height: 16),
+                _fieldInput('Current password', 'Enter your current password', _current, _hideCurrent, () => setState(() => _hideCurrent = !_hideCurrent)),
+                if (widget.isBiometricAvailable && widget.isBiometricEnabled) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _verifyBiometric,
+                    icon: const Icon(LucideIcons.fingerprint, size: 19),
+                    label: const Text('Use Fingerprint / Face ID instead'),
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+                  ),
+                ],
+              ] else if (_step == 1) ...[
+                Text('Enter a new password and confirm it below.', style: TextStyle(color: _muted, fontSize: 13, height: 1.45)),
+                const SizedBox(height: 16),
+                _fieldInput('New password', 'At least 8 characters', _newPassword, _hideNew, () => setState(() => _hideNew = !_hideNew)),
+                const SizedBox(height: 13),
+                _fieldInput('Confirm new password', 'Re-enter your new password', _confirm, _hideConfirm, () => setState(() => _hideConfirm = !_hideConfirm)),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(color: _dark ? const Color(0xFF142B25) : _greenLight, borderRadius: BorderRadius.circular(14), border: Border.all(color: _dark ? const Color(0xFF245B43) : _greenBorder)),
+                  child: Row(children: [
+                    const Icon(LucideIcons.shieldCheck, color: _greenAccent, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text('Your new password and confirmation match.', style: TextStyle(color: _text, fontSize: 13, height: 1.4))),
+                  ]),
+                ),
+                const SizedBox(height: 12),
+                Text('This is a preview flow. The account password will not change until the secure password update service is connected.', style: TextStyle(color: _muted, fontSize: 12, height: 1.4)),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(_error!, style: const TextStyle(color: _redAccent, fontSize: 12.5, fontWeight: FontWeight.w600)),
+              ],
+              const SizedBox(height: 18),
+              SizedBox(height: 50, child: FilledButton(
+                onPressed: _busy ? null : _step == 0 ? _verifyPassword : _step == 1 ? _continue : _confirmChange,
+                style: FilledButton.styleFrom(backgroundColor: _bluePrimary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                child: Text(_step == 0 ? 'Verify & Continue' : _step == 1 ? 'Continue' : 'Confirm Password Change', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              )),
+              if (_step > 0) TextButton(onPressed: () => setState(() { _step--; _error = null; }), child: const Text('Back')),
+              Text('Your password is never displayed in plain text.', textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 11)),
+            ]),
           ),
         ),
       ),

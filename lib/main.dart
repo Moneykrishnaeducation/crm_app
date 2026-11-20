@@ -730,6 +730,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final primaryIndex = _primaryTabIndex;
+    final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     return PopScope(
       key: const Key('app_shell_pop_scope'),
       canPop: _selectedPage == 'Dashboard' &&
@@ -826,8 +827,9 @@ class _AppShellState extends State<AppShell> {
                   ),
                 ),
               ),
-              if (!const {'Settings', 'Theme Mode', 'Privacy Policy'}
-                  .contains(_selectedPage))
+              if (!isKeyboardOpen &&
+                  !const {'Settings', 'Theme Mode', 'Privacy Policy'}
+                      .contains(_selectedPage))
                 Positioned(
                   left: 0,
                   right: 0,

@@ -27,7 +27,6 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     final liveAccounts = widget.accounts.where((a) => a.type == 'Live MT5').toList();
     final query = _query.trim().toLowerCase();
     final filtered = liveAccounts.where((a) => query.isEmpty || a.login.toLowerCase().contains(query) || a.name.toLowerCase().contains(query)).toList();
-    final totalBalance = liveAccounts.fold<double>(0, (sum, a) => sum + (double.tryParse(a.balance.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0));
     final surface = theme.colorScheme.surface;
     final border = theme.dividerColor.withValues(alpha: dark ? .72 : .8);
     final fg = theme.colorScheme.onSurface;

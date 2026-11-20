@@ -85,6 +85,7 @@ void main() {
     expect(find.text('Buy'), findsWidgets);
 
     // Tap on Metals filter pill
+    await tester.ensureVisible(find.text('Metals'));
     await tester.tap(find.text('Metals'));
     await tester.pumpAndSettle();
     expect(find.descendant(of: find.byType(BrokerDashboardPage), matching: find.text('XAUUSD')), findsOneWidget);

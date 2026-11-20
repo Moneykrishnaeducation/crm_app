@@ -1619,23 +1619,30 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   }
 
   void _submit(bool withdrawal) async {
-    if (_amount.text.isEmpty ||
-        (withdrawal && (double.tryParse(_amount.text) ?? 0) < 10)) {
-      showAppMessage(withdrawal ? 'Enter a withdrawal amount of at least \$10.' : 'Enter an amount to continue.');
+    if (_isSubmitting) return;
+
+    final normalizedAmount = _amount.text.trim().replaceAll(',', '');
+    final parsedAmount = double.tryParse(normalizedAmount);
+    if (parsedAmount == null || !parsedAmount.isFinite || parsedAmount <= 0) {
+      showAppMessage('Enter a valid amount greater than zero.');
+      return;
+    }
+    if (withdrawal && parsedAmount < 10) {
+      showAppMessage('Enter a withdrawal amount of at least \$10.');
       return;
     }
 
     if (withdrawal) {
-      final amt = _amount.text;
+      final amt = parsedAmount.toStringAsFixed(2);
       unawaited(AppNotificationCenter.instance.sendNotification(
-        title: 'Withdrawal Request Submitted',
-        body: 'Withdrawal request of \$$amt USD from MT5 #3311 is under review.',
+        title: 'Withdrawal Draft Created',
+        body: 'A withdrawal draft for \$amt USD from MT5 #3311 is ready for review. No withdrawal has been submitted.',
         category: 'Funds',
         icon: LucideIcons.arrowUpRight,
         isGold: false,
         sendToMobilePanel: true,
       ));
-      showAppMessage('Withdrawal request is ready for review.');
+      showAppMessage('Withdrawal details are ready for review. No request was submitted.');
       return;
     }
 
@@ -1644,7 +1651,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    final amountStr = _amount.text;
+    final amountStr = parsedAmount.toStringAsFixed(2);
     final currencyStr = _method == 2 ? 'USDT' : (_currency == 0 ? 'USD' : 'INR');
     final estimatedUsd = _getEstimatedUsd();
     final methodName = switch (_method) {
@@ -1655,8 +1662,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final refId = 'VTX-DEP-${100000 + DateTime.now().millisecondsSinceEpoch % 900000}';
 
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Deposit Request Initiated',
-      body: '$currencyStr $amountStr ($methodName) initiated. Ref: $refId.',
+      title: 'Deposit Request Preview Created',
+      body: '$currencyStr $amountStr ($methodName) prepared locally. Ref: $refId. No payment or deposit request was sent.',
       category: 'Funds',
       icon: LucideIcons.wallet,
       isGold: true,
@@ -1672,7 +1679,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       method: methodName,
     );
 
-    showAppMessage('Deposit request $refId submitted successfully.');
+    showAppMessage('Deposit details prepared locally. No payment was initiated.');
   }
 
   void _showDepositResponseModal(

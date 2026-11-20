@@ -237,7 +237,7 @@ class _MockTicketDetailsPage extends StatefulWidget {
 
 class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
   final TextEditingController _replyController = TextEditingController();
-  final List<Map<String, String>> _messages = [];
+  final List<Map<String, dynamic>> _messages = [];\n  final List<PlatformFile> _replyAttachments = [];\n  bool _pickingReplyAttachment = false;
 
   bool get _canReply => widget.ticket['status'] == 'In-progress';
 
@@ -247,13 +247,13 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
     if (widget.ticket['id'] == 'TKT-2026-1036') {
       _messages.addAll([
         {'from': 'You', 'time': 'Today, 08:42 AM', 'body': 'I am unable to sign in to my MT5 account. The platform keeps showing an authorization error.'},
-        {'from': 'Support team', 'time': 'Today, 09:02 AM', 'body': 'Thank you for contacting us. Please confirm the MT5 login ID and the server name displayed in your account details. Do not share your password.'},
+        {'from': 'Support team', 'time': 'Today, 09:02 AM', 'body': 'Thank you for contacting us. Please confirm the MT5 login ID and the server name displayed in your account details. Do not share your password.', 'attachments': ['MT5_login_troubleshooting.pdf']},
         {'from': 'You', 'time': 'Today, 09:15 AM', 'body': 'My login ID is 8201456. The server shown is VTIndex-Live.'},
       ]);
     } else if (widget.ticket['id'] == 'TKT-2026-1019') {
       _messages.addAll([
         {'from': 'You', 'time': 'Yesterday, 03:55 PM', 'body': 'I need to correct the phone number registered on my profile.'},
-        {'from': 'Support team', 'time': 'Yesterday, 04:12 PM', 'body': 'We have received your request. Our verification team is reviewing the account details. We will update you here if any additional information is required.'},
+        {'from': 'Support team', 'time': 'Yesterday, 04:12 PM', 'body': 'We have received your request. Our verification team is reviewing the account details. We will update you here if any additional information is required.', 'attachments': ['Profile_update_guide.pdf']},
       ]);
     } else {
       _messages.add({'from': 'You', 'time': widget.ticket['updated'] ?? 'Recently', 'body': 'I am following up on this request. Please let me know if you need any further information.'});
@@ -266,12 +266,56 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
     super.dispose();
   }
 
+  Future<void> _pickReplyAttachments() async {
+    if (!_canReply || _pickingReplyAttachment) return;
+    setState(() => _pickingReplyAttachment = true);
+    try {
+      final files = await FilePicker.pickFiles(
+        type: FileType.custom, allowMultiple: true,
+        allowedExtensions: const ['png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'],
+      );
+      if (!mounted || files.isEmpty) return;
+      final accepted = <PlatformFile>[];
+      var rejected = false;
+      for (final file in files) {
+        final size = await file.length();
+        if (size != null && size <= 5 * 1024 * 1024) {
+          accepted.add(file);
+        } else {
+          rejected = true;
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        for (final file in accepted) {
+          if (_replyAttachments.length < 5) _replyAttachments.add(file);
+          else rejected = true;
+        }
+      });
+      if (rejected && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Attachments must be 5 MB or smaller. Maximum 5 files per reply.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not attach files: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _pickingReplyAttachment = false);
+    }
+  }
+
   void _sendReply() {
     final body = _replyController.text.trim();
-    if (body.isEmpty || !_canReply) return;
+    if ((body.isEmpty && _replyAttachments.isEmpty) || !_canReply) return;
     setState(() {
-      _messages.add({'from': 'You', 'time': 'Just now', 'body': body});
+      _messages.add({
+        'from': 'You', 'time': 'Just now', 'body': body,
+        'attachments': _replyAttachments.map((file) => file.name).toList(),
+      });
       _replyController.clear();
+      _replyAttachments.clear();
     });
     FocusScope.of(context).unfocus();
   }
@@ -351,8 +395,28 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
         SafeArea(top: false, child: Container(
           padding: EdgeInsets.fromLTRB(14, 10, 14, 10 + MediaQuery.viewInsetsOf(context).bottom),
           decoration: BoxDecoration(color: scheme.surface, border: Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: .7)))),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Expanded(child: TextField(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (_replyAttachments.isNotEmpty)
+              SizedBox(height: 42, child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  for (final file in _replyAttachments)
+                    Padding(padding: const EdgeInsets.only(right: 7), child: InputChip(
+                      avatar: const Icon(LucideIcons.paperclip, size: 14),
+                      label: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 150),
+                        child: Text(file.name, overflow: TextOverflow.ellipsis)),
+                      onDeleted: () => setState(() => _replyAttachments.remove(file)),
+                    )),
+                ],
+              )),
+            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              IconButton(
+                tooltip: 'Attach files', onPressed: _canReply ? _pickReplyAttachments : null,
+                icon: _pickingReplyAttachment
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(LucideIcons.paperclip),
+              ),
+              Expanded(child: TextField(
               controller: _replyController, enabled: _canReply, minLines: 1, maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
@@ -370,6 +434,7 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
               style: FilledButton.styleFrom(padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               child: const Icon(LucideIcons.send, size: 17),
             )),
+            ]),
           ]),
         )),
       ]),
@@ -386,7 +451,7 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
     ]),
   );
 
-  Widget _messageBubble(Map<String, String> message, ThemeData theme) {
+  Widget _messageBubble(Map<String, dynamic> message, ThemeData theme) {
     final isUser = message['from'] == 'You';
     final scheme = theme.colorScheme;
     return Align(
@@ -408,7 +473,28 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
               Text(message['time']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 8)),
             ]),
             const SizedBox(height: 7),
-            Text(message['body']!, style: TextStyle(color: scheme.onSurface, fontSize: 11, height: 1.5)),
+            if ((message['body'] as String? ?? '').isNotEmpty)
+              Text(message['body'] as String, style: TextStyle(color: scheme.onSurface, fontSize: 11, height: 1.5)),
+            if ((message['attachments'] as List?)?.isNotEmpty == true) ...[
+              const SizedBox(height: 9),
+              for (final name in message['attachments'] as List)
+                Container(
+                  margin: const EdgeInsets.only(top: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: .07),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: theme.dividerColor.withValues(alpha: .6)),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(LucideIcons.fileText, size: 14, color: scheme.primary),
+                    const SizedBox(width: 7),
+                    Flexible(child: Text(name.toString(), style: TextStyle(color: scheme.onSurface, fontSize: 9, fontWeight: FontWeight.w700))),
+                    const SizedBox(width: 5),
+                    Icon(LucideIcons.paperclip, size: 11, color: scheme.onSurfaceVariant),
+                  ]),
+                ),
+            ],
           ]),
         ),
       ),

@@ -486,13 +486,12 @@ class _TradeReportPageState extends State<TradeReportPage> {
           await Future.delayed(const Duration(milliseconds: 350));
           if (mounted) setState(() {});
         },
-        child: CustomScrollView(
+        child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                   _buildDateRangeFilterRow(cardBg, cardBorder, mutedText, titleText),
                   const SizedBox(height: 14),
                   _buildHeroAccountCard(currentAcc, balanceStr, equityStr),
@@ -532,10 +531,8 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   _buildPnLAnalysisSection(
                     cardBg, cardBorder, mutedText, titleText, isDark,
                   ),
-                ]),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

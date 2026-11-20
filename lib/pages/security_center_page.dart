@@ -250,7 +250,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   const SizedBox(height: 28),
                   _securitySectionLabel('Other Settings'),
                   const SizedBox(height: 14),
-                  _securityActionRow(title: 'Account Logs', trailing: '', onTap: () => _openSecuritySubPage('Account Logs')),
                   _securityActionRow(title: 'Device Management', trailing: '', onTap: () => _openSecuritySubPage('Device Management')),
                   _securityActionRow(title: 'Account Management', trailing: '', onTap: () => _openSecuritySubPage('Account Management'), showDivider: false),
                 ],

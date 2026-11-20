@@ -282,7 +282,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                                 ),
                                 const SizedBox(width: 5),
                                 const Text(
-                                  'INSTANT TRANSFER',
+                                  'TRANSFER PREVIEW',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w900,
@@ -345,7 +345,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'INSTANT TRANSFER',
+                                      'TRANSFER PREVIEW',
                                       style: TextStyle(
                                         color: brandPrimary,
                                         fontWeight: FontWeight.w800,
@@ -1391,7 +1391,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
       destinationLogin: toLogin,
       amount: amount,
       timestamp: DateTime.now(),
-      status: 'Completed',
+      status: 'Preview',
     );
 
     widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
@@ -1457,7 +1457,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Transfer Successful!',
+                  'Transfer Preview Completed',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                     fontSize: 20,
@@ -1466,7 +1466,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Funds have been credited instantly',
+                  'Local account balances were updated for this preview only',
                   style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
@@ -1505,7 +1505,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                       const SizedBox(height: 8),
                       _buildSummaryRow(label: 'To Account', value: '#${record.destinationLogin}'),
                       const SizedBox(height: 8),
-                      _buildSummaryRow(label: 'Status', value: 'Completed', valueColor: const Color(0xFF10B981), isBold: true),
+                      _buildSummaryRow(label: 'Status', value: 'Preview only', valueColor: colors.primary, isBold: true),
                     ],
                   ),
                 ),

@@ -1798,7 +1798,7 @@ class _DepositResponseSheet extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Your deposit request has been submitted for processing.',
+            'This is a local deposit preview. No payment or deposit request has been sent.',
             textAlign: TextAlign.center,
             style: TextStyle(color: muted, fontSize: 12),
           ),

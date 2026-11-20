@@ -142,7 +142,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  visible ? r'\$12,450.00' : '••••••••',
+                  visible ? r'$12,450.00' : '••••••••',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
@@ -198,7 +198,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  visible ? r'+\$245.80' : '••••••',
+                  visible ? r'+$245.80' : '••••••',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

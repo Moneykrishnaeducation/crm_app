@@ -43,8 +43,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
   void initState() {
     super.initState();
     _selectedLogin = widget.selectedAccountLogin ?? '52132132';
-    _startDate = DateTime(2026, 11, 1);
-    _endDate = DateTime(2026, 11, 17);
+    final today = DateTime.now();
+    _endDate = DateTime(today.year, today.month, today.day);
+    _startDate = _endDate.subtract(const Duration(days: 6));
+    _selectedPreset = '7days';
   }
 
   @override

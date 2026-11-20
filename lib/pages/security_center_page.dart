@@ -2067,16 +2067,17 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
 
                   // Title & Subtitle
                   Text(
-                    'Security Verification',
+                    'Verify your identity',
                     style: TextStyle(
                       color: _textColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.35,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Enter your CRM password to access Security Center.',
+                    'Confirm it is you before setting a new login password.',
                     style: TextStyle(
                       color: _mutedColor,
                       fontSize: 13.5,
@@ -2087,11 +2088,12 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
 
                   // Password Label: "CRM Password"
                   Text(
-                    'CRM Password',
+                    'CURRENT PASSWORD',
                     style: TextStyle(
                       color: _textColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .9,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -2100,7 +2102,7 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                   Container(
                     decoration: BoxDecoration(
                       color: _fieldBg,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(15),
                       border: Border.all(
                         color: _fieldBorder,
                         width: 1.2,
@@ -2237,7 +2239,7 @@ class _VerifySecurityPasswordModalState extends State<VerifySecurityPasswordModa
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Protected by 256-bit encryption. Your password is not stored.',
+                          'Preview only: password verification is not connected to the authentication service.',
                           style: TextStyle(
                             color: _mutedColor,
                             fontSize: 12,
@@ -2278,6 +2280,7 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
   bool get _dark => Theme.of(context).brightness == Brightness.dark;
   Color get _text => Theme.of(context).colorScheme.onSurface;
   Color get _muted => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get _outline => _dark ? const Color(0xFF2A3A53) : const Color(0xFFDCE5F1);
 
   @override
   void dispose() {
@@ -2293,8 +2296,8 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
       Container(
         decoration: BoxDecoration(
           color: _dark ? const Color(0xFF16253D) : const Color(0xFFF4F7FC),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _dark ? const Color(0xFF2A3A53) : const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: _outline),
         ),
         child: TextField(
           controller: controller,
@@ -2345,16 +2348,18 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _muted.withValues(alpha: .35), borderRadius: BorderRadius.circular(8)))),
               const SizedBox(height: 18),
               Row(children: [
-                const Icon(LucideIcons.lockKeyhole, color: _bluePrimary, size: 23),
+                Container(width: 44, height: 44, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF174A8B), Color(0xFF0B2C55)]), borderRadius: BorderRadius.circular(14), border: Border.all(color: _brokerGold)), child: const Icon(LucideIcons.lockKeyhole, color: _brokerGold, size: 22)),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Set New Password', style: TextStyle(color: _text, fontSize: 17, fontWeight: FontWeight.w800)),
-                  Text('Create a new password for your account', style: TextStyle(color: _muted, fontSize: 12)),
+                  Text('Create a new password', style: TextStyle(color: _text, fontSize: 17, fontWeight: FontWeight.w800)),
+                  Text('Choose a strong password you have not used before', style: TextStyle(color: _muted, fontSize: 12)),
                 ])),
                 IconButton(onPressed: () => Navigator.pop(context), icon: Icon(LucideIcons.x, color: _muted)),
               ]),
               const SizedBox(height: 20),
-              _passwordField('New password', 'At least 8 characters', _newPassword, _hideNew, () => setState(() => _hideNew = !_hideNew)),
+              Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: _dark ? const Color(0xFF162744) : const Color(0xFFF2F6FC), borderRadius: BorderRadius.circular(14), border: Border.all(color: _outline)), child: Row(children: [const Icon(LucideIcons.info, color: _brokerGold, size: 17), const SizedBox(width: 9), Expanded(child: Text('Use at least 8 characters. A mix of letters, numbers and symbols is recommended.', style: TextStyle(color: _muted, fontSize: 11.5, height: 1.4)))])),
+              const SizedBox(height: 18),
+              _passwordField('New password', 'Enter your new password', _newPassword, _hideNew, () => setState(() => _hideNew = !_hideNew)),
               const SizedBox(height: 16),
               _passwordField('Confirm new password', 'Re-enter your new password', _confirm, _hideConfirm, () => setState(() => _hideConfirm = !_hideConfirm)),
               if (_error != null) ...[
@@ -2364,7 +2369,7 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
               const SizedBox(height: 20),
               SizedBox(height: 50, child: FilledButton(
                 onPressed: _continue,
-                style: FilledButton.styleFrom(backgroundColor: _bluePrimary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                style: FilledButton.styleFrom(backgroundColor: _bluePrimary, foregroundColor: Colors.white, elevation: 0, side: const BorderSide(color: _brokerGold), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                 child: const Text('Continue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
               )),
             ]),
@@ -2394,22 +2399,22 @@ class _PasswordChangeConfirmSheet extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: scheme.outlineVariant, borderRadius: BorderRadius.circular(8)))),
           const SizedBox(height: 22),
-          const Icon(LucideIcons.shieldCheck, color: _bluePrimary, size: 32),
-          const SizedBox(height: 12),
-          Text('Confirm Password Change', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)),
+          Container(width: 62, height: 62, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF174A8B), Color(0xFF0B2C55)]), borderRadius: BorderRadius.circular(19), border: Border.all(color: _brokerGold), boxShadow: const [BoxShadow(color: Color(0x1A10264A), blurRadius: 14, offset: Offset(0, 5))]), child: const Icon(LucideIcons.shieldCheck, color: _brokerGold, size: 29)),
+          const SizedBox(height: 16),
+          Text('Review password change', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text('Are you sure you want to proceed with changing your login password?', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
+          Text('You are about to confirm a new login password for this account. Do you want to continue?', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
           const SizedBox(height: 22),
           Row(children: [
             Expanded(child: OutlinedButton(
               onPressed: () => Navigator.pop(context, false),
-              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50), side: BorderSide(color: dark ? const Color(0xFF40536D) : const Color(0xFFCBD8E8)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               child: const Text('Cancel'),
             )),
             const SizedBox(width: 10),
             Expanded(child: FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(backgroundColor: _bluePrimary, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+              style: FilledButton.styleFrom(backgroundColor: _bluePrimary, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(50), side: const BorderSide(color: _brokerGold), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               child: const Text('Confirm'),
             )),
           ]),
@@ -2438,17 +2443,17 @@ class _PasswordChangeSuccessSheet extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
             width: 66, height: 66,
-            decoration: BoxDecoration(color: _greenLight, shape: BoxShape.circle, border: Border.all(color: _greenBorder)),
-            child: const Icon(LucideIcons.check, color: _greenAccent, size: 34),
+            decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF174A8B), Color(0xFF0B2C55)]), shape: BoxShape.circle, border: Border.all(color: _brokerGold, width: 1.5), boxShadow: const [BoxShadow(color: Color(0x1A10264A), blurRadius: 16, offset: Offset(0, 6))]),
+            child: const Icon(LucideIcons.check, color: _brokerGold, size: 34),
           ),
           const SizedBox(height: 18),
-          Text('Password Change Confirmed', style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
+          Text('Confirmation complete', style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Text('Your password change has been confirmed in this preview. The account password has not been updated because the secure password service is not connected.', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
           const SizedBox(height: 22),
           SizedBox(width: double.infinity, height: 48, child: FilledButton(
             onPressed: () => Navigator.pop(context),
-            style: FilledButton.styleFrom(backgroundColor: _bluePrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+            style: FilledButton.styleFrom(backgroundColor: _bluePrimary, foregroundColor: Colors.white, side: const BorderSide(color: _brokerGold), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w700)),
           )),
         ]),

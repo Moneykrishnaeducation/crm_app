@@ -7,7 +7,7 @@ const _loginGoldBorder = Color(0x99D4AF37);
 const _loginRoyalBlue = Color(0xFF1E70E8);
 const _loginDarkBlueText = Color(0xFF0D1B3E);
 const _loginMutedBlueText = Color(0xFF5A718F);
-const _loginPlaceholderText = Color(0xFF7E92A8);
+const _loginPlaceholderText = Color(0xFF687D9B);
 
 class LoginPage extends StatefulWidget {
   const LoginPage({
@@ -434,7 +434,7 @@ class _LoginPageState extends State<LoginPage> {
     final inputBg = isDark ? const Color(0xFF1C1D23) : const Color(0xFFF4F8FD);
     final inputBorder = isDark ? const Color(0x2EFFFFFF) : _loginGoldBorder;
     final inputTextColor = isDark ? Colors.white : _loginDarkBlueText;
-    final placeholderColor = isDark ? const Color(0xFF757989) : _loginPlaceholderText;
+    final placeholderColor = isDark ? const Color(0xFFADB4C3) : _loginPlaceholderText;
     final prefixIconColor = isDark ? const Color(0xFF8A90A2) : _loginRoyalBlue;
 
     return Form(
@@ -520,11 +520,12 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'Username or Email',
+                  hintText: 'Enter username or email',
                   hintStyle: TextStyle(
                     color: placeholderColor,
-                    fontSize: 14.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    letterSpacing: 0.05,
                   ),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 18, right: 12),
@@ -575,7 +576,7 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'Password',
+                  hintText: 'Enter your password',
                   hintStyle: TextStyle(
                     color: placeholderColor,
                     fontSize: 14.5,
@@ -838,7 +839,7 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'Full Name',
+                  hintText: 'Enter your full name',
                   hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 18, right: 12),
@@ -881,7 +882,7 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
-                        hintText: 'Email Address',
+                        hintText: 'Enter your email address',
                         hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
                         prefixIcon: Padding(
                           padding: const EdgeInsets.only(left: 18, right: 12),
@@ -936,7 +937,7 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'IB Referral Code (Optional)',
+                  hintText: 'Enter referral code (optional)',
                   hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 18, right: 12),

@@ -7,7 +7,6 @@ import 'app_notifications.dart';
 export 'app_notifications.dart';
 import 'biometric_sign_in.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';

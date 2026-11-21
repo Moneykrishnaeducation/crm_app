@@ -88,9 +88,9 @@ void main() {
         find.textContaining('Biometric sign-in unavailable'),
         findsOneWidget,
       );
-      expect(find.text('Email or Login ID'), findsOneWidget);
+      expect(find.text('Phone number, email or username'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Login'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Log in'), findsOneWidget);
     },
   );
 }

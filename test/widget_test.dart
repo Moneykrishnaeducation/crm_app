@@ -16,10 +16,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify Login page is shown
-    expect(find.text('Login'), findsWidgets);
+    expect(find.text('Log in'), findsWidgets);
 
     // Tap Login button to enter dashboard
-    final loginBtn = find.widgetWithText(FilledButton, 'Login');
+    final loginBtn = find.widgetWithText(FilledButton, 'Log in');
     expect(loginBtn, findsOneWidget);
     await tester.tap(loginBtn);
     await tester.pumpAndSettle();

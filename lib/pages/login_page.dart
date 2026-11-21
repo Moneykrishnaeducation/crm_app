@@ -42,6 +42,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
   bool _biometricBusy = false;
+  bool _isSubmitting = false;
 
   BiometricSignIn get _biometricService =>
       widget.biometricSignIn ?? BiometricSignIn.instance;
@@ -50,6 +51,34 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     unawaited(_loadBiometricSignIn());
+    unawaited(_loadRememberedLogin());
+  }
+
+  Future<void> _loadRememberedLogin() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final remembered = preferences.getBool('vtindex_remember_login') ?? true;
+      final identifier = preferences.getString('vtindex_login_identifier') ?? '';
+      if (!mounted) return;
+      setState(() {
+        _rememberMe = remembered;
+        if (remembered) _emailController.text = identifier;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveRememberedLogin() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setBool('vtindex_remember_login', _rememberMe);
+      if (_rememberMe) {
+        await preferences.setString('vtindex_login_identifier', _emailController.text.trim());
+      } else {
+        await preferences.remove('vtindex_login_identifier');
+      }
+    } catch (_) {
+      if (mounted) showAppMessage('Could not save the Remember Me preference on this device.');
+    }
   }
 
   Future<void> _loadBiometricSignIn() async {
@@ -66,7 +95,6 @@ class _LoginPageState extends State<LoginPage> {
         _biometricEnabled = enabled;
         _biometricAvailable = available;
       });
-      if (enabled && available) await _signInWithBiometrics();
     } on PlatformException {
       if (mounted) {
         setState(() {
@@ -111,7 +139,8 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (!mounted) return;
       if (authenticated) {
-        _submit();
+        HapticFeedback.selectionClick();
+        widget.onLogin?.call();
       } else {
         showAppMessage('Biometric sign-in was canceled. Use your login ID and password instead.');
       }
@@ -137,10 +166,30 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_isSubmitting || _biometricBusy) return;
+    FocusScope.of(context).unfocus();
     final form = _loginFormKey.currentState;
-    if (form == null || !form.validate()) return;
-    widget.onLogin?.call();
+    if (form == null || !form.validate()) {
+      showAppMessage('Check the highlighted fields and try again.');
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    HapticFeedback.selectionClick();
+    await _saveRememberedLogin();
+    if (!mounted) return;
+    try {
+      // Demo-mode navigation. Connect a real authentication service before production use.
+      if (widget.onLogin != null) {
+        widget.onLogin!.call();
+      } else {
+        showAppMessage('Sign-in is not connected. Please contact the administrator.');
+      }
+    } catch (_) {
+      if (mounted) showAppMessage('Unable to sign in right now. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _submitSignUp() {
@@ -197,7 +246,7 @@ class _LoginPageState extends State<LoginPage> {
             FilledButton(
               onPressed: () {
                 Navigator.pop(sheetContext);
-                showAppMessage('Password reset instructions sent to your registered email.');
+                showAppMessage('Password recovery is not connected yet. Please contact customer support.');
               },
               style: FilledButton.styleFrom(
                 backgroundColor: _loginRoyalBlue,
@@ -211,7 +260,7 @@ class _LoginPageState extends State<LoginPage> {
             OutlinedButton(
               onPressed: () {
                 Navigator.pop(sheetContext);
-                showAppMessage('Support chat will open shortly.');
+                showAppMessage('Support chat is not available in this demo. Please use your broker support channel.');
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: _loginDarkBlueText,
@@ -458,7 +507,10 @@ class _LoginPageState extends State<LoginPage> {
               child: TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                textCapitalization: TextCapitalization.none,
+                autocorrect: false,
                 textInputAction: TextInputAction.next,
+                validator: (value) => _required(value, 'your username or email'),
                 cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
                 style: TextStyle(
                   color: inputTextColor,
@@ -508,6 +560,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Center(
               child: TextFormField(
                 controller: _passwordController,
+                validator: (value) => _required(value, 'your password'),
                 obscureText: !_passwordVisible,
                 obscuringCharacter: '•',
                 textInputAction: TextInputAction.done,
@@ -563,7 +616,10 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               Flexible(
                 child: InkWell(
-                  onTap: () => setState(() => _rememberMe = !_rememberMe),
+                  onTap: () {
+                setState(() => _rememberMe = !_rememberMe);
+                unawaited(_saveRememberedLogin());
+              },
                   borderRadius: BorderRadius.circular(6),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
@@ -632,9 +688,10 @@ class _LoginPageState extends State<LoginPage> {
 
           // Login button (Royal blue gradient pill with gold rim & arrow)
           _buildRaisedButton(
-            label: 'Login',
-            onPressed: _submit,
+            label: _isSubmitting ? 'Signing in...' : 'Login',
+            onPressed: _isSubmitting ? () {} : _submit,
             isDark: isDark,
+            isLoading: _isSubmitting,
           ),
           const SizedBox(height: 28),
 
@@ -1014,6 +1071,7 @@ class _LoginPageState extends State<LoginPage> {
     required String label,
     required VoidCallback onPressed,
     required bool isDark,
+    bool isLoading = false,
   }) {
     return FilledButton(
       onPressed: onPressed,
@@ -1062,7 +1120,16 @@ class _LoginPageState extends State<LoginPage> {
             alignment: Alignment.center,
             children: [
               Center(
-                child: Text(
+                child: isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
                   label,
                   style: const TextStyle(
                     color: Colors.white,
@@ -1072,7 +1139,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              Positioned(
+              if (!isLoading)
+                Positioned(
                 right: 8,
                 child: Container(
                   width: 42,

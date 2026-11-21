@@ -342,6 +342,36 @@ class BrokerAccount {
   final List<double> equityHistory;
   final List<BrokerOpenPosition> openPositions;
   final List<BrokerTradeRecord> recentTrades;
+
+  BrokerAccount copyWith({
+    String? name,
+    String? login,
+    String? leverage,
+    String? balance,
+    String? equity,
+    String? type,
+    String? server,
+    String? currency,
+    double? floatingPnl,
+    List<double>? equityHistory,
+    List<BrokerOpenPosition>? openPositions,
+    List<BrokerTradeRecord>? recentTrades,
+  }) {
+    return BrokerAccount(
+      name ?? this.name,
+      login ?? this.login,
+      leverage ?? this.leverage,
+      balance ?? this.balance,
+      equity ?? this.equity,
+      type ?? this.type,
+      server: server ?? this.server,
+      currency: currency ?? this.currency,
+      floatingPnl: floatingPnl ?? this.floatingPnl,
+      equityHistory: equityHistory ?? this.equityHistory,
+      openPositions: openPositions ?? this.openPositions,
+      recentTrades: recentTrades ?? this.recentTrades,
+    );
+  }
 }
 class BrokerOpenPosition {
   const BrokerOpenPosition({required this.symbol, required this.side, required this.volume, required this.openPrice, required this.currentPrice, required this.profit});
@@ -685,18 +715,28 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   }
 }
 
+enum _SettingsView { menu, investorPassword, updateLeverage }
 enum _PasswordStep { input, confirm, done }
 
-class _ChangeInvestorPasswordSheet extends StatefulWidget {
-  const _ChangeInvestorPasswordSheet({required this.account});
+class _BrokerAccountSettingsSheet extends StatefulWidget {
+  const _BrokerAccountSettingsSheet({
+    required this.account,
+    this.onLeverageUpdated,
+  });
 
   final BrokerAccount account;
+  final ValueChanged<String>? onLeverageUpdated;
 
   @override
-  State<_ChangeInvestorPasswordSheet> createState() => _ChangeInvestorPasswordSheetState();
+  State<_BrokerAccountSettingsSheet> createState() => _BrokerAccountSettingsSheetState();
 }
 
-class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordSheet> {
+typedef _ChangeInvestorPasswordSheet = _BrokerAccountSettingsSheet;
+
+class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet> {
+  _SettingsView _activeView = _SettingsView.menu;
+
+  // Investor password state
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _obscurePassword = true;
@@ -704,6 +744,31 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
   String? _error;
   _PasswordStep _step = _PasswordStep.input;
   String? _savedPassword;
+
+  // Leverage state
+  late String _currentLeverage = widget.account.leverage;
+  late String _selectedLeverage = widget.account.leverage;
+  bool _leverageUpdated = false;
+
+  static const List<String> _leverageOptions = [
+    '1:50',
+    '1:100',
+    '1:200',
+    '1:400',
+    '1:500',
+    '1:1000',
+    '1:2000',
+  ];
+
+  static const Map<String, String> _leverageMargins = {
+    '1:50': '2.00% Margin',
+    '1:100': '1.00% Margin',
+    '1:200': '0.50% Margin',
+    '1:400': '0.25% Margin',
+    '1:500': '0.20% Margin',
+    '1:1000': '0.10% Margin',
+    '1:2000': '0.05% Margin',
+  };
 
   @override
   void dispose() {
@@ -764,6 +829,30 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
     showAppMessage('Password preview prepared. No MT5 password change was submitted.');
   }
 
+  void _onApplyLeverage() {
+    if (_selectedLeverage == _currentLeverage) {
+      showAppMessage('Selected leverage is already active.');
+      return;
+    }
+
+    setState(() {
+      _currentLeverage = _selectedLeverage;
+      _leverageUpdated = true;
+    });
+
+    widget.onLeverageUpdated?.call(_selectedLeverage);
+
+    unawaited(AppNotificationCenter.instance.sendNotification(
+      title: 'Leverage Updated (#${widget.account.login})',
+      body: 'Account #${widget.account.login} leverage changed to $_selectedLeverage.',
+      category: 'Trading',
+      icon: LucideIcons.scale,
+      isGold: true,
+      sendToMobilePanel: true,
+    ));
+    showAppMessage('Leverage updated to $_selectedLeverage successfully.');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -776,20 +865,53 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
     final isDone = _step == _PasswordStep.done;
     final isConfirm = _step == _PasswordStep.confirm;
 
-    final headerIcon = isDone
-        ? LucideIcons.shieldCheck
-        : (isConfirm ? LucideIcons.shieldAlert : LucideIcons.keyRound);
-    final headerIconColor = isDone
-        ? const Color(0xFF10B981)
-        : (isConfirm ? const Color(0xFFD8A82E) : cs.primary);
-    final headerTitle = isDone
-        ? 'Password Updated'
-        : (isConfirm ? 'Confirm Password Change' : 'Change Investor Password');
-    final headerSubtitle = isDone
-        ? 'Account #${widget.account.login} · Ready'
-        : (isConfirm
-            ? 'Review and confirm update for #${widget.account.login}'
-            : 'MT5 Read-only access for #${widget.account.login}');
+    IconData headerIcon;
+    Color headerIconColor;
+    String headerTitle;
+    String headerSubtitle;
+    bool canGoBack;
+
+    switch (_activeView) {
+      case _SettingsView.menu:
+        headerIcon = LucideIcons.settings;
+        headerIconColor = _brokerGold;
+        headerTitle = 'Account Settings';
+        headerSubtitle = 'Account #${widget.account.login} (${widget.account.name})';
+        canGoBack = false;
+        break;
+      case _SettingsView.investorPassword:
+        headerIcon = isDone
+            ? LucideIcons.shieldCheck
+            : (isConfirm ? LucideIcons.shieldAlert : LucideIcons.keyRound);
+        headerIconColor = isDone
+            ? const Color(0xFF10B981)
+            : (isConfirm ? const Color(0xFFD8A82E) : cs.primary);
+        headerTitle = isDone
+            ? 'Password Updated'
+            : (isConfirm ? 'Confirm Password Change' : 'Change Investor Password');
+        headerSubtitle = isDone
+            ? 'Account #${widget.account.login} · Ready'
+            : (isConfirm
+                ? 'Review and confirm update for #${widget.account.login}'
+                : 'MT5 Read-only access for #${widget.account.login}');
+        canGoBack = !isDone;
+        break;
+      case _SettingsView.updateLeverage:
+        if (_leverageUpdated) {
+          headerIcon = LucideIcons.shieldCheck;
+          headerIconColor = const Color(0xFF10B981);
+          headerTitle = 'Leverage Updated';
+          headerSubtitle = 'Account #${widget.account.login} · Active';
+          canGoBack = false;
+        } else {
+          headerIcon = LucideIcons.scale;
+          headerIconColor = const Color(0xFFD8A82E);
+          headerTitle = 'Update Leverage';
+          headerSubtitle = 'Account #${widget.account.login} · Current: $_currentLeverage';
+          canGoBack = true;
+        }
+        break;
+    }
 
     return SafeArea(
       top: false,
@@ -831,9 +953,24 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 12, 14),
+                    padding: const EdgeInsets.fromLTRB(14, 10, 12, 12),
                     child: Row(
                       children: [
+                        if (canGoBack) ...[
+                          IconButton(
+                            tooltip: 'Back to Settings',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () {
+                              if (_activeView == _SettingsView.investorPassword && _step == _PasswordStep.confirm) {
+                                setState(() => _step = _PasswordStep.input);
+                              } else {
+                                setState(() => _activeView = _SettingsView.menu);
+                              }
+                            },
+                            icon: Icon(LucideIcons.arrowLeft, color: cs.onSurface, size: 20),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                         Container(
                           width: 44,
                           height: 44,
@@ -852,13 +989,15 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
                                 headerTitle,
                                 style: TextStyle(
                                   color: cs.onSurface,
-                                  fontSize: 17,
+                                  fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               const SizedBox(height: 3),
                               Text(
                                 headerSubtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(color: muted, fontSize: 11),
                               ),
                             ],
@@ -876,10 +1015,16 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
                   Flexible(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-                      child: switch (_step) {
-                        _PasswordStep.input => _buildInputView(cs, border, muted, dark),
-                        _PasswordStep.confirm => _buildConfirmView(cs, border, muted, dark),
-                        _PasswordStep.done => _buildSuccessView(cs, border, muted),
+                      child: switch (_activeView) {
+                        _SettingsView.menu => _buildMenuView(cs, border, muted, dark),
+                        _SettingsView.investorPassword => switch (_step) {
+                          _PasswordStep.input => _buildInputView(cs, border, muted, dark),
+                          _PasswordStep.confirm => _buildConfirmView(cs, border, muted, dark),
+                          _PasswordStep.done => _buildSuccessView(cs, border, muted),
+                        },
+                        _SettingsView.updateLeverage => _leverageUpdated
+                            ? _buildLeverageSuccessView(cs, border, muted, dark)
+                            : _buildLeverageInputView(cs, border, muted, dark),
                       },
                     ),
                   ),
@@ -897,54 +1042,595 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
     );
   }
 
+  Widget _buildMenuView(ColorScheme cs, Color border, Color muted, bool dark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: cs.primary.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cs.primary.withValues(alpha: .22)),
+          ),
+          child: Row(
+            children: [
+              Icon(LucideIcons.sparkles, color: cs.primary, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Manage security credentials and leverage parameters for MT5 Account #${widget.account.login}.',
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 11,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Text('01', style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 8),
+            Text('ACCOUNT FUNCTIONS', style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Function 1: Change Investor Password
+        _buildFunctionCard(
+          cs: cs,
+          border: border,
+          muted: muted,
+          dark: dark,
+          icon: LucideIcons.keyRound,
+          iconColor: cs.primary,
+          title: 'Change Investor Password',
+          subtitle: 'Set or update MT5 read-only access password',
+          trailingText: 'Security',
+          onTap: () => setState(() => _activeView = _SettingsView.investorPassword),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Function 2: Update Leverage
+        _buildFunctionCard(
+          cs: cs,
+          border: border,
+          muted: muted,
+          dark: dark,
+          icon: LucideIcons.scale,
+          iconColor: const Color(0xFFD8A82E),
+          title: 'Update Leverage',
+          subtitle: 'Current: $_currentLeverage · Modify purchasing power & margin',
+          trailingText: _currentLeverage,
+          onTap: () => setState(() => _activeView = _SettingsView.updateLeverage),
+        ),
+
+        const SizedBox(height: 20),
+
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: dark ? .35 : .45),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border),
+          ),
+          child: Row(
+            children: [
+              Icon(LucideIcons.shieldCheck, size: 18, color: const Color(0xFF10B981)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Trading operations, floating P/L, and open positions are preserved during settings updates.',
+                  style: TextStyle(color: muted, fontSize: 11, height: 1.35),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFunctionCard({
+    required ColorScheme cs,
+    required Color border,
+    required Color muted,
+    required bool dark,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String trailingText,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? .18 : .04),
+            offset: const Offset(0, 3),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: .12),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 21),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: muted,
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    trailingText,
+                    style: TextStyle(
+                      color: iconColor,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(LucideIcons.chevronRight, size: 17, color: muted),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeverageInputView(ColorScheme cs, Color border, Color muted, bool dark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD8A82E).withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFD8A82E).withValues(alpha: .28)),
+          ),
+          child: Row(
+            children: [
+              const Icon(LucideIcons.info, color: Color(0xFFD8A82E), size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Changing your account leverage will adjust the margin requirements for all new positions.',
+                  style: TextStyle(color: cs.onSurface, fontSize: 11, height: 1.4, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        // Current Leverage Tile
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: dark ? .35 : .45),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border),
+          ),
+          child: Row(
+            children: [
+              const Icon(LucideIcons.scale, size: 18, color: Color(0xFFD8A82E)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('CURRENT LEVERAGE', style: TextStyle(color: muted, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: .6)),
+                    const SizedBox(height: 2),
+                    Text(_currentLeverage, style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: .14),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: .30)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.circle, color: Color(0xFF10B981), size: 7),
+                    SizedBox(width: 5),
+                    Text('ACTIVE', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        Row(
+          children: [
+            Text('01', style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 8),
+            Text('CHOOSE NEW LEVERAGE RATIO', style: TextStyle(color: cs.onSurface, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .8)),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Grid of leverage options
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _leverageOptions.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 2.1,
+          ),
+          itemBuilder: (context, index) {
+            final option = _leverageOptions[index];
+            final isSelected = option == _selectedLeverage;
+            final isCurrent = option == _currentLeverage;
+            final marginDesc = _leverageMargins[option] ?? '';
+
+            return InkWell(
+              onTap: () => setState(() => _selectedLeverage = option),
+              borderRadius: BorderRadius.circular(14),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? _brokerGold.withValues(alpha: dark ? .15 : .10)
+                      : cs.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected ? _brokerGold : border,
+                    width: isSelected ? 1.8 : 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: _brokerGold.withValues(alpha: .18),
+                            offset: const Offset(0, 3),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                option,
+                                style: TextStyle(
+                                  color: isSelected ? _brokerGold : cs.onSurface,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              if (isCurrent) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: muted.withValues(alpha: .15),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text('Current', style: TextStyle(color: muted, fontSize: 8.5, fontWeight: FontWeight.w800)),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            marginDesc,
+                            style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                      color: isSelected ? _brokerGold : muted.withValues(alpha: .5),
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(height: 18),
+
+        // Risk warning
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: dark ? .30 : .40),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 1),
+                child: Icon(LucideIcons.alertTriangle, size: 15, color: Color(0xFFD8A82E)),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'High leverage increases risk. Ensure your account margin is adequate before applying changes.',
+                  style: TextStyle(color: muted, fontSize: 10.5, height: 1.35),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLeverageSuccessView(ColorScheme cs, Color border, Color muted, bool dark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: .15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(LucideIcons.checkCheck, color: Color(0xFF10B981), size: 30),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Center(
+          child: Text(
+            'Leverage Successfully Updated',
+            style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Center(
+          child: Text(
+            'The new leverage ratio has been applied to account #${widget.account.login}.',
+            style: TextStyle(color: muted, fontSize: 11),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: dark ? .35 : .45),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border),
+          ),
+          child: Column(
+            children: [
+              _summaryRow('Account Number', '#${widget.account.login}', cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('Previous Leverage', widget.account.leverage, cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('Active New Leverage', _selectedLeverage, cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('Effective Margin', _leverageMargins[_selectedLeverage] ?? '', cs, muted),
+              Divider(height: 18, color: border.withValues(alpha: .5)),
+              _summaryRow('Status', 'Active & Applied', cs, muted),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildBottomActions(BuildContext context, ColorScheme cs, Color border) {
-    switch (_step) {
-      case _PasswordStep.input:
+    switch (_activeView) {
+      case _SettingsView.menu:
         return SizedBox(
           height: 48,
           width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: _onContinue,
-            style: FilledButton.styleFrom(
-              backgroundColor: _brokerGold,
-              foregroundColor: const Color(0xFF142238),
-              elevation: 0,
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: cs.onSurface,
+              side: BorderSide(color: border),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            icon: const Icon(LucideIcons.arrowRight, size: 18),
-            label: const Text(
-              'CONTINUE',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
-            ),
+            child: const Text('CLOSE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
           ),
         );
-      case _PasswordStep.confirm:
+      case _SettingsView.investorPassword:
+        switch (_step) {
+          case _PasswordStep.input:
+            return SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _onContinue,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _brokerGold,
+                  foregroundColor: const Color(0xFF142238),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(LucideIcons.arrowRight, size: 18),
+                label: const Text(
+                  'CONTINUE',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+                ),
+              ),
+            );
+          case _PasswordStep.confirm:
+            return Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => setState(() => _step = _PasswordStep.input),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: cs.onSurface,
+                        side: BorderSide(color: border),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(LucideIcons.arrowLeft, size: 16),
+                      label: const Text(
+                        'CANCEL',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: FilledButton.icon(
+                      onPressed: _onConfirm,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _brokerGold,
+                        foregroundColor: const Color(0xFF142238),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(LucideIcons.check, size: 18),
+                      label: const Text(
+                        'CONFIRM',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          case _PasswordStep.done:
+            return SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => Navigator.pop(context),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(LucideIcons.check, size: 18),
+                label: const Text(
+                  'DONE',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+                ),
+              ),
+            );
+        }
+      case _SettingsView.updateLeverage:
+        if (_leverageUpdated) {
+          return SizedBox(
+            height: 48,
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => Navigator.pop(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(LucideIcons.check, size: 18),
+              label: const Text('DONE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+            ),
+          );
+        }
         return Row(
           children: [
             Expanded(
               child: SizedBox(
                 height: 48,
                 child: OutlinedButton.icon(
-                  onPressed: () => setState(() => _step = _PasswordStep.input),
+                  onPressed: () => setState(() => _activeView = _SettingsView.menu),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: cs.onSurface,
                     side: BorderSide(color: border),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(LucideIcons.arrowLeft, size: 16),
-                  label: const Text(
-                    'CANCEL',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
-                  ),
+                  label: const Text('BACK', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                 ),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
+              flex: 2,
               child: SizedBox(
                 height: 48,
                 child: FilledButton.icon(
-                  onPressed: _onConfirm,
+                  onPressed: _onApplyLeverage,
                   style: FilledButton.styleFrom(
                     backgroundColor: _brokerGold,
                     foregroundColor: const Color(0xFF142238),
@@ -952,33 +1638,11 @@ class _ChangeInvestorPasswordSheetState extends State<_ChangeInvestorPasswordShe
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(LucideIcons.check, size: 18),
-                  label: const Text(
-                    'CONFIRM',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
-                  ),
+                  label: const Text('CONFIRM LEVERAGE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                 ),
               ),
             ),
           ],
-        );
-      case _PasswordStep.done:
-        return SizedBox(
-          height: 48,
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () => Navigator.pop(context),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            icon: const Icon(LucideIcons.check, size: 18),
-            label: const Text(
-              'DONE',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
-            ),
-          ),
         );
     }
   }
@@ -1332,20 +1996,38 @@ class BrokerAccountDetailsPage extends StatefulWidget {
 class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   String _tab = 'Overview';
   String _range = '1W';
+  late BrokerAccount _account = widget.account;
+
+  @override
+  void didUpdateWidget(covariant BrokerAccountDetailsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.account != widget.account) {
+      _account = widget.account;
+    }
+  }
 
   String _money(double value) => (value < 0 ? '-' : '') + r'$' + value.abs().toStringAsFixed(2);
 
-  void _showChangeInvestorPassword(BrokerAccount a) {
+  void _showChangeInvestorPassword(BrokerAccount a) => _showAccountSettings(a);
+
+  void _showAccountSettings(BrokerAccount a) {
     showModalBottomSheet<void>(
       context: context, isScrollControlled: true, useSafeArea: true,
       backgroundColor: Colors.transparent, barrierColor: Colors.black54,
-      builder: (_) => _ChangeInvestorPasswordSheet(account: a),
+      builder: (_) => _BrokerAccountSettingsSheet(
+        account: _account,
+        onLeverageUpdated: (newLeverage) {
+          setState(() {
+            _account = _account.copyWith(leverage: newLeverage);
+          });
+        },
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final a = widget.account;
+    final a = _account;
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
     const navy = Color(0xFF071629);
@@ -1536,7 +2218,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               action(LucideIcons.arrowUpFromLine, 'Withdraw', false, () => widget.onSelectPage('Withdraw'), actionWidth),
               action(LucideIcons.arrowLeftRight, 'Transfer', false, () => widget.onSelectPage('Internal Transfer'), actionWidth),
             ],
-            action(LucideIcons.settings, 'Settings', false, () => _showChangeInvestorPassword(a), isLive ? actionWidth : (screenWidth - horizontalPadding * 2 - 8) / 2),
+            action(LucideIcons.settings, 'Settings', false, () => _showAccountSettings(_account), isLive ? actionWidth : (screenWidth - horizontalPadding * 2 - 8) / 2),
           ]),
           const SizedBox(height: 17),
           panelCard(

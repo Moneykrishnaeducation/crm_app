@@ -143,6 +143,15 @@ void main() {
     await tester.tap(settingsBtn);
     await tester.pumpAndSettle();
 
+    // Step 0: Settings Menu view with functions listed one by one
+    expect(find.text('Account Settings'), findsOneWidget);
+    expect(find.text('Change Investor Password'), findsOneWidget);
+    expect(find.text('Update Leverage'), findsOneWidget);
+
+    // Tap Change Investor Password to open the selected function
+    await tester.tap(find.text('Change Investor Password'));
+    await tester.pumpAndSettle();
+
     // Step 1: Input view
     expect(find.text('Change Investor Password'), findsOneWidget);
     expect(find.text('Account #3419921 (Standard Trader)'), findsOneWidget);
@@ -190,5 +199,66 @@ void main() {
 
     expect(find.text('Investor Password Changed!'), findsNothing);
     expect(find.text('Trading snapshot'), findsOneWidget);
+  });
+
+  testWidgets('settings button opens update leverage function, selects new leverage, and updates account leverage', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const testAccount = BrokerAccount('Standard Trader', '3419921', '1:500', '\$2,500.00', '\$2,500.00', 'Live MT5');
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: BrokerAccountDetailsPage(
+          account: testAccount,
+          onBack: () {},
+          onSelectPage: (_) {},
+          isFavorite: false,
+          onToggleFavorite: () {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Verify initial leverage
+    expect(find.text('1:500'), findsWidgets);
+
+    // Open Settings bottom sheet
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    // Menu shows functions
+    expect(find.text('Account Settings'), findsOneWidget);
+    expect(find.text('Update Leverage'), findsOneWidget);
+
+    // Select Update Leverage
+    await tester.tap(find.text('Update Leverage'));
+    await tester.pumpAndSettle();
+
+    // In Update Leverage view
+    expect(find.text('CHOOSE NEW LEVERAGE RATIO'), findsOneWidget);
+    expect(find.text('CONFIRM LEVERAGE'), findsOneWidget);
+
+    // Select 1:200
+    await tester.tap(find.text('1:200'));
+    await tester.pumpAndSettle();
+
+    // Confirm leverage change
+    await tester.tap(find.text('CONFIRM LEVERAGE'));
+    await tester.pumpAndSettle();
+
+    // Success view
+    expect(find.text('Leverage Successfully Updated'), findsOneWidget);
+    expect(find.text('Active New Leverage'), findsOneWidget);
+    expect(find.text('DONE'), findsOneWidget);
+
+    // Close sheet
+    await tester.tap(find.text('DONE'));
+    await tester.pumpAndSettle();
+
+    // Leverage on account details page updated to 1:200
+    expect(find.text('1:200'), findsWidgets);
   });
 }

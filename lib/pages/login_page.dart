@@ -1581,40 +1581,6 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     Navigator.pop(context);
   }
 
-  Widget _buildStepIndicator() {
-    return Column(
-      children: [
-        Row(
-          children: List.generate(4, (index) {
-            final active = index + 1 <= _currentStep;
-            return Expanded(
-              child: Container(
-                height: 4,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: BoxDecoration(
-                  color: active
-                      ? _loginRoyalBlue
-                      : (widget.isDark ? const Color(0xFF383B47) : const Color(0xFFE2EDFC)),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'STEP $_currentStep OF 4',
-          style: TextStyle(
-            color: widget.isDark ? const Color(0xFF888F9F) : _loginMutedBlueText,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildStepErrorFeedback() {
     if (_stepError == null) return const SizedBox.shrink();
     return Padding(
@@ -2129,11 +2095,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-
-                // Step progress bar
-                _buildStepIndicator(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // Dynamic step content
                 AnimatedSwitcher(

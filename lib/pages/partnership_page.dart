@@ -1,9 +1,12 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
-import '../app_notifications.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../app_notifications.dart';
 
 /// Centralized adaptive design tokens aligned with VTIndex Dashboard and Transactions
 class _PartnershipColors {
@@ -67,6 +70,106 @@ class _PartnershipColors {
       appBarBg: isDark ? const Color(0xFF101D31) : Colors.white,
     );
   }
+
+  Color get glassFill => isDark
+      ? const Color(0xCC17263B)
+      : const Color(0xDFFFFFFF);
+  Color get glassBorder => isDark
+      ? const Color(0x663E5A7A)
+      : const Color(0xBFFFFFFF);
+  Color get accentGlow => isDark
+      ? const Color(0xFF173B65)
+      : const Color(0xFFD6E8FF);
+}
+
+class _PartnershipBackdrop extends StatelessWidget {
+  const _PartnershipBackdrop({required this.colors, required this.child});
+
+  final _PartnershipColors colors;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: colors.isDark
+                      ? const [Color(0xFF0B1424), Color(0xFF101E32)]
+                      : const [Color(0xFFF6F9FF), Color(0xFFEAF1FB)],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -170,
+            right: -120,
+            child: _ambientOrb(colors.accentGlow),
+          ),
+          Positioned(
+            bottom: 40,
+            left: -210,
+            child: _ambientOrb(colors.blue.withValues(alpha: .12)),
+          ),
+          child,
+        ],
+      );
+
+  Widget _ambientOrb(Color color) => Container(
+        width: 420,
+        height: 420,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color.withValues(alpha: .52), color.withValues(alpha: 0)],
+          ),
+        ),
+      );
+}
+
+class _PartnershipGlassPanel extends StatelessWidget {
+  const _PartnershipGlassPanel({
+    required this.colors,
+    required this.child,
+    this.padding,
+    this.radius = 20,
+    this.fillColor,
+    this.borderColor,
+  });
+
+  final _PartnershipColors colors;
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final double radius;
+  final Color? fillColor;
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: fillColor ?? colors.glassFill,
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(color: borderColor ?? colors.glassBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.cardShadow,
+                  blurRadius: 22,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        ),
+      );
 }
 
 const _partnerProfiles = <_PartnerProfile>[
@@ -299,48 +402,159 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
   @override
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
-    return Container(
-      color: colors.canvas,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 580),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+    return _PartnershipBackdrop(
+      colors: colors,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 820;
+          final stats = Column(
             children: [
-              _buildHeroCard(context, colors),
-              const SizedBox(height: 12),
-              Row(
+              _PartnershipStat(
+                icon: LucideIcons.usersRound,
+                label: 'Network clients',
+                value: '2,458',
+              ),
+              SizedBox(height: wide ? 12 : 0),
+              _PartnershipStat(
+                icon: LucideIcons.coins,
+                label: 'IB earnings',
+                value: r'$4,820.00',
+                gold: true,
+              ),
+            ],
+          );
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1080),
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  wide ? 28 : 16,
+                  24,
+                  wide ? 28 : 16,
+                  120,
+                ),
                 children: [
-                  Expanded(
-                    child: _PartnershipStat(
-                      icon: LucideIcons.usersRound,
-                      label: 'Total clients',
-                      value: '2,458',
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: colors.blue.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: colors.glassBorder),
+                        ),
+                        child: Icon(
+                          LucideIcons.network,
+                          color: colors.blue,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 13),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Partnership',
+                              style: TextStyle(
+                                color: colors.text,
+                                fontSize: 23,
+                                fontWeight: FontWeight.w800,
+                                height: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Grow your network and track partner earnings.',
+                              style: TextStyle(color: colors.muted, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (wide)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.glassFill,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: colors.glassBorder),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                LucideIcons.badgeCheck,
+                                color: colors.green,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                'IB PARTNER',
+                                style: TextStyle(
+                                  color: colors.text,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: .4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _PartnershipStat(
-                      icon: LucideIcons.coins,
-                      label: 'IB earnings',
-                      value: r'$4,820.00',
-                      gold: true,
+                  const SizedBox(height: 22),
+                  if (wide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 7, child: _buildHeroCard(context, colors)),
+                        const SizedBox(width: 14),
+                        Expanded(flex: 3, child: stats),
+                      ],
+                    )
+                  else ...[
+                    _buildHeroCard(context, colors),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _PartnershipStat(
+                            icon: LucideIcons.usersRound,
+                            label: 'Network clients',
+                            value: '2,458',
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _PartnershipStat(
+                            icon: LucideIcons.coins,
+                            label: 'IB earnings',
+                            value: r'$4,820.00',
+                            gold: true,
+                          ),
+                        ),
+                      ],
                     ),
+                  ],
+                  const SizedBox(height: 26),
+                  _PartnershipSectionLabel(
+                    'REFERRAL & INVITATIONS',
+                    subtitle:
+                        'Choose a partner profile, share your referral link, or explore your network.',
+                    colors: colors,
                   ),
+                  const SizedBox(height: 12),
+                  _buildToolsColumn(context, colors),
                 ],
               ),
-              const SizedBox(height: 14),
-              _PartnershipSectionLabel(
-                'REFERRAL & INVITATIONS',
-                subtitle: 'Manage partner profiles, referral codes and QR materials',
-                colors: colors,
-              ),
-              const SizedBox(height: 9),
-              _buildToolsColumn(context, colors),
-              const SizedBox(height: 22),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -562,13 +776,10 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
   Widget _buildToolsColumn(BuildContext context, _PartnershipColors colors) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: colors.card,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: colors.border),
-        ),
+      _PartnershipGlassPanel(
+        colors: colors,
+        padding: const EdgeInsets.all(18),
+        radius: 20,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -693,8 +904,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                   ),
                   IconButton(
                     tooltip: 'Copy referral link',
-                    visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                    constraints: const BoxConstraints.tightFor(width: 44, height: 44),
                     onPressed: () async {
                       final url = 'https://client.vtindex.com/?ref=${_selectedPartner.code}';
                       await Clipboard.setData(ClipboardData(text: url));
@@ -708,8 +918,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                   ),
                   IconButton(
                     tooltip: 'Show referral QR code',
-                    visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                    constraints: const BoxConstraints.tightFor(width: 44, height: 44),
                     onPressed: _showReferralQr,
                     icon: Icon(
                       LucideIcons.qrCode,
@@ -2316,19 +2525,11 @@ class _PartnershipStat extends StatelessWidget {
     final colors = _PartnershipColors.of(context);
     final accent = gold ? colors.gold : colors.blue;
     final compact = MediaQuery.sizeOf(context).width < 600;
-    return Material(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(9),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 11,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: colors.border),
-        ),
-        child: Row(children: [
+    return _PartnershipGlassPanel(
+      colors: colors,
+      radius: 17,
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+      child: Row(children: [
           Container(
             width: 26,
             height: 26,
@@ -2360,7 +2561,6 @@ class _PartnershipStat extends StatelessWidget {
             ],
           )),
         ]),
-      ),
     );
   }
 }
@@ -2381,19 +2581,17 @@ class _PartnershipShortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
-    return Material(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: colors.border),
-          ),
-          child: Row(children: [
+    return _PartnershipGlassPanel(
+      colors: colors,
+      radius: 17,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(17),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(children: [
             Container(
               width: 35,
               height: 35,
@@ -2423,7 +2621,8 @@ class _PartnershipShortcut extends StatelessWidget {
               ],
             )),
             Icon(LucideIcons.chevronRight, color: colors.muted, size: 17),
-          ]),
+            ]),
+          ),
         ),
       ),
     );
@@ -2549,23 +2748,35 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     return Scaffold(
       backgroundColor: colors.canvas,
       appBar: AppBar(
-        backgroundColor: colors.appBarBg,
+        backgroundColor: Colors.transparent,
         foregroundColor: colors.text,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Client list'),
+        title: const Text(
+          'Client network',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton.icon(
+          if (MediaQuery.sizeOf(context).width < 440)
+            IconButton(
+              tooltip: 'Add client',
               onPressed: _showAddClientDialog,
-              style: FilledButton.styleFrom(
-                backgroundColor: colors.blue,
-                foregroundColor: Colors.white,
+              icon: const Icon(LucideIcons.userRoundPlus),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: FilledButton.icon(
+                onPressed: _showAddClientDialog,
+                style: FilledButton.styleFrom(
+                  backgroundColor: colors.blue,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 44),
+                ),
+                icon: const Icon(LucideIcons.userRoundPlus, size: 16),
+                label: const Text('Add client'),
               ),
-              icon: const Icon(LucideIcons.userRoundPlus, size: 16),
-              label: const Text('Add client'),
             ),
-          ),
         ],
         leading: IconButton(
           tooltip: 'Back',
@@ -2573,7 +2784,9 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           icon: const Icon(LucideIcons.arrowLeft),
         ),
       ),
-      body: LayoutBuilder(
+      body: _PartnershipBackdrop(
+        colors: colors,
+        child: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 900;
           final horizontal = wide ? 28.0 : 14.0;
@@ -2738,29 +2951,20 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
             ],
           );
         },
+        ),
       ),
     );
   }
 
-  Widget _treeHeader(_PartnershipColors colors) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(17),
-      border: Border.all(color: colors.border),
-      boxShadow: [
-        BoxShadow(
-          color: colors.cardShadow,
-          blurRadius: 14,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
+  Widget _treeHeader(_PartnershipColors colors) => _PartnershipGlassPanel(
+    colors: colors,
+    padding: const EdgeInsets.all(20),
+    radius: 20,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'IB NETWORK',
+          'PARTNER NETWORK',
           style: TextStyle(
             color: colors.blue,
             fontSize: 9,
@@ -2770,7 +2974,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Client Tree',
+          'Your client network',
           style: TextStyle(
             color: colors.text,
             fontSize: 21,
@@ -2780,7 +2984,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
         ),
         const SizedBox(height: 5),
         Text(
-          'Explore your referral network and client trading accounts.',
+          'Follow referrals, account activity, and each connection in your network.',
           style: TextStyle(
             color: colors.muted,
             fontSize: 11,
@@ -2790,12 +2994,9 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     ),
   );
 
-  Widget _treeSearch(_PartnershipColors colors) => Container(
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(13),
-      border: Border.all(color: colors.border),
-    ),
+  Widget _treeSearch(_PartnershipColors colors) => _PartnershipGlassPanel(
+    colors: colors,
+    radius: 16,
     child: TextField(
       controller: _searchController,
       onChanged: (value) => setState(() => _query = value),
@@ -2826,13 +3027,10 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     ),
   );
 
-  Widget _treeEmpty(_PartnershipColors colors) => Container(
-    padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: colors.border),
-    ),
+  Widget _treeEmpty(_PartnershipColors colors) => _PartnershipGlassPanel(
+    colors: colors,
+    padding: const EdgeInsets.all(24),
+    radius: 18,
     child: Column(
       children: [
         Icon(
@@ -3378,13 +3576,10 @@ class _TreeStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: colors.border),
-      ),
+    return _PartnershipGlassPanel(
+      colors: colors,
+      radius: 17,
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -3449,16 +3644,14 @@ class _TreeMemberCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
     final accent = root ? colors.blue : const Color(0xFF00BFA5);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: root && !colors.isDark ? const Color(0xFFEEF4FF) : colors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: root ? colors.blue : colors.border,
-          width: root ? 1.2 : 1,
-        ),
-      ),
+    return _PartnershipGlassPanel(
+      colors: colors,
+      radius: 17,
+      padding: const EdgeInsets.all(15),
+      borderColor: root ? colors.blue.withValues(alpha: .55) : null,
+      fillColor: root
+          ? (colors.isDark ? const Color(0xDD183254) : const Color(0xDFFFFFFF))
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

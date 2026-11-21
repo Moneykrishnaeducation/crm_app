@@ -48,7 +48,7 @@ void main() {
       expect(find.text('142.80 Lots'), findsOneWidget);
 
       // Stats row
-      expect(find.text('Total clients'), findsOneWidget);
+      expect(find.text('Network clients'), findsOneWidget);
       expect(find.text('2,458'), findsOneWidget);
       expect(find.text('IB earnings'), findsOneWidget);
       expect(find.text(r'$4,820.00'), findsOneWidget);
@@ -78,6 +78,15 @@ void main() {
       expect(find.text('PARTNERSHIP PROGRAM'), findsOneWidget);
       expect(find.text(r'$4,820.00 USD'), findsOneWidget);
       expect(find.text('Quick shortcuts'), findsOneWidget);
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          brightness: Brightness.dark,
+          child: const BrokerClientTreePage(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Your client network'), findsOneWidget);
     });
 
     testWidgets('tapping Show referral QR opens bottom sheet with referral QR and links', (tester) async {
@@ -165,8 +174,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Client list'), findsOneWidget);
-      expect(find.text('Client Tree'), findsOneWidget);
+      expect(find.text('Client network'), findsOneWidget);
+      expect(find.text('Your client network'), findsOneWidget);
       expect(find.text('TOTAL NETWORK'), findsOneWidget);
       expect(find.text('DIRECT (L1)'), findsOneWidget);
       expect(find.text('INR-DEVOP B'), findsOneWidget);
@@ -218,7 +227,7 @@ void main() {
       // Mobile BrokerClientTreePage
       await tester.pumpWidget(buildTestableWidget(child: const BrokerClientTreePage()));
       await tester.pumpAndSettle();
-      expect(find.text('Client list'), findsOneWidget);
+      expect(find.text('Client network'), findsOneWidget);
 
       // Mobile BrokerCommissionLedgerPage
       await tester.pumpWidget(buildTestableWidget(child: const BrokerCommissionLedgerPage()));

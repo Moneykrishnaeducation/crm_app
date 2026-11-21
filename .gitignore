@@ -7,7 +7,7 @@ check_delimiters.py
 *.swp
 .buildlog/
 .history
-
+.agents
 
 
 # Flutter repo-specific

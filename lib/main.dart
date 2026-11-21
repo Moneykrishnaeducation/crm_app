@@ -20,6 +20,7 @@ import 'pages/partnership_page.dart';
 import 'pages/privacy_policy_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/security_center_page.dart';
+import 'pages/trade_pattern_analysis_page.dart';
 import 'services/display_refresh_rate_service.dart';
 
 part 'widgets/app_header.dart';
@@ -237,9 +238,9 @@ class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
     try {
       await _controller.initialize();
       if (!mounted) return;
-      setState(() => _ready = true);
       await _controller.setVolume(0);
       await _controller.play();
+      if (mounted) setState(() => _ready = true);
     } catch (_) {
       _finish();
     }
@@ -683,6 +684,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         'Partnership' => const BrokerPartnershipPage(),
         'PAMM Account' => PammPage(
             onBack: _handleBack,
+            onSelectPage: _selectPage,
           ),
         'Internal Transfer' => BrokerInternalTransferPage(
             accounts: _accounts,
@@ -833,6 +835,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               });
             },
             onBack: _handleBack,
+          ),
+        'Trade Pattern Analysis' => TradePatternAnalysisPage(
+            accounts: _accounts,
+            initialAccountLogin: _selectedAccount?.login ?? '3503',
+            onBack: _handleBack,
+            onSelectPage: _selectPage,
           ),
         _ => _SectionPage(title: page),
       },

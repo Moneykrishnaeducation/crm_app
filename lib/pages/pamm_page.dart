@@ -5,14 +5,17 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crm_app/pages/pamm_tab_pages.dart';
+import 'package:crm_app/widgets/pool_trades_modal.dart';
+import 'package:crm_app/pages/trade_pattern_analysis_page.dart';
 
 part 'pamm_managed_tab_content.dart';
 part 'pamm_available_tab_content.dart';
 part 'pamm_investments_tab_content.dart';
 
 class PammPage extends StatefulWidget {
-  const PammPage({super.key, this.onBack});
+  const PammPage({super.key, this.onBack, this.onSelectPage});
   final VoidCallback? onBack;
+  final ValueChanged<String>? onSelectPage;
 
   @override
   State<PammPage> createState() => _PammPageState();
@@ -42,6 +45,7 @@ class _PammInvestment {
 class _PammPageState extends State<PammPage> {
   int _tab = 0;
   String _query = '';
+  String _selectedFilter = 'All Pools';
   _PammPool? _selectedManagedPool;
   _PammPool? _selectedAvailablePool;
   _PammPool? _connectedInvestorPool;
@@ -51,16 +55,18 @@ class _PammPageState extends State<PammPage> {
   final List<_PammPool> _available = [_PammPool('Naveen Test', '3420', '1:500', 0, 10, manager: 'Process Process'), _PammPool('Nani', '2141718258', '1:500', 0, 50, manager: 'Nani Manager'), _PammPool('Testpam1', '2141717469', '1:500', 0.01, 50, manager: 'Test Manager')];
   final List<_PammInvestment> _investments = [_PammInvestment('3420', 'Naveen Test', 'Process Process', 0, 0, 0, 0)];
 
-  static const _blue = Color(0xFF365CEB);
-  static const _gold = Color(0xFFF3C744);
-  static const _green = Color(0xFF00B889);
+  static const _blue = Color(0xFF2563EB);
+  static const _deepBlue = Color(0xFF1D4ED8);
+  static const _gold = Color(0xFFD4AF37);
+  static const _green = Color(0xFF10B981);
+  static const _rose = Color(0xFFEF4444);
 
   bool get _dark => Theme.of(context).brightness == Brightness.dark;
-  Color get _card => _dark ? const Color(0xFF17243A) : Colors.white;
-  Color get _surface => _dark ? const Color(0xFF101D31) : const Color(0xFFF5F8FD);
-  Color get _border => _dark ? const Color(0xFF2A3A53) : const Color(0xFFDCE6F5);
-  Color get _text => _dark ? const Color(0xFFF1F5F9) : const Color(0xFF10264A);
-  Color get _muted => _dark ? const Color(0xFF94A3B8) : const Color(0xFF71839E);
+  Color get _card => _dark ? const Color(0xFF0C1833) : Colors.white;
+  Color get _surface => _dark ? const Color(0xFF07142A) : const Color(0xFFF8FAFC);
+  Color get _border => _dark ? const Color(0xFF1E3563) : const Color(0xFFE2E8F0);
+  Color get _text => _dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+  Color get _muted => _dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
   @override
   void dispose() {
@@ -120,12 +126,19 @@ class _PammPageState extends State<PammPage> {
     final icons = [LucideIcons.briefcaseBusiness, LucideIcons.layers, LucideIcons.usersRound];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.fromLTRB(14, 6, 14, 4),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _dark ? const Color(0xFF263750) : const Color(0xFFBFD5FF)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _dark ? 0.25 : 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -135,11 +148,11 @@ class _PammPageState extends State<PammPage> {
               const SizedBox(width: 12),
               Expanded(child: _brandTitle()),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: _dark ? const Color(0xFF132D28) : const Color(0xFFECFDF5),
+                  color: _green.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _green.withValues(alpha: .3)),
+                  border: Border.all(color: _green.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -147,24 +160,38 @@ class _PammPageState extends State<PammPage> {
                     Container(
                       width: 6,
                       height: 6,
-                      decoration: const BoxDecoration(color: _green, shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: _green,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: _green.withValues(alpha: 0.6),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(width: 5),
-                    const Text(
-                      'Live',
-                      style: TextStyle(color: _green, fontSize: 10.5, fontWeight: FontWeight.w700),
+                    Text(
+                      'LIVE FEED',
+                      style: GoogleFonts.inter(
+                        color: _green,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: _dark ? const Color(0xFF17243A) : const Color(0xFFEAF1FC),
-              borderRadius: BorderRadius.circular(13),
+              color: _card,
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: _border),
             ),
             child: Row(
@@ -179,37 +206,68 @@ class _PammPageState extends State<PammPage> {
                           _query = '';
                           _search.clear();
                         }),
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(11),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.easeInOutCubic,
-                          constraints: const BoxConstraints(minHeight: 44),
+                          constraints: const BoxConstraints(minHeight: 42),
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                           decoration: BoxDecoration(
-                            gradient: _tab == i ? const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)], begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
-                            borderRadius: BorderRadius.circular(9),
-                            boxShadow: _tab == i ? [BoxShadow(color: _blue.withValues(alpha: .3), blurRadius: 8, offset: const Offset(0, 2))] : null,
+                            gradient: _tab == i
+                                ? const LinearGradient(
+                                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.circular(11),
+                            boxShadow: _tab == i
+                                ? [
+                                    BoxShadow(
+                                      color: _blue.withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(icons[i], size: 14, color: _tab == i ? Colors.white : _muted),
-                              const SizedBox(width: 5),
+                              Icon(
+                                icons[i],
+                                size: 14,
+                                color: _tab == i ? Colors.white : _muted,
+                              ),
+                              const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
                                   labels[i],
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: _tab == i ? Colors.white : _text, fontSize: 10.5, fontWeight: FontWeight.w700),
+                                  style: GoogleFonts.inter(
+                                    color: _tab == i ? Colors.white : _text,
+                                    fontSize: 11.5,
+                                    fontWeight: _tab == i ? FontWeight.w800 : FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                decoration: BoxDecoration(color: _tab == i ? Colors.white.withValues(alpha: .24) : _border.withValues(alpha: .7), borderRadius: BorderRadius.circular(6)),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _tab == i
+                                      ? Colors.white.withValues(alpha: 0.22)
+                                      : _border.withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 child: Text(
                                   '${counts[i]}',
-                                  style: TextStyle(color: _tab == i ? Colors.white : _muted, fontSize: 9, fontWeight: FontWeight.w800),
+                                  style: GoogleFonts.inter(
+                                    color: _tab == i ? Colors.white : _muted,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
                             ],
@@ -227,12 +285,22 @@ class _PammPageState extends State<PammPage> {
   }
 
   Widget _brandIcon() => Container(
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [BoxShadow(color: _blue.withValues(alpha: .28), blurRadius: 8, offset: const Offset(0, 3))],
+      gradient: const LinearGradient(
+        colors: [Color(0xFF1A3A8C), Color(0xFF2563EB)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(13),
+      boxShadow: [
+        BoxShadow(
+          color: _blue.withValues(alpha: 0.3),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
+      ],
     ),
     child: const Icon(LucideIcons.activity, color: Colors.white, size: 21),
   );
@@ -241,15 +309,24 @@ class _PammPageState extends State<PammPage> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'PAMM',
-        style: GoogleFonts.inter(color: _text, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.4),
+        'PAMM Portfolio',
+        style: GoogleFonts.inter(
+          color: _text,
+          fontSize: 17,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.4,
+        ),
       ),
-      const SizedBox(height: 1),
+      const SizedBox(height: 2),
       Text(
         'Percentage Allocation Management Module',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(color: _muted, fontSize: 11, fontWeight: FontWeight.w500),
+        style: GoogleFonts.inter(
+          color: _muted,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     ],
   );
@@ -268,24 +345,35 @@ class _PammPageState extends State<PammPage> {
       ],
     );
   }
-  Widget _featureBanner({required IconData icon, required String title, required String tag, required String subtitle, required String actionLabel, required VoidCallback onAction}) {
+  Widget _featureBanner({
+    required IconData icon,
+    required String title,
+    required String tag,
+    required String subtitle,
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
     return Container(
       padding: const EdgeInsets.all(1.2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFF59E0B).withValues(alpha: _dark ? .45 : .6),
-            const Color(0xFF2563EB).withValues(alpha: _dark ? .55 : .7),
+            _gold.withValues(alpha: _dark ? .5 : .65),
+            _blue.withValues(alpha: _dark ? .6 : .75),
           ],
         ),
       ),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _card,
-          borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(colors: [_card, _dark ? const Color(0xFF131F33) : const Color(0xFFF8FAFC)]),
+          borderRadius: BorderRadius.circular(17),
+          gradient: LinearGradient(
+            colors: [_card, _dark ? const Color(0xFF0C1D3E) : const Color(0xFFF8FAFC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,10 +384,19 @@ class _PammPageState extends State<PammPage> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
+                    gradient: const LinearGradient(
+                      colors: [_blue, _deepBlue],
+                    ),
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _blue.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Icon(icon, color: Colors.white, size: 22),
+                  child: Icon(icon, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -313,39 +410,65 @@ class _PammPageState extends State<PammPage> {
                               title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(color: _text, fontSize: 15, fontWeight: FontWeight.w800),
+                              style: GoogleFonts.inter(
+                                color: _text,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(color: _gold.withValues(alpha: .15), borderRadius: BorderRadius.circular(4)),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: _gold.withValues(alpha: .15),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: _gold.withValues(alpha: .3)),
+                            ),
                             child: Text(
                               tag,
-                              style: GoogleFonts.inter(color: _gold, fontSize: 8, fontWeight: FontWeight.w800),
+                              style: GoogleFonts.inter(
+                                color: _gold,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 3),
-                      Text(subtitle, style: TextStyle(color: _muted, fontSize: 10.5, height: 1.3)),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          color: _muted,
+                          fontSize: 11,
+                          height: 1.35,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 13),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-              height: 44,
+              height: 42,
               child: FilledButton.icon(
                 onPressed: onAction,
-                icon: const Icon(LucideIcons.arrowRight, size: 16),
-                label: Text(actionLabel, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                icon: const Icon(LucideIcons.arrowRight, size: 15),
+                label: Text(
+                  actionLabel,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor: _blue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
                 ),
               ),
             ),
@@ -357,11 +480,18 @@ class _PammPageState extends State<PammPage> {
 
   Widget _metricCard(String label, String value, String subtext, IconData icon, Color accent) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _dark ? 0.15 : 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,19 +503,35 @@ class _PammPageState extends State<PammPage> {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(color: _muted, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: .2),
+                  style: GoogleFonts.inter(
+                    color: _muted,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
-              Icon(icon, color: accent, size: 13),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon, color: accent, size: 12),
+              ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 7),
           FittedBox(
             alignment: Alignment.centerLeft,
             fit: BoxFit.scaleDown,
             child: Text(
               value,
-              style: GoogleFonts.inter(color: _text, fontSize: 15, fontWeight: FontWeight.w800),
+              style: GoogleFonts.jetBrainsMono(
+                color: _text,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           const SizedBox(height: 3),
@@ -393,7 +539,11 @@ class _PammPageState extends State<PammPage> {
             subtext,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: _muted, fontSize: 9),
+            style: GoogleFonts.inter(
+              color: _muted,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -407,16 +557,16 @@ class _PammPageState extends State<PammPage> {
           height: 44,
           decoration: BoxDecoration(
             color: _card,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: _border),
           ),
           child: TextField(
             controller: _search,
             onChanged: (v) => setState(() => _query = v),
-            style: GoogleFonts.inter(color: _text, fontSize: 12),
+            style: GoogleFonts.inter(color: _text, fontSize: 12.5),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(color: _muted, fontSize: 11),
+              hintStyle: GoogleFonts.inter(color: _muted, fontSize: 11.5),
               prefixIcon: Icon(LucideIcons.search, color: _muted, size: 17),
               suffixIcon: _query.isNotEmpty
                   ? IconButton(
@@ -432,56 +582,93 @@ class _PammPageState extends State<PammPage> {
             ),
           ),
         ),
-        const SizedBox(height: 9),
-        SizedBox(
-          height: 34,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: filters.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, i) => Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 13),
-              decoration: BoxDecoration(
-                color: i == 0 ? _blue : _surface,
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: i == 0 ? _blue : _border),
-              ),
-              child: Text(
-                filters[i],
-                style: GoogleFonts.inter(color: i == 0 ? Colors.white : _text, fontSize: 10.5, fontWeight: FontWeight.w700),
-              ),
+        if (filters.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 32,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: filters.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, i) {
+                final f = filters[i];
+                final isSelected = _selectedFilter == f;
+                return InkWell(
+                  onTap: () => setState(() => _selectedFilter = f),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? _blue : _card,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected ? _blue : _border,
+                      ),
+                    ),
+                    child: Text(
+                      f,
+                      style: GoogleFonts.inter(
+                        color: isSelected ? Colors.white : _muted,
+                        fontSize: 10.5,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-        ),
+        ],
       ],
     );
   }
 
   Widget _sectionHeader(String title, int count) => Container(
-    padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
+    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
     decoration: BoxDecoration(
       color: _card,
-      borderRadius: BorderRadius.circular(13),
+      borderRadius: BorderRadius.circular(14),
       border: Border.all(color: _border),
     ),
     child: Row(
       children: [
         Container(
           width: 4,
-          height: 19,
-          decoration: BoxDecoration(color: _blue, borderRadius: BorderRadius.circular(4)),
+          height: 16,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+            ),
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 9),
         Expanded(
           child: Text(
             title,
-            style: GoogleFonts.inter(color: _text, fontSize: 13, fontWeight: FontWeight.w800),
+            style: GoogleFonts.inter(
+              color: _text,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
-        Text(
-          '$count records',
-          style: GoogleFonts.inter(color: _muted, fontSize: 9, fontWeight: FontWeight.w700),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: _surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: _border),
+          ),
+          child: Text(
+            '$count pools',
+            style: GoogleFonts.inter(
+              color: _muted,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ],
     ),
@@ -492,7 +679,7 @@ class _PammPageState extends State<PammPage> {
       final wide = constraints.maxWidth >= 900;
       final specifications = _poolSpecificationsCard(pool);
       final management = _poolManagementCard(pool);
-      final analytics = _poolAnalyticsCard();
+      final analytics = _poolAnalyticsCard(pool);
       return Column(
         children: [
           Padding(
@@ -793,12 +980,7 @@ class _PammPageState extends State<PammPage> {
           ],
         ),
       );
-      final analytics = _managedDetailCard(
-        title: 'Analytics and activity',
-        subtitle: 'Review trading activity',
-        icon: Icons.monitor_heart_outlined,
-        child: Column(children: [_detailAction('View pool trades', 'Orders and floating P/L', Icons.bar_chart, () => _showPammMessage('No pool trades are available yet.')), const SizedBox(height: 8), _detailAction('Trade pattern analysis', 'Behavioral metrics and win rate', Icons.trending_up, () => _showPammMessage('Trade pattern analysis will appear when trading activity is available.'))]),
-      );
+      final analytics = _poolAnalyticsCard(pool);
 
       return Column(
         children: [
@@ -1094,11 +1276,56 @@ class _PammPageState extends State<PammPage> {
     ),
   );
 
-  Widget _poolAnalyticsCard() => _managedDetailCard(
+  void _openPoolTrades([_PammPool? pool]) {
+    final targetPool = pool ?? _selectedManagedPool ?? _selectedAvailablePool;
+    final login = targetPool?.login ?? '3503';
+    final name = targetPool?.name ?? 'PAMM Pool';
+    PoolTradesModal.show(
+      context,
+      poolLogin: login,
+      poolName: name,
+      isManager: targetPool == _selectedManagedPool,
+    );
+  }
+
+  void _openTradePatternAnalysis([_PammPool? pool]) {
+    final targetPool = pool ?? _selectedManagedPool ?? _selectedAvailablePool;
+    final login = targetPool?.login ?? '3503';
+    if (widget.onSelectPage != null) {
+      widget.onSelectPage!('Trade Pattern Analysis');
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TradePatternAnalysisPage(
+            initialAccountLogin: login,
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _poolAnalyticsCard([_PammPool? pool]) => _managedDetailCard(
     title: 'Analytics and activity',
     subtitle: 'Review trading activity',
     icon: Icons.monitor_heart_outlined,
-    child: Column(children: [_detailAction('View pool trades', 'Orders and floating P/L', Icons.bar_chart, () => _showPammMessage('No pool trades are available yet.')), const SizedBox(height: 8), _detailAction('Trade pattern analysis', 'Behavioral metrics and win rate', Icons.trending_up, () => _showPammMessage('Trade pattern analysis will appear when trading activity is available.'))]),
+    child: Column(
+      children: [
+        _detailAction(
+          'View pool trades',
+          'Orders and floating P/L',
+          Icons.bar_chart,
+          () => _openPoolTrades(pool),
+        ),
+        const SizedBox(height: 8),
+        _detailAction(
+          'Trade pattern analysis',
+          'Behavioral metrics and win rate',
+          Icons.trending_up,
+          () => _openTradePatternAnalysis(pool),
+        ),
+      ],
+    ),
   );
 
   Widget _managedHeroCard(_PammPool pool) => Container(
@@ -1391,12 +1618,18 @@ class _PammPageState extends State<PammPage> {
 
   Widget _buildPoolCard(_PammPool pool, {required bool managed}) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _border),
-        boxShadow: const [BoxShadow(color: Color(0x080F2748), blurRadius: 8, offset: Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _dark ? 0.2 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1404,20 +1637,37 @@ class _PammPageState extends State<PammPage> {
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: managed ? const [Color(0xFF2563EB), Color(0xFF1D4ED8)] : const [Color(0xFFF59E0B), Color(0xFFD97706)]),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: managed
+                        ? const [Color(0xFF1A3A8C), Color(0xFF2563EB)]
+                        : const [Color(0xFFD97706), Color(0xFFF59E0B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(13),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (managed ? _blue : _gold).withValues(alpha: 0.28),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Center(
                   child: Text(
                     pool.name.isEmpty ? 'P' : pool.name[0].toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 11),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1426,42 +1676,117 @@ class _PammPageState extends State<PammPage> {
                       pool.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(color: _text, fontSize: 13, fontWeight: FontWeight.w800),
+                      style: GoogleFonts.inter(
+                        color: _text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                    const SizedBox(height: 3),
-                    Text('MT5 Account · ${pool.login}', style: TextStyle(color: _muted, fontSize: 10)),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(
+                          'MT5 ${pool.login}',
+                          style: GoogleFonts.inter(
+                            color: _muted,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () => _copyPammValue(pool.login),
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(
+                              Icons.copy_outlined,
+                              size: 11,
+                              color: _muted,
+                            ),
+                          ),
+                        ),
+                        if (!managed) ...[
+                          Text(
+                            ' • ${pool.manager}',
+                            style: GoogleFonts.inter(
+                              color: _muted,
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF9DEDD1)),
+                  color: _green.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _green.withValues(alpha: 0.3)),
                 ),
-                child: const Text(
-                  '● LIVE',
-                  style: TextStyle(color: Color(0xFF008B68), fontSize: 8, fontWeight: FontWeight.w800),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: _green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'ACTIVE',
+                      style: GoogleFonts.inter(
+                        color: _green,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: 12),
           Container(height: 1, color: _border),
           const SizedBox(height: 11),
           Row(
             children: [
               Expanded(child: _cardStat('LEVERAGE', pool.leverage)),
-              Expanded(child: _cardStat(managed ? 'MANAGER BALANCE' : 'POOL EQUITY', _money(managed ? pool.managerBalance : pool.equity))),
-              Expanded(child: _cardStat(managed ? 'POOL VALUE' : 'PROFIT SHARE', managed ? _money(pool.equity) : '${pool.share.toStringAsFixed(2)}%')),
+              Expanded(
+                child: _cardStat(
+                  managed ? 'MANAGER BALANCE' : 'POOL EQUITY',
+                  _money(managed ? pool.managerBalance : pool.equity),
+                ),
+              ),
+              Expanded(
+                child: _cardStat(
+                  managed ? 'POOL VALUE' : 'PROFIT SHARE',
+                  managed ? _money(pool.equity) : '${pool.share.toStringAsFixed(2)}%',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: Text(managed ? 'Managed PAMM account' : 'Open for new investment', style: TextStyle(color: _muted, fontSize: 10)),
+                child: Text(
+                  managed ? 'Managed PAMM Pool' : 'Open for Investor Allocation',
+                  style: GoogleFonts.inter(
+                    color: _muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               if (managed) ...[
                 OutlinedButton.icon(
@@ -1471,6 +1796,9 @@ class _PammPageState extends State<PammPage> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _text,
                     side: BorderSide(color: _border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     minimumSize: const Size(0, 34),
                   ),
@@ -1478,8 +1806,19 @@ class _PammPageState extends State<PammPage> {
                 const SizedBox(width: 7),
                 FilledButton(
                   onPressed: () => _depositDialog(pool.name),
-                  style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white, minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 12)),
-                  child: const Text('Deposit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    minimumSize: const Size(0, 34),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  child: const Text(
+                    'Deposit',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ] else
                 Row(
@@ -1488,8 +1827,19 @@ class _PammPageState extends State<PammPage> {
                     FilledButton.icon(
                       onPressed: () => _joinInvestmentDialog(pool),
                       icon: const Icon(LucideIcons.trendingUp, size: 14),
-                      style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white, minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 10)),
-                      label: const Text('Invest Now', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      label: const Text(
+                        'Invest Now',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ],
                 ),
@@ -1500,32 +1850,48 @@ class _PammPageState extends State<PammPage> {
     );
   }
 
-  Widget _cardStat(String label, String value) => Column(
+  Widget _cardStat(String label, String value, {Color? color}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(color: _muted, fontSize: 8, fontWeight: FontWeight.w700),
+        style: GoogleFonts.inter(
+          color: _muted,
+          fontSize: 8.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
       ),
-      const SizedBox(height: 5),
+      const SizedBox(height: 4),
       Text(
         value,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(color: _text, fontSize: 11, fontWeight: FontWeight.w800),
+        style: GoogleFonts.jetBrainsMono(
+          color: color ?? _text,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     ],
   );
 
   Widget _buildInvestmentCard(_PammInvestment item) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _dark ? 0.2 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1533,25 +1899,48 @@ class _PammPageState extends State<PammPage> {
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(LucideIcons.walletCards, color: Color(0xFF2563EB), size: 21),
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF10B981), Color(0xFF059669)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(13),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _green.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(LucideIcons.walletCards, color: Colors.white, size: 20),
               ),
-              const SizedBox(width: 11),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       item.name,
-                      style: GoogleFonts.inter(color: _text, fontSize: 13, fontWeight: FontWeight.w800),
+                      style: GoogleFonts.inter(
+                        color: _text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      'MT5 Login · ${item.login}  |  ${item.manager}',
+                      'MT5 ${item.login}  •  Manager: ${item.manager}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: _muted, fontSize: 10),
+                      style: GoogleFonts.inter(
+                        color: _muted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -1565,7 +1954,7 @@ class _PammPageState extends State<PammPage> {
           Row(
             children: [
               Expanded(child: _cardStat('CURRENT VALUE', _money(item.value))),
-              Expanded(child: _cardStat('PROFIT / LOSS', _money(item.pnl))),
+              Expanded(child: _cardStat('PROFIT / LOSS', _money(item.pnl), color: item.pnl >= 0 ? _green : _rose)),
               Expanded(child: _cardStat('INITIAL DEPOSIT', _money(item.deposit))),
             ],
           ),
@@ -1573,7 +1962,14 @@ class _PammPageState extends State<PammPage> {
           Row(
             children: [
               Expanded(
-                child: Text('PAMM allocation', style: TextStyle(color: _muted, fontSize: 10)),
+                child: Text(
+                  'Active PAMM Allocation',
+                  style: GoogleFonts.inter(
+                    color: _muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               OutlinedButton.icon(
                 onPressed: () => _openInvestmentDetails(item),
@@ -1582,6 +1978,9 @@ class _PammPageState extends State<PammPage> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _text,
                   side: BorderSide(color: _border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   minimumSize: const Size(0, 34),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                 ),
@@ -1589,7 +1988,15 @@ class _PammPageState extends State<PammPage> {
               const SizedBox(width: 7),
               FilledButton(
                 onPressed: () => _depositDialog(item.name),
-                style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white, minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 12)),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  minimumSize: const Size(0, 34),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
                 child: const Text('Deposit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
               ),
             ],
@@ -1624,287 +2031,6 @@ class _PammPageState extends State<PammPage> {
     ),
   );
 
-  Widget _searchField(double width) => SizedBox(
-    width: width,
-    height: 38,
-    child: TextField(
-      controller: _search,
-      onChanged: (v) => setState(() => _query = v),
-      style: TextStyle(color: _text, fontSize: 11),
-      decoration: InputDecoration(
-        hintText: 'Search name, MT5 login...',
-        hintStyle: TextStyle(color: _muted, fontSize: 10),
-        prefixIcon: Icon(LucideIcons.search, color: _muted, size: 15),
-        prefixIconConstraints: const BoxConstraints(minWidth: 36),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        filled: true,
-        fillColor: _surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(11),
-          borderSide: BorderSide(color: _border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(11),
-          borderSide: BorderSide(color: _border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(11),
-          borderSide: const BorderSide(color: _blue),
-        ),
-      ),
-    ),
-  );
-
-  Widget _poolRows(List<_PammPool> rows, bool compact) {
-    if (rows.isEmpty) return _empty();
-    if (compact) {
-      return Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(children: [for (final p in rows) _mobilePool(p)]),
-      );
-    }
-    final available = _tab == 1;
-    final headers = available ? ['PAMM POOL', 'MT5 LOGIN', 'LEVERAGE', 'TOTAL POOL EQUITY', 'PROFIT SHARE', 'STATUS', 'ACTIONS'] : ['PAMM POOL', 'MT5 LOGIN', 'LEVERAGE', 'MANAGER BALANCE', 'P/L', 'TOTAL POOL VALUE', 'ACTIONS'];
-    final widths = [190.0, 130.0, 105.0, 150.0, 110.0, 140.0, 150.0];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 22, 16, 22),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 975),
-        child: Column(
-          children: [
-            _headerRow(headers, widths),
-            const SizedBox(height: 8),
-            for (final p in rows)
-              Container(
-                margin: const EdgeInsets.only(bottom: 7),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: _surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _border),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(width: widths[0], child: _poolName(p)),
-                    SizedBox(width: widths[1], child: _login(p.login)),
-                    SizedBox(width: widths[2], child: _bold(p.leverage)),
-                    SizedBox(width: widths[3], child: _bold(available ? _money(p.equity) : _money(p.managerBalance))),
-                    SizedBox(
-                      width: widths[4],
-                      child: available ? _share(p.share) : _bold(_money(p.pnl), color: _green),
-                    ),
-                    SizedBox(
-                      width: widths[5],
-                      child: available ? _status() : _bold(_money(p.equity), color: _gold),
-                    ),
-                    SizedBox(width: widths[6], child: available ? _availableActions(p, compact: true) : _actions(p)),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _investmentRows(List<_PammInvestment> rows, bool compact) {
-    if (rows.isEmpty) return _empty();
-    if (compact) {
-      return Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            for (final p in rows)
-              Container(
-                margin: const EdgeInsets.only(bottom: 9),
-                padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  color: _surface,
-                  borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: _border),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: _poolNameText(p.name)),
-                        _login(p.login),
-                      ],
-                    ),
-                    const SizedBox(height: 9),
-                    _labelValue('Manager', p.manager),
-                    _labelValue('Current value', _money(p.value)),
-                    _labelValue('P/L', _money(p.pnl)),
-                    _labelValue('Initial deposit', _money(p.deposit)),
-                    _labelValue('Pool share', '${p.share.toStringAsFixed(2)}%'),
-                    Align(alignment: Alignment.centerRight, child: _actionsInvestment(p)),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      );
-    }
-    final headers = ['INVESTMENT ACCOUNT', 'MANAGER', 'CURRENT VALUE', 'P/L', 'INITIAL DEPOSIT', 'POOL SHARE', 'ACTIONS'];
-    final widths = [190.0, 155.0, 135.0, 105.0, 135.0, 115.0, 150.0];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 22, 16, 22),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 985),
-        child: Column(
-          children: [
-            _headerRow(headers, widths),
-            const SizedBox(height: 8),
-            for (final p in rows)
-              Container(
-                margin: const EdgeInsets.only(bottom: 7),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: _surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _border),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: widths[0],
-                      child: _poolNameText(p.name, subtitle: p.login),
-                    ),
-                    SizedBox(width: widths[1], child: _bold(p.manager)),
-                    SizedBox(width: widths[2], child: _bold(_money(p.value))),
-                    SizedBox(
-                      width: widths[3],
-                      child: _bold(_money(p.pnl), color: _green),
-                    ),
-                    SizedBox(
-                      width: widths[4],
-                      child: _bold(_money(p.deposit), color: _muted),
-                    ),
-                    SizedBox(width: widths[5], child: _share(p.share)),
-                    SizedBox(width: widths[6], child: _actionsInvestment(p)),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _headerRow(List<String> labels, List<double> widths) => Container(
-    color: _surface,
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-    child: Row(
-      children: [
-        for (var i = 0; i < labels.length; i++)
-          SizedBox(
-            width: widths[i],
-            child: Text(
-              labels[i],
-              style: TextStyle(color: _muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .6),
-            ),
-          ),
-      ],
-    ),
-  );
-
-  Widget _mobilePool(_PammPool p) => Container(
-    margin: const EdgeInsets.only(bottom: 9),
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: _surface,
-      borderRadius: BorderRadius.circular(13),
-      border: Border.all(color: _border),
-    ),
-    child: Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: _poolName(p)),
-            _login(p.login),
-          ],
-        ),
-        const SizedBox(height: 9),
-        _labelValue('Leverage', p.leverage),
-        _labelValue(_tab == 1 ? 'Profit share' : 'Manager balance', _tab == 1 ? '${p.share.toStringAsFixed(2)}%' : _money(p.managerBalance)),
-        const SizedBox(height: 8),
-        Align(alignment: Alignment.centerRight, child: _tab == 1 ? _availableActions(p) : _actions(p)),
-      ],
-    ),
-  );
-
-  Widget _poolName(_PammPool p) => Row(
-    children: [
-      Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF6D9),
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: const Color(0xFFF8D979)),
-        ),
-        child: Center(
-          child: Text(
-            p.name.substring(0, 1).toUpperCase(),
-            style: const TextStyle(color: Color(0xFF99620A), fontWeight: FontWeight.w800),
-          ),
-        ),
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              p.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w800),
-            ),
-            if (_tab == 0)
-              const Text(
-                '● MT5 Live',
-                style: TextStyle(color: _green, fontSize: 8, fontWeight: FontWeight.w700),
-              ),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _poolNameText(String name, {String? subtitle}) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        name,
-        style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w800),
-      ),
-      if (subtitle != null) Text(subtitle, style: TextStyle(color: _muted, fontSize: 9)),
-    ],
-  );
-
-  Widget _login(String value) => Align(
-    alignment: Alignment.centerLeft,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: _border),
-      ),
-      child: Text(
-        value,
-        style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w700),
-      ),
-    ),
-  );
-
-  Widget _bold(String value, {Color? color}) => Text(
-    value,
-    style: TextStyle(color: color ?? _text, fontSize: 10.5, fontWeight: FontWeight.w800),
-  );
   Widget _share(double value) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
@@ -1915,106 +2041,6 @@ class _PammPageState extends State<PammPage> {
     child: Text(
       '${value.toStringAsFixed(2)}%',
       style: const TextStyle(color: Color(0xFF99620A), fontSize: 9, fontWeight: FontWeight.w800),
-    ),
-  );
-  Widget _status() => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: const Color(0xFFE9FBF4),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xFF9DEDD1)),
-    ),
-    child: const Text(
-      '● Open Pool',
-      style: TextStyle(color: Color(0xFF008B68), fontSize: 9, fontWeight: FontWeight.w700),
-    ),
-  );
-
-  Widget _goldButton(String label, VoidCallback action) => FilledButton(
-    onPressed: action,
-    style: FilledButton.styleFrom(
-      backgroundColor: _gold,
-      foregroundColor: const Color(0xFF17233D),
-      elevation: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      minimumSize: const Size(0, 34),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-    ),
-    child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
-  );
-
-  Widget _actions(_PammPool p) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      _goldButton('Deposit', () => _depositDialog(p.name)),
-      const SizedBox(width: 6),
-      OutlinedButton(
-        onPressed: () => _openManagedDetails(p),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: _text,
-          side: BorderSide(color: _border),
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
-          minimumSize: const Size(0, 34),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-        ),
-        child: const Row(
-          children: [
-            Text('Details', style: TextStyle(fontSize: 10)),
-            Icon(LucideIcons.chevronRight, size: 13),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _availableActions(_PammPool pool, {bool compact = false}) {
-    final invest = _goldButton('Invest Now', () => _joinInvestmentDialog(pool));
-    return compact ? Align(alignment: Alignment.centerLeft, child: invest) : invest;
-  }
-
-  Widget _actionsInvestment(_PammInvestment p) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      _goldButton('Deposit', () => _depositDialog(p.name)),
-      const SizedBox(width: 6),
-      OutlinedButton(
-        onPressed: () => _openInvestmentDetails(p),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: _text,
-          side: BorderSide(color: _border),
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
-          minimumSize: const Size(0, 34),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-        ),
-        child: const Row(
-          children: [
-            Text('Details', style: TextStyle(fontSize: 10)),
-            Icon(LucideIcons.chevronRight, size: 13),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _labelValue(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(label, style: TextStyle(color: _muted, fontSize: 10)),
-        ),
-        Text(
-          value,
-          style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w700),
-        ),
-      ],
-    ),
-  );
-
-  Widget _empty() => Padding(
-    padding: const EdgeInsets.all(28),
-    child: Center(
-      child: Text('No records found', style: TextStyle(color: _muted, fontSize: 12)),
     ),
   );
 

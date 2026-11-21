@@ -233,6 +233,10 @@ class _LoginPageState extends State<LoginPage> {
       termsErr = 'Please accept the Terms & Conditions and Privacy Policy.';
     }
 
+    if (!_emailVerified) {
+      emailErr = 'Please verify your email address to continue.';
+    }
+
     if (nameErr != null || emailErr != null || passErr != null || termsErr != null) {
       setState(() {
         _signUpNameError = nameErr;
@@ -240,6 +244,9 @@ class _LoginPageState extends State<LoginPage> {
         _signUpPasswordError = passErr;
         _signUpTermsError = termsErr;
       });
+      if (emailErr != null && nameErr == null && passErr == null && termsErr == null && !_emailVerified) {
+        _showSignUpEmailVerificationModal(isDark: Theme.of(context).brightness == Brightness.dark);
+      }
       return;
     }
 
@@ -251,6 +258,33 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     showAppMessage('Account creation is not connected yet.');
+  }
+
+  void _showSignUpEmailVerificationModal({required bool isDark}) {
+    FocusScope.of(context).unfocus();
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
+      setState(() => _signUpEmailError = 'Please enter a valid email address first.');
+      return;
+    }
+    setState(() => _signUpEmailError = null);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      builder: (sheetContext) => _SignUpEmailVerificationModal(
+        email: email,
+        isDark: isDark,
+        onVerified: () {
+          setState(() {
+            _emailVerified = true;
+            _signUpEmailError = null;
+          });
+        },
+      ),
+    );
   }
 
   void _showHelpModal() {
@@ -938,26 +972,26 @@ class _LoginPageState extends State<LoginPage> {
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: FilledButton(
-                    onPressed: () {
-                      final email = _emailController.text.trim();
-                      if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-                        setState(() => _signUpEmailError = 'Please enter a valid email address.');
-                        return;
-                      }
-                      setState(() {
-                        _emailVerified = true;
-                        _signUpEmailError = null;
-                      });
-                      showAppMessage('Email verified.');
-                    },
+                    onPressed: _emailVerified ? null : () => _showSignUpEmailVerificationModal(isDark: isDark),
                     style: FilledButton.styleFrom(
                       backgroundColor: _emailVerified ? const Color(0xFF2E7D32) : _loginRoyalBlue,
                       foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFF2E7D32),
+                      disabledForegroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       minimumSize: const Size(0, 36),
                     ),
-                    child: Text(_emailVerified ? 'Verified' : 'Verify', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_emailVerified) ...[
+                          const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                          const SizedBox(width: 4),
+                        ],
+                        Text(_emailVerified ? 'Verified' : 'Verify', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -2338,6 +2372,501 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                     _ => _buildStep4Content(titleColor, subtitleColor),
                   },
                 ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bottom popup modal for Sign-Up email OTP verification
+class _SignUpEmailVerificationModal extends StatefulWidget {
+  const _SignUpEmailVerificationModal({
+    required this.email,
+    required this.isDark,
+    required this.onVerified,
+  });
+
+  final String email;
+  final bool isDark;
+  final VoidCallback onVerified;
+
+  @override
+  State<_SignUpEmailVerificationModal> createState() => _SignUpEmailVerificationModalState();
+}
+
+class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationModal> {
+  final TextEditingController _otpController = TextEditingController();
+  final FocusNode _otpFocusNode = FocusNode();
+  String? _error;
+  int _countdown = 45;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+    _otpFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _otpFocusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _otpController.dispose();
+    _otpFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() => _countdown = 45);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_countdown > 1) {
+        setState(() => _countdown--);
+      } else {
+        timer.cancel();
+        setState(() => _countdown = 0);
+      }
+    });
+  }
+
+  void _verifyOtp() {
+    FocusScope.of(context).unfocus();
+    final otp = _otpController.text.trim();
+    if (otp.isEmpty) {
+      setState(() => _error = 'Please enter the verification code.');
+      return;
+    }
+    if (otp.length < 4) {
+      setState(() => _error = 'Please enter the complete verification code.');
+      return;
+    }
+    widget.onVerified();
+    Navigator.pop(context);
+  }
+
+  Widget _buildActionButton() {
+    return FilledButton(
+      onPressed: _verifyOtp,
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        padding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      ),
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF267DFF), Color(0xFF0B52C7)],
+          ),
+          border: Border.all(color: _loginGoldRim, width: 1.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x4D1E70E8),
+              offset: Offset(0, 6),
+              blurRadius: 14,
+            ),
+          ],
+        ),
+        child: SizedBox(
+          height: 54,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Center(
+                child: Text(
+                  'Verify Email',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 8,
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.22),
+                  ),
+                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final titleColor = widget.isDark ? Colors.white : _loginDarkBlueText;
+    final subtitleColor = widget.isDark ? const Color(0xFF9EA3B0) : _loginMutedBlueText;
+    final inputBg = widget.isDark ? const Color(0xFF191A20) : const Color(0xFFF4F8FD);
+    final inputBorder = widget.isDark ? const Color(0x33FFFFFF) : _loginGoldBorder;
+    final inputTextColor = widget.isDark ? Colors.white : _loginDarkBlueText;
+    final placeholderColor = widget.isDark ? const Color(0xFF757885) : _loginPlaceholderText;
+    final otpText = _otpController.text;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: widget.isDark ? const Color(0xFF22232A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border.all(
+            color: widget.isDark ? const Color(0x33FFFFFF) : const Color(0x66ECC868),
+            width: 1.2,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x40000000),
+              offset: Offset(0, -6),
+              blurRadius: 24,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 14, 24, 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top handle & close row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 32),
+                    Container(
+                      width: 42,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: widget.isDark ? const Color(0xFF454854) : const Color(0x80ECC868),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        LucideIcons.x,
+                        color: widget.isDark ? const Color(0xFF888F9F) : _loginPlaceholderText,
+                        size: 20,
+                      ),
+                      tooltip: 'Close',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                Text(
+                  'Verify Email Address',
+                  style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                Text.rich(
+                  TextSpan(
+                    text: 'We sent a 6-digit verification code to\n',
+                    style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
+                    children: [
+                      TextSpan(
+                        text: widget.email,
+                        style: TextStyle(
+                          color: widget.isDark ? Colors.white : _loginDarkBlueText,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 6-digit PIN Box interactive input
+                SizedBox(
+                  height: 62,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Opacity(
+                        opacity: 0.0,
+                        child: TextField(
+                          controller: _otpController,
+                          focusNode: _otpFocusNode,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          autofocus: true,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
+                          onChanged: (val) {
+                            if (_error != null) setState(() => _error = null);
+                            setState(() {});
+                            if (val.length == 6) {
+                              _verifyOtp();
+                            }
+                          },
+                          onSubmitted: (_) => _verifyOtp(),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _otpFocusNode.requestFocus(),
+                        behavior: HitTestBehavior.opaque,
+                        child: Row(
+                          children: List.generate(6, (index) {
+                            final hasChar = index < otpText.length;
+                            final char = hasChar ? otpText[index] : '';
+                            final isFocusedCell = _otpFocusNode.hasFocus &&
+                                (index == otpText.length || (index == 5 && otpText.length == 6));
+                            final hasError = _error != null;
+
+                            Color cellBorder;
+                            double borderWidth;
+                            List<BoxShadow> cellShadow;
+
+                            if (hasError) {
+                              cellBorder = _loginErrorColor;
+                              borderWidth = 1.5;
+                              cellShadow = const [
+                                BoxShadow(color: Color(0x26E53935), offset: Offset(0, 3), blurRadius: 8),
+                              ];
+                            } else if (isFocusedCell) {
+                              cellBorder = _loginRoyalBlue;
+                              borderWidth = 2.0;
+                              cellShadow = [
+                                BoxShadow(
+                                  color: _loginRoyalBlue.withValues(alpha: 0.28),
+                                  offset: const Offset(0, 4),
+                                  blurRadius: 10,
+                                ),
+                              ];
+                            } else if (hasChar) {
+                              cellBorder = widget.isDark ? const Color(0xFF4C7FD8) : _loginRoyalBlue.withValues(alpha: 0.65);
+                              borderWidth = 1.5;
+                              cellShadow = const [
+                                BoxShadow(
+                                  color: Color(0x141E70E8),
+                                  offset: Offset(0, 2),
+                                  blurRadius: 6,
+                                ),
+                              ];
+                            } else {
+                              cellBorder = inputBorder;
+                              borderWidth = 1.2;
+                              cellShadow = [];
+                            }
+
+                            return Expanded(
+                              child: Container(
+                                height: 60,
+                                margin: EdgeInsets.only(
+                                  left: index == 0 ? 0 : 4,
+                                  right: index == 5 ? 0 : 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: inputBg,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: cellBorder, width: borderWidth),
+                                  boxShadow: cellShadow,
+                                ),
+                                child: Center(
+                                  child: hasChar
+                                      ? Text(
+                                          char,
+                                          style: TextStyle(
+                                            color: inputTextColor,
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        )
+                                      : isFocusedCell
+                                          ? Container(
+                                              width: 2.2,
+                                              height: 22,
+                                              decoration: BoxDecoration(
+                                                color: _loginRoyalBlue,
+                                                borderRadius: BorderRadius.circular(1),
+                                              ),
+                                            )
+                                          : Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: placeholderColor.withValues(alpha: 0.35),
+                                              ),
+                                            ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 8, bottom: 2),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.alertCircle, size: 14, color: _loginErrorColor),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(
+                              color: _loginErrorColor,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 14),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    InkWell(
+                      onTap: () async {
+                        final data = await Clipboard.getData('text/plain');
+                        if (data?.text != null) {
+                          final digits = data!.text!.replaceAll(RegExp(r'\D'), '');
+                          if (digits.isNotEmpty) {
+                            final code = digits.substring(0, math.min(6, digits.length));
+                            setState(() {
+                              _otpController.text = code;
+                              if (_error != null) _error = null;
+                            });
+                            if (code.length == 6) {
+                              _verifyOtp();
+                            }
+                          }
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              LucideIcons.clipboardPaste,
+                              size: 14,
+                              color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Paste code',
+                              style: TextStyle(
+                                color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (otpText.isNotEmpty)
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _otpController.clear();
+                            if (_error != null) _error = null;
+                          });
+                          _otpFocusNode.requestFocus();
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          child: Text(
+                            'Clear',
+                            style: TextStyle(
+                              color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                Center(
+                  child: _countdown > 0
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: widget.isDark ? const Color(0xFF1E2028) : const Color(0xFFF0F5FD),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: widget.isDark ? const Color(0x22FFFFFF) : const Color(0x331E70E8),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.clock, size: 14, color: subtitleColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Resend code in 00:${_countdown.toString().padLeft(2, '0')}',
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : TextButton.icon(
+                          onPressed: () {
+                            _startTimer();
+                            setState(() {
+                              _otpController.clear();
+                              if (_error != null) _error = null;
+                            });
+                            _otpFocusNode.requestFocus();
+                          },
+                          icon: const Icon(LucideIcons.rotateCcw, size: 14, color: _loginRoyalBlue),
+                          label: const Text(
+                            'Resend OTP Code',
+                            style: TextStyle(color: _loginRoyalBlue, fontSize: 13, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                ),
+
+                const SizedBox(height: 20),
+
+                _buildActionButton(),
               ],
             ),
           ),

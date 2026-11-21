@@ -1468,6 +1468,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
 
   late final TextEditingController _emailController;
   final TextEditingController _otpController = TextEditingController();
+  final FocusNode _otpFocusNode = FocusNode();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
@@ -1482,6 +1483,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
   void initState() {
     super.initState();
     _emailController = TextEditingController(text: widget.initialEmail);
+    _otpFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -1489,6 +1493,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     _countdownTimer?.cancel();
     _emailController.dispose();
     _otpController.dispose();
+    _otpFocusNode.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -1525,6 +1530,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       _currentStep = 2;
     });
     _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _otpFocusNode.requestFocus();
+    });
   }
 
   // --- Step 2: Verify OTP ---
@@ -1731,94 +1739,317 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     );
   }
 
-  // --- View: Step 2 Content ---
+  // --- View: Step 2 Content (Modern 6-Cell OTP Input with Superior UX) ---
   Widget _buildStep2Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+    final otpText = _otpController.text;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Enter Verification Code',
-          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Enter Verification Code',
+                style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+            ),
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _stepError = null;
+                  _currentStep = 1;
+                });
+              },
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Text(
+                  'Change',
+                  style: TextStyle(
+                    color: widget.isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 6),
         Text.rich(
           TextSpan(
-            text: 'We sent a 6-digit verification code to\n',
+            text: 'We sent a 6-digit code to ',
             style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
             children: [
               TextSpan(
                 text: _emailController.text.trim(),
-                style: TextStyle(color: widget.isDark ? Colors.white : _loginRoyalBlue, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: widget.isDark ? Colors.white : _loginDarkBlueText,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        Container(
-          height: 56,
-          decoration: BoxDecoration(
-            color: inputBg,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: _stepError != null ? _loginErrorColor : inputBorder,
-              width: 1.2,
-            ),
-          ),
-          child: Center(
-            child: TextFormField(
-              controller: _otpController,
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submitStep2(),
-              cursorColor: _loginRoyalBlue,
-              maxLength: 6,
-              style: TextStyle(
-                color: inputTextColor,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 10,
-                height: 1.2,
-              ),
-              onChanged: (_) {
-                if (_stepError != null) setState(() => _stepError = null);
-              },
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                isDense: true,
-                counterText: '',
-                hintText: '• • • • • •',
-                hintStyle: TextStyle(
-                  color: placeholderColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 8,
+        const SizedBox(height: 24),
+
+        // 6-digit PIN Box interactive input
+        SizedBox(
+          height: 62,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Hidden real text field backing the UX
+              Opacity(
+                opacity: 0.0,
+                child: TextField(
+                  controller: _otpController,
+                  focusNode: _otpFocusNode,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  autofocus: true,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
+                  onChanged: (val) {
+                    if (_stepError != null) setState(() => _stepError = null);
+                    setState(() {});
+                    if (val.length == 6) {
+                      _submitStep2();
+                    }
+                  },
+                  onSubmitted: (_) => _submitStep2(),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-            ),
+
+              // Visual 6 individual cells
+              GestureDetector(
+                onTap: () => _otpFocusNode.requestFocus(),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  children: List.generate(6, (index) {
+                    final hasChar = index < otpText.length;
+                    final char = hasChar ? otpText[index] : '';
+                    final isFocusedCell = _otpFocusNode.hasFocus &&
+                        (index == otpText.length || (index == 5 && otpText.length == 6));
+                    final hasError = _stepError != null;
+
+                    Color cellBorder;
+                    double borderWidth;
+                    List<BoxShadow> cellShadow;
+
+                    if (hasError) {
+                      cellBorder = _loginErrorColor;
+                      borderWidth = 1.5;
+                      cellShadow = const [
+                        BoxShadow(color: Color(0x26E53935), offset: Offset(0, 3), blurRadius: 8),
+                      ];
+                    } else if (isFocusedCell) {
+                      cellBorder = _loginRoyalBlue;
+                      borderWidth = 2.0;
+                      cellShadow = [
+                        BoxShadow(
+                          color: _loginRoyalBlue.withValues(alpha: 0.28),
+                          offset: const Offset(0, 4),
+                          blurRadius: 10,
+                        ),
+                      ];
+                    } else if (hasChar) {
+                      cellBorder = widget.isDark ? const Color(0xFF4C7FD8) : _loginRoyalBlue.withValues(alpha: 0.65);
+                      borderWidth = 1.5;
+                      cellShadow = const [
+                        BoxShadow(
+                          color: Color(0x141E70E8),
+                          offset: Offset(0, 2),
+                          blurRadius: 6,
+                        ),
+                      ];
+                    } else {
+                      cellBorder = inputBorder;
+                      borderWidth = 1.2;
+                      cellShadow = [];
+                    }
+
+                    return Expanded(
+                      child: Container(
+                        height: 60,
+                        margin: EdgeInsets.only(
+                          left: index == 0 ? 0 : 4,
+                          right: index == 5 ? 0 : 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: inputBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: cellBorder, width: borderWidth),
+                          boxShadow: cellShadow,
+                        ),
+                        child: Center(
+                          child: hasChar
+                              ? Text(
+                                  char,
+                                  style: TextStyle(
+                                    color: inputTextColor,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                )
+                              : isFocusedCell
+                                  ? Container(
+                                      width: 2.2,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        color: _loginRoyalBlue,
+                                        borderRadius: BorderRadius.circular(1),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: placeholderColor.withValues(alpha: 0.35),
+                                      ),
+                                    ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
         ),
+
         _buildStepErrorFeedback(),
+
+        const SizedBox(height: 14),
+
+        // Helper row: Quick paste & Clear action
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            InkWell(
+              onTap: () async {
+                final data = await Clipboard.getData('text/plain');
+                if (data?.text != null) {
+                  final digits = data!.text!.replaceAll(RegExp(r'\D'), '');
+                  if (digits.isNotEmpty) {
+                    final code = digits.substring(0, math.min(6, digits.length));
+                    setState(() {
+                      _otpController.text = code;
+                      if (_stepError != null) _stepError = null;
+                    });
+                    if (code.length == 6) {
+                      _submitStep2();
+                    }
+                  }
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      LucideIcons.clipboardPaste,
+                      size: 14,
+                      color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Paste code',
+                      style: TextStyle(
+                        color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (otpText.isNotEmpty)
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _otpController.clear();
+                    if (_stepError != null) _stepError = null;
+                  });
+                  _otpFocusNode.requestFocus();
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Text(
+                    'Clear',
+                    style: TextStyle(
+                      color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+
         const SizedBox(height: 12),
+
+        // Resend code countdown timer pill / active button
         Center(
           child: _resendCountdown > 0
-              ? Text(
-                  'Resend code in 00:${_resendCountdown.toString().padLeft(2, '0')}',
-                  style: TextStyle(color: subtitleColor, fontSize: 12.5),
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: widget.isDark ? const Color(0xFF1E2028) : const Color(0xFFF0F5FD),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: widget.isDark ? const Color(0x22FFFFFF) : const Color(0x331E70E8),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.clock,
+                        size: 14,
+                        color: subtitleColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Resend code in 00:${_resendCountdown.toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 )
-              : TextButton(
+              : TextButton.icon(
                   onPressed: () {
                     _startTimer();
-                    setState(() => _otpController.clear());
+                    setState(() {
+                      _otpController.clear();
+                      if (_stepError != null) _stepError = null;
+                    });
+                    _otpFocusNode.requestFocus();
                   },
-                  child: const Text(
+                  icon: const Icon(LucideIcons.rotateCcw, size: 14, color: _loginRoyalBlue),
+                  label: const Text(
                     'Resend OTP Code',
                     style: TextStyle(color: _loginRoyalBlue, fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ),
         ),
-        const SizedBox(height: 16),
+
+        const SizedBox(height: 20),
+
         _buildActionButton(
           label: 'Verify OTP',
           onPressed: _submitStep2,

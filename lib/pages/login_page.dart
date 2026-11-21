@@ -1,14 +1,16 @@
 part of '../main.dart';
 
-const _loginDarkBg = Color(0xFF222427);
-const _loginCardBg = Color(0xFF2B2D31);
-const _loginCardBorder = Color(0xFF383B41);
-const _loginFieldInsetBg = Color(0xFF202226);
-const _loginFieldBorder = Color(0xFF383B42);
-const _loginLabelMuted = Color(0xFF9EA3AC);
-const _loginBtnGradTop = Color(0xFF383B41);
-const _loginBtnGradBottom = Color(0xFF2C2E33);
-const _loginBtnText = Color(0xFFE4E7ED);
+const _loginDarkBg = Color(0xFF091428);
+const _loginCardBg = Color(0xFF0F2244);
+const _loginCardBorder = Color(0x33D8A82E);
+const _loginFieldInsetBg = Color(0xFF071224);
+const _loginFieldBorder = Color(0xFF1B365D);
+const _loginLabelMuted = Color(0xFF9FB5D4);
+const _loginGold = Color(0xFFD8A82E);
+const _loginGoldLight = Color(0xFFECC25A);
+const _loginBtnGradTop = Color(0xFFECC25A);
+const _loginBtnGradBottom = Color(0xFFC4931A);
+const _loginBtnText = Color(0xFF081427);
 
 class LoginPage extends StatefulWidget {
   const LoginPage({
@@ -174,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0x66D8A82E),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -199,8 +201,8 @@ class _LoginPageState extends State<LoginPage> {
                 showAppMessage('Password reset instructions sent to your registered email.');
               },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF36393F),
-                foregroundColor: Colors.white,
+                backgroundColor: _loginGold,
+                foregroundColor: _loginBtnText,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -214,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFF383B42)),
+                side: const BorderSide(color: Color(0x66D8A82E)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -240,17 +242,17 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: BoxDecoration(
                   color: _loginCardBg,
                   borderRadius: BorderRadius.circular(38),
-                  border: Border.all(color: _loginCardBorder, width: 1.0),
+                  border: Border.all(color: _loginCardBorder, width: 1.2),
                   boxShadow: const [
                     BoxShadow(
-                      color: Color(0x66000000),
-                      offset: Offset(0, 14),
-                      blurRadius: 28,
+                      color: Color(0x80020712),
+                      offset: Offset(0, 16),
+                      blurRadius: 32,
                     ),
                     BoxShadow(
-                      color: Color(0x12FFFFFF),
+                      color: Color(0x1AD8A82E),
                       offset: Offset(0, -2),
-                      blurRadius: 8,
+                      blurRadius: 10,
                     ),
                   ],
                 ),
@@ -274,17 +276,17 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF35383E), Color(0xFF202226)],
+            colors: [Color(0xFF1B3D70), Color(0xFF0C1B33)],
           ),
           boxShadow: [
             BoxShadow(
-              color: Color(0x8A000000),
-              offset: Offset(6, 8),
+              color: Color(0x66000000),
+              offset: Offset(4, 8),
               blurRadius: 16,
             ),
             BoxShadow(
-              color: Color(0x14FFFFFF),
-              offset: Offset(-3, -3),
+              color: Color(0x33D8A82E),
+              offset: Offset(-2, -2),
               blurRadius: 8,
             ),
           ],
@@ -293,8 +295,8 @@ class _LoginPageState extends State<LoginPage> {
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFF1B1C1F),
-            border: Border.all(color: const Color(0x40FFFFFF), width: 1.2),
+            color: const Color(0xFF061020),
+            border: Border.all(color: const Color(0x80D8A82E), width: 1.5),
           ),
           child: ClipOval(
             child: Padding(
@@ -341,7 +343,7 @@ class _LoginPageState extends State<LoginPage> {
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              cursorColor: Colors.white,
+              cursorColor: _loginGold,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 15,
@@ -378,7 +380,7 @@ class _LoginPageState extends State<LoginPage> {
                     obscuringCharacter: '•',
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),
-                    cursorColor: Colors.white,
+                    cursorColor: _loginGold,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -398,7 +400,7 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                     icon: Icon(
                       _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
-                      color: const Color(0xFFE2E6EC),
+                      color: _loginGoldLight,
                       size: 20,
                     ),
                     tooltip: _passwordVisible ? 'Hide password' : 'Show password',
@@ -427,7 +429,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextSpan(
                     text: 'Forgot your login details? ',
                     style: TextStyle(
-                      color: const Color(0xFF8E939D),
+                      color: _loginLabelMuted,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w400,
                     ),
@@ -435,7 +437,7 @@ class _LoginPageState extends State<LoginPage> {
                       TextSpan(
                         text: 'Get help login in.',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: _loginGold,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -482,7 +484,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextSpan(
                     text: "Don't have an account? ",
                     style: TextStyle(
-                      color: const Color(0xFF8E939D),
+                      color: _loginLabelMuted,
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                     ),
@@ -490,7 +492,7 @@ class _LoginPageState extends State<LoginPage> {
                       TextSpan(
                         text: 'Sign up',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: _loginGold,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -543,7 +545,7 @@ class _LoginPageState extends State<LoginPage> {
           _buildInsetField(
             child: TextFormField(
               controller: _nameController,
-              cursorColor: Colors.white,
+              cursorColor: _loginGold,
               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
               validator: (v) => _required(v, 'your full name'),
               decoration: const InputDecoration(
@@ -567,7 +569,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    cursorColor: Colors.white,
+                    cursorColor: _loginGold,
                     style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                     validator: (v) {
                       final email = v?.trim() ?? '';
@@ -598,9 +600,10 @@ class _LoginPageState extends State<LoginPage> {
                       showAppMessage('Email verified.');
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF383B41),
-                      foregroundColor: Colors.white,
+                      backgroundColor: _emailVerified ? _loginGold : const Color(0xFF163259),
+                      foregroundColor: _emailVerified ? _loginBtnText : Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: BorderSide(color: _emailVerified ? _loginGold : const Color(0x66D8A82E)),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       minimumSize: const Size(0, 36),
                     ),
@@ -620,7 +623,7 @@ class _LoginPageState extends State<LoginPage> {
           _buildInsetField(
             child: TextFormField(
               controller: _referralController,
-              cursorColor: Colors.white,
+              cursorColor: _loginGold,
               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
               decoration: const InputDecoration(
                 border: InputBorder.none,
@@ -644,7 +647,7 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _passwordController,
                     obscureText: !_passwordVisible,
                     obscuringCharacter: '•',
-                    cursorColor: Colors.white,
+                    cursorColor: _loginGold,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -669,7 +672,7 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                     icon: Icon(
                       _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
-                      color: const Color(0xFFE2E6EC),
+                      color: _loginGoldLight,
                       size: 20,
                     ),
                   ),
@@ -685,9 +688,9 @@ class _LoginPageState extends State<LoginPage> {
               Checkbox(
                 value: _acceptedTerms,
                 onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
-                activeColor: const Color(0xFF383B41),
-                checkColor: Colors.white,
-                side: const BorderSide(color: Color(0xFF5A5E68)),
+                activeColor: _loginGold,
+                checkColor: _loginBtnText,
+                side: const BorderSide(color: Color(0xFF2C4A7A)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
               Expanded(
@@ -696,9 +699,9 @@ class _LoginPageState extends State<LoginPage> {
                     text: 'I agree to the ',
                     style: TextStyle(color: _loginLabelMuted, fontSize: 12.5),
                     children: const [
-                      TextSpan(text: 'Terms & Conditions', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      TextSpan(text: 'Terms & Conditions', style: TextStyle(color: _loginGold, fontWeight: FontWeight.w600)),
                       TextSpan(text: ' and '),
-                      TextSpan(text: 'Privacy Policy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      TextSpan(text: 'Privacy Policy', style: TextStyle(color: _loginGold, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -722,9 +725,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: Text.rich(
                   TextSpan(
                     text: 'Already have an account? ',
-                    style: TextStyle(color: const Color(0xFF8E939D), fontSize: 13),
+                    style: TextStyle(color: _loginLabelMuted, fontSize: 13),
                     children: const [
-                      TextSpan(text: 'Log in', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      TextSpan(text: 'Log in', style: TextStyle(color: _loginGold, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -766,16 +769,16 @@ class _LoginPageState extends State<LoginPage> {
             end: Alignment.bottomCenter,
             colors: [_loginBtnGradTop, _loginBtnGradBottom],
           ),
-          border: Border.all(color: const Color(0x2EFFFFFF), width: 1.0),
+          border: Border.all(color: const Color(0x99FFE8A3), width: 1.2),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x8A000000),
-              offset: Offset(0, 10),
+              color: Color(0x66D8A82E),
+              offset: Offset(0, 8),
               blurRadius: 18,
             ),
             BoxShadow(
-              color: Color(0x1AFFFFFF),
-              offset: Offset(0, -1.5),
+              color: Color(0x4D000000),
+              offset: Offset(0, 2),
               blurRadius: 4,
             ),
           ],
@@ -788,8 +791,8 @@ class _LoginPageState extends State<LoginPage> {
             style: const TextStyle(
               color: _loginBtnText,
               fontSize: 18,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
             ),
           ),
         ),
@@ -803,8 +806,8 @@ class _LoginPageState extends State<LoginPage> {
       child: InkWell(
         onTap: _signInWithBiometrics,
         borderRadius: BorderRadius.circular(46),
-        splashColor: Colors.white10,
-        highlightColor: Colors.white12,
+        splashColor: const Color(0x33D8A82E),
+        highlightColor: const Color(0x1AD8A82E),
         child: Container(
           width: 88,
           height: 88,
@@ -813,19 +816,19 @@ class _LoginPageState extends State<LoginPage> {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF383B41), Color(0xFF26282D)],
+              colors: [Color(0xFF1B3D70), Color(0xFF0C1B33)],
             ),
-            border: Border.all(color: const Color(0x33FFFFFF), width: 1.2),
+            border: Border.all(color: const Color(0x80D8A82E), width: 1.5),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x73000000),
+                color: Color(0x66000000),
                 offset: Offset(0, 8),
                 blurRadius: 18,
               ),
               BoxShadow(
-                color: Color(0x1FFFFFFF),
+                color: Color(0x29D8A82E),
                 offset: Offset(0, -2),
-                blurRadius: 6,
+                blurRadius: 8,
               ),
             ],
           ),
@@ -833,19 +836,19 @@ class _LoginPageState extends State<LoginPage> {
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF202225),
-              border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
+              color: const Color(0xFF061020),
+              border: Border.all(color: const Color(0x40D8A82E), width: 1.0),
             ),
             child: Center(
               child: _biometricBusy
                   ? const SizedBox(
                       width: 28,
                       height: 28,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: _loginGold),
                     )
                   : const Icon(
                       Icons.fingerprint,
-                      color: Color(0xFFE8ECF2),
+                      color: _loginGold,
                       size: 46,
                     ),
             ),
@@ -891,8 +894,8 @@ class _NeumorphicInsetPainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        const Color(0xB3000000),
-        const Color(0x59000000),
+        const Color(0x99000000),
+        const Color(0x40000000),
         Colors.transparent,
       ],
       stops: const [0.0, 0.45, 1.0],
@@ -908,7 +911,7 @@ class _NeumorphicInsetPainter extends CustomPainter {
       begin: Alignment.bottomCenter,
       end: Alignment.topCenter,
       colors: [
-        Color(0x1AFFFFFF),
+        Color(0x1AD8A82E),
         Colors.transparent,
       ],
     );

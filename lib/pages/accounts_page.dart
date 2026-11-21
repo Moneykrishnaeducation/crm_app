@@ -754,20 +754,18 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
     '1:50',
     '1:100',
     '1:200',
+    '1:300',
     '1:400',
     '1:500',
-    '1:1000',
-    '1:2000',
   ];
 
   static const Map<String, String> _leverageMargins = {
     '1:50': '2.00% Margin',
     '1:100': '1.00% Margin',
     '1:200': '0.50% Margin',
+    '1:300': '0.33% Margin',
     '1:400': '0.25% Margin',
     '1:500': '0.20% Margin',
-    '1:1000': '0.10% Margin',
-    '1:2000': '0.05% Margin',
   };
 
   @override

@@ -1,15 +1,21 @@
 part of '../main.dart';
 
 class BrokerMorePage extends StatelessWidget {
-  const BrokerMorePage({super.key, required this.onSelectPage});
+  const BrokerMorePage({
+    super.key,
+    required this.onSelectPage,
+    this.scrollController,
+  });
   final ValueChanged<String> onSelectPage;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
-        primary: true,
+        controller: scrollController,
+        primary: scrollController == null ? true : false,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),

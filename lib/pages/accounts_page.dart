@@ -1,13 +1,23 @@
 part of '../main.dart';
 
 class BrokerAccountsPage extends StatefulWidget {
-  const BrokerAccountsPage({super.key, required this.onSelectPage, required this.accounts, required this.onAccountCreated, required this.onAccountSelected, required this.favoriteLogins, required this.onToggleFavorite});
+  const BrokerAccountsPage({
+    super.key,
+    required this.onSelectPage,
+    required this.accounts,
+    required this.onAccountCreated,
+    required this.onAccountSelected,
+    required this.favoriteLogins,
+    required this.onToggleFavorite,
+    this.scrollController,
+  });
   final ValueChanged<String> onSelectPage;
   final List<BrokerAccount> accounts;
   final ValueChanged<BrokerAccount> onAccountCreated;
   final ValueChanged<BrokerAccount> onAccountSelected;
   final Set<String> favoriteLogins;
   final ValueChanged<String> onToggleFavorite;
+  final ScrollController? scrollController;
   @override
   State<BrokerAccountsPage> createState() => _BrokerAccountsPageState();
 }
@@ -39,6 +49,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     return Container(
       color: theme.scaffoldBackgroundColor,
       child: ListView(
+        controller: widget.scrollController,
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         padding: EdgeInsets.fromLTRB(16, 12, 16, bottomNavPadding),
         children: [

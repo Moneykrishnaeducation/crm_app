@@ -302,6 +302,48 @@ class _AppShellState extends State<AppShell> {
   bool _balanceVisible = true;
   final Set<String> _favoriteAccountLogins = <String>{};
   final Map<String, List<ActivityFundTransaction>> _appFundTransactions = {};
+  final ScrollController _dashboardScrollController = ScrollController(keepScrollOffset: false);
+  final ScrollController _transactionsScrollController = ScrollController(keepScrollOffset: false);
+  final ScrollController _accountsScrollController = ScrollController(keepScrollOffset: false);
+  final ScrollController _moreScrollController = ScrollController(keepScrollOffset: false);
+  int _secondaryPageNavId = 0;
+
+  @override
+  void dispose() {
+    _dashboardScrollController.dispose();
+    _transactionsScrollController.dispose();
+    _accountsScrollController.dispose();
+    _moreScrollController.dispose();
+    super.dispose();
+  }
+
+  void _resetScrollFor(String page) {
+    void performJump() {
+      switch (page) {
+        case 'Dashboard':
+          if (_dashboardScrollController.hasClients) {
+            _dashboardScrollController.jumpTo(0.0);
+          }
+        case 'Transactions':
+          if (_transactionsScrollController.hasClients) {
+            _transactionsScrollController.jumpTo(0.0);
+          }
+        case 'Trading Accounts':
+          if (_accountsScrollController.hasClients) {
+            _accountsScrollController.jumpTo(0.0);
+          }
+        case 'More':
+          if (_moreScrollController.hasClients) {
+            _moreScrollController.jumpTo(0.0);
+          }
+      }
+    }
+
+    performJump();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) performJump();
+    });
+  }
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
     BrokerAccount(
@@ -452,6 +494,8 @@ class _AppShellState extends State<AppShell> {
 
     if (_navigationHistory.isNotEmpty) {
       final prev = _navigationHistory.removeLast();
+      _secondaryPageNavId++;
+      _resetScrollFor(prev);
       setState(() {
         _selectedPage = prev;
       });
@@ -459,12 +503,16 @@ class _AppShellState extends State<AppShell> {
     }
     final fallback = _getDefaultParentPage(_selectedPage);
     if (fallback != _selectedPage) {
+      _secondaryPageNavId++;
+      _resetScrollFor(fallback);
       setState(() {
         _selectedPage = fallback;
       });
       return;
     }
     if (_selectedPage != 'Dashboard') {
+      _secondaryPageNavId++;
+      _resetScrollFor('Dashboard');
       setState(() {
         _selectedPage = 'Dashboard';
       });
@@ -473,6 +521,7 @@ class _AppShellState extends State<AppShell> {
 
   void _openAccount(BrokerAccount account) {
     _navigationHistory.add(_selectedPage);
+    _secondaryPageNavId++;
     setState(() {
       _selectedAccount = account;
       _accountDetailsReturnPage = 'Trading Accounts';
@@ -482,6 +531,7 @@ class _AppShellState extends State<AppShell> {
 
   void _openDemoAccount(BrokerAccount account) {
     _navigationHistory.add(_selectedPage);
+    _secondaryPageNavId++;
     setState(() {
       _selectedAccount = account;
       _accountDetailsReturnPage = 'Demo Accounts';
@@ -491,7 +541,10 @@ class _AppShellState extends State<AppShell> {
 
   void _selectPage(String rawPage) {
     final page = rawPage == 'activity' ? 'Transactions' : rawPage;
-    if (page == _selectedPage) return;
+    if (page == _selectedPage) {
+      _resetScrollFor(page);
+      return;
+    }
 
     if (page == 'Open Account') {
       showModalBottomSheet<void>(
@@ -534,8 +587,13 @@ class _AppShellState extends State<AppShell> {
         context,
         onVerified: () {
           if (!mounted) return;
-          if (_selectedPage == 'Security Center') return;
+          if (_selectedPage == 'Security Center') {
+            _resetScrollFor('Security Center');
+            return;
+          }
           _navigationHistory.add(_selectedPage);
+          _secondaryPageNavId++;
+          _resetScrollFor('Security Center');
           setState(() => _selectedPage = 'Security Center');
         },
       );
@@ -548,6 +606,8 @@ class _AppShellState extends State<AppShell> {
       default:
         _navigationHistory.add(_selectedPage);
     }
+    _secondaryPageNavId++;
+    _resetScrollFor(page);
     setState(() => _selectedPage = page);
   }
 
@@ -560,9 +620,12 @@ class _AppShellState extends State<AppShell> {
       };
 
   Widget _buildSecondaryPage(String page) {
-    return KeyedSubtree(
-      key: ValueKey(page),
-      child: switch (page) {
+    return PageStorage(
+      key: ValueKey('$page-$_secondaryPageNavId'),
+      bucket: PageStorageBucket(),
+      child: KeyedSubtree(
+        key: ValueKey('$page-$_secondaryPageNavId'),
+        child: switch (page) {
         'Deposit' => BrokerFundsPage(
             withdrawal: false,
             onBack: _handleBack,
@@ -729,7 +792,8 @@ class _AppShellState extends State<AppShell> {
           ),
         _ => _SectionPage(title: page),
       },
-    );
+    ),
+  );
   }
 
   Widget _buildPrimaryTabLayer({
@@ -807,6 +871,7 @@ class _AppShellState extends State<AppShell> {
                                         () => _balanceVisible = !_balanceVisible,
                                       ),
                                       onSelectPage: _selectPage,
+                                      scrollController: _dashboardScrollController,
                                     ),
                                   ),
                                   _buildPrimaryTabLayer(
@@ -815,6 +880,7 @@ class _AppShellState extends State<AppShell> {
                                     child: BrokerTransactionsPage(
                                       accounts: _accounts,
                                       externalFundTransactions: _appFundTransactions,
+                                      scrollController: _transactionsScrollController,
                                     ),
                                   ),
                                   _buildPrimaryTabLayer(
@@ -827,12 +893,16 @@ class _AppShellState extends State<AppShell> {
                                       onAccountSelected: _openAccount,
                                       favoriteLogins: _favoriteAccountLogins,
                                       onToggleFavorite: _toggleFavoriteAccount,
+                                      scrollController: _accountsScrollController,
                                     ),
                                   ),
                                   _buildPrimaryTabLayer(
                                     index: 3,
                                     activeIndex: primaryIndex,
-                                    child: BrokerMorePage(onSelectPage: _selectPage),
+                                    child: BrokerMorePage(
+                                      onSelectPage: _selectPage,
+                                      scrollController: _moreScrollController,
+                                    ),
                                   ),
                                 ],
                               ),

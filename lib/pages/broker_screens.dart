@@ -10,10 +10,12 @@ class BrokerDashboardPage extends StatelessWidget {
     required this.balanceVisible,
     required this.onToggleBalance,
     required this.onSelectPage,
+    this.scrollController,
   });
   final bool balanceVisible;
   final VoidCallback onToggleBalance;
   final ValueChanged<String> onSelectPage;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +25,7 @@ class BrokerDashboardPage extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 680),
           child: SingleChildScrollView(
+            controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
@@ -2014,12 +2017,14 @@ class BrokerTransactionsPage extends StatefulWidget {
     this.selectedAccountLogin,
     this.onAccountChanged,
     this.externalFundTransactions,
+    this.scrollController,
   });
 
   final List<BrokerAccount>? accounts;
   final String? selectedAccountLogin;
   final ValueChanged<String>? onAccountChanged;
   final Map<String, List<ActivityFundTransaction>>? externalFundTransactions;
+  final ScrollController? scrollController;
 
   @override
   State<BrokerTransactionsPage> createState() => _BrokerTransactionsPageState();
@@ -4270,6 +4275,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: width > 900 ? 860 : 680),
           child: ListView(
+            controller: widget.scrollController,
             padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
             children: [
               // Accessible title tag for widget tests

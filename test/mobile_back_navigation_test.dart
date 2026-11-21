@@ -91,7 +91,7 @@ void main() {
         // 1. Navigate to More tab
         await tester.tap(find.text('More').first);
         await tester.pumpAndSettle();
-        expect(find.text('INVESTMENT MANAGEMENT & PARTNERSHIPS'), findsOneWidget);
+        expect(find.text('INVESTMENT & PARTNERSHIPS'), findsOneWidget);
 
         // 2. Tap Settings in More menu
         await tester.tap(find.text('Settings').first);
@@ -113,7 +113,7 @@ void main() {
         // 5. Press back second time -> returns to More
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(find.text('INVESTMENT MANAGEMENT & PARTNERSHIPS'), findsOneWidget);
+        expect(find.text('INVESTMENT & PARTNERSHIPS'), findsOneWidget);
 
         // 6. Press back third time -> returns to Dashboard
         await tester.binding.handlePopRoute();

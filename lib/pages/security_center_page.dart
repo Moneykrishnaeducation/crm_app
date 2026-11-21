@@ -193,18 +193,10 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         bottom: false,
         child: Column(
           children: [
-            SizedBox(
-              height: 58,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                ],
-              ),
-            ),
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 30),
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
                 children: [
                   _buildSecurityIntro(),
                   const SizedBox(height: 22),

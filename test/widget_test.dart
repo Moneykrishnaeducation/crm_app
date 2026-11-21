@@ -18,7 +18,9 @@ void main() {
     // Verify Login page is shown
     expect(find.text('Login'), findsWidgets);
 
-    // Tap Login button to enter dashboard
+    // Submit valid demo credentials to enter the dashboard.
+    await tester.enterText(find.byType(TextFormField).at(0), 'demo@vtindex.com');
+    await tester.enterText(find.byType(TextFormField).at(1), 'DemoPass123!');
     final loginBtn = find.widgetWithText(FilledButton, 'Login');
     expect(loginBtn, findsOneWidget);
     await tester.tap(loginBtn);

@@ -796,33 +796,16 @@ class _LoginPageState extends State<LoginPage> {
 
         const SizedBox(height: 20),
 
-        // Forgot your login details helper
+        // Footer tagline
         Center(
-          child: InkWell(
-            onTap: _showHelpModal,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text.rich(
-                TextSpan(
-                  text: 'Forgot your login details? ',
-                  style: TextStyle(
-                    color: subtitleColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: 'Get help login in.',
-                      style: TextStyle(
-                        color: isDark ? const Color(0xFF6DA2F5) : const Color(0xFF134282),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
+          child: Text(
+            'PLAY  •  COMPETE  •  GROW TOGETHER',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: subtitleColor,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 2.2,
             ),
           ),
         ),

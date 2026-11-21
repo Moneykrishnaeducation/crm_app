@@ -191,7 +191,6 @@ class _LoginPageState extends State<LoginPage> {
         _loginEmailError = emailErr;
         _loginPasswordError = passErr;
       });
-      showAppMessage(emailErr ?? passErr ?? 'Please enter your credentials.');
       return;
     }
 
@@ -239,7 +238,6 @@ class _LoginPageState extends State<LoginPage> {
         _signUpEmailError = emailErr;
         _signUpPasswordError = passErr;
       });
-      showAppMessage(nameErr ?? emailErr ?? passErr ?? 'Please check the required fields.');
       return;
     }
 
@@ -990,7 +988,6 @@ class _LoginPageState extends State<LoginPage> {
                       final email = _emailController.text.trim();
                       if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
                         setState(() => _signUpEmailError = 'Please enter a valid email address.');
-                        showAppMessage('Enter a valid email address first.');
                         return;
                       }
                       setState(() {

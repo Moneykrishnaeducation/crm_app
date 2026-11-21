@@ -38,8 +38,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _emailVerified = false;
   bool _passwordVisible = false;
   bool _acceptedTerms = true;
-  bool _darkModeActive = true;
-  String _selectedLanguage = 'English';
 
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
@@ -150,54 +148,6 @@ class _LoginPageState extends State<LoginPage> {
   String? _required(String? value, String label) =>
       value == null || value.trim().isEmpty ? 'Enter $label' : null;
 
-  void _showLanguageSelector() {
-    final languages = ['English', 'Español', 'Français', 'Deutsch', '中文', 'العربية'];
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: _loginCardBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Select Language',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...languages.map(
-                (lang) => ListTile(
-                  title: Text(
-                    lang,
-                    style: TextStyle(
-                      color: _selectedLanguage == lang ? Colors.white : _loginLabelMuted,
-                      fontWeight: _selectedLanguage == lang ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  trailing: _selectedLanguage == lang
-                      ? const Icon(LucideIcons.check, color: Colors.white, size: 18)
-                      : null,
-                  onTap: () {
-                    setState(() => _selectedLanguage = lang);
-                    Navigator.pop(sheetContext);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showHelpModal() {
     showModalBottomSheet<void>(
       context: context,
@@ -307,126 +257,11 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildTopBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Left: "UI Series" pill chip
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFF222428),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF383B41), width: 0.8),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x33000000),
-                offset: Offset(0, 2),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: const Text(
-            'UI Series',
-            style: TextStyle(
-              color: Color(0xFFBAC0CB),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ),
-
-        // Center: "English ⌵"
-        InkWell(
-          onTap: _showLanguageSelector,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _selectedLanguage,
-                  style: const TextStyle(
-                    color: Color(0xFFE2E6ED),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  color: Color(0xFFE2E6ED),
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Right: "Dark Mode" toggle
-        InkWell(
-          onTap: () {
-            setState(() => _darkModeActive = !_darkModeActive);
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF202226),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF36393E), width: 0.8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Dark Mode',
-                  style: TextStyle(
-                    color: Color(0xFF8E939D),
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: _darkModeActive
-                          ? [Colors.white, const Color(0xFFD8DCE3)]
-                          : [const Color(0xFF6B707B), const Color(0xFF4A4E57)],
-                    ),
-                    boxShadow: _darkModeActive
-                        ? const [
-                            BoxShadow(
-                              color: Color(0x66FFFFFF),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildLogoEmblem() {
     return Center(
       child: Container(
-        width: 116,
-        height: 116,
+        width: 120,
+        height: 120,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
@@ -447,7 +282,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
         ),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(7),
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
@@ -455,9 +290,16 @@ class _LoginPageState extends State<LoginPage> {
             border: Border.all(color: const Color(0x40FFFFFF), width: 1.2),
           ),
           child: ClipOval(
-            child: CustomPaint(
-              size: const Size(100, 100),
-              painter: _LabyrinthEmblemPainter(),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Image.asset(
+                'assets/images/vtindex_app_icon_source.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Image.asset(
+                  'assets/images/vtindex_logo_img.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
         ),
@@ -471,8 +313,7 @@ class _LoginPageState extends State<LoginPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTopBar(),
-          const SizedBox(height: 36),
+          const SizedBox(height: 12),
           _buildLogoEmblem(),
           const SizedBox(height: 40),
 
@@ -663,8 +504,7 @@ class _LoginPageState extends State<LoginPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTopBar(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           _buildLogoEmblem(),
           const SizedBox(height: 28),
 
@@ -950,51 +790,57 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildFingerprintButton() {
-    return InkWell(
-      onTap: _signInWithBiometrics,
-      borderRadius: BorderRadius.circular(44),
-      child: Container(
-        width: 86,
-        height: 86,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF383B41), Color(0xFF26282D)],
-          ),
-          border: Border.all(color: const Color(0x33FFFFFF), width: 1.2),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x73000000),
-              offset: Offset(0, 8),
-              blurRadius: 18,
-            ),
-            BoxShadow(
-              color: Color(0x1FFFFFFF),
-              offset: Offset(0, -2),
-              blurRadius: 6,
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(7),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _signInWithBiometrics,
+        borderRadius: BorderRadius.circular(46),
+        splashColor: Colors.white10,
+        highlightColor: Colors.white12,
         child: Container(
+          width: 88,
+          height: 88,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFF202225),
-            border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF383B41), Color(0xFF26282D)],
+            ),
+            border: Border.all(color: const Color(0x33FFFFFF), width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x73000000),
+                offset: Offset(0, 8),
+                blurRadius: 18,
+              ),
+              BoxShadow(
+                color: Color(0x1FFFFFFF),
+                offset: Offset(0, -2),
+                blurRadius: 6,
+              ),
+            ],
           ),
-          child: Center(
-            child: _biometricBusy
-                ? const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                  )
-                : CustomPaint(
-                    size: const Size(42, 48),
-                    painter: _FingerprintGlyphPainter(),
-                  ),
+          padding: const EdgeInsets.all(7),
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF202225),
+              border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
+            ),
+            child: Center(
+              child: _biometricBusy
+                  ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                    )
+                  : const Icon(
+                      Icons.fingerprint,
+                      color: Color(0xFFE8ECF2),
+                      size: 46,
+                    ),
+            ),
           ),
         ),
       ),
@@ -1069,117 +915,6 @@ class _NeumorphicInsetPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _NeumorphicInsetPainter oldDelegate) => false;
-}
-
-/// Custom painter for the square geometric labyrinth / maze emblem in the circular medallion
-class _LabyrinthEmblemPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4
-      ..strokeCap = StrokeCap.square
-      ..strokeJoin = StrokeJoin.miter;
-
-    // Center square diamond maze
-    final path = Path();
-
-    // Loop 1 (Outer perimeter tracks with labyrinth entry points)
-    final w1 = size.width * 0.30;
-    final h1 = size.height * 0.30;
-    path.addRRect(RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset(cx, cy), width: w1 * 2, height: h1 * 2),
-      const Radius.circular(5),
-    ));
-
-    // Concentric labyrinth meanders inside
-    final step = w1 / 4.0;
-    for (int i = 1; i <= 3; i++) {
-      final s = w1 - (i * step);
-      if (s > 4) {
-        if (i.isOdd) {
-          // Track with top/bottom gaps
-          path.moveTo(cx - s + step * 0.6, cy - s);
-          path.lineTo(cx + s, cy - s);
-          path.lineTo(cx + s, cy + s);
-          path.lineTo(cx - s, cy + s);
-          path.lineTo(cx - s, cy - s + step * 0.6);
-        } else {
-          // Track with left/right turns
-          path.moveTo(cx - s, cy - s);
-          path.lineTo(cx + s - step * 0.6, cy - s);
-          path.moveTo(cx + s, cy - s + step * 0.6);
-          path.lineTo(cx + s, cy + s);
-          path.lineTo(cx - s + step * 0.6, cy + s);
-          path.lineTo(cx - s + step * 0.6, cy - s + step * 0.8);
-        }
-      }
-    }
-
-    // Center focal square
-    final centerCore = Path()
-      ..addRect(Rect.fromCenter(center: Offset(cx, cy), width: step * 0.9, height: step * 0.9));
-
-    canvas.drawPath(path, paint);
-
-    final corePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(centerCore, corePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _LabyrinthEmblemPainter oldDelegate) => false;
-}
-
-/// Custom painter for the biometric fingerprint glyph matching the image
-class _FingerprintGlyphPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-
-    final paint = Paint()
-      ..color = const Color(0xFFE8ECF2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-
-    // Ridge 1 (Center loop)
-    path.moveTo(cx - 3, cy + 8);
-    path.cubicTo(cx - 3, cy - 2, cx + 3, cy - 2, cx + 3, cy + 8);
-
-    // Ridge 2 (Inner arch)
-    path.moveTo(cx - 7, cy + 12);
-    path.cubicTo(cx - 7, cy - 8, cx + 7, cy - 8, cx + 7, cy + 12);
-
-    // Ridge 3 (Mid arch with left leg curving down)
-    path.moveTo(cx - 11, cy + 16);
-    path.cubicTo(cx - 11, cy - 13, cx + 11, cy - 13, cx + 11, cy + 15);
-
-    // Ridge 4 (Wide arch)
-    path.moveTo(cx - 15, cy + 18);
-    path.cubicTo(cx - 15, cy - 18, cx + 15, cy - 18, cx + 15, cy + 17);
-
-    // Ridge 5 (Outer contour arch)
-    path.moveTo(cx - 19, cy + 16);
-    path.cubicTo(cx - 19, cy - 22, cx + 19, cy - 22, cx + 19, cy + 14);
-
-    // Lower whorl lines
-    path.moveTo(cx - 7, cy + 17);
-    path.cubicTo(cx - 5, cy + 20, cx - 1, cy + 21, cx + 3, cy + 18);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _FingerprintGlyphPainter oldDelegate) => false;
 }
 
 /// Standalone entry point for the account registration form.

@@ -229,26 +229,16 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFEAF1FB),
+      backgroundColor: isDark ? const Color(0xFF18191E) : const Color(0xFFEAF1FB),
       body: Stack(
         children: [
-          // 1. Decorative background graphic painter
+          // 1. Decorative background graphic painter (supports light & dark themes)
           Positioned.fill(
             child: CustomPaint(
-              painter: _LoginBackgroundPainter(),
-            ),
-          ),
-
-          // Optional subtle overlay of ribbon background art if available
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.35,
-              child: Image.asset(
-                'assets/images/login_light_ribbons.png',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-              ),
+              painter: _LoginBackgroundPainter(isDark: isDark),
             ),
           ),
 
@@ -265,24 +255,40 @@ class _LoginPageState extends State<LoginPage> {
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: _loginCardGlassBg,
+                          color: isDark ? const Color(0xFF25262D) : _loginCardGlassBg,
                           borderRadius: BorderRadius.circular(38),
-                          border: Border.all(color: _loginGoldBorder, width: 1.5),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x261E70E8),
-                              offset: Offset(0, 16),
-                              blurRadius: 36,
-                            ),
-                            BoxShadow(
-                              color: Color(0x33D4AF37),
-                              offset: Offset(0, 0),
-                              blurRadius: 10,
-                            ),
+                          border: Border.all(
+                            color: isDark ? const Color(0x33FFFFFF) : _loginGoldBorder,
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            if (isDark) ...[
+                              const BoxShadow(
+                                color: Color(0x990A0B0E),
+                                offset: Offset(0, 18),
+                                blurRadius: 36,
+                              ),
+                              const BoxShadow(
+                                color: Color(0x1AFFFFFF),
+                                offset: Offset(0, -1),
+                                blurRadius: 6,
+                              ),
+                            ] else ...[
+                              const BoxShadow(
+                                color: Color(0x261E70E8),
+                                offset: Offset(0, 16),
+                                blurRadius: 36,
+                              ),
+                              const BoxShadow(
+                                color: Color(0x33D4AF37),
+                                offset: Offset(0, 0),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ],
                         ),
                         padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
-                        child: _isSignUp ? _buildSignUpContent() : _buildLoginContent(),
+                        child: _isSignUp ? _buildSignUpContent(isDark: isDark) : _buildLoginContent(isDark: isDark),
                       ),
                     ),
                   ),
@@ -295,47 +301,75 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLogoEmblem() {
+  Widget _buildLogoEmblem({required bool isDark}) {
     return Center(
       child: Container(
         width: 122,
         height: 122,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const RadialGradient(
-            colors: [Colors.white, Color(0xFFF3F7FD)],
+          gradient: isDark
+              ? const RadialGradient(
+                  colors: [Color(0xFF33353E), Color(0xFF222329)],
+                )
+              : const RadialGradient(
+                  colors: [Colors.white, Color(0xFFF3F7FD)],
+                ),
+          border: Border.all(
+            color: isDark ? const Color(0x44FFFFFF) : _loginGoldRim,
+            width: 2.8,
           ),
-          border: Border.all(color: _loginGoldRim, width: 2.8),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x2E1E70E8),
-              offset: Offset(0, 10),
-              blurRadius: 22,
-            ),
-            BoxShadow(
-              color: Color(0x4DECC868),
-              offset: Offset(0, 0),
-              blurRadius: 10,
-            ),
+          boxShadow: [
+            if (isDark)
+              const BoxShadow(
+                color: Color(0x800A0B0E),
+                offset: Offset(0, 10),
+                blurRadius: 20,
+              )
+            else ...[
+              const BoxShadow(
+                color: Color(0x2E1E70E8),
+                offset: Offset(0, 10),
+                blurRadius: 22,
+              ),
+              const BoxShadow(
+                color: Color(0x4DECC868),
+                offset: Offset(0, 0),
+                blurRadius: 10,
+              ),
+            ],
           ],
         ),
         padding: const EdgeInsets.all(6),
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.white, Color(0xFFE8F1FC)],
+            gradient: isDark
+                ? const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF2A2B33), Color(0xFF1B1C22)],
+                  )
+                : const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.white, Color(0xFFE8F1FC)],
+                  ),
+            border: Border.all(
+              color: isDark ? const Color(0x22FFFFFF) : const Color(0x66D4AF37),
+              width: 1.0,
             ),
-            border: Border.all(color: const Color(0x66D4AF37), width: 1.0),
           ),
-          child: Center(
-            child: SizedBox(
-              width: 72,
-              height: 72,
-              child: CustomPaint(
-                painter: _WaveFlameEmblemPainter(),
+          child: ClipOval(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Image.asset(
+                'assets/images/vtindex_app_icon_source.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Image.asset(
+                  'assets/images/vtindex_logo_img.png',
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),
@@ -344,21 +378,30 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLoginContent() {
+  Widget _buildLoginContent({required bool isDark}) {
+    final titleColor = isDark ? Colors.white : _loginDarkBlueText;
+    final subtitleColor = isDark ? const Color(0xFF9CA2B2) : _loginMutedBlueText;
+    final dividerColor = isDark ? const Color(0xFF383B47) : const Color(0xFFD4E2F2);
+    final inputBg = isDark ? const Color(0xFF1C1D23) : const Color(0xFFF4F8FD);
+    final inputBorder = isDark ? const Color(0x2EFFFFFF) : _loginGoldBorder;
+    final inputTextColor = isDark ? Colors.white : _loginDarkBlueText;
+    final placeholderColor = isDark ? const Color(0xFF757989) : _loginPlaceholderText;
+    final prefixIconColor = isDark ? const Color(0xFF8A90A2) : _loginRoyalBlue;
+
     return Form(
       key: _loginFormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildLogoEmblem(),
+          _buildLogoEmblem(isDark: isDark),
           const SizedBox(height: 20),
 
           // "Welcome Back"
-          const Text(
+          Text(
             'Welcome Back',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _loginDarkBlueText,
+              color: titleColor,
               fontSize: 28,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.4,
@@ -372,14 +415,14 @@ class _LoginPageState extends State<LoginPage> {
               Expanded(
                 child: Container(
                   height: 1,
-                  color: const Color(0xFFD4E2F2),
+                  color: dividerColor,
                   margin: const EdgeInsets.only(left: 14, right: 12),
                 ),
               ),
-              const Text(
+              Text(
                 'Sign in to continue',
                 style: TextStyle(
-                  color: _loginMutedBlueText,
+                  color: subtitleColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.3,
@@ -388,7 +431,7 @@ class _LoginPageState extends State<LoginPage> {
               Expanded(
                 child: Container(
                   height: 1,
-                  color: const Color(0xFFD4E2F2),
+                  color: dividerColor,
                   margin: const EdgeInsets.only(left: 12, right: 14),
                 ),
               ),
@@ -400,13 +443,13 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             height: 58,
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F8FD),
+              color: inputBg,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: _loginGoldBorder, width: 1.2),
-              boxShadow: const [
+              border: Border.all(color: inputBorder, width: 1.2),
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x0F0D47A1),
-                  offset: Offset(0, 3),
+                  color: isDark ? const Color(0x40000000) : const Color(0x0F0D47A1),
+                  offset: const Offset(0, 3),
                   blurRadius: 8,
                 ),
               ],
@@ -416,31 +459,31 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                cursorColor: _loginRoyalBlue,
-                style: const TextStyle(
-                  color: _loginDarkBlueText,
+                cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+                style: TextStyle(
+                  color: inputTextColor,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
                   hintText: 'Username or Email',
                   hintStyle: TextStyle(
-                    color: _loginPlaceholderText,
+                    color: placeholderColor,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
                   ),
                   prefixIcon: Padding(
-                    padding: EdgeInsets.only(left: 18, right: 12),
+                    padding: const EdgeInsets.only(left: 18, right: 12),
                     child: Icon(
                       LucideIcons.user,
-                      color: _loginRoyalBlue,
+                      color: prefixIconColor,
                       size: 21,
                     ),
                   ),
-                  prefixIconConstraints: BoxConstraints(minWidth: 50, minHeight: 24),
-                  contentPadding: EdgeInsets.only(right: 20),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                  contentPadding: const EdgeInsets.only(right: 20),
                 ),
               ),
             ),
@@ -451,13 +494,13 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             height: 58,
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F8FD),
+              color: inputBg,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: _loginGoldBorder, width: 1.2),
-              boxShadow: const [
+              border: Border.all(color: inputBorder, width: 1.2),
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x0F0D47A1),
-                  offset: Offset(0, 3),
+                  color: isDark ? const Color(0x40000000) : const Color(0x0F0D47A1),
+                  offset: const Offset(0, 3),
                   blurRadius: 8,
                 ),
               ],
@@ -469,9 +512,9 @@ class _LoginPageState extends State<LoginPage> {
                 obscuringCharacter: '•',
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
-                cursorColor: _loginRoyalBlue,
+                cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
                 style: TextStyle(
-                  color: _loginDarkBlueText,
+                  color: inputTextColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   letterSpacing: _passwordVisible ? 0 : 2.5,
@@ -480,17 +523,17 @@ class _LoginPageState extends State<LoginPage> {
                   border: InputBorder.none,
                   isDense: true,
                   hintText: 'Password',
-                  hintStyle: const TextStyle(
-                    color: _loginPlaceholderText,
+                  hintStyle: TextStyle(
+                    color: placeholderColor,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0,
                   ),
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.only(left: 18, right: 12),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 18, right: 12),
                     child: Icon(
                       LucideIcons.lock,
-                      color: _loginRoyalBlue,
+                      color: prefixIconColor,
                       size: 21,
                     ),
                   ),
@@ -501,7 +544,7 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                       icon: Icon(
                         _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
-                        color: _loginPlaceholderText,
+                        color: placeholderColor,
                         size: 20,
                       ),
                       tooltip: _passwordVisible ? 'Hide password' : 'Show password',
@@ -531,17 +574,21 @@ class _LoginPageState extends State<LoginPage> {
                           width: 18,
                           height: 18,
                           decoration: BoxDecoration(
-                            color: _rememberMe ? _loginRoyalBlue : Colors.white,
+                            color: _rememberMe
+                                ? (isDark ? const Color(0xFF2575FC) : _loginRoyalBlue)
+                                : (isDark ? const Color(0xFF1E1F24) : Colors.white),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: _rememberMe ? _loginRoyalBlue : const Color(0xFFBACADB),
+                              color: _rememberMe
+                                  ? (isDark ? const Color(0xFF2575FC) : _loginRoyalBlue)
+                                  : (isDark ? const Color(0xFF454958) : const Color(0xFFBACADB)),
                               width: 1.5,
                             ),
                             boxShadow: [
                               if (_rememberMe)
-                                const BoxShadow(
-                                  color: Color(0x331E70E8),
-                                  offset: Offset(0, 2),
+                                BoxShadow(
+                                  color: (isDark ? const Color(0xFF2575FC) : const Color(0xFF1E70E8)).withValues(alpha: 0.35),
+                                  offset: const Offset(0, 2),
                                   blurRadius: 4,
                                 ),
                             ],
@@ -551,10 +598,10 @@ class _LoginPageState extends State<LoginPage> {
                               : null,
                         ),
                         const SizedBox(width: 6),
-                        const Text(
+                        Text(
                           'Remember Me',
                           style: TextStyle(
-                            color: _loginDarkBlueText,
+                            color: titleColor,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                           ),
@@ -567,12 +614,12 @@ class _LoginPageState extends State<LoginPage> {
               InkWell(
                 onTap: _showHelpModal,
                 borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                   child: Text(
                     'Forgot Password?',
                     style: TextStyle(
-                      color: Color(0xFF134282),
+                      color: isDark ? const Color(0xFF6DA2F5) : const Color(0xFF134282),
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                     ),
@@ -587,6 +634,7 @@ class _LoginPageState extends State<LoginPage> {
           _buildRaisedButton(
             label: 'Login',
             onPressed: _submit,
+            isDark: isDark,
           ),
           const SizedBox(height: 28),
 
@@ -595,13 +643,13 @@ class _LoginPageState extends State<LoginPage> {
             child: InkWell(
               onTap: () => setState(() => _isSignUp = true),
               borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text.rich(
                   TextSpan(
                     text: "Don't have an account? ",
                     style: TextStyle(
-                      color: _loginMutedBlueText,
+                      color: subtitleColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -609,7 +657,7 @@ class _LoginPageState extends State<LoginPage> {
                       TextSpan(
                         text: 'Sign up',
                         style: TextStyle(
-                          color: _loginRoyalBlue,
+                          color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -623,12 +671,12 @@ class _LoginPageState extends State<LoginPage> {
 
           if (_biometricEnabled && !_biometricAvailable) ...[
             const SizedBox(height: 12),
-            const Center(
+            Center(
               child: Text(
                 'Biometric sign-in unavailable. Use your login ID and password.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: _loginMutedBlueText,
+                  color: subtitleColor,
                   fontSize: 11,
                 ),
               ),
@@ -638,7 +686,7 @@ class _LoginPageState extends State<LoginPage> {
           if (_biometricEnabled && _biometricAvailable) ...[
             const SizedBox(height: 24),
             Center(
-              child: _buildFingerprintButton(),
+              child: _buildFingerprintButton(isDark: isDark),
             ),
           ],
 
@@ -649,13 +697,13 @@ class _LoginPageState extends State<LoginPage> {
             child: InkWell(
               onTap: _showHelpModal,
               borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text.rich(
                   TextSpan(
                     text: 'Forgot your login details? ',
                     style: TextStyle(
-                      color: _loginMutedBlueText,
+                      color: subtitleColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -663,7 +711,7 @@ class _LoginPageState extends State<LoginPage> {
                       TextSpan(
                         text: 'Get help login in.',
                         style: TextStyle(
-                          color: Color(0xFF134282),
+                          color: isDark ? const Color(0xFF6DA2F5) : const Color(0xFF134282),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -679,20 +727,28 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildSignUpContent() {
+  Widget _buildSignUpContent({required bool isDark}) {
+    final titleColor = isDark ? Colors.white : _loginDarkBlueText;
+    final subtitleColor = isDark ? const Color(0xFF9CA2B2) : _loginMutedBlueText;
+    final inputBg = isDark ? const Color(0xFF1C1D23) : const Color(0xFFF4F8FD);
+    final inputBorder = isDark ? const Color(0x2EFFFFFF) : _loginGoldBorder;
+    final inputTextColor = isDark ? Colors.white : _loginDarkBlueText;
+    final placeholderColor = isDark ? const Color(0xFF757989) : _loginPlaceholderText;
+    final prefixIconColor = isDark ? const Color(0xFF8A90A2) : _loginRoyalBlue;
+
     return Form(
       key: _signUpFormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildLogoEmblem(),
+          _buildLogoEmblem(isDark: isDark),
           const SizedBox(height: 20),
 
-          const Center(
+          Center(
             child: Text(
               'Create Account',
               style: TextStyle(
-                color: _loginDarkBlueText,
+                color: titleColor,
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.4,
@@ -700,10 +756,10 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           const SizedBox(height: 6),
-          const Center(
+          Center(
             child: Text(
               'Start your trading journey with VT Index',
-              style: TextStyle(color: _loginMutedBlueText, fontSize: 13),
+              style: TextStyle(color: subtitleColor, fontSize: 13),
             ),
           ),
           const SizedBox(height: 24),
@@ -712,27 +768,27 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             height: 56,
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F8FD),
+              color: inputBg,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: _loginGoldBorder, width: 1.2),
+              border: Border.all(color: inputBorder, width: 1.2),
             ),
             child: Center(
               child: TextFormField(
                 controller: _nameController,
-                cursorColor: _loginRoyalBlue,
-                style: const TextStyle(color: _loginDarkBlueText, fontSize: 15, fontWeight: FontWeight.w600),
+                cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+                style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600),
                 validator: (v) => _required(v, 'your full name'),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
                   hintText: 'Full Name',
-                  hintStyle: TextStyle(color: _loginPlaceholderText, fontSize: 14.5),
+                  hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
                   prefixIcon: Padding(
-                    padding: EdgeInsets.only(left: 18, right: 12),
-                    child: Icon(LucideIcons.user, color: _loginRoyalBlue, size: 20),
+                    padding: const EdgeInsets.only(left: 18, right: 12),
+                    child: Icon(LucideIcons.user, color: prefixIconColor, size: 20),
                   ),
-                  prefixIconConstraints: BoxConstraints(minWidth: 50, minHeight: 24),
-                  contentPadding: EdgeInsets.only(right: 20),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                  contentPadding: const EdgeInsets.only(right: 20),
                 ),
               ),
             ),
@@ -743,9 +799,9 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             height: 56,
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F8FD),
+              color: inputBg,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: _loginGoldBorder, width: 1.2),
+              border: Border.all(color: inputBorder, width: 1.2),
             ),
             child: Center(
               child: Row(
@@ -754,8 +810,8 @@ class _LoginPageState extends State<LoginPage> {
                     child: TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      cursorColor: _loginRoyalBlue,
-                      style: const TextStyle(color: _loginDarkBlueText, fontSize: 15, fontWeight: FontWeight.w600),
+                      cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+                      style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600),
                       validator: (v) {
                         final email = v?.trim() ?? '';
                         if (email.isEmpty) return 'Enter your email address';
@@ -765,17 +821,17 @@ class _LoginPageState extends State<LoginPage> {
                       onChanged: (_) {
                         if (_emailVerified) setState(() => _emailVerified = false);
                       },
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
                         hintText: 'Email Address',
-                        hintStyle: TextStyle(color: _loginPlaceholderText, fontSize: 14.5),
+                        hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
                         prefixIcon: Padding(
-                          padding: EdgeInsets.only(left: 18, right: 12),
-                          child: Icon(LucideIcons.mail, color: _loginRoyalBlue, size: 20),
+                          padding: const EdgeInsets.only(left: 18, right: 12),
+                          child: Icon(LucideIcons.mail, color: prefixIconColor, size: 20),
                         ),
-                        prefixIconConstraints: BoxConstraints(minWidth: 50, minHeight: 24),
-                        contentPadding: EdgeInsets.only(right: 12),
+                        prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                        contentPadding: const EdgeInsets.only(right: 12),
                       ),
                     ),
                   ),
@@ -811,26 +867,26 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             height: 56,
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F8FD),
+              color: inputBg,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: _loginGoldBorder, width: 1.2),
+              border: Border.all(color: inputBorder, width: 1.2),
             ),
             child: Center(
               child: TextFormField(
                 controller: _referralController,
-                cursorColor: _loginRoyalBlue,
-                style: const TextStyle(color: _loginDarkBlueText, fontSize: 15, fontWeight: FontWeight.w600),
-                decoration: const InputDecoration(
+                cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+                style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
                   hintText: 'IB Referral Code (Optional)',
-                  hintStyle: TextStyle(color: _loginPlaceholderText, fontSize: 14.5),
+                  hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
                   prefixIcon: Padding(
-                    padding: EdgeInsets.only(left: 18, right: 12),
-                    child: Icon(LucideIcons.tag, color: _loginRoyalBlue, size: 20),
+                    padding: const EdgeInsets.only(left: 18, right: 12),
+                    child: Icon(LucideIcons.tag, color: prefixIconColor, size: 20),
                   ),
-                  prefixIconConstraints: BoxConstraints(minWidth: 50, minHeight: 24),
-                  contentPadding: EdgeInsets.only(right: 20),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                  contentPadding: const EdgeInsets.only(right: 20),
                 ),
               ),
             ),
@@ -841,9 +897,9 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             height: 56,
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F8FD),
+              color: inputBg,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: _loginGoldBorder, width: 1.2),
+              border: Border.all(color: inputBorder, width: 1.2),
             ),
             child: Center(
               child: Row(
@@ -853,9 +909,9 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _passwordController,
                       obscureText: !_passwordVisible,
                       obscuringCharacter: '•',
-                      cursorColor: _loginRoyalBlue,
+                      cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
                       style: TextStyle(
-                        color: _loginDarkBlueText,
+                        color: inputTextColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         letterSpacing: _passwordVisible ? 0 : 2.5,
@@ -865,17 +921,17 @@ class _LoginPageState extends State<LoginPage> {
                         if (v.length < 8) return 'Use at least 8 characters';
                         return null;
                       },
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
                         hintText: 'Password',
-                        hintStyle: TextStyle(color: _loginPlaceholderText, fontSize: 14.5, letterSpacing: 0),
+                        hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0),
                         prefixIcon: Padding(
-                          padding: EdgeInsets.only(left: 18, right: 12),
-                          child: Icon(LucideIcons.lock, color: _loginRoyalBlue, size: 20),
+                          padding: const EdgeInsets.only(left: 18, right: 12),
+                          child: Icon(LucideIcons.lock, color: prefixIconColor, size: 20),
                         ),
-                        prefixIconConstraints: BoxConstraints(minWidth: 50, minHeight: 24),
-                        contentPadding: EdgeInsets.only(right: 8),
+                        prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                        contentPadding: const EdgeInsets.only(right: 8),
                       ),
                     ),
                   ),
@@ -885,7 +941,7 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                       icon: Icon(
                         _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
-                        color: _loginPlaceholderText,
+                        color: placeholderColor,
                         size: 20,
                       ),
                     ),
@@ -902,20 +958,20 @@ class _LoginPageState extends State<LoginPage> {
               Checkbox(
                 value: _acceptedTerms,
                 onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
-                activeColor: _loginRoyalBlue,
+                activeColor: isDark ? const Color(0xFF2575FC) : _loginRoyalBlue,
                 checkColor: Colors.white,
-                side: const BorderSide(color: Color(0xFFBACADB)),
+                side: BorderSide(color: isDark ? const Color(0xFF454958) : const Color(0xFFBACADB)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
               Expanded(
                 child: Text.rich(
                   TextSpan(
                     text: 'I agree to the ',
-                    style: const TextStyle(color: _loginMutedBlueText, fontSize: 12.5),
-                    children: const [
-                      TextSpan(text: 'Terms & Conditions', style: TextStyle(color: _loginRoyalBlue, fontWeight: FontWeight.w600)),
-                      TextSpan(text: ' and '),
-                      TextSpan(text: 'Privacy Policy', style: TextStyle(color: _loginRoyalBlue, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: subtitleColor, fontSize: 12.5),
+                    children: [
+                      TextSpan(text: 'Terms & Conditions', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
+                      const TextSpan(text: ' and '),
+                      TextSpan(text: 'Privacy Policy', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -927,6 +983,7 @@ class _LoginPageState extends State<LoginPage> {
           _buildRaisedButton(
             label: 'Create Account',
             onPressed: _submitSignUp,
+            isDark: isDark,
           ),
           const SizedBox(height: 22),
 
@@ -934,14 +991,14 @@ class _LoginPageState extends State<LoginPage> {
             child: InkWell(
               onTap: () => setState(() => _isSignUp = false),
               borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Text.rich(
                   TextSpan(
                     text: 'Already have an account? ',
-                    style: TextStyle(color: _loginMutedBlueText, fontSize: 13),
+                    style: TextStyle(color: subtitleColor, fontSize: 13),
                     children: [
-                      TextSpan(text: 'Login', style: TextStyle(color: _loginRoyalBlue, fontWeight: FontWeight.w700)),
+                      TextSpan(text: 'Login', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -956,6 +1013,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildRaisedButton({
     required String label,
     required VoidCallback onPressed,
+    required bool isDark,
   }) {
     return FilledButton(
       onPressed: onPressed,
@@ -968,18 +1026,34 @@ class _LoginPageState extends State<LoginPage> {
       child: Ink(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF267DFF), Color(0xFF0B52C7)],
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF353740), Color(0xFF24252C)],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF267DFF), Color(0xFF0B52C7)],
+                ),
+          border: Border.all(
+            color: isDark ? const Color(0x44FFFFFF) : _loginGoldRim,
+            width: 1.5,
           ),
-          border: Border.all(color: _loginGoldRim, width: 1.5),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x661E70E8),
-              offset: Offset(0, 8),
-              blurRadius: 18,
-            ),
+          boxShadow: [
+            if (isDark)
+              const BoxShadow(
+                color: Color(0x66000000),
+                offset: Offset(0, 8),
+                blurRadius: 18,
+              )
+            else
+              const BoxShadow(
+                color: Color(0x661E70E8),
+                offset: Offset(0, 8),
+                blurRadius: 18,
+              ),
           ],
         ),
         child: SizedBox(
@@ -1021,50 +1095,67 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildFingerprintButton() {
+  Widget _buildFingerprintButton({required bool isDark}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: _signInWithBiometrics,
         borderRadius: BorderRadius.circular(42),
-        splashColor: const Color(0x331E70E8),
+        splashColor: isDark ? const Color(0x33FFFFFF) : const Color(0x331E70E8),
         child: Container(
           width: 76,
           height: 76,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white,
-            border: Border.all(color: _loginGoldRim, width: 2.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x261E70E8),
-                offset: Offset(0, 6),
-                blurRadius: 14,
-              ),
-              BoxShadow(
-                color: Color(0x40D4AF37),
-                offset: Offset(0, 0),
-                blurRadius: 8,
-              ),
+            color: isDark ? const Color(0xFF292A32) : Colors.white,
+            border: Border.all(
+              color: isDark ? const Color(0x44FFFFFF) : _loginGoldRim,
+              width: 2.2,
+            ),
+            boxShadow: [
+              if (isDark)
+                const BoxShadow(
+                  color: Color(0x80000000),
+                  offset: Offset(0, 6),
+                  blurRadius: 14,
+                )
+              else ...[
+                const BoxShadow(
+                  color: Color(0x261E70E8),
+                  offset: Offset(0, 6),
+                  blurRadius: 14,
+                ),
+                const BoxShadow(
+                  color: Color(0x40D4AF37),
+                  offset: Offset(0, 0),
+                  blurRadius: 8,
+                ),
+              ],
             ],
           ),
           padding: const EdgeInsets.all(5),
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFF7FAFF),
-              border: Border.all(color: const Color(0x66D4AF37), width: 1.0),
+              color: isDark ? const Color(0xFF202127) : const Color(0xFFF7FAFF),
+              border: Border.all(
+                color: isDark ? const Color(0x22FFFFFF) : const Color(0x66D4AF37),
+                width: 1.0,
+              ),
             ),
             child: Center(
               child: _biometricBusy
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 24,
                       height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: _loginRoyalBlue),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: isDark ? Colors.white : _loginRoyalBlue,
+                      ),
                     )
-                  : const Icon(
+                  : Icon(
                       Icons.fingerprint,
-                      color: _loginRoyalBlue,
+                      color: isDark ? Colors.white : _loginRoyalBlue,
                       size: 44,
                     ),
             ),
@@ -1075,143 +1166,113 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// Custom painter for the 3D stylized Blue & White wave/flame emblem in the center medallion
-class _WaveFlameEmblemPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // 1. Left deep blue wave swoosh
-    final leftGradient = const LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
-    ).createShader(Rect.fromLTWH(0, 0, w, h));
-    final leftPaint = Paint()
-      ..shader = leftGradient
-      ..style = PaintingStyle.fill;
-
-    final leftPath = Path();
-    leftPath.moveTo(w * 0.35, h * 0.28);
-    leftPath.cubicTo(w * 0.28, h * 0.40, w * 0.22, h * 0.58, w * 0.35, h * 0.72);
-    leftPath.cubicTo(w * 0.44, h * 0.82, w * 0.58, h * 0.85, w * 0.52, h * 0.94);
-    leftPath.cubicTo(w * 0.42, h * 0.96, w * 0.25, h * 0.84, w * 0.20, h * 0.68);
-    leftPath.cubicTo(w * 0.16, h * 0.50, w * 0.26, h * 0.34, w * 0.35, h * 0.28);
-    leftPath.close();
-    canvas.drawPath(leftPath, leftPaint);
-
-    // 2. Center vibrant cyan-blue flame swoosh
-    final centerGradient = const LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color(0xFF42A5F5), Color(0xFF1565C0)],
-    ).createShader(Rect.fromLTWH(0, 0, w, h));
-    final centerPaint = Paint()
-      ..shader = centerGradient
-      ..style = PaintingStyle.fill;
-
-    final centerPath = Path();
-    centerPath.moveTo(w * 0.48, h * 0.18);
-    centerPath.cubicTo(w * 0.38, h * 0.32, w * 0.36, h * 0.52, w * 0.46, h * 0.68);
-    centerPath.cubicTo(w * 0.54, h * 0.80, w * 0.65, h * 0.82, w * 0.62, h * 0.92);
-    centerPath.cubicTo(w * 0.56, h * 0.92, w * 0.46, h * 0.82, w * 0.40, h * 0.70);
-    centerPath.cubicTo(w * 0.32, h * 0.52, w * 0.36, h * 0.30, w * 0.48, h * 0.18);
-    centerPath.close();
-    canvas.drawPath(centerPath, centerPaint);
-
-    // 3. Top-right sculpted white & light silver swoosh
-    final rightGradient = const LinearGradient(
-      begin: Alignment.topRight,
-      end: Alignment.bottomLeft,
-      colors: [Colors.white, Color(0xFFCFE0F5)],
-    ).createShader(Rect.fromLTWH(0, 0, w, h));
-    final rightPaint = Paint()
-      ..shader = rightGradient
-      ..style = PaintingStyle.fill;
-
-    final rightPath = Path();
-    rightPath.moveTo(w * 0.54, h * 0.14);
-    rightPath.cubicTo(w * 0.64, h * 0.24, w * 0.72, h * 0.38, w * 0.68, h * 0.54);
-    rightPath.cubicTo(w * 0.64, h * 0.66, w * 0.54, h * 0.72, w * 0.60, h * 0.80);
-    rightPath.cubicTo(w * 0.70, h * 0.72, w * 0.78, h * 0.58, w * 0.76, h * 0.42);
-    rightPath.cubicTo(w * 0.74, h * 0.28, w * 0.64, h * 0.18, w * 0.54, h * 0.14);
-    rightPath.close();
-
-    // Subtle drop shadow under right swoosh
-    canvas.drawShadow(rightPath, const Color(0x330D47A1), 4, false);
-    canvas.drawPath(rightPath, rightPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 /// Custom painter for the ethereal blue ambient background with fluid ribbons, golden curves, and dot matrix
 class _LoginBackgroundPainter extends CustomPainter {
+  const _LoginBackgroundPainter({this.isDark = false});
+
+  final bool isDark;
+
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Soft atmospheric base gradient
+    if (isDark) {
+      _paintDark(canvas, size);
+    } else {
+      _paintLight(canvas, size);
+    }
+  }
+
+  void _paintDark(Canvas canvas, Size size) {
+    // 1. Charcoal neumorphic dark background
+    final baseGradient = const LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Color(0xFF1B1C21), Color(0xFF141518)],
+    ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, Paint()..shader = baseGradient);
+
+    // 2. Subtle top-left radial glow
+    final topOrbPaint = Paint()
+      ..shader = const RadialGradient(
+        center: Alignment.topLeft,
+        radius: 1.0,
+        colors: [Color(0x333A3C46), Color(0x003A3C46)],
+      ).createShader(Rect.fromCircle(center: const Offset(40, 70), radius: 210));
+    canvas.drawCircle(const Offset(40, 70), 210, topOrbPaint);
+
+    // 3. Subtle bottom-left 4x4 matrix of dark dots
+    final dotPaint = Paint()..color = const Color(0x337A7E8D);
+    for (int r = 0; r < 4; r++) {
+      for (int c = 0; c < 4; c++) {
+        canvas.drawCircle(Offset(28.0 + (c * 13.0), size.height - 110.0 + (r * 13.0)), 2.2, dotPaint);
+      }
+    }
+  }
+
+  void _paintLight(Canvas canvas, Size size) {
+    // 1. Soft atmospheric base gradient matching reference
     final baseGradient = const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Color(0xFFE9F1FC),
-        Color(0xFFF6F9FE),
-        Color(0xFFDEEAFB),
+        Color(0xFFEFF5FD),
+        Color(0xFFF8FAFE),
+        Color(0xFFE2EDFC),
       ],
     ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, Paint()..shader = baseGradient);
 
-    // 2. Top-left ambient royal blue sphere and golden trim ribbon
+    // 2. Top-left ambient royal blue sphere with golden boundary curve
     final blueOrbPaint = Paint()
       ..shader = const RadialGradient(
-        colors: [Color(0xFF1E70E8), Color(0x001E70E8)],
-      ).createShader(Rect.fromCircle(center: const Offset(40, 80), radius: 180));
-    canvas.drawCircle(const Offset(40, 80), 180, blueOrbPaint);
+        center: Alignment.topLeft,
+        radius: 1.0,
+        colors: [Color(0xFF2575FC), Color(0xFF0F52BA), Color(0x000F52BA)],
+        stops: [0.0, 0.65, 1.0],
+      ).createShader(Rect.fromCircle(center: const Offset(40, 70), radius: 210));
+    canvas.drawCircle(const Offset(40, 70), 210, blueOrbPaint);
 
     final goldRibbonPaint = Paint()
       ..color = const Color(0xFFECC868)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4;
+      ..strokeWidth = 2.6;
 
     final pathTop = Path();
-    pathTop.moveTo(0, 160);
-    pathTop.cubicTo(60, 150, 140, 110, 160, 0);
+    pathTop.moveTo(0, 175);
+    pathTop.cubicTo(65, 160, 145, 115, 170, 0);
     canvas.drawPath(pathTop, goldRibbonPaint);
 
     // 3. Right side floating blurred sphere
     final rightOrbPaint = Paint()
       ..shader = const RadialGradient(
-        colors: [Color(0x6686B8F7), Color(0x0086B8F7)],
-      ).createShader(Rect.fromCircle(center: Offset(size.width + 20, size.height * 0.3), radius: 140));
-    canvas.drawCircle(Offset(size.width + 20, size.height * 0.3), 140, rightOrbPaint);
+        colors: [Color(0x7386B8F7), Color(0x0086B8F7)],
+      ).createShader(Rect.fromCircle(center: Offset(size.width + 10, size.height * 0.28), radius: 150));
+    canvas.drawCircle(Offset(size.width + 10, size.height * 0.28), 150, rightOrbPaint);
 
     // 4. Bottom-right sweeping fluid royal curves with gold edge
     final bottomBlueGrad = const RadialGradient(
       center: Alignment.bottomRight,
-      radius: 1.2,
-      colors: [Color(0xFF0D47A1), Color(0xFF1976D2), Color(0x001E88E5)],
-    ).createShader(Rect.fromCircle(center: Offset(size.width, size.height), radius: size.width * 0.8));
-    final bottomBluePaint = Paint()..shader = bottomBlueGrad;
+      radius: 1.15,
+      colors: [Color(0xFF0B46A8), Color(0xFF1565C0), Color(0x001976D2)],
+      stops: [0.0, 0.7, 1.0],
+    ).createShader(Rect.fromCircle(center: Offset(size.width, size.height), radius: size.width * 0.85));
 
     final bottomPath = Path();
-    bottomPath.moveTo(size.width * 0.3, size.height);
-    bottomPath.cubicTo(size.width * 0.5, size.height * 0.88, size.width * 0.75, size.height * 0.82, size.width, size.height * 0.78);
+    bottomPath.moveTo(size.width * 0.28, size.height);
+    bottomPath.cubicTo(size.width * 0.48, size.height * 0.88, size.width * 0.74, size.height * 0.82, size.width, size.height * 0.77);
     bottomPath.lineTo(size.width, size.height);
     bottomPath.close();
-    canvas.drawPath(bottomPath, bottomBluePaint);
+    canvas.drawPath(bottomPath, Paint()..shader = bottomBlueGrad);
 
     final goldBottomPath = Path();
-    goldBottomPath.moveTo(size.width * 0.3, size.height);
-    goldBottomPath.cubicTo(size.width * 0.5, size.height * 0.88, size.width * 0.75, size.height * 0.82, size.width, size.height * 0.78);
+    goldBottomPath.moveTo(size.width * 0.28, size.height);
+    goldBottomPath.cubicTo(size.width * 0.48, size.height * 0.88, size.width * 0.74, size.height * 0.82, size.width, size.height * 0.77);
     canvas.drawPath(goldBottomPath, goldRibbonPaint);
 
     // 5. Bottom-left 4x4 matrix of subtle light blue dots
-    final dotPaint = Paint()..color = const Color(0x809EBCE8);
+    final dotPaint = Paint()..color = const Color(0x999EBCE8);
     for (int r = 0; r < 4; r++) {
       for (int c = 0; c < 4; c++) {
-        canvas.drawCircle(Offset(32.0 + (c * 13.0), size.height - 110.0 + (r * 13.0)), 2.2, dotPaint);
+        canvas.drawCircle(Offset(28.0 + (c * 13.0), size.height - 110.0 + (r * 13.0)), 2.2, dotPaint);
       }
     }
 
@@ -1249,7 +1310,8 @@ class _LoginBackgroundPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LoginBackgroundPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _LoginBackgroundPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
 
 /// Standalone entry point for the account registration form.

@@ -508,6 +508,13 @@ class _LoginPageState extends State<LoginPage> {
                 textCapitalization: TextCapitalization.none,
                 autocorrect: false,
                 textInputAction: TextInputAction.next,
+                errorBuilder: (context, errorText) => Padding(
+                  padding: const EdgeInsets.only(left: 50, top: 4, bottom: 2),
+                  child: Text(
+                    errorText,
+                    style: const TextStyle(color: Color(0xFFD93025), fontSize: 11, height: 1.2),
+                  ),
+                ),
                 validator: (value) => _required(value, 'your username or email'),
                 cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
                 style: TextStyle(
@@ -557,6 +564,13 @@ class _LoginPageState extends State<LoginPage> {
             ),
             child: TextFormField(
                 controller: _passwordController,
+                errorBuilder: (context, errorText) => Padding(
+                  padding: const EdgeInsets.only(left: 50, top: 4, bottom: 2),
+                  child: Text(
+                    errorText,
+                    style: const TextStyle(color: Color(0xFFD93025), fontSize: 11, height: 1.2),
+                  ),
+                ),
                 validator: (value) => _required(value, 'your password'),
                 obscureText: !_passwordVisible,
                 obscuringCharacter: '•',

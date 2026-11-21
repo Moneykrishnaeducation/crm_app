@@ -6,13 +6,17 @@ class BrokerMorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomClearance = 124.0 + MediaQuery.viewPaddingOf(context).bottom;
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
+        primary: true,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, bottomClearance),
         children: [
           _MoreProfileCard(onTap: () => onSelectPage('Profile')),
           const SizedBox(height: 24),

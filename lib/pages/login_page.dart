@@ -38,8 +38,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _passwordVisible = false;
   bool _acceptedTerms = true;
   bool _rememberMe = true;
-  bool _darkModeActive = false;
-  String _selectedLanguage = 'English';
 
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
@@ -157,54 +155,6 @@ class _LoginPageState extends State<LoginPage> {
 
   String? _required(String? value, String label) =>
       value == null || value.trim().isEmpty ? 'Enter $label' : null;
-
-  void _showLanguageSelector() {
-    final languages = ['English', 'Español', 'Français', 'Deutsch', '中文', 'العربية'];
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Select Language',
-                style: TextStyle(
-                  color: _loginDarkBlueText,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...languages.map(
-                (lang) => ListTile(
-                  title: Text(
-                    lang,
-                    style: TextStyle(
-                      color: _selectedLanguage == lang ? _loginRoyalBlue : _loginMutedBlueText,
-                      fontWeight: _selectedLanguage == lang ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  trailing: _selectedLanguage == lang
-                      ? const Icon(LucideIcons.check, color: _loginRoyalBlue, size: 18)
-                      : null,
-                  onTap: () {
-                    setState(() => _selectedLanguage = lang);
-                    Navigator.pop(sheetContext);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showHelpModal() {
     showModalBottomSheet<void>(
@@ -331,7 +281,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ],
                         ),
-                        padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),
+                        padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
                         child: _isSignUp ? _buildSignUpContent() : _buildLoginContent(),
                       ),
                     ),
@@ -345,155 +295,25 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildTopBar() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.center,
-      child: SizedBox(
-        width: 460,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Left: "UI Series ⌵"
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0x66D4AF37), width: 0.9),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x0A000000),
-                    offset: Offset(0, 2),
-                    blurRadius: 6,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'UI Series',
-                    style: TextStyle(
-                      color: Color(0xFF0F1E36),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 3),
-                  Icon(Icons.keyboard_arrow_down, size: 15, color: Color(0xFF0F1E36)),
-                ],
-              ),
-            ),
-
-            // Center: "English ⌵"
-            InkWell(
-              onTap: _showLanguageSelector,
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _selectedLanguage,
-                      style: const TextStyle(
-                        color: Color(0xFF0F1E36),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    const Icon(Icons.keyboard_arrow_down, size: 15, color: Color(0xFF0F1E36)),
-                  ],
-                ),
-              ),
-            ),
-
-            // Right: "Dark Mode"
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Dark Mode',
-                  style: TextStyle(
-                    color: Color(0xFF5A718F),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                _buildDarkModeSwitch(),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDarkModeSwitch() {
-    return GestureDetector(
-      onTap: () => setState(() => _darkModeActive = !_darkModeActive),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        width: 46,
-        height: 25,
-        padding: const EdgeInsets.all(2.5),
-        decoration: BoxDecoration(
-          color: _darkModeActive ? const Color(0xFF1E3A68) : const Color(0xFFD6E3F5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x66D4AF37), width: 0.8),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 250),
-          alignment: _darkModeActive ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 20,
-            height: 20,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x29000000),
-                  blurRadius: 3,
-                  offset: Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Icon(
-              _darkModeActive ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-              size: 12,
-              color: _darkModeActive ? _loginRoyalBlue : const Color(0xFFD8A82E),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildLogoEmblem() {
     return Center(
       child: Container(
-        width: 118,
-        height: 118,
+        width: 122,
+        height: 122,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.white, Color(0xFFF0F5FD)],
+          gradient: const RadialGradient(
+            colors: [Colors.white, Color(0xFFF3F7FD)],
           ),
-          border: Border.all(color: _loginGoldRim, width: 2.5),
+          border: Border.all(color: _loginGoldRim, width: 2.8),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x291E70E8),
+              color: Color(0x2E1E70E8),
               offset: Offset(0, 10),
               blurRadius: 22,
             ),
             BoxShadow(
-              color: Color(0x40D4AF37),
+              color: Color(0x4DECC868),
               offset: Offset(0, 0),
               blurRadius: 10,
             ),
@@ -510,16 +330,12 @@ class _LoginPageState extends State<LoginPage> {
             ),
             border: Border.all(color: const Color(0x66D4AF37), width: 1.0),
           ),
-          child: ClipOval(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Image.asset(
-                'assets/images/vtindex_app_icon_source.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Image.asset(
-                  'assets/images/vtindex_logo_img.png',
-                  fit: BoxFit.contain,
-                ),
+          child: Center(
+            child: SizedBox(
+              width: 72,
+              height: 72,
+              child: CustomPaint(
+                painter: _WaveFlameEmblemPainter(),
               ),
             ),
           ),
@@ -534,10 +350,8 @@ class _LoginPageState extends State<LoginPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTopBar(),
-          const SizedBox(height: 20),
           _buildLogoEmblem(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
           // "Welcome Back"
           const Text(
@@ -580,7 +394,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 28),
 
           // Field 1: Username or Email
           Container(
@@ -767,66 +581,14 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 26),
 
           // Login button (Royal blue gradient pill with gold rim & arrow)
           _buildRaisedButton(
             label: 'Login',
             onPressed: _submit,
           ),
-          const SizedBox(height: 22),
-
-          // "— OR CONTINUE WITH —"
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 1,
-                  color: const Color(0xFFD4E2F2),
-                  margin: const EdgeInsets.only(left: 14, right: 12),
-                ),
-              ),
-              const Text(
-                'OR CONTINUE WITH',
-                style: TextStyle(
-                  color: Color(0xFF7E92A8),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  height: 1,
-                  color: const Color(0xFFD4E2F2),
-                  margin: const EdgeInsets.only(left: 12, right: 14),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-
-          // Social Login Buttons: Google, Discord, Facebook
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildSocialButton(
-                icon: SvgPicture.asset('assets/icons/google_logo.svg', width: 24, height: 24),
-                onTap: () => showAppMessage('Google sign-in coming soon.'),
-              ),
-              const SizedBox(width: 22),
-              _buildSocialButton(
-                icon: const _DiscordLogoIcon(),
-                onTap: () => showAppMessage('Discord sign-in coming soon.'),
-              ),
-              const SizedBox(width: 22),
-              _buildSocialButton(
-                icon: const Icon(Icons.facebook, color: Color(0xFF1877F2), size: 30),
-                onTap: () => showAppMessage('Facebook sign-in coming soon.'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 28),
 
           // Sign up link
           Center(
@@ -874,13 +636,13 @@ class _LoginPageState extends State<LoginPage> {
           ],
 
           if (_biometricEnabled && _biometricAvailable) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Center(
               child: _buildFingerprintButton(),
             ),
           ],
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Forgot your login details helper
           Center(
@@ -923,10 +685,8 @@ class _LoginPageState extends State<LoginPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTopBar(),
-          const SizedBox(height: 20),
           _buildLogoEmblem(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
           const Center(
             child: Text(
@@ -1261,37 +1021,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildSocialButton({
-    required Widget icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        splashColor: const Color(0x261E70E8),
-        child: Container(
-          width: 58,
-          height: 58,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0x40D4AF37), width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x140D47A1),
-                offset: Offset(0, 4),
-                blurRadius: 10,
-              ),
-            ],
-          ),
-          child: Center(child: icon),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFingerprintButton() {
     return Material(
       color: Colors.transparent,
@@ -1305,7 +1034,7 @@ class _LoginPageState extends State<LoginPage> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.white,
-            border: Border.all(color: _loginGoldRim, width: 2.0),
+            border: Border.all(color: _loginGoldRim, width: 2.2),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x261E70E8),
@@ -1346,59 +1075,72 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// Custom painter for the Discord gamepad controller logo
-class _DiscordLogoIcon extends StatelessWidget {
-  const _DiscordLogoIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: const BoxDecoration(
-        color: Color(0xFF5865F2),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: CustomPaint(
-          size: const Size(20, 16),
-          painter: _DiscordPainter(),
-        ),
-      ),
-    );
-  }
-}
-
-class _DiscordPainter extends CustomPainter {
+/// Custom painter for the 3D stylized Blue & White wave/flame emblem in the center medallion
+class _WaveFlameEmblemPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
+    final w = size.width;
+    final h = size.height;
+
+    // 1. Left deep blue wave swoosh
+    final leftGradient = const LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+    ).createShader(Rect.fromLTWH(0, 0, w, h));
+    final leftPaint = Paint()
+      ..shader = leftGradient
       ..style = PaintingStyle.fill;
 
-    final path = Path();
-    path.moveTo(size.width * 0.15, size.height * 0.2);
-    path.cubicTo(size.width * 0.35, size.height * 0.05, size.width * 0.65, size.height * 0.05, size.width * 0.85, size.height * 0.2);
-    path.cubicTo(size.width * 0.98, size.height * 0.6, size.width * 0.9, size.height * 0.9, size.width * 0.9, size.height * 0.9);
-    path.cubicTo(size.width * 0.8, size.height * 0.98, size.width * 0.7, size.height * 0.92, size.width * 0.7, size.height * 0.92);
-    path.cubicTo(size.width * 0.65, size.height * 0.85, size.width * 0.6, size.height * 0.8, size.width * 0.6, size.height * 0.8);
-    path.cubicTo(size.width * 0.55, size.height * 0.82, size.width * 0.45, size.height * 0.82, size.width * 0.4, size.height * 0.8);
-    path.cubicTo(size.width * 0.4, size.height * 0.8, size.width * 0.35, size.height * 0.85, size.width * 0.3, size.height * 0.92);
-    path.cubicTo(size.width * 0.3, size.height * 0.92, size.width * 0.2, size.height * 0.98, size.width * 0.1, size.height * 0.9);
-    path.cubicTo(size.width * 0.1, size.height * 0.9, size.width * 0.02, size.height * 0.6, size.width * 0.15, size.height * 0.2);
-    path.close();
+    final leftPath = Path();
+    leftPath.moveTo(w * 0.35, h * 0.28);
+    leftPath.cubicTo(w * 0.28, h * 0.40, w * 0.22, h * 0.58, w * 0.35, h * 0.72);
+    leftPath.cubicTo(w * 0.44, h * 0.82, w * 0.58, h * 0.85, w * 0.52, h * 0.94);
+    leftPath.cubicTo(w * 0.42, h * 0.96, w * 0.25, h * 0.84, w * 0.20, h * 0.68);
+    leftPath.cubicTo(w * 0.16, h * 0.50, w * 0.26, h * 0.34, w * 0.35, h * 0.28);
+    leftPath.close();
+    canvas.drawPath(leftPath, leftPaint);
 
-    canvas.drawPath(path, paint);
+    // 2. Center vibrant cyan-blue flame swoosh
+    final centerGradient = const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF42A5F5), Color(0xFF1565C0)],
+    ).createShader(Rect.fromLTWH(0, 0, w, h));
+    final centerPaint = Paint()
+      ..shader = centerGradient
+      ..style = PaintingStyle.fill;
 
-    final eyePaint = Paint()..color = const Color(0xFF5865F2);
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(size.width * 0.36, size.height * 0.52), width: 3.5, height: 4.5),
-      eyePaint,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(size.width * 0.64, size.height * 0.52), width: 3.5, height: 4.5),
-      eyePaint,
-    );
+    final centerPath = Path();
+    centerPath.moveTo(w * 0.48, h * 0.18);
+    centerPath.cubicTo(w * 0.38, h * 0.32, w * 0.36, h * 0.52, w * 0.46, h * 0.68);
+    centerPath.cubicTo(w * 0.54, h * 0.80, w * 0.65, h * 0.82, w * 0.62, h * 0.92);
+    centerPath.cubicTo(w * 0.56, h * 0.92, w * 0.46, h * 0.82, w * 0.40, h * 0.70);
+    centerPath.cubicTo(w * 0.32, h * 0.52, w * 0.36, h * 0.30, w * 0.48, h * 0.18);
+    centerPath.close();
+    canvas.drawPath(centerPath, centerPaint);
+
+    // 3. Top-right sculpted white & light silver swoosh
+    final rightGradient = const LinearGradient(
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+      colors: [Colors.white, Color(0xFFCFE0F5)],
+    ).createShader(Rect.fromLTWH(0, 0, w, h));
+    final rightPaint = Paint()
+      ..shader = rightGradient
+      ..style = PaintingStyle.fill;
+
+    final rightPath = Path();
+    rightPath.moveTo(w * 0.54, h * 0.14);
+    rightPath.cubicTo(w * 0.64, h * 0.24, w * 0.72, h * 0.38, w * 0.68, h * 0.54);
+    rightPath.cubicTo(w * 0.64, h * 0.66, w * 0.54, h * 0.72, w * 0.60, h * 0.80);
+    rightPath.cubicTo(w * 0.70, h * 0.72, w * 0.78, h * 0.58, w * 0.76, h * 0.42);
+    rightPath.cubicTo(w * 0.74, h * 0.28, w * 0.64, h * 0.18, w * 0.54, h * 0.14);
+    rightPath.close();
+
+    // Subtle drop shadow under right swoosh
+    canvas.drawShadow(rightPath, const Color(0x330D47A1), 4, false);
+    canvas.drawPath(rightPath, rightPaint);
   }
 
   @override

@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
   late bool _isSignUp = widget.initialSignUp;
   bool _emailVerified = false;
   bool _passwordVisible = false;
-  bool _acceptedTerms = true;
+  bool _acceptedTerms = false;
   bool _rememberMe = true;
 
   // Inline validation error messages
@@ -44,6 +44,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _signUpNameError;
   String? _signUpEmailError;
   String? _signUpPasswordError;
+  String? _signUpTermsError;
 
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
@@ -213,6 +214,7 @@ class _LoginPageState extends State<LoginPage> {
     String? nameErr;
     String? emailErr;
     String? passErr;
+    String? termsErr;
 
     if (name.isEmpty) {
       nameErr = 'Please enter your full name.';
@@ -228,15 +230,15 @@ class _LoginPageState extends State<LoginPage> {
       passErr = 'Password must be at least 8 characters long.';
     }
     if (!_acceptedTerms) {
-      showAppMessage('Please accept the Terms & Conditions and Privacy Policy.');
-      return;
+      termsErr = 'Please accept the Terms & Conditions and Privacy Policy.';
     }
 
-    if (nameErr != null || emailErr != null || passErr != null) {
+    if (nameErr != null || emailErr != null || passErr != null || termsErr != null) {
       setState(() {
         _signUpNameError = nameErr;
         _signUpEmailError = emailErr;
         _signUpPasswordError = passErr;
+        _signUpTermsError = termsErr;
       });
       return;
     }
@@ -245,6 +247,7 @@ class _LoginPageState extends State<LoginPage> {
       _signUpNameError = null;
       _signUpEmailError = null;
       _signUpPasswordError = null;
+      _signUpTermsError = null;
     });
 
     showAppMessage('Account creation is not connected yet.');
@@ -1133,27 +1136,41 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             Checkbox(
               value: _acceptedTerms,
-              onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
+              onChanged: (v) => setState(() {
+                _acceptedTerms = v ?? false;
+                if (_signUpTermsError != null) _signUpTermsError = null;
+              }),
               activeColor: isDark ? const Color(0xFF2575FC) : _loginRoyalBlue,
               checkColor: Colors.white,
-              side: BorderSide(color: isDark ? const Color(0xFF454958) : const Color(0xFFBACADB)),
+              side: BorderSide(
+                color: _signUpTermsError != null
+                    ? _loginErrorColor
+                    : (isDark ? const Color(0xFF454958) : const Color(0xFFBACADB)),
+              ),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
             Expanded(
-              child: Text.rich(
-                TextSpan(
-                  text: 'I agree to the ',
-                  style: TextStyle(color: subtitleColor, fontSize: 12.5),
-                  children: [
-                    TextSpan(text: 'Terms & Conditions', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
-                    const TextSpan(text: ' and '),
-                    TextSpan(text: 'Privacy Policy', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
-                  ],
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _acceptedTerms = !_acceptedTerms;
+                  if (_signUpTermsError != null) _signUpTermsError = null;
+                }),
+                child: Text.rich(
+                  TextSpan(
+                    text: 'I agree to the ',
+                    style: TextStyle(color: subtitleColor, fontSize: 12.5),
+                    children: [
+                      TextSpan(text: 'Terms & Conditions', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
+                      const TextSpan(text: ' and '),
+                      TextSpan(text: 'Privacy Policy', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
+        _buildFieldFeedback(errorText: _signUpTermsError),
         const SizedBox(height: 22),
 
         _buildRaisedButton(
@@ -1170,6 +1187,7 @@ class _LoginPageState extends State<LoginPage> {
               _signUpNameError = null;
               _signUpEmailError = null;
               _signUpPasswordError = null;
+              _signUpTermsError = null;
             }),
             borderRadius: BorderRadius.circular(8),
             child: Padding(

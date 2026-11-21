@@ -28,7 +28,7 @@ void main() {
     expect(find.text('PREFERENCES'), findsOneWidget);
     expect(find.text('ABOUT'), findsOneWidget);
     expect(find.text('Theme Mode'), findsOneWidget);
-    expect(find.text('Smooth Display'), findsOneWidget);
+    expect(find.text('Smooth Display'), findsNothing);
     expect(find.text('Version'), findsOneWidget);
     expect(find.text('Sub-version'), findsOneWidget);
 

@@ -101,8 +101,8 @@ void main() {
     });
   });
 
-  group('Settings Page Smooth Display UI tests', () {
-    testWidgets('Settings page renders Smooth Display tile and opens sheet', (tester) async {
+  group('Settings Page UI tests', () {
+    testWidgets('Settings page does not display refresh rate section in settings', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -115,25 +115,11 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // Verify Smooth Display tile is rendered under PREFERENCES
-      expect(find.text('Smooth Display'), findsOneWidget);
-      expect(find.text('120 Hz'), findsOneWidget);
-
-      // Tap on Smooth Display tile
-      await tester.tap(find.text('Smooth Display'));
-      await tester.pumpAndSettle();
-
-      // Verify bottom sheet opens
-      expect(find.text('Adapts to screen higher refresh rate based on device settings.'), findsOneWidget);
-      expect(find.text('Active rate: 120 Hz'), findsOneWidget);
-      expect(find.text('Auto (Highest Refresh Rate)'), findsOneWidget);
-      expect(find.text('Use Device Default'), findsOneWidget);
-
-      // Tap Auto (Highest Refresh Rate) button
-      await tester.tap(find.text('Auto (Highest Refresh Rate)'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Adapts to screen higher refresh rate based on device settings.'), findsNothing);
+      // Verify Smooth Display and refresh rate section are not present
+      expect(find.text('Smooth Display'), findsNothing);
+      expect(find.text('120 Hz'), findsNothing);
+      expect(find.text('Theme Mode'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
     });
   });
 }

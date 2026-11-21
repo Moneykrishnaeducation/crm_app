@@ -1462,7 +1462,7 @@ class _ForgotPasswordFlowModal extends StatefulWidget {
 }
 
 class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
-  int _currentStep = 1; // 1: Email, 2: OTP, 3: New Password, 4: Confirm Password, 5: Success
+  int _currentStep = 1; // 1: Email, 2: OTP, 3: New & Confirm Password, 4: Success
 
   late final TextEditingController _emailController;
   final TextEditingController _otpController = TextEditingController();
@@ -1543,10 +1543,11 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     });
   }
 
-  // --- Step 3: Enter New Password ---
+  // --- Step 3: Set New Password & Confirm Password (in same window one by one) ---
   void _submitStep3() {
     FocusScope.of(context).unfocus();
     final pass = _newPasswordController.text;
+    final confirm = _confirmPasswordController.text;
     if (pass.isEmpty) {
       setState(() => _stepError = 'Please enter your new password.');
       return;
@@ -1555,19 +1556,8 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       setState(() => _stepError = 'Password must be at least 8 characters long.');
       return;
     }
-    setState(() {
-      _stepError = null;
-      _currentStep = 4;
-    });
-  }
-
-  // --- Step 4: Confirm New Password ---
-  void _submitStep4() {
-    FocusScope.of(context).unfocus();
-    final confirm = _confirmPasswordController.text;
-    final pass = _newPasswordController.text;
     if (confirm.isEmpty) {
-      setState(() => _stepError = 'Please re-enter your new password to confirm.');
+      setState(() => _stepError = 'Please confirm your new password.');
       return;
     }
     if (confirm != pass) {
@@ -1576,7 +1566,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     }
     setState(() {
       _stepError = null;
-      _currentStep = 5;
+      _currentStep = 4;
     });
     widget.onPasswordResetCompleted(
       _emailController.text.trim(),
@@ -1584,8 +1574,8 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     );
   }
 
-  // --- Step 5: Finish & Back to Login ---
-  void _submitStep5() {
+  // --- Step 4: Finish & Back to Login ---
+  void _submitStep4() {
     Navigator.pop(context);
   }
 
@@ -1593,12 +1583,12 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     return Column(
       children: [
         Row(
-          children: List.generate(5, (index) {
+          children: List.generate(4, (index) {
             final active = index + 1 <= _currentStep;
             return Expanded(
               child: Container(
                 height: 4,
-                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
                   color: active
                       ? _loginRoyalBlue
@@ -1611,7 +1601,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         ),
         const SizedBox(height: 12),
         Text(
-          'STEP $_currentStep OF 5',
+          'STEP $_currentStep OF 4',
           style: TextStyle(
             color: widget.isDark ? const Color(0xFF888F9F) : _loginMutedBlueText,
             fontSize: 11,
@@ -1869,7 +1859,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     );
   }
 
-  // --- View: Step 3 Content ---
+  // --- View: Step 3 Content (New Password & Confirm Password in same window one by one) ---
   Widget _buildStep3Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1880,10 +1870,12 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Choose a strong password with at least 8 characters.',
+          'Choose a strong password and confirm it below.',
           style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 20),
+
+        // New Password Field
         Container(
           height: 56,
           decoration: BoxDecoration(
@@ -1900,8 +1892,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
               textAlignVertical: TextAlignVertical.center,
               obscureText: !_newPasswordVisible,
               obscuringCharacter: '•',
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submitStep3(),
+              textInputAction: TextInputAction.next,
               cursorColor: _loginRoyalBlue,
               style: TextStyle(
                 color: inputTextColor,
@@ -1918,8 +1909,8 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 isDense: true,
                 hintText: 'New Password (min. 8 characters)',
                 hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0, height: 1.25),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 18, right: 12),
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(left: 18, right: 12),
                   child: Icon(LucideIcons.lock, color: _loginRoyalBlue, size: 20),
                 ),
                 prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
@@ -1941,31 +1932,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
             ),
           ),
         ),
-        _buildStepErrorFeedback(),
-        const SizedBox(height: 24),
-        _buildActionButton(
-          label: 'Continue',
-          onPressed: _submitStep3,
-        ),
-      ],
-    );
-  }
 
-  // --- View: Step 4 Content ---
-  Widget _buildStep4Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Confirm New Password',
-          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Re-enter your new password to verify and activate it.',
-          style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 14),
+
+        // Confirm Password Field (one by one in the same window)
         Container(
           height: 56,
           decoration: BoxDecoration(
@@ -1983,7 +1953,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
               obscureText: !_confirmPasswordVisible,
               obscuringCharacter: '•',
               textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submitStep4(),
+              onFieldSubmitted: (_) => _submitStep3(),
               cursorColor: _loginRoyalBlue,
               style: TextStyle(
                 color: inputTextColor,
@@ -1998,10 +1968,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 isDense: true,
-                hintText: 'Confirm Password',
+                hintText: 'Confirm New Password',
                 hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0, height: 1.25),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 18, right: 12),
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(left: 18, right: 12),
                   child: Icon(LucideIcons.lock, color: _loginRoyalBlue, size: 20),
                 ),
                 prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
@@ -2023,19 +1993,20 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
             ),
           ),
         ),
+
         _buildStepErrorFeedback(),
-        const SizedBox(height: 24),
+        const SizedBox(height: 22),
         _buildActionButton(
-          label: 'Confirm & Reset Password',
-          onPressed: _submitStep4,
+          label: 'Reset Password',
+          onPressed: _submitStep3,
           icon: Icons.check_rounded,
         ),
       ],
     );
   }
 
-  // --- View: Step 5 Content ---
-  Widget _buildStep5Content(Color titleColor, Color subtitleColor) {
+  // --- View: Step 4 Content (Success Done) ---
+  Widget _buildStep4Content(Color titleColor, Color subtitleColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2088,7 +2059,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         const SizedBox(height: 28),
         _buildActionButton(
           label: 'Back to Login',
-          onPressed: _submitStep5,
+          onPressed: _submitStep4,
           icon: Icons.login_rounded,
         ),
       ],
@@ -2169,8 +2140,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                     1 => _buildStep1Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
                     2 => _buildStep2Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
                     3 => _buildStep3Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
-                    4 => _buildStep4Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
-                    _ => _buildStep5Content(titleColor, subtitleColor),
+                    _ => _buildStep4Content(titleColor, subtitleColor),
                   },
                 ),
               ],

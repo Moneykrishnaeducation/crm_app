@@ -324,7 +324,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final viewInsets = MediaQuery.of(context).viewInsets;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -334,80 +333,66 @@ class _LoginPageState extends State<LoginPage> {
         behavior: HitTestBehavior.opaque,
         child: Stack(
           children: [
-            // 1. Full-screen decorative background graphic painter (remains uncompressed)
+            // 1. Full-screen decorative background graphic painter
             Positioned.fill(
               child: CustomPaint(
                 painter: _LoginBackgroundPainter(isDark: isDark),
               ),
             ),
 
-            // 2. Main floating glass card with smooth keyboard avoidance
+            // 2. Main floating glass card (stays anchored without jumping up on keyboard open)
             SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 20,
-                      bottom: 20 + viewInsets.bottom,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight - 40,
-                      ),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 440),
-                          child: ClipRRect(
+              child: Center(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(38),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF25262D) : _loginCardGlassBg,
                             borderRadius: BorderRadius.circular(38),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF25262D) : _loginCardGlassBg,
-                                  borderRadius: BorderRadius.circular(38),
-                                  border: Border.all(
-                                    color: isDark ? const Color(0x33FFFFFF) : _loginGoldBorder,
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: [
-                                    if (isDark) ...[
-                                      const BoxShadow(
-                                        color: Color(0x990A0B0E),
-                                        offset: Offset(0, 18),
-                                        blurRadius: 36,
-                                      ),
-                                      const BoxShadow(
-                                        color: Color(0x1AFFFFFF),
-                                        offset: Offset(0, -1),
-                                        blurRadius: 6,
-                                      ),
-                                    ] else ...[
-                                      const BoxShadow(
-                                        color: Color(0x261E70E8),
-                                        offset: Offset(0, 16),
-                                        blurRadius: 36,
-                                      ),
-                                      const BoxShadow(
-                                        color: Color(0x33D4AF37),
-                                        offset: Offset(0, 0),
-                                        blurRadius: 10,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
-                                child: _isSignUp ? _buildSignUpContent(isDark: isDark) : _buildLoginContent(isDark: isDark),
-                              ),
+                            border: Border.all(
+                              color: isDark ? const Color(0x33FFFFFF) : _loginGoldBorder,
+                              width: 1.5,
                             ),
+                            boxShadow: [
+                              if (isDark) ...[
+                                const BoxShadow(
+                                  color: Color(0x990A0B0E),
+                                  offset: Offset(0, 18),
+                                  blurRadius: 36,
+                                ),
+                                const BoxShadow(
+                                  color: Color(0x1AFFFFFF),
+                                  offset: Offset(0, -1),
+                                  blurRadius: 6,
+                                ),
+                              ] else ...[
+                                const BoxShadow(
+                                  color: Color(0x261E70E8),
+                                  offset: Offset(0, 16),
+                                  blurRadius: 36,
+                                ),
+                                const BoxShadow(
+                                  color: Color(0x33D4AF37),
+                                  offset: Offset(0, 0),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ],
                           ),
+                          padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
+                          child: _isSignUp ? _buildSignUpContent(isDark: isDark) : _buildLoginContent(isDark: isDark),
                         ),
                       ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
           ],

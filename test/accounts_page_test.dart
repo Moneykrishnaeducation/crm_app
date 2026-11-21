@@ -3,6 +3,46 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crm_app/main.dart';
 
 void main() {
+  testWidgets('account list and detail use the dashboard performance chart', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const listAccount = BrokerAccount('List Trader', '1001', '1:100', '\$1,000.00', '\$1,000.00', 'Live MT5', equityHistory: [1000]);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: BrokerAccountsPage(
+          onSelectPage: (_) {},
+          accounts: const [listAccount],
+          onAccountCreated: (_) {},
+          onAccountSelected: (_) {},
+          favoriteLogins: const {},
+          onToggleFavorite: (_) {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('account_list_performance_chart')), findsOneWidget);
+
+    const detailAccount = BrokerAccount('Detail Trader', '1002', '1:100', '\$1,000.00', '\$1,020.00', 'Live MT5', equityHistory: [1000, 1012, 1008, 1020]);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: BrokerAccountDetailsPage(
+          account: detailAccount,
+          onBack: () {},
+          onSelectPage: (_) {},
+          isFavorite: false,
+          onToggleFavorite: () {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Account performance'), findsOneWidget);
+    expect(find.byKey(const ValueKey('account_detail_performance_chart')), findsOneWidget);
+    expect(find.text('1D'), findsOneWidget);
+  });
+
   testWidgets('created live account sheet stays open and shows credentials', (tester) async {
     tester.view.physicalSize = const Size(800, 1200);
     tester.view.devicePixelRatio = 1;

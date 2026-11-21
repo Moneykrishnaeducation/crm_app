@@ -131,6 +131,8 @@ class _ReferenceAccountCard extends StatelessWidget {
     final live = account.type == 'Live MT5';
     final pnl = account.floatingPnl ?? 0;
     final pnlColor = pnl > 0 ? green : pnl < 0 ? red : theme.colorScheme.onSurface;
+    final neutralChartColor = dark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8);
+    final chartColor = pnl > 0 ? green : pnl < 0 ? red : neutralChartColor;
     final fg = theme.colorScheme.onSurface;
     final muted = theme.colorScheme.onSurfaceVariant;
     final fav = effectiveFavorite;
@@ -171,7 +173,14 @@ class _ReferenceAccountCard extends StatelessWidget {
               const SizedBox(height: 5),
               Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
             ])),
-            SizedBox(width: sparkWidth, height: 35, child: CustomPaint(painter: _AccountSparkPainter(values: equity, color: pnl < 0 ? red : live ? green : const Color(0xFF78A9DC)))),
+            SizedBox(width: sparkWidth, height: 35, child: CustomPaint(
+              key: const ValueKey('account_list_performance_chart'),
+              painter: _PortfolioLinePainter(
+                values: equity,
+                lineColor: chartColor,
+                fillColor: chartColor.withValues(alpha: .10),
+              ),
+            )),
             const SizedBox(width: 2),
             if (onToggleFavorite != null)
               IconButton(
@@ -287,28 +296,6 @@ class _ReferenceMetric extends StatelessWidget {
       FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w800))),
     ]),
   );
-}
-
-class _AccountSparkPainter extends CustomPainter {
-  const _AccountSparkPainter({required this.values, required this.color});
-  final List<double> values;
-  final Color color;
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (values.length < 2 || size.isEmpty) return;
-    final minV = values.reduce((a, b) => a < b ? a : b);
-    final maxV = values.reduce((a, b) => a > b ? a : b);
-    final range = (maxV - minV).abs() < .000001 ? 1.0 : maxV - minV;
-    final path = Path();
-    for (var i = 0; i < values.length; i++) {
-      final x = size.width * i / (values.length - 1);
-      final y = size.height - 3 - ((values[i] - minV) / range) * (size.height - 7);
-      if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
-    }
-    canvas.drawPath(path, Paint()..color = color..strokeWidth = 1.8..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
-  }
-  @override
-  bool shouldRepaint(covariant _AccountSparkPainter old) => old.values != values || old.color != color;
 }
 
 class _AccountEmptyState extends StatelessWidget {
@@ -1356,6 +1343,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     const blue = Color(0xFF39B5FF);
     const green = Color(0xFF08D879);
     const red = Color(0xFFFF6268);
+    final neutralChartColor = dark ? const Color(0xFF75A9FF) : const Color(0xFF2865D8);
     final bg = dark ? navy : theme.scaffoldBackgroundColor;
     final surface = dark ? panel : Colors.white;
     final border = dark ? const Color(0xFF29415F) : const Color(0xFFD9E2EE);
@@ -1377,6 +1365,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     final rangeCount = switch (_range) { '1D' => 3, '1W' => 5, '1M' => 8, '3M' => 10, 'YTD' => 12, _ => history.length };
     final chartHistory = history.length > rangeCount ? history.sublist(history.length - rangeCount) : history;
     final changePct = chartHistory.length > 1 && chartHistory.first != 0 ? ((chartHistory.last - chartHistory.first) / chartHistory.first) * 100 : 0.0;
+    final chartColor = changePct > 0 ? green : changePct < 0 ? red : neutralChartColor;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final horizontalPadding = screenWidth < 360 ? 12.0 : 16.0;
     final bottomNavPadding = 116.0 + MediaQuery.paddingOf(context).bottom;
@@ -1575,7 +1564,21 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               ]),
               const SizedBox(height: 13),
               if (history.length > 1)
-                SizedBox(height: MediaQuery.sizeOf(context).height < 760 ? 105 : 125, width: double.infinity, child: CustomPaint(painter: _EquityHistoryPainter(values: chartHistory, color: green, gridColor: border)))
+                LayoutBuilder(builder: (context, constraints) {
+                  final chartHeight = (constraints.maxWidth * .30).clamp(92.0, 124.0);
+                  return SizedBox(
+                    height: chartHeight,
+                    width: double.infinity,
+                    child: CustomPaint(
+                      key: const ValueKey('account_detail_performance_chart'),
+                      painter: _PortfolioLinePainter(
+                        values: chartHistory,
+                        lineColor: chartColor,
+                        fillColor: chartColor.withValues(alpha: .10),
+                      ),
+                    ),
+                  );
+                })
               else
                 SizedBox(height: 105, child: Center(child: Text('Performance history will appear after MT5 sync.', style: TextStyle(color: muted, fontSize: 10)))),
               const SizedBox(height: 8),
@@ -1586,9 +1589,24 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(color: selected ? gold : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+                    constraints: const BoxConstraints(minHeight: 40),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? (dark ? const Color(0xFF1D3B68) : const Color(0xFFEAF1FF))
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
                     alignment: Alignment.center,
-                    child: Text(value, style: TextStyle(color: selected ? const Color(0xFF101A29) : fg, fontSize: 9, fontWeight: FontWeight.w900)),
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        color: selected
+                            ? (dark ? const Color(0xFF9CC3FF) : const Color(0xFF2459C7))
+                            : muted,
+                        fontSize: 10,
+                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
                   ),
                 )));
               }).toList()),
@@ -1678,37 +1696,3 @@ Widget _detailTradeRow(BuildContext context, String symbol, String detail, Strin
     Container(height: 1, color: border),
   ]),
 );
-
-class _EquityHistoryPainter extends CustomPainter {
-  const _EquityHistoryPainter({required this.values, required this.color, required this.gridColor});
-  final List<double> values; final Color color, gridColor;
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (values.length < 2 || size.isEmpty) return;
-    final minV = values.reduce((a, b) => a < b ? a : b); final maxV = values.reduce((a, b) => a > b ? a : b);
-    final range = (maxV - minV).abs() < .000001 ? 1.0 : maxV - minV;
-    final rect = Rect.fromLTWH(0, 4, size.width, size.height - 8);
-    final grid = Paint()..color = gridColor..strokeWidth = 1;
-    for (var i = 0; i < 4; i++) { final y = rect.top + rect.height * i / 3; canvas.drawLine(Offset(0, y), Offset(size.width, y), grid); }
-    final path = Path();
-    for (var i = 0; i < values.length; i++) {
-      final x = rect.width * i / (values.length - 1); final y = rect.bottom - ((values[i] - minV) / range) * rect.height;
-      if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
-    }
-    final fillPath = Path.from(path)
-      ..lineTo(rect.right, rect.bottom)
-      ..lineTo(rect.left, rect.bottom)
-      ..close();
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [color.withValues(alpha: .25), color.withValues(alpha: .015)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(rect)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, Paint()..color = color..strokeWidth = 2.4..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
-  }
-  @override
-  bool shouldRepaint(covariant _EquityHistoryPainter old) => old.values != values || old.color != color || old.gridColor != gridColor;
-}

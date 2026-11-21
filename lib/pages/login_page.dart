@@ -301,48 +301,66 @@ class _LoginPageState extends State<LoginPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(38),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF25262D) : _loginCardGlassBg,
-                            borderRadius: BorderRadius.circular(38),
-                            border: Border.all(
-                              color: isDark ? const Color(0x33FFFFFF) : _loginGoldBorder,
-                              width: 1.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(38),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF25262D) : _loginCardGlassBg,
+                                borderRadius: BorderRadius.circular(38),
+                                border: Border.all(
+                                  color: isDark ? const Color(0x33FFFFFF) : _loginGoldBorder,
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  if (isDark) ...[
+                                    const BoxShadow(
+                                      color: Color(0x990A0B0E),
+                                      offset: Offset(0, 18),
+                                      blurRadius: 36,
+                                    ),
+                                    const BoxShadow(
+                                      color: Color(0x1AFFFFFF),
+                                      offset: Offset(0, -1),
+                                      blurRadius: 6,
+                                    ),
+                                  ] else ...[
+                                    const BoxShadow(
+                                      color: Color(0x261E70E8),
+                                      offset: Offset(0, 16),
+                                      blurRadius: 36,
+                                    ),
+                                    const BoxShadow(
+                                      color: Color(0x33D4AF37),
+                                      offset: Offset(0, 0),
+                                      blurRadius: 10,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
+                              child: _isSignUp ? _buildSignUpContent(isDark: isDark) : _buildLoginContent(isDark: isDark),
                             ),
-                            boxShadow: [
-                              if (isDark) ...[
-                                const BoxShadow(
-                                  color: Color(0x990A0B0E),
-                                  offset: Offset(0, 18),
-                                  blurRadius: 36,
-                                ),
-                                const BoxShadow(
-                                  color: Color(0x1AFFFFFF),
-                                  offset: Offset(0, -1),
-                                  blurRadius: 6,
-                                ),
-                              ] else ...[
-                                const BoxShadow(
-                                  color: Color(0x261E70E8),
-                                  offset: Offset(0, 16),
-                                  blurRadius: 36,
-                                ),
-                                const BoxShadow(
-                                  color: Color(0x33D4AF37),
-                                  offset: Offset(0, 0),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ],
                           ),
-                          padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
-                          child: _isSignUp ? _buildSignUpContent(isDark: isDark) : _buildLoginContent(isDark: isDark),
                         ),
-                      ),
+                        const SizedBox(height: 18),
+
+                        // Slogan outside the card
+                        Text(
+                          'PLAY  •  COMPETE  •  GROW TOGETHER',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF888F9F) : const Color(0xFF4B5E7D),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -793,22 +811,6 @@ class _LoginPageState extends State<LoginPage> {
             child: _buildFingerprintButton(isDark: isDark),
           ),
         ],
-
-        const SizedBox(height: 20),
-
-        // Footer tagline
-        Center(
-          child: Text(
-            'PLAY  •  COMPETE  •  GROW TOGETHER',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: subtitleColor,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2.2,
-            ),
-          ),
-        ),
       ],
     );
   }

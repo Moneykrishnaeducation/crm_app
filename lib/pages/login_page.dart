@@ -254,72 +254,22 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showHelpModal() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0x66D4AF37),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const Text(
-              'Need help signing in?',
-              style: TextStyle(
-                color: _loginDarkBlueText,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Enter your registered email address or account number to reset your password or recover your username.',
-              style: TextStyle(color: _loginMutedBlueText, fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(sheetContext);
-                showAppMessage('Password recovery is not connected yet. Please contact customer support.');
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: _loginRoyalBlue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: const Text('Reset Password via Email', style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton(
-              onPressed: () {
-                Navigator.pop(sheetContext);
-                showAppMessage('Support chat is not available in this demo. Please use your broker support channel.');
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _loginDarkBlueText,
-                side: const BorderSide(color: Color(0x66D4AF37)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: const Text('Contact Customer Support'),
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _ForgotPasswordFlowModal(
+        initialEmail: _emailController.text.trim(),
+        isDark: isDark,
+        onPasswordResetCompleted: (newEmail, newPassword) {
+          setState(() {
+            _emailController.text = newEmail;
+            _passwordController.text = newPassword;
+            _loginEmailError = null;
+            _loginPasswordError = null;
+          });
+        },
       ),
     );
   }
@@ -1510,6 +1460,743 @@ class _LoginBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LoginBackgroundPainter oldDelegate) =>
       oldDelegate.isDark != isDark;
+}
+
+/// 5-Step interactive Forgot Password bottom modal flow
+class _ForgotPasswordFlowModal extends StatefulWidget {
+  const _ForgotPasswordFlowModal({
+    required this.initialEmail,
+    required this.isDark,
+    required this.onPasswordResetCompleted,
+  });
+
+  final String initialEmail;
+  final bool isDark;
+  final void Function(String email, String newPassword) onPasswordResetCompleted;
+
+  @override
+  State<_ForgotPasswordFlowModal> createState() => _ForgotPasswordFlowModalState();
+}
+
+class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
+  int _currentStep = 1; // 1: Email, 2: OTP, 3: New Password, 4: Confirm Password, 5: Success
+
+  late final TextEditingController _emailController;
+  final TextEditingController _otpController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  bool _newPasswordVisible = false;
+  bool _confirmPasswordVisible = false;
+
+  String? _stepError;
+  int _resendCountdown = 45;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    _emailController.dispose();
+    _otpController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _countdownTimer?.cancel();
+    setState(() => _resendCountdown = 45);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_resendCountdown > 1) {
+        setState(() => _resendCountdown--);
+      } else {
+        timer.cancel();
+        setState(() => _resendCountdown = 0);
+      }
+    });
+  }
+
+  // --- Step 1: Send OTP to Email ---
+  void _submitStep1() {
+    FocusScope.of(context).unfocus();
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _stepError = 'Please enter your registered email address.');
+      return;
+    }
+    if (!email.contains('@') || !email.contains('.')) {
+      setState(() => _stepError = 'Please enter a valid email address.');
+      return;
+    }
+    setState(() {
+      _stepError = null;
+      _currentStep = 2;
+    });
+    _startTimer();
+  }
+
+  // --- Step 2: Verify OTP ---
+  void _submitStep2() {
+    FocusScope.of(context).unfocus();
+    final otp = _otpController.text.trim();
+    if (otp.isEmpty) {
+      setState(() => _stepError = 'Please enter the verification code.');
+      return;
+    }
+    if (otp.length < 4) {
+      setState(() => _stepError = 'Please enter the complete verification code.');
+      return;
+    }
+    setState(() {
+      _stepError = null;
+      _currentStep = 3;
+    });
+  }
+
+  // --- Step 3: Enter New Password ---
+  void _submitStep3() {
+    FocusScope.of(context).unfocus();
+    final pass = _newPasswordController.text;
+    if (pass.isEmpty) {
+      setState(() => _stepError = 'Please enter your new password.');
+      return;
+    }
+    if (pass.length < 8) {
+      setState(() => _stepError = 'Password must be at least 8 characters long.');
+      return;
+    }
+    setState(() {
+      _stepError = null;
+      _currentStep = 4;
+    });
+  }
+
+  // --- Step 4: Confirm New Password ---
+  void _submitStep4() {
+    FocusScope.of(context).unfocus();
+    final confirm = _confirmPasswordController.text;
+    final pass = _newPasswordController.text;
+    if (confirm.isEmpty) {
+      setState(() => _stepError = 'Please re-enter your new password to confirm.');
+      return;
+    }
+    if (confirm != pass) {
+      setState(() => _stepError = 'Passwords do not match. Please re-enter.');
+      return;
+    }
+    setState(() {
+      _stepError = null;
+      _currentStep = 5;
+    });
+    widget.onPasswordResetCompleted(
+      _emailController.text.trim(),
+      _newPasswordController.text,
+    );
+  }
+
+  // --- Step 5: Finish & Back to Login ---
+  void _submitStep5() {
+    Navigator.pop(context);
+  }
+
+  Widget _buildStepIndicator() {
+    return Column(
+      children: [
+        Row(
+          children: List.generate(5, (index) {
+            final active = index + 1 <= _currentStep;
+            return Expanded(
+              child: Container(
+                height: 4,
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                decoration: BoxDecoration(
+                  color: active
+                      ? _loginRoyalBlue
+                      : (widget.isDark ? const Color(0xFF383B47) : const Color(0xFFE2EDFC)),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'STEP $_currentStep OF 5',
+          style: TextStyle(
+            color: widget.isDark ? const Color(0xFF888F9F) : _loginMutedBlueText,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepErrorFeedback() {
+    if (_stepError == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 8, bottom: 2),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.alertCircle, size: 14, color: _loginErrorColor),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              _stepError!,
+              style: const TextStyle(
+                color: _loginErrorColor,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required VoidCallback onPressed,
+    IconData icon = Icons.arrow_forward_rounded,
+  }) {
+    return FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        padding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      ),
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF267DFF), Color(0xFF0B52C7)],
+          ),
+          border: Border.all(color: _loginGoldRim, width: 1.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x4D1E70E8),
+              offset: Offset(0, 6),
+              blurRadius: 14,
+            ),
+          ],
+        ),
+        child: SizedBox(
+          height: 54,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Center(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 8,
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.22),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 19),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- View: Step 1 Content ---
+  Widget _buildStep1Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Confirm Email Address',
+          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Enter your registered email address to receive a one-time verification code (OTP).',
+          style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
+        ),
+        const SizedBox(height: 22),
+        Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: inputBg,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _stepError != null ? _loginErrorColor : inputBorder,
+              width: 1.2,
+            ),
+          ),
+          child: Center(
+            child: TextFormField(
+              controller: _emailController,
+              textAlignVertical: TextAlignVertical.center,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submitStep1(),
+              cursorColor: _loginRoyalBlue,
+              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
+              onChanged: (_) {
+                if (_stepError != null) setState(() => _stepError = null);
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                hintText: 'Email Address',
+                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 12),
+                  child: Icon(LucideIcons.mail, color: _loginRoyalBlue, size: 20),
+                ),
+                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                contentPadding: const EdgeInsets.only(right: 20),
+              ),
+            ),
+          ),
+        ),
+        _buildStepErrorFeedback(),
+        const SizedBox(height: 24),
+        _buildActionButton(
+          label: 'Send OTP',
+          onPressed: _submitStep1,
+        ),
+      ],
+    );
+  }
+
+  // --- View: Step 2 Content ---
+  Widget _buildStep2Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Enter Verification Code',
+          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text.rich(
+          TextSpan(
+            text: 'We sent a 6-digit verification code to\n',
+            style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
+            children: [
+              TextSpan(
+                text: _emailController.text.trim(),
+                style: TextStyle(color: widget.isDark ? Colors.white : _loginRoyalBlue, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: inputBg,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _stepError != null ? _loginErrorColor : inputBorder,
+              width: 1.2,
+            ),
+          ),
+          child: Center(
+            child: TextFormField(
+              controller: _otpController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submitStep2(),
+              cursorColor: _loginRoyalBlue,
+              maxLength: 6,
+              style: TextStyle(
+                color: inputTextColor,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 10,
+                height: 1.2,
+              ),
+              onChanged: (_) {
+                if (_stepError != null) setState(() => _stepError = null);
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                counterText: '',
+                hintText: '• • • • • •',
+                hintStyle: TextStyle(
+                  color: placeholderColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 8,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+          ),
+        ),
+        _buildStepErrorFeedback(),
+        const SizedBox(height: 12),
+        Center(
+          child: _resendCountdown > 0
+              ? Text(
+                  'Resend code in 00:${_resendCountdown.toString().padLeft(2, '0')}',
+                  style: TextStyle(color: subtitleColor, fontSize: 12.5),
+                )
+              : TextButton(
+                  onPressed: () {
+                    _startTimer();
+                    setState(() => _otpController.clear());
+                  },
+                  child: const Text(
+                    'Resend OTP Code',
+                    style: TextStyle(color: _loginRoyalBlue, fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                ),
+        ),
+        const SizedBox(height: 16),
+        _buildActionButton(
+          label: 'Verify OTP',
+          onPressed: _submitStep2,
+        ),
+      ],
+    );
+  }
+
+  // --- View: Step 3 Content ---
+  Widget _buildStep3Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Create New Password',
+          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Choose a strong password with at least 8 characters.',
+          style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
+        ),
+        const SizedBox(height: 22),
+        Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: inputBg,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _stepError != null ? _loginErrorColor : inputBorder,
+              width: 1.2,
+            ),
+          ),
+          child: Center(
+            child: TextFormField(
+              controller: _newPasswordController,
+              textAlignVertical: TextAlignVertical.center,
+              obscureText: !_newPasswordVisible,
+              obscuringCharacter: '•',
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submitStep3(),
+              cursorColor: _loginRoyalBlue,
+              style: TextStyle(
+                color: inputTextColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: (_newPasswordVisible || _newPasswordController.text.isEmpty) ? 0 : 2.5,
+                height: 1.25,
+              ),
+              onChanged: (_) {
+                if (_stepError != null) setState(() => _stepError = null);
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                hintText: 'New Password (min. 8 characters)',
+                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0, height: 1.25),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 12),
+                  child: Icon(LucideIcons.lock, color: _loginRoyalBlue, size: 20),
+                ),
+                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 14),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _newPasswordVisible = !_newPasswordVisible),
+                    behavior: HitTestBehavior.opaque,
+                    child: Icon(
+                      _newPasswordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
+                      color: placeholderColor,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                contentPadding: const EdgeInsets.only(right: 8),
+              ),
+            ),
+          ),
+        ),
+        _buildStepErrorFeedback(),
+        const SizedBox(height: 24),
+        _buildActionButton(
+          label: 'Continue',
+          onPressed: _submitStep3,
+        ),
+      ],
+    );
+  }
+
+  // --- View: Step 4 Content ---
+  Widget _buildStep4Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Confirm New Password',
+          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Re-enter your new password to verify and activate it.',
+          style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
+        ),
+        const SizedBox(height: 22),
+        Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: inputBg,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _stepError != null ? _loginErrorColor : inputBorder,
+              width: 1.2,
+            ),
+          ),
+          child: Center(
+            child: TextFormField(
+              controller: _confirmPasswordController,
+              textAlignVertical: TextAlignVertical.center,
+              obscureText: !_confirmPasswordVisible,
+              obscuringCharacter: '•',
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submitStep4(),
+              cursorColor: _loginRoyalBlue,
+              style: TextStyle(
+                color: inputTextColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: (_confirmPasswordVisible || _confirmPasswordController.text.isEmpty) ? 0 : 2.5,
+                height: 1.25,
+              ),
+              onChanged: (_) {
+                if (_stepError != null) setState(() => _stepError = null);
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                hintText: 'Confirm Password',
+                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0, height: 1.25),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 12),
+                  child: Icon(LucideIcons.lock, color: _loginRoyalBlue, size: 20),
+                ),
+                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 14),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _confirmPasswordVisible = !_confirmPasswordVisible),
+                    behavior: HitTestBehavior.opaque,
+                    child: Icon(
+                      _confirmPasswordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
+                      color: placeholderColor,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                contentPadding: const EdgeInsets.only(right: 8),
+              ),
+            ),
+          ),
+        ),
+        _buildStepErrorFeedback(),
+        const SizedBox(height: 24),
+        _buildActionButton(
+          label: 'Confirm & Reset Password',
+          onPressed: _submitStep4,
+          icon: Icons.check_rounded,
+        ),
+      ],
+    );
+  }
+
+  // --- View: Step 5 Content ---
+  Widget _buildStep5Content(Color titleColor, Color subtitleColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 10),
+        Center(
+          child: Container(
+            width: 82,
+            height: 82,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFE8F5E9),
+              border: Border.all(color: const Color(0xFF2E7D32), width: 2.2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x332E7D32),
+                  offset: Offset(0, 6),
+                  blurRadius: 16,
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.check_rounded,
+                color: Color(0xFF2E7D32),
+                size: 46,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 22),
+        Text(
+          'Password Reset Done!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: titleColor,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Your password has been successfully updated. You can now use your new password to sign in.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: subtitleColor,
+            fontSize: 13.5,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 28),
+        _buildActionButton(
+          label: 'Back to Login',
+          onPressed: _submitStep5,
+          icon: Icons.login_rounded,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final titleColor = widget.isDark ? Colors.white : _loginDarkBlueText;
+    final subtitleColor = widget.isDark ? const Color(0xFF9EA3B0) : _loginMutedBlueText;
+    final inputBg = widget.isDark ? const Color(0xFF191A20) : const Color(0xFFF4F8FD);
+    final inputBorder = widget.isDark ? const Color(0x33FFFFFF) : _loginGoldBorder;
+    final inputTextColor = widget.isDark ? Colors.white : _loginDarkBlueText;
+    final placeholderColor = widget.isDark ? const Color(0xFF757885) : _loginPlaceholderText;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: widget.isDark ? const Color(0xFF22232A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border.all(
+            color: widget.isDark ? const Color(0x33FFFFFF) : const Color(0x66ECC868),
+            width: 1.2,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x40000000),
+              offset: Offset(0, -6),
+              blurRadius: 24,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 14, 24, 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top handle & close row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 32),
+                    Container(
+                      width: 42,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: widget.isDark ? const Color(0xFF454854) : const Color(0x80ECC868),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        LucideIcons.x,
+                        color: widget.isDark ? const Color(0xFF888F9F) : _loginPlaceholderText,
+                        size: 20,
+                      ),
+                      tooltip: 'Close',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Step progress bar
+                _buildStepIndicator(),
+                const SizedBox(height: 20),
+
+                // Dynamic step content
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: switch (_currentStep) {
+                    1 => _buildStep1Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
+                    2 => _buildStep2Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
+                    3 => _buildStep3Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
+                    4 => _buildStep4Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
+                    _ => _buildStep5Content(titleColor, subtitleColor),
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Standalone entry point for the account registration form.

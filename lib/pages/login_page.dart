@@ -490,7 +490,6 @@ class _LoginPageState extends State<LoginPage> {
 
           // Field 1: Username or Email
           Container(
-            height: 58,
             decoration: BoxDecoration(
               color: inputBg,
               borderRadius: BorderRadius.circular(30),
@@ -503,8 +502,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
-            child: Center(
-              child: TextFormField(
+            child: TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 textCapitalization: TextCapitalization.none,
@@ -536,16 +534,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
-                  contentPadding: const EdgeInsets.only(right: 20),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 18).copyWith(right: 20),
+                  errorMaxLines: 2,
                 ),
               ),
-            ),
           ),
           const SizedBox(height: 16),
 
           // Field 2: Password
           Container(
-            height: 58,
             decoration: BoxDecoration(
               color: inputBg,
               borderRadius: BorderRadius.circular(30),
@@ -558,8 +555,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
-            child: Center(
-              child: TextFormField(
+            child: TextFormField(
                 controller: _passwordController,
                 validator: (value) => _required(value, 'your password'),
                 obscureText: !_passwordVisible,
@@ -604,10 +600,10 @@ class _LoginPageState extends State<LoginPage> {
                       tooltip: _passwordVisible ? 'Hide password' : 'Show password',
                     ),
                   ),
-                  contentPadding: const EdgeInsets.only(right: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 18).copyWith(right: 8),
+                  errorMaxLines: 2,
                 ),
               ),
-            ),
           ),
           const SizedBox(height: 14),
 

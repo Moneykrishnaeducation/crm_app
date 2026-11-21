@@ -81,6 +81,13 @@ class _LoginPageState extends State<LoginPage> {
           _biometricAvailable = false;
         });
       }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _biometricEnabled = enabled;
+          _biometricAvailable = false;
+        });
+      }
     }
   }
 
@@ -454,12 +461,13 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
 
-          const SizedBox(height: 28),
-
-          // Biometric Fingerprint button
-          Center(
-            child: _buildFingerprintButton(),
-          ),
+          if (_biometricEnabled && _biometricAvailable) ...[
+            const SizedBox(height: 28),
+            // Biometric Fingerprint button
+            Center(
+              child: _buildFingerprintButton(),
+            ),
+          ],
 
           const SizedBox(height: 28),
 

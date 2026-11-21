@@ -65,12 +65,13 @@ void main() {
 
     expect(find.text('Use fingerprint / Face ID'), findsNothing);
     expect(find.textContaining('Biometric sign-in unavailable'), findsNothing);
+    expect(find.byIcon(Icons.fingerprint), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets(
-    'unavailable biometric sign-in keeps password fallback available',
+    'unavailable biometric sign-in keeps password fallback available and hides fingerprint button',
     (tester) async {
       SharedPreferences.setMockInitialValues({
         BiometricSignIn.enabledPreferenceKey: true,
@@ -88,9 +89,33 @@ void main() {
         find.textContaining('Biometric sign-in unavailable'),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.fingerprint), findsNothing);
       expect(find.text('Phone number, email or username'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Log in'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'shows fingerprint button when enabled in app and device has biometric support',
+    (tester) async {
+      final biometricSignIn = _FakeBiometricSignIn(
+        enabled: true,
+        available: true,
+        authenticated: false,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(
+            onLogin: () {},
+            biometricSignIn: biometricSignIn,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.fingerprint), findsOneWidget);
     },
   );
 }

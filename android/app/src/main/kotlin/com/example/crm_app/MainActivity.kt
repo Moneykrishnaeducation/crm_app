@@ -1,4 +1,4 @@
-package com.example.crm_app
+package com.vtindex.crm
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,14 +8,14 @@ import android.view.Display
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.example.crm_app.R
+import com.vtindex.crm.R
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val LIVE_CHANNEL = "com.example.crm_app/live_updates"
-    private val DISPLAY_CHANNEL = "com.example.crm_app/display_mode"
+    private val LIVE_CHANNEL = "com.vtindex.crm/live_updates"
+    private val DISPLAY_CHANNEL = "com.vtindex.crm/display_mode"
     private val LIVE_CHANNEL_ID = "vt_live_updates_channel"
 
     override fun onResume() {

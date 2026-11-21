@@ -19,6 +19,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Login to Dashboard
+      await tester.enterText(find.byType(TextFormField).at(0), 'demo@vtindex.com');
+      await tester.enterText(find.byType(TextFormField).at(1), 'DemoPass123!');
       final loginBtn = find.widgetWithText(FilledButton, 'Login');
       await tester.tap(loginBtn);
       await tester.pumpAndSettle();
@@ -74,7 +76,7 @@ void main() {
 
       // Verify we are back on Dashboard
       expect(find.byType(BrokerFundsPage), findsNothing);
-      expect(find.text('Total Balance'), findsOneWidget);
+      expect(find.textContaining(RegExp(r'Total [Bb]alance')), findsOneWidget);
     });
 
     testWidgets('Withdraw navigates to dedicated BrokerFundsPage with full forms and returns via header back button', (tester) async {
@@ -87,6 +89,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Login to Dashboard
+      await tester.enterText(find.byType(TextFormField).at(0), 'demo@vtindex.com');
+      await tester.enterText(find.byType(TextFormField).at(1), 'DemoPass123!');
       await tester.tap(find.widgetWithText(FilledButton, 'Login'));
       await tester.pumpAndSettle();
 
@@ -123,11 +127,11 @@ void main() {
       await tester.tap(find.text('Crypto Wallet'));
       await tester.pumpAndSettle();
 
-      // Tap preset amount chip
-      await tester.tap(find.text('\$100'));
+      // Enter withdrawal amount
+      final amountInput = find.byType(TextField).first;
+      await tester.enterText(amountInput, '100');
       await tester.pumpAndSettle();
       expect(find.text('100'), findsOneWidget);
-      expect(find.text('\$100'), findsWidgets);
 
       // Tap AppBar Back button
       final backButton = find.byTooltip('Back');
@@ -137,7 +141,7 @@ void main() {
 
       // Verify returned to Dashboard
       expect(find.byType(BrokerFundsPage), findsNothing);
-      expect(find.text('Total Balance'), findsOneWidget);
+      expect(find.textContaining(RegExp(r'Total [Bb]alance')), findsOneWidget);
     });
 
     testWidgets('BrokerFundsPage renders cleanly in dark mode without overflow', (tester) async {

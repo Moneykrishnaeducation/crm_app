@@ -27,8 +27,48 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   int _payout = 0;
   bool _isSubmitting = false;
   String? _uploadedProofName;
-  final String _selectedAccount = 'Mohanprasath R - 3311 - \$0.00';
-  final String _withdrawSourceAccount = '3311     STANDARD     Available:  \$0.00';
+  int _selectedAccountIndex = 0;
+
+  final List<Map<String, dynamic>> _tradingAccounts = const [
+    {
+      'id': '3311',
+      'label': 'Live MT5 · 3311',
+      'tier': 'STANDARD',
+      'available': 2560.00,
+      'equity': 3740.00,
+      'margin': 1180.00,
+      'leverage': '1:500',
+    },
+    {
+      'id': '3312',
+      'label': 'Live MT5 · 3312',
+      'tier': 'PRO ZERO',
+      'available': 5820.00,
+      'equity': 7100.00,
+      'margin': 1280.00,
+      'leverage': '1:200',
+    },
+    {
+      'id': '3315',
+      'label': 'Live MT5 · 3315',
+      'tier': 'ECN RAW',
+      'available': 14100.00,
+      'equity': 18500.00,
+      'margin': 4400.00,
+      'leverage': '1:500',
+    },
+  ];
+
+  Map<String, dynamic> get _activeTradingAccount =>
+      _tradingAccounts[_selectedAccountIndex.clamp(0, _tradingAccounts.length - 1)];
+
+  final String _selectedAccount = 'Mohanprasath R - 3311 - \$2,560.00';
+
+  String get _withdrawSourceAccount {
+    final acc = _activeTradingAccount;
+    final avail = (acc['available'] as double).toStringAsFixed(2);
+    return '${acc['id']}     ${acc['tier']}     Available:  \$$avail';
+  }
 
   @override
   void dispose() {
@@ -915,15 +955,21 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final isCompact = constraints.maxWidth < 440;
     final textPrimary = isDark ? Colors.white : _fundInk;
     final badgeBg = isDark ? const Color(0xFF1E2D47) : const Color(0xFFEAF0F8);
+    final acc = _activeTradingAccount;
+    final avail = acc['available'] as double;
+    final equity = acc['equity'] as double;
+    final margin = acc['margin'] as double;
+    final accountId = acc['id'] as String;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Treasury Card
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF14243B) : const Color(0xFFF1F6FE),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark ? const Color(0xFF1D3557) : const Color(0xFFD6E4FA),
             ),
@@ -937,11 +983,18 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFC99A2E),
+                      color: Color(0xFF10B981),
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x6610B981),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
                       'WITHDRAWABLE TREASURY',
@@ -949,29 +1002,71 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Color(0xFF4B83FF),
-                        fontSize: 10,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
                   const SizedBox(width: 6),
                   _valueBadge(
-                    'Active Account: 3311',
+                    'Active Account: $accountId',
                     isDark: isDark,
                     badgeBg: badgeBg,
                     compact: true,
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '\$0.00',
-                style: TextStyle(
-                  color: textPrimary,
-                  fontSize: 28,
-                  height: 1.1,
-                  fontWeight: FontWeight.w800,
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '\$${avail.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 30,
+                      height: 1.1,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'AVAILABLE NOW',
+                      style: TextStyle(
+                        color: Color(0xFF10B981),
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0D1B2E) : Colors.white.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF1D3252) : const Color(0xFFDEE9F7),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: _subMetric('Equity', '\$${equity.toStringAsFixed(2)}', isDark)),
+                    _metricDivider(isDark),
+                    Expanded(child: _subMetric('Margin Used', '\$${margin.toStringAsFixed(2)}', isDark)),
+                    _metricDivider(isDark),
+                    Expanded(child: _subMetric('Free Margin', '\$${avail.toStringAsFixed(2)}', isDark, isHighlight: true)),
+                  ],
                 ),
               ),
             ],
@@ -989,8 +1084,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             0,
             LucideIcons.landmark,
             'Bank Transfer',
-            'ocbc bank •••• 0111',
-            'Linked',
+            'Direct Wire Transfer',
+            'Supported',
             '1–3 Business Days',
             isDark,
           ),
@@ -999,8 +1094,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             1,
             LucideIcons.wallet,
             'Crypto Wallet',
-            'Connect your wallet',
-            'Setup Needed',
+            'USDT (TRC20 / ERC20)',
+            'Ready',
             'Near-Instant (~10–30m)',
             isDark,
           ),
@@ -1012,8 +1107,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                   0,
                   LucideIcons.landmark,
                   'Bank Transfer',
-                  'ocbc bank •••• 0111',
-                  'Linked',
+                  'Direct Wire Transfer',
+                  'Supported',
                   '1–3 Business Days',
                   isDark,
                 ),
@@ -1024,8 +1119,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                   1,
                   LucideIcons.wallet,
                   'Crypto Wallet',
-                  'Connect your wallet',
-                  'Setup Needed',
+                  'USDT (TRC20 / ERC20)',
+                  'Ready',
                   'Near-Instant (~10–30m)',
                   isDark,
                 ),
@@ -1050,19 +1145,83 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         ),
         const SizedBox(height: 7),
         _moneyInput('\$', suffix: 'USD', isDark: isDark),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            ...[50, 100, 250, 500].map((v) => _amountChip('\$$v', '$v', isDark)),
-            _amountChip('MAX', '0', isDark),
-          ],
-        ),
+        _buildSecurityBadges(isDark),
         const SizedBox(height: 18),
         _fundButton(
           'CONFIRM WITHDRAWAL',
           onPressed: () => _submit(true),
+        ),
+      ],
+    );
+  }
+
+  Widget _subMetric(String label, String value, bool isDark, {bool isHighlight = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            fontSize: 8.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            color: isHighlight
+                ? const Color(0xFF10B981)
+                : (isDark ? Colors.white : _fundInk),
+            fontSize: 10.5,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _metricDivider(bool isDark) {
+    return Container(
+      width: 1,
+      height: 20,
+      color: isDark ? const Color(0xFF22385C) : const Color(0xFFDEE7F4),
+    );
+  }
+
+  Widget _buildSecurityBadges(bool isDark) {
+    final border = isDark ? const Color(0xFF1D3557) : const Color(0xFFE2E8F0);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F1A2D) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _securityItem(LucideIcons.shieldCheck, '256-Bit SSL', muted),
+          _securityItem(LucideIcons.landmark, 'Tier-1 Custody', muted),
+          _securityItem(LucideIcons.lock, 'AML Regulated', muted),
+        ],
+      ),
+    );
+  }
+
+  Widget _securityItem(IconData icon, String text, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: const Color(0xFF2563EB)),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -1205,80 +1364,248 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final surface = isDark ? const Color(0xFF13223A) : const Color(0xFFF7FAFE);
     final border = isDark ? const Color(0xFF243B5E) : const Color(0xFFDEE7F4);
     final textPrimary = isDark ? Colors.white : _fundInk;
+    final acc = _activeTradingAccount;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: surface,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1658C9).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(9),
+    return InkWell(
+      onTap: () => _showAccountSelectorSheet(context, isDark),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: surface,
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(LucideIcons.wallet, color: Color(0xFF1658C9), size: 16),
             ),
-            child: const Icon(LucideIcons.wallet, color: Color(0xFF1658C9), size: 16),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
-                  runSpacing: 2,
-                  children: [
-                    Text(
-                      'Live MT5 · 3311',
-                      style: TextStyle(
-                        color: textPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1658C9).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'STANDARD',
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 2,
+                    children: [
+                      Text(
+                        acc['label'] as String,
                         style: TextStyle(
-                          color: Color(0xFF1658C9),
-                          fontSize: 8.5,
+                          color: textPrimary,
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w500,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          acc['tier'] as String,
+                          style: const TextStyle(
+                            color: Color(0xFF1658C9),
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              LucideIcons.chevronDown,
+              color: isDark ? const Color(0xFF8E9EB5) : _muted,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAccountSelectorSheet(BuildContext context, bool isDark) {
+    final sheetBg = isDark ? const Color(0xFF0F1E38) : Colors.white;
+    final border = isDark ? const Color(0xFF1E355B) : const Color(0xFFE2E8F0);
+    final textPrimary = isDark ? Colors.white : _fundInk;
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: border),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          18,
+          12,
+          18,
+          18 + MediaQuery.viewPaddingOf(ctx).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: muted.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  'Select Trading Account',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  icon: const Icon(LucideIcons.x, size: 18),
+                  tooltip: 'Close',
+                  color: muted,
                 ),
               ],
             ),
-          ),
-          Icon(
-            LucideIcons.chevronDown,
-            color: isDark ? const Color(0xFF8E9EB5) : _muted,
-            size: 16,
-          ),
-        ],
+            const SizedBox(height: 10),
+            for (var i = 0; i < _tradingAccounts.length; i++) ...[
+              _buildAccountOptionTile(i, isDark, () {
+                setState(() => _selectedAccountIndex = i);
+                Navigator.pop(ctx);
+              }),
+              if (i < _tradingAccounts.length - 1) const SizedBox(height: 8),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountOptionTile(int index, bool isDark, VoidCallback onSelect) {
+    final selected = _selectedAccountIndex == index;
+    final item = _tradingAccounts[index];
+    final surface = selected
+        ? (isDark ? const Color(0xFF193259) : const Color(0xFFEAF2FF))
+        : (isDark ? const Color(0xFF13223A) : const Color(0xFFF8FAFC));
+    final border = selected
+        ? const Color(0xFF2563EB)
+        : (isDark ? const Color(0xFF223656) : const Color(0xFFE2E8F0));
+    final textPrimary = isDark ? Colors.white : _fundInk;
+    final avail = (item['available'] as double).toStringAsFixed(2);
+
+    return InkWell(
+      onTap: onSelect,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: border, width: selected ? 1.4 : 1.0),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: (selected ? const Color(0xFF2563EB) : const Color(0xFF64748B)).withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                LucideIcons.wallet,
+                size: 16,
+                color: selected ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        item['label'] as String,
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          item['tier'] as String,
+                          style: const TextStyle(
+                            color: Color(0xFF2563EB),
+                            fontSize: 8,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Withdrawable: \$$avail USD  •  Leverage ${item['leverage']}',
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              selected ? LucideIcons.circleCheck : LucideIcons.circle,
+              color: selected ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1633,16 +1960,14 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     }
 
     if (withdrawal) {
-      final amt = parsedAmount.toStringAsFixed(2);
-      unawaited(AppNotificationCenter.instance.sendNotification(
-        title: 'Withdrawal Draft Created',
-        body: 'A withdrawal draft for \$amt USD from MT5 #3311 is ready for review. No withdrawal has been submitted.',
-        category: 'Funds',
-        icon: LucideIcons.arrowUpRight,
-        isGold: false,
-        sendToMobilePanel: true,
-      ));
-      showAppMessage('Withdrawal details are ready for review. No request was submitted.');
+      final available = _activeTradingAccount['available'] as double;
+      if (parsedAmount > available) {
+        showAppMessage(
+          'Amount exceeds available withdrawable balance of \$${available.toStringAsFixed(2)}.',
+        );
+        return;
+      }
+      _showWithdrawConfirmationSheet(context, parsedAmount);
       return;
     }
 
@@ -1701,6 +2026,83 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         currency: currency,
         estimatedUsd: estimatedUsd,
         method: method,
+        onViewActivity: () {
+          Navigator.pop(ctx);
+          widget.onSelectPage('activity');
+        },
+        onBackToDashboard: () {
+          Navigator.pop(ctx);
+          widget.onBack();
+        },
+      ),
+    );
+  }
+
+  void _showWithdrawConfirmationSheet(BuildContext context, double amount) {
+    final acc = _activeTradingAccount;
+    final methodName = _payout == 0 ? 'Bank Transfer' : 'Crypto Wallet (USDT)';
+    final settlementTime =
+        _payout == 0 ? '1–3 Business Days' : 'Near-Instant (~10–30m)';
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (ctx) => _WithdrawConfirmationSheet(
+        amount: amount,
+        accountName: acc['label'] as String,
+        accountTier: acc['tier'] as String,
+        methodName: methodName,
+        settlementTime: settlementTime,
+        onConfirm: () async {
+          Navigator.pop(ctx);
+          final refId =
+              'VTX-WTH-${100000 + DateTime.now().millisecondsSinceEpoch % 900000}';
+          final amtStr = amount.toStringAsFixed(2);
+
+          unawaited(AppNotificationCenter.instance.sendNotification(
+            title: 'Withdrawal Request Submitted',
+            body:
+                'Withdrawal of \$$amtStr USD from ${acc['label']} submitted. Ref: $refId.',
+            category: 'Funds',
+            icon: LucideIcons.arrowUpRight,
+            isGold: true,
+            sendToMobilePanel: true,
+          ));
+
+          _showWithdrawReceiptModal(
+            context,
+            refId: refId,
+            amount: amtStr,
+            accountLabel: acc['label'] as String,
+            method: methodName,
+            settlementTime: settlementTime,
+          );
+        },
+      ),
+    );
+  }
+
+  void _showWithdrawReceiptModal(
+    BuildContext context, {
+    required String refId,
+    required String amount,
+    required String accountLabel,
+    required String method,
+    required String settlementTime,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (ctx) => _WithdrawReceiptSheet(
+        refId: refId,
+        amount: amount,
+        accountLabel: accountLabel,
+        method: method,
+        settlementTime: settlementTime,
         onViewActivity: () {
           Navigator.pop(ctx);
           widget.onSelectPage('activity');
@@ -1788,7 +2190,7 @@ class _DepositResponseSheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Deposit Preview Created',
+            'Deposit Request Initiated',
             style: TextStyle(
               color: isDark ? Colors.white : _fundInk,
               fontSize: 19,
@@ -1950,6 +2352,428 @@ class _DepositResponseSheet extends StatelessWidget {
               style: TextStyle(
                 color: isGold
                     ? _brokerGold
+                    : (isDark ? Colors.white : _fundInk),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _WithdrawConfirmationSheet extends StatelessWidget {
+  const _WithdrawConfirmationSheet({
+    required this.amount,
+    required this.accountName,
+    required this.accountTier,
+    required this.methodName,
+    required this.settlementTime,
+    required this.onConfirm,
+  });
+
+  final double amount;
+  final String accountName;
+  final String accountTier;
+  final String methodName;
+  final String settlementTime;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF0F1E38) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF152A4E) : const Color(0xFFF8FAFC);
+    final border = isDark ? const Color(0xFF1E355B) : const Color(0xFFE2E8F0);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textPrimary = isDark ? Colors.white : _fundInk;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: border),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        20 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 38,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: muted.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                'Review Withdrawal Request',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(LucideIcons.x, size: 18),
+                color: muted,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  'Withdrawal Amount',
+                  style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '\$${amount.toStringAsFixed(2)} USD',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+            ),
+            child: Column(
+              children: [
+                _detailRow('Source Account', '$accountName ($accountTier)', isDark, muted, textPrimary),
+                const SizedBox(height: 10),
+                _detailRow('Payout Method', methodName, isDark, muted, textPrimary),
+                const SizedBox(height: 10),
+                _detailRow('Broker Processing Fee', 'Free (\$0.00)', isDark, muted, const Color(0xFF10B981)),
+                const SizedBox(height: 10),
+                _detailRow('Estimated Settlement', settlementTime, isDark, muted, textPrimary),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(LucideIcons.shieldCheck, size: 16, color: Color(0xFF2563EB)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Segregated Tier-1 Bank custody with instant AML risk clearance.',
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFFB0C8ED) : const Color(0xFF1E40AF),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: onConfirm,
+              icon: const Icon(LucideIcons.check, size: 17),
+              label: const Text(
+                'Authorize & Submit Request',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1658C9),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value, bool isDark, Color muted, Color valColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: valColor, fontSize: 11.5, fontWeight: FontWeight.w800),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WithdrawReceiptSheet extends StatelessWidget {
+  const _WithdrawReceiptSheet({
+    required this.refId,
+    required this.amount,
+    required this.accountLabel,
+    required this.method,
+    required this.settlementTime,
+    required this.onViewActivity,
+    required this.onBackToDashboard,
+  });
+
+  final String refId;
+  final String amount;
+  final String accountLabel;
+  final String method;
+  final String settlementTime;
+  final VoidCallback onViewActivity;
+  final VoidCallback onBackToDashboard;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF0F1E38) : Colors.white;
+    final border = isDark ? const Color(0xFF1E355B) : const Color(0xFFE2E8F0);
+    final cardBg = isDark ? const Color(0xFF152A4E) : const Color(0xFFF8FAFC);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textPrimary = isDark ? Colors.white : _fundInk;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: border),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        20 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 38,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: muted.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+              border: Border.all(color: const Color(0xFF10B981), width: 2),
+            ),
+            child: const Icon(LucideIcons.checkCheck, color: Color(0xFF10B981), size: 28),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Withdrawal Request Submitted',
+            style: TextStyle(
+              color: textPrimary,
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'VTIndex Treasury is processing your payout request.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: muted, fontSize: 12),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Ref: $refId',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: refId));
+                    showAppMessage('Copied reference ID $refId');
+                  },
+                  child: Icon(
+                    LucideIcons.copy,
+                    size: 13,
+                    color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+            ),
+            child: Column(
+              children: [
+                _receiptRow('Requested Amount', '\$$amount USD', isDark, isHighlight: true),
+                const SizedBox(height: 10),
+                _receiptRow('Source Account', accountLabel, isDark),
+                const SizedBox(height: 10),
+                _receiptRow('Payout Method', method, isDark),
+                const SizedBox(height: 10),
+                _receiptRow('Estimated Settlement', settlementTime, isDark),
+                const SizedBox(height: 10),
+                _receiptRow('Status', 'Processing', isDark, isStatus: true),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: FilledButton.icon(
+              onPressed: onViewActivity,
+              icon: const Icon(LucideIcons.activity, size: 16),
+              label: const Text(
+                'View in Activity & Orders',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1658C9),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton(
+              onPressed: onBackToDashboard,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: textPrimary,
+                side: BorderSide(color: border),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+              ),
+              child: const Text(
+                'Back to Dashboard',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _receiptRow(String label, String value, bool isDark, {bool isHighlight = false, bool isStatus = false}) {
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (isStatus)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1658C9).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF1658C9),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                const Text(
+                  'Processing',
+                  style: TextStyle(
+                    color: Color(0xFF1658C9),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isHighlight
+                    ? const Color(0xFF10B981)
                     : (isDark ? Colors.white : _fundInk),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,

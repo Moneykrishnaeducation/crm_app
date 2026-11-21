@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -31,7 +32,9 @@ class DisplayModeInfo {
 }
 
 class DisplayRefreshRateService {
-  static const MethodChannel _channel = MethodChannel('com.example.crm_app/display_mode');
+  static const MethodChannel _channel = MethodChannel(
+    'com.vtindex.crm/display_mode',
+  );
 
   @visibleForTesting
   static MethodChannel get channel => _channel;
@@ -40,7 +43,10 @@ class DisplayRefreshRateService {
   static bool? isAndroidOverride;
 
   static bool get _isAndroid =>
-      isAndroidOverride ?? (!kIsWeb && (Platform.isAndroid || defaultTargetPlatform == TargetPlatform.android));
+      isAndroidOverride ??
+      (!kIsWeb &&
+          (Platform.isAndroid ||
+              defaultTargetPlatform == TargetPlatform.android));
 
   /// Automatically adapts the screen to the highest refresh rate mode
   /// supported by current device settings (e.g., 90Hz, 120Hz, 144Hz).
@@ -65,7 +71,9 @@ class DisplayRefreshRateService {
     if (!_isAndroid) return null;
 
     try {
-      final result = await _channel.invokeMapMethod<dynamic, dynamic>('getActiveMode');
+      final result = await _channel.invokeMapMethod<dynamic, dynamic>(
+        'getActiveMode',
+      );
       if (result != null) {
         return DisplayModeInfo.fromMap(result);
       }
@@ -78,7 +86,9 @@ class DisplayRefreshRateService {
     if (!_isAndroid) return const [];
 
     try {
-      final list = await _channel.invokeListMethod<dynamic>('getAvailableModes');
+      final list = await _channel.invokeListMethod<dynamic>(
+        'getAvailableModes',
+      );
       if (list != null) {
         return list
             .whereType<Map<dynamic, dynamic>>()
@@ -94,7 +104,9 @@ class DisplayRefreshRateService {
     if (!_isAndroid) return false;
 
     try {
-      final ok = await _channel.invokeMethod<bool>('setPreferredMode', {'modeId': modeId});
+      final ok = await _channel.invokeMethod<bool>('setPreferredMode', {
+        'modeId': modeId,
+      });
       return ok ?? false;
     } catch (_) {
       return false;

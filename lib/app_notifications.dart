@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -100,14 +101,16 @@ class AppNotificationCenter {
 
       final androidPlugin = _localNotifications
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (androidPlugin != null) {
         // 1. Standard notifications channel (deposits, executions, security alerts)
         await androidPlugin.createNotificationChannel(
           const AndroidNotificationChannel(
             'vt_index_channel',
             'VT Index Notifications',
-            description: 'Trading, funding, and security alerts for VT Index CRM',
+            description:
+                'Trading, funding, and security alerts for VT Index CRM',
             importance: Importance.high,
             enableVibration: true,
           ),
@@ -130,7 +133,9 @@ class AppNotificationCenter {
 
       _isPluginInitialized = true;
     } catch (e) {
-      debugPrint('AppNotificationCenter: platform notification init warning: $e');
+      debugPrint(
+        'AppNotificationCenter: platform notification init warning: $e',
+      );
     }
   }
 
@@ -193,12 +198,14 @@ class AppNotificationCenter {
   }
 
   void _updateUnreadCount() {
-    unreadCountNotifier.value =
-        notificationsNotifier.value.where((n) => n.isUnread).length;
+    unreadCountNotifier.value = notificationsNotifier.value
+        .where((n) => n.isUnread)
+        .length;
   }
 
-  static const MethodChannel _nativeChannel =
-      MethodChannel('com.example.crm_app/live_updates');
+  static const MethodChannel _nativeChannel = MethodChannel(
+    'com.vtindex.crm/live_updates',
+  );
 
   /// Starts a Native OS Live Update notification.
   /// On modern Android (Android 14/15/16/17, Motorola Moto Live Updates, Samsung Now Bar),
@@ -230,7 +237,9 @@ class AppNotificationCenter {
         });
         return;
       } catch (e) {
-        debugPrint('AppNotificationCenter: native startLiveUpdate channel failed, falling back to local notifications: $e');
+        debugPrint(
+          'AppNotificationCenter: native startLiveUpdate channel failed, falling back to local notifications: $e',
+        );
       }
     }
 
@@ -249,7 +258,8 @@ class AppNotificationCenter {
       final androidDetails = AndroidNotificationDetails(
         'vt_live_updates_channel',
         'VT Index Live Updates',
-        channelDescription: 'Real-time ongoing live status updates for open trades and orders',
+        channelDescription:
+            'Real-time ongoing live status updates for open trades and orders',
         importance: Importance.max,
         priority: Priority.max,
         ongoing: true,
@@ -363,12 +373,23 @@ class AppNotificationCenter {
     return title.substring(0, 12);
   }
 
-  String generatePillColorHex(String title, String body, bool isGold, String category) {
+  String generatePillColorHex(
+    String title,
+    String body,
+    bool isGold,
+    String category,
+  ) {
     final lower = '$title $body'.toLowerCase();
-    if (lower.contains('deposit') || lower.contains('profit') || lower.contains('credited') || lower.contains('bought')) {
+    if (lower.contains('deposit') ||
+        lower.contains('profit') ||
+        lower.contains('credited') ||
+        lower.contains('bought')) {
       return '#10B981'; // Emerald Green
     }
-    if (lower.contains('margin') || lower.contains('warning') || lower.contains('loss') || lower.contains('failed')) {
+    if (lower.contains('margin') ||
+        lower.contains('warning') ||
+        lower.contains('loss') ||
+        lower.contains('failed')) {
       return '#EF4444'; // Crimson Red
     }
     if (isGold || category == 'Trading') {
@@ -412,7 +433,8 @@ class AppNotificationCenter {
 
     // 2. Dispatch to the native mobile notification panel
     if (sendToMobilePanel) {
-      final color = colorHex ?? generatePillColorHex(title, body, isGold, category);
+      final color =
+          colorHex ?? generatePillColorHex(title, body, isGold, category);
       await _dispatchSystemNotification(
         id: _nextNotificationId++,
         title: title,
@@ -425,8 +447,10 @@ class AppNotificationCenter {
 
     // 3. Automatically promote to Native OS Live Update pill
     if (updateLivePill) {
-      final short = pillShortText ?? generatePillShortText(title, body, category);
-      final color = colorHex ?? generatePillColorHex(title, body, isGold, category);
+      final short =
+          pillShortText ?? generatePillShortText(title, body, category);
+      final color =
+          colorHex ?? generatePillColorHex(title, body, isGold, category);
       await startLiveUpdate(
         id: 7777,
         title: title,
@@ -474,35 +498,60 @@ class AppNotificationCenter {
       List<AndroidNotificationAction>? actions;
       if (isTrade) {
         actions = const [
-          AndroidNotificationAction('view_trade', 'View Trade', showsUserInterface: true),
-          AndroidNotificationAction('dismiss', 'Dismiss', cancelNotification: true),
+          AndroidNotificationAction(
+            'view_trade',
+            'View Trade',
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            'dismiss',
+            'Dismiss',
+            cancelNotification: true,
+          ),
         ];
       } else if (category.toLowerCase() == 'funds') {
         actions = const [
-          AndroidNotificationAction('view_wallet', 'View Wallet', showsUserInterface: true),
-          AndroidNotificationAction('deposit', 'Deposit', showsUserInterface: true),
+          AndroidNotificationAction(
+            'view_wallet',
+            'View Wallet',
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            'deposit',
+            'Deposit',
+            showsUserInterface: true,
+          ),
         ];
       } else if (category.toLowerCase() == 'security') {
         actions = const [
-          AndroidNotificationAction('review_security', 'Review', showsUserInterface: true),
+          AndroidNotificationAction(
+            'review_security',
+            'Review',
+            showsUserInterface: true,
+          ),
         ];
       } else {
         actions = const [
-          AndroidNotificationAction('open_app', 'Open App', showsUserInterface: true),
+          AndroidNotificationAction(
+            'open_app',
+            'Open App',
+            showsUserInterface: true,
+          ),
         ];
       }
 
       final androidDetails = AndroidNotificationDetails(
         'vt_index_channel',
         'VT Index Notifications',
-        channelDescription: 'Trading, funding, and security alerts for VT Index CRM',
+        channelDescription:
+            'Trading, funding, and security alerts for VT Index CRM',
         importance: Importance.high,
         priority: Priority.high,
         icon: smallIcon,
         largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
         color: parsedColor,
         subText: category.toUpperCase(),
-        groupKey: 'com.example.crm_app.NOTIFICATIONS',
+        groupKey: 'com.vtindex.crm.NOTIFICATIONS',
         styleInformation: BigTextStyleInformation(
           body,
           contentTitle: title,
@@ -535,7 +584,9 @@ class AppNotificationCenter {
         notificationDetails: notificationDetails,
       );
     } catch (e) {
-      debugPrint('AppNotificationCenter: mobile notification panel dispatch warning: $e');
+      debugPrint(
+        'AppNotificationCenter: mobile notification panel dispatch warning: $e',
+      );
     }
   }
 

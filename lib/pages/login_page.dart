@@ -579,6 +579,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Center(
             child: TextFormField(
               controller: _emailController,
+              textAlignVertical: TextAlignVertical.center,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
@@ -586,6 +587,7 @@ class _LoginPageState extends State<LoginPage> {
                 color: inputTextColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
+                height: 1.25,
               ),
               onChanged: (_) {
                 if (_loginEmailError != null) setState(() => _loginEmailError = null);
@@ -598,6 +600,8 @@ class _LoginPageState extends State<LoginPage> {
                   color: placeholderColor,
                   fontSize: 14.5,
                   fontWeight: FontWeight.w500,
+                  letterSpacing: 0,
+                  height: 1.25,
                 ),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 18, right: 12),
@@ -637,6 +641,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Center(
             child: TextFormField(
               controller: _passwordController,
+              textAlignVertical: TextAlignVertical.center,
               obscureText: !_passwordVisible,
               obscuringCharacter: '•',
               textInputAction: TextInputAction.done,
@@ -644,9 +649,10 @@ class _LoginPageState extends State<LoginPage> {
               cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
               style: TextStyle(
                 color: inputTextColor,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
-                letterSpacing: _passwordVisible ? 0 : 2.5,
+                letterSpacing: (_passwordVisible || _passwordController.text.isEmpty) ? 0 : 2.5,
+                height: 1.25,
               ),
               onChanged: (_) {
                 if (_loginPasswordError != null) setState(() => _loginPasswordError = null);
@@ -660,6 +666,7 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: 14.5,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0,
+                  height: 1.25,
                 ),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 18, right: 12),
@@ -670,16 +677,17 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
                 suffixIcon: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: IconButton(
-                    onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
-                    icon: Icon(
+                  padding: const EdgeInsets.only(right: 14),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _passwordVisible = !_passwordVisible),
+                    behavior: HitTestBehavior.opaque,
+                    child: Icon(
                       _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
                       color: placeholderColor,
                       size: 20,
                     ),
-                    tooltip: _passwordVisible ? 'Hide password' : 'Show password',
                   ),
                 ),
                 contentPadding: const EdgeInsets.only(right: 8),
@@ -912,8 +920,9 @@ class _LoginPageState extends State<LoginPage> {
           child: Center(
             child: TextFormField(
               controller: _nameController,
+              textAlignVertical: TextAlignVertical.center,
               cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
-              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600),
+              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
               onChanged: (_) {
                 if (_signUpNameError != null) setState(() => _signUpNameError = null);
               },
@@ -921,7 +930,7 @@ class _LoginPageState extends State<LoginPage> {
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'Full Name',
-                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
+                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 18, right: 12),
                   child: Icon(
@@ -956,9 +965,10 @@ class _LoginPageState extends State<LoginPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _emailController,
+                    textAlignVertical: TextAlignVertical.center,
                     keyboardType: TextInputType.emailAddress,
                     cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
-                    style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
                     onChanged: (_) {
                       if (_emailVerified) setState(() => _emailVerified = false);
                       if (_signUpEmailError != null) setState(() => _signUpEmailError = null);
@@ -967,7 +977,7 @@ class _LoginPageState extends State<LoginPage> {
                       border: InputBorder.none,
                       isDense: true,
                       hintText: 'Email Address',
-                      hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
+                      hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
                       prefixIcon: Padding(
                         padding: const EdgeInsets.only(left: 18, right: 12),
                         child: Icon(
@@ -1024,13 +1034,14 @@ class _LoginPageState extends State<LoginPage> {
           child: Center(
             child: TextFormField(
               controller: _referralController,
+              textAlignVertical: TextAlignVertical.center,
               cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
-              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600),
+              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'IB Referral Code (Optional)',
-                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5),
+                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 18, right: 12),
                   child: Icon(LucideIcons.tag, color: prefixIconColor, size: 20),
@@ -1055,53 +1066,56 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           child: Center(
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _passwordController,
-                    obscureText: !_passwordVisible,
-                    obscuringCharacter: '•',
-                    cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
-                    style: TextStyle(
-                      color: inputTextColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: _passwordVisible ? 0 : 2.5,
-                    ),
-                    onChanged: (_) {
-                      if (_signUpPasswordError != null) setState(() => _signUpPasswordError = null);
-                    },
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      isDense: true,
-                      hintText: 'Password (min. 8 characters)',
-                      hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0),
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.only(left: 18, right: 12),
-                        child: Icon(
-                          LucideIcons.lock,
-                          color: _signUpPasswordError != null ? _loginErrorColor : prefixIconColor,
-                          size: 20,
-                        ),
-                      ),
-                      prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
-                      contentPadding: const EdgeInsets.only(right: 8),
-                    ),
+            child: TextFormField(
+              controller: _passwordController,
+              textAlignVertical: TextAlignVertical.center,
+              obscureText: !_passwordVisible,
+              obscuringCharacter: '•',
+              cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+              style: TextStyle(
+                color: inputTextColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: (_passwordVisible || _passwordController.text.isEmpty) ? 0 : 2.5,
+                height: 1.25,
+              ),
+              onChanged: (_) {
+                if (_signUpPasswordError != null) setState(() => _signUpPasswordError = null);
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                hintText: 'Password (min. 8 characters)',
+                hintStyle: TextStyle(
+                  color: placeholderColor,
+                  fontSize: 14.5,
+                  letterSpacing: 0,
+                  height: 1.25,
+                ),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 12),
+                  child: Icon(
+                    LucideIcons.lock,
+                    color: _signUpPasswordError != null ? _loginErrorColor : prefixIconColor,
+                    size: 20,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: IconButton(
-                    onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
-                    icon: Icon(
+                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 14),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _passwordVisible = !_passwordVisible),
+                    behavior: HitTestBehavior.opaque,
+                    child: Icon(
                       _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
                       color: placeholderColor,
                       size: 20,
                     ),
                   ),
                 ),
-              ],
+                contentPadding: const EdgeInsets.only(right: 8),
+              ),
             ),
           ),
         ),

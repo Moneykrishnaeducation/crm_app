@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'app_notifications.dart';
 export 'app_notifications.dart';
 import 'biometric_sign_in.dart';

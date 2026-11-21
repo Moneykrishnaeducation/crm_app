@@ -90,9 +90,9 @@ void main() {
         findsOneWidget,
       );
       expect(find.byIcon(Icons.fingerprint), findsNothing);
-      expect(find.text('Phone number, email or username'), findsOneWidget);
+      expect(find.text('Username or Email'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Log in'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Login'), findsOneWidget);
     },
   );
 

@@ -21,6 +21,7 @@ import 'pages/partnership_page.dart';
 import 'pages/privacy_policy_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/security_center_page.dart';
+import 'services/display_refresh_rate_service.dart';
 
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
@@ -47,6 +48,7 @@ const _gold = Color(0xFFD8A82E);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  unawaited(DisplayRefreshRateService.adaptToHighestRefreshRate());
   await AppNotificationCenter.instance.initialize();
   final preferences = await SharedPreferences.getInstance();
   final stored = preferences.getString('vtindex_theme_mode');
@@ -291,7 +293,7 @@ class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
       );
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   ThemeMode? _currentThemeMode;
   ThemeMode get _effectiveThemeMode => _currentThemeMode ?? widget.themeMode;
   String _selectedPage = 'Dashboard';
@@ -307,14 +309,55 @@ class _AppShellState extends State<AppShell> {
   final ScrollController _accountsScrollController = ScrollController(keepScrollOffset: false);
   final ScrollController _moreScrollController = ScrollController(keepScrollOffset: false);
   int _secondaryPageNavId = 0;
+  double _lastScreenWidth = 0;
+  double _maxWindowHeight = 0;
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    FocusManager.instance.removeListener(_handleFocusChange);
     _dashboardScrollController.dispose();
     _transactionsScrollController.dispose();
     _accountsScrollController.dispose();
     _moreScrollController.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  bool _isWindowShrunkForKeyboard(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    if (_lastScreenWidth != size.width) {
+      _lastScreenWidth = size.width;
+      _maxWindowHeight = size.height;
+      return false;
+    }
+    if (size.height > _maxWindowHeight) {
+      _maxWindowHeight = size.height;
+    }
+    return _maxWindowHeight > 0 && (_maxWindowHeight - size.height) > 120;
+  }
+
+  bool _isKeyboardOpen(BuildContext context) {
+    if (BrokerBottomNavigation.isKeyboardOrInputActive(context)) {
+      return true;
+    }
+    if (_isWindowShrunkForKeyboard(context)) {
+      return true;
+    }
+    return false;
   }
 
   void _resetScrollFor(String page) {
@@ -388,6 +431,8 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    FocusManager.instance.addListener(_handleFocusChange);
     _currentThemeMode = widget.themeMode;
     _loadFavoriteAccounts();
   }
@@ -819,8 +864,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final primaryIndex = _primaryTabIndex;
-    final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0 ||
-        View.of(context).viewInsets.bottom > 0;
+    final isKeyboardOpen = _isKeyboardOpen(context);
     return PopScope(
       key: const Key('app_shell_pop_scope'),
       canPop: _selectedPage == 'Dashboard' &&
@@ -842,11 +886,14 @@ class _AppShellState extends State<AppShell> {
           },
           onSelectPage: _selectPage,
         ),
-        body: SafeArea(
-          top: false,
-          bottom: false,
-          child: Stack(
-            children: [
+        body: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SafeArea(
+            top: false,
+            bottom: false,
+            child: Stack(
+              children: [
               Positioned.fill(
                 child: RepaintBoundary(
                   child: LayoutBuilder(
@@ -943,6 +990,7 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

@@ -4,6 +4,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.view.Display
+import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.crm_app.R
@@ -12,15 +14,54 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val CHANNEL = "com.example.crm_app/live_updates"
+    private val LIVE_CHANNEL = "com.example.crm_app/live_updates"
+    private val DISPLAY_CHANNEL = "com.example.crm_app/display_mode"
     private val LIVE_CHANNEL_ID = "vt_live_updates_channel"
+
+    override fun onResume() {
+        super.onResume()
+        // Automatically adapt to the highest refresh rate supported by device settings when app resumes
+        adaptToHighestRefreshRate()
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         createLiveNotificationChannel()
+        adaptToHighestRefreshRate()
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        // Display refresh rate adaptation channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DISPLAY_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getAvailableModes" -> {
+                    result.success(getSupportedDisplayModes())
+                }
+                "getActiveMode" -> {
+                    result.success(getActiveDisplayMode())
+                }
+                "setHighRefreshRate" -> {
+                    val applied = adaptToHighestRefreshRate()
+                    result.success(applied)
+                }
+                "setPreferredMode" -> {
+                    val modeId = call.argument<Int>("modeId")
+                    if (modeId != null) {
+                        val applied = setDisplayMode(modeId)
+                        result.success(applied)
+                    } else {
+                        result.error("INVALID_ARG", "modeId is required", null)
+                    }
+                }
+                "setDeviceDefault" -> {
+                    val applied = resetToDefaultDisplayMode()
+                    result.success(applied)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Live notification channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, LIVE_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startLiveUpdate", "updateLiveUpdate" -> {
                     val id = call.argument<Int>("id") ?: 7777
@@ -42,6 +83,132 @@ class MainActivity : FlutterFragmentActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun getWindowDisplay(): Display? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                display
+            } catch (_: Exception) {
+                @Suppress("DEPRECATION")
+                windowManager.defaultDisplay
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay
+        }
+    }
+
+    private fun getSupportedDisplayModes(): List<Map<String, Any>> {
+        val result = mutableListOf<Map<String, Any>>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val display = getWindowDisplay() ?: return result
+            val modes = display.supportedModes ?: return result
+            for (mode in modes) {
+                result.add(
+                    mapOf(
+                        "id" to mode.modeId,
+                        "width" to mode.physicalWidth,
+                        "height" to mode.physicalHeight,
+                        "refreshRate" to mode.refreshRate.toDouble()
+                    )
+                )
+            }
+        }
+        return result
+    }
+
+    private fun getActiveDisplayMode(): Map<String, Any>? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val display = getWindowDisplay() ?: return null
+            val mode = display.mode ?: return null
+            return mapOf(
+                "id" to mode.modeId,
+                "width" to mode.physicalWidth,
+                "height" to mode.physicalHeight,
+                "refreshRate" to mode.refreshRate.toDouble()
+            )
+        }
+        return null
+    }
+
+    private fun adaptToHighestRefreshRate(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val display = getWindowDisplay() ?: return false
+                val modes = display.supportedModes
+                if (!modes.isNullOrEmpty()) {
+                    val currentMode = display.mode
+                    var bestMode: Display.Mode? = null
+                    var maxRate = 0f
+
+                    val currentWidth = currentMode?.physicalWidth ?: 0
+                    val currentHeight = currentMode?.physicalHeight ?: 0
+
+                    // First pass: match current physical resolution with highest refresh rate
+                    for (m in modes) {
+                        val matchesResolution = (currentWidth == 0 && currentHeight == 0) ||
+                                (m.physicalWidth == currentWidth && m.physicalHeight == currentHeight)
+                        if (matchesResolution && m.refreshRate > maxRate) {
+                            maxRate = m.refreshRate
+                            bestMode = m
+                        }
+                    }
+
+                    // Fallback pass: any mode with highest refresh rate
+                    if (bestMode == null) {
+                        for (m in modes) {
+                            if (m.refreshRate > maxRate) {
+                                maxRate = m.refreshRate
+                                bestMode = m
+                            }
+                        }
+                    }
+
+                    if (bestMode != null) {
+                        val layoutParams = window.attributes
+                        layoutParams.preferredDisplayModeId = bestMode.modeId
+                        @Suppress("DEPRECATION")
+                        layoutParams.preferredRefreshRate = bestMode.refreshRate
+                        window.attributes = layoutParams
+                        return true
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return false
+    }
+
+    private fun setDisplayMode(modeId: Int): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val layoutParams = window.attributes
+                layoutParams.preferredDisplayModeId = modeId
+                window.attributes = layoutParams
+                return true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return false
+    }
+
+    private fun resetToDefaultDisplayMode(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val layoutParams = window.attributes
+                layoutParams.preferredDisplayModeId = 0
+                @Suppress("DEPRECATION")
+                layoutParams.preferredRefreshRate = 0f
+                window.attributes = layoutParams
+                return true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return false
     }
 
     private fun createLiveNotificationChannel() {

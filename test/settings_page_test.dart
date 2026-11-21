@@ -26,10 +26,9 @@ void main() {
 
     expect(find.text('Personalize your experience'), findsOneWidget);
     expect(find.text('PREFERENCES'), findsOneWidget);
-    expect(find.text('SECURITY'), findsOneWidget);
     expect(find.text('ABOUT'), findsOneWidget);
-    expect(find.text('Biometric sign-in'), findsOneWidget);
-    expect(find.text('Dark Mode'), findsOneWidget);
+    expect(find.text('Theme Mode'), findsOneWidget);
+    expect(find.text('Smooth Display'), findsOneWidget);
     expect(find.text('Version'), findsOneWidget);
     expect(find.text('Sub-version'), findsOneWidget);
 

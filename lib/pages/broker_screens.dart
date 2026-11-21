@@ -4516,10 +4516,31 @@ class BrokerBottomNavigation extends StatelessWidget {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  static bool isKeyboardOrInputActive(BuildContext context) {
     if (MediaQuery.viewInsetsOf(context).bottom > 0 ||
         View.of(context).viewInsets.bottom > 0) {
+      return true;
+    }
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isNotEmpty && views.first.viewInsets.bottom > 0) {
+      return true;
+    }
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus != null && focus.hasFocus) {
+      final ctx = focus.context;
+      if (ctx != null) {
+        if (ctx.widget is EditableText ||
+            ctx.findAncestorWidgetOfExactType<EditableText>() != null) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isKeyboardOrInputActive(context)) {
       return const SizedBox.shrink();
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;

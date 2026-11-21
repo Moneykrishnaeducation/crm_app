@@ -81,5 +81,41 @@ void main() {
       // Floating bottom bar is restored
       expect(find.byType(BrokerBottomNavigation), findsOneWidget);
     });
+
+    testWidgets('BrokerBottomNavigation hides immediately when input field is tapped/focused even without viewInsets', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+
+      await tester.pumpWidget(buildTestShell());
+      await tester.pumpAndSettle();
+
+      // Navigate to Deposit page
+      await tester.ensureVisible(find.text('Deposit').first);
+      await tester.tap(find.text('Deposit').first);
+      await tester.pumpAndSettle();
+
+      // Initially nav bar is present
+      expect(find.byType(BrokerBottomNavigation), findsOneWidget);
+
+      // Find the Deposit amount TextField and tap it to give focus (simulating user clicking input)
+      final depositInput = find.byType(TextField);
+      expect(depositInput, findsWidgets);
+      await tester.tap(depositInput.first);
+      await tester.pumpAndSettle();
+
+      // Even without viewInsets set (simulating Android adjustResize or before soft keyboard insets arrive),
+      // the focused input field MUST hide the floating bottom navigation bar!
+      expect(find.byType(BrokerBottomNavigation), findsNothing);
+
+      // Unfocus (e.g. tapping outside)
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      // Floating bottom bar reappears
+      expect(find.byType(BrokerBottomNavigation), findsOneWidget);
+    });
   });
 }

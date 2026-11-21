@@ -19,6 +19,220 @@ class BrokerSettingsPage extends StatefulWidget {
 }
 
 class _BrokerSettingsPageState extends State<BrokerSettingsPage> {
+  DisplayModeInfo? _activeDisplayMode;
+  List<DisplayModeInfo> _availableDisplayModes = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDisplayModes();
+  }
+
+  Future<void> _fetchDisplayModes() async {
+    try {
+      final active = await DisplayRefreshRateService.getActiveMode();
+      final modes = await DisplayRefreshRateService.getAvailableModes();
+      if (mounted) {
+        setState(() {
+          _activeDisplayMode = active;
+          _availableDisplayModes = modes;
+        });
+      }
+    } catch (_) {}
+  }
+
+  String get _displayRefreshRateLabel {
+    if (_activeDisplayMode != null) {
+      final hz = _activeDisplayMode!.refreshRateInt;
+      return '$hz Hz';
+    }
+    return 'Auto / Smooth';
+  }
+
+  Future<void> _showRefreshRateDialog() async {
+    final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: colors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: colors.outlineVariant.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(LucideIcons.gauge, color: colors.primary, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Smooth Display',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Adapts to screen higher refresh rate based on device settings.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF14243B) : const Color(0xFFEDF4FD),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: colors.primary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.sparkles, color: colors.primary, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Active rate: ${_activeDisplayMode != null ? "${_activeDisplayMode!.refreshRateInt} Hz" : "High (Adaptive)"}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_availableDisplayModes.isNotEmpty) ...[
+                Text(
+                  'AVAILABLE MODES',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ..._availableDisplayModes.map((mode) {
+                  final isSelected = _activeDisplayMode?.id == mode.id;
+                  return InkWell(
+                    onTap: () async {
+                      await DisplayRefreshRateService.setPreferredMode(mode.id);
+                      final updated = await DisplayRefreshRateService.getActiveMode();
+                      if (mounted) {
+                        setState(() => _activeDisplayMode = updated ?? mode);
+                      }
+                      setSheetState(() => _activeDisplayMode = updated ?? mode);
+                      showAppMessage('Display refresh rate set to ${mode.refreshRateInt} Hz');
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${mode.refreshRateInt} Hz (${mode.width}x${mode.height})',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                color: isSelected ? colors.primary : colors.onSurface,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(LucideIcons.check, color: colors.primary, size: 18),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+              ],
+              FilledButton(
+                onPressed: () async {
+                  await DisplayRefreshRateService.adaptToHighestRefreshRate();
+                  final updated = await DisplayRefreshRateService.getActiveMode();
+                  if (mounted) {
+                    setState(() => _activeDisplayMode = updated);
+                  }
+                  setSheetState(() => _activeDisplayMode = updated);
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  showAppMessage('Optimal high refresh rate applied from device settings.');
+                },
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Auto (Highest Refresh Rate)', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () async {
+                  await DisplayRefreshRateService.resetToDefault();
+                  final updated = await DisplayRefreshRateService.getActiveMode();
+                  if (mounted) {
+                    setState(() => _activeDisplayMode = updated);
+                  }
+                  setSheetState(() => _activeDisplayMode = updated);
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  showAppMessage('Display refresh rate reset to device default.');
+                },
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(46),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Use Device Default'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -82,6 +296,14 @@ class _BrokerSettingsPageState extends State<BrokerSettingsPage> {
                             subtitle: 'Choose light, dark, or device default.',
                             value: _themeModeLabel(widget.themeMode),
                             onTap: () => widget.onSelectPage?.call('Theme Mode'),
+                          ),
+                          const _SettingsDivider(),
+                          _SettingsTile(
+                            icon: LucideIcons.gauge,
+                            title: 'Smooth Display',
+                            subtitle: 'Adapts to screen higher refresh rate for smoother motion.',
+                            value: _displayRefreshRateLabel,
+                            onTap: _showRefreshRateDialog,
                           ),
                           const _SettingsDivider(),
                           _SettingsTile(

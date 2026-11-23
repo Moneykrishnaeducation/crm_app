@@ -335,6 +335,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   ThemeMode? _currentThemeMode;
   ThemeMode get _effectiveThemeMode => _currentThemeMode ?? widget.themeMode;
   String _selectedPage = 'Dashboard';
+  int _activityRefreshToken = 0;
   final List<String> _navigationHistory = <String>[];
   final GlobalKey<MamPageState> _mamKey = GlobalKey<MamPageState>();
   BrokerAccount? _selectedAccount;
@@ -499,7 +500,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   final List<BrokerAccount> _accounts = <BrokerAccount>[];
   bool _accountsLoading = false;
-  bool _accountsHasLoaded = false;
   String? _accountsError;
 
   double _accountNumber(dynamic value) {
@@ -541,7 +541,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _loadTradingAccounts({bool refresh = false}) async {
     if (_accountsLoading) return;
-    _accountsHasLoaded = true;
     setState(() {
       _accountsLoading = true;
       _accountsError = null;
@@ -695,6 +694,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final page = rawPage == 'activity' ? 'Transactions' : rawPage;
     if (page == _selectedPage) {
       _resetScrollFor(page);
+      if (page == 'Transactions') {
+        setState(() => _activityRefreshToken++);
+      } else if (page == 'Trading Accounts') {
+        unawaited(_loadTradingAccounts(refresh: true));
+      }
       return;
     }
 
@@ -760,9 +764,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
     _secondaryPageNavId++;
     _resetScrollFor(page);
-    setState(() => _selectedPage = page);
-    if (page == 'Trading Accounts' && !_accountsHasLoaded) {
-      unawaited(_loadTradingAccounts());
+    setState(() {
+      _selectedPage = page;
+      if (page == 'Transactions') _activityRefreshToken++;
+    });
+    if (page == 'Trading Accounts') {
+      unawaited(_loadTradingAccounts(refresh: true));
     }
   }
 
@@ -1075,6 +1082,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                       activeIndex: primaryIndex,
                                       child: BrokerTransactionsPage(
                                         isActive: primaryIndex == 1,
+                                        refreshToken: _activityRefreshToken,
                                         accounts: _accounts,
                                         externalFundTransactions:
                                             _appFundTransactions,

@@ -2139,6 +2139,7 @@ class BrokerTransactionsPage extends StatefulWidget {
   const BrokerTransactionsPage({
     super.key,
     this.isActive = false,
+    this.refreshToken = 0,
     this.accounts,
     this.selectedAccountLogin,
     this.onAccountChanged,
@@ -2147,6 +2148,7 @@ class BrokerTransactionsPage extends StatefulWidget {
   });
 
   final bool isActive;
+  final int refreshToken;
   final List<BrokerAccount>? accounts;
   final String? selectedAccountLogin;
   final ValueChanged<String>? onAccountChanged;
@@ -2422,9 +2424,13 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   @override
   void didUpdateWidget(covariant BrokerTransactionsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive && !_hasLoadedTradingData) {
+    final becameActive = widget.isActive && !oldWidget.isActive;
+    final explicitlySelected =
+        widget.isActive && widget.refreshToken != oldWidget.refreshToken;
+    if (becameActive || explicitlySelected) {
+      final refresh = _hasLoadedTradingData;
       _hasLoadedTradingData = true;
-      unawaited(_loadTradingAccounts(fresh: false));
+      unawaited(_loadTradingAccounts(fresh: refresh));
     }
     if (widget.selectedAccountLogin != null &&
         _allAccounts.any((a) => a.login == widget.selectedAccountLogin) &&

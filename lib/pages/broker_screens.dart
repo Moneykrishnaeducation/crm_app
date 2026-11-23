@@ -2138,6 +2138,7 @@ class ActivityFundTransaction {
 class BrokerTransactionsPage extends StatefulWidget {
   const BrokerTransactionsPage({
     super.key,
+    this.isActive = false,
     this.accounts,
     this.selectedAccountLogin,
     this.onAccountChanged,
@@ -2145,6 +2146,7 @@ class BrokerTransactionsPage extends StatefulWidget {
     this.scrollController,
   });
 
+  final bool isActive;
   final List<BrokerAccount>? accounts;
   final String? selectedAccountLogin;
   final ValueChanged<String>? onAccountChanged;
@@ -2177,6 +2179,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   bool _pendingLoading = false;
   String? _pendingError;
   int _pendingRequestId = 0;
+  bool _hasLoadedTradingData = false;
 
   late final Map<String, List<ActivityOpenPosition>> _accountOpenPositions;
   late final Map<String, List<ActivityPendingOrder>> _accountPendingOrders;
@@ -2390,7 +2393,6 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     };
 
     _mergeExternalFunds();
-    unawaited(_loadTradingAccounts());
   }
 
   @override
@@ -2415,6 +2417,10 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   @override
   void didUpdateWidget(covariant BrokerTransactionsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive && !_hasLoadedTradingData) {
+      _hasLoadedTradingData = true;
+      unawaited(_loadTradingAccounts(fresh: false));
+    }
     if (widget.selectedAccountLogin != null &&
         _allAccounts.any((a) => a.login == widget.selectedAccountLogin) &&
         widget.selectedAccountLogin != _selectedLogin) {

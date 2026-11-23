@@ -2187,7 +2187,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   @override
   void initState() {
     super.initState();
-    _selectedLogin = '';
+    _selectedLogin = widget.selectedAccountLogin ?? '52132132';
 
     _accountOpenPositions = {
       '52132132': [
@@ -2381,11 +2381,16 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       '3327': [],
     };
 
-    _accountBalances = {};
+    _accountBalances = {
+      '52132132': 12300.00,
+      '3315': 0.00,
+      '3311': 4820.00,
+      '3312': 1100.00,
+      '3327': 0.00,
+    };
 
     _mergeExternalFunds();
     unawaited(_loadTradingAccounts());
-    unawaited(_loadUserTransactions());
   }
 
   @override
@@ -2416,14 +2421,44 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _selectedLogin = widget.selectedAccountLogin!;
       _remoteOpenPositions = null;
       _remotePendingOrders = null;
-      unawaited(_loadOpenPositions(_selectedLogin));
-      unawaited(_loadPendingOrders(_selectedLogin));
+      unawaited(_loadTradingAccounts(fresh: true));
     }
     _mergeExternalFunds();
   }
 
   List<BrokerAccount> get _allAccounts {
-    return _remoteAccounts ?? const [];
+    if (_remoteAccounts != null) return _remoteAccounts!;
+    final list = <BrokerAccount>[];
+    if (widget.accounts != null && widget.accounts!.isNotEmpty) {
+      list.addAll(widget.accounts!);
+    }
+    final logins = list.map((a) => a.login).toSet();
+    if (!logins.contains('52132132')) {
+      list.insert(
+        0,
+        const BrokerAccount(
+          'V Tamizharasan',
+          '52132132',
+          '1:500',
+          '\$12,300.00',
+          '\$12,450.00',
+          'Live MT5',
+        ),
+      );
+    }
+    if (!logins.contains('3315')) {
+      list.add(
+        const BrokerAccount(
+          'XRSIM-USD-1',
+          '3315',
+          '1:500',
+          '\$0.00',
+          '\$0.00',
+          'Live MT5',
+        ),
+      );
+    }
+    return list;
   }
 
   BrokerAccount get _currentAccount {
@@ -2445,7 +2480,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   List<ActivityOpenPosition> get _currentOpenPositions =>
-      _remoteOpenPositions ?? const [];
+      _remoteOpenPositions ?? _accountOpenPositions[_selectedLogin] ?? [];
 
   List<ActivityPendingOrder> get _currentPendingOrders =>
       _remotePendingOrders ?? _accountPendingOrders[_selectedLogin] ?? [];
@@ -2457,6 +2492,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _remoteFunds ?? _accountFunds[_selectedLogin] ?? [];
 
   Future<void> _loadUserTransactions() async {
+    if (!AuthApi.instance.hasToken) return;
     setState(() {
       _transactionsLoading = true;
       _transactionsError = null;
@@ -2541,12 +2577,16 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Future<void> _loadTradingAccounts({bool fresh = true}) async {
+    if (!AuthApi.instance.hasToken) return;
     setState(() {
       _accountsLoading = true;
       _accountsError = null;
-      _positionsLoading = _selectedLogin.isNotEmpty;
+      _positionsLoading = _activeTab == 0 && _selectedLogin.isNotEmpty;
+      _pendingLoading = _activeTab == 1 && _selectedLogin.isNotEmpty;
       _positionsError = null;
+      _pendingError = null;
       _remoteOpenPositions = null;
+      _remotePendingOrders = null;
     });
     try {
       final response = await AuthApi.instance.getUserTradingAccounts(
@@ -2604,10 +2644,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         }
       });
       if (selectedLogin.isNotEmpty) {
-        await Future.wait([
-          _loadOpenPositions(selectedLogin),
-          _loadPendingOrders(selectedLogin),
-        ]);
+        await _loadActivityTab(selectedLogin);
       }
     } catch (error) {
       if (!mounted) return;
@@ -2633,10 +2670,22 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     return double.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
+  Future<void> _loadActivityTab(String accountId) async {
+    if (accountId.isEmpty) return;
+    if (_activeTab == 0) {
+      await _loadOpenPositions(accountId);
+    } else if (_activeTab == 1) {
+      await _loadPendingOrders(accountId);
+    } else if (_activeTab == 3) {
+      await _loadUserTransactions();
+    }
+  }
+
   double _parseCurrency(String value) =>
       double.tryParse(value.replaceAll(RegExp(r'[^0-9.\-]'), '')) ?? 0;
 
   Future<void> _loadOpenPositions(String accountId) async {
+    if (!AuthApi.instance.hasToken) return;
     final requestId = ++_positionRequestId;
     if (accountId.isEmpty) {
       setState(() {
@@ -2651,15 +2700,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _positionsError = null;
     });
     try {
-      final response = await AuthApi.instance.getOpenPositions(accountId);
-      final nested = response['data'];
-      final rows = response['positions'] ??
-          (nested is Map ? nested['positions'] : null) ??
-          (nested is List ? nested : null);
-      final positions = (rows is List ? rows : const <dynamic>[])
-          .whereType<Map>()
-          .map((raw) {
-            final item = raw.cast<String, dynamic>();
+      final rows = await AuthApi.instance.getOpenPositions(accountId);
+      final positions = rows.map((item) {
             final type = '${item['type'] ?? ''}'.toLowerCase();
             return ActivityOpenPosition(
               id: '${item['ticket'] ?? item['id'] ?? ''}',
@@ -2695,6 +2737,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Future<void> _loadPendingOrders(String accountId) async {
+    if (!AuthApi.instance.hasToken) return;
     final requestId = ++_pendingRequestId;
     if (accountId.isEmpty) {
       setState(() {
@@ -3726,8 +3769,14 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                           if (_activeTab != i) {
                             setState(() => _activeTab = i);
                           }
-                          if (i == 0 && _selectedLogin.isNotEmpty) {
-                            unawaited(_loadTradingAccounts(fresh: true));
+                          if (_selectedLogin.isNotEmpty) {
+                            if (i == 0) {
+                              unawaited(_loadOpenPositions(_selectedLogin));
+                            } else if (i == 1) {
+                              unawaited(_loadPendingOrders(_selectedLogin));
+                            } else if (i == 3) {
+                              unawaited(_loadUserTransactions());
+                            }
                           }
                         },
                         borderRadius: BorderRadius.circular(12),

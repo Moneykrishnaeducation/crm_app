@@ -650,37 +650,11 @@ class AuthApi {
         'user-trading-accounts/${fresh ? '?fresh=true' : ''}',
       );
 
-  Future<Map<String, dynamic>> getOpenPositions(String accountId) =>
-      _request(
-        'GET',
-        'open-positions/${Uri.encodeComponent(accountId)}/',
-      );
-
   Future<Map<String, dynamic>> getTradingPositions(String accountId) =>
       _request(
         'GET',
         'get-trading-positions/${Uri.encodeComponent(accountId)}/',
       );
-
-  Future<Map<String, dynamic>> closePosition({
-    required String accountId,
-    dynamic ticket,
-    double? volume,
-    bool closeAll = false,
-    String? comment,
-  }) {
-    final body = <String, dynamic>{
-      if (closeAll) 'close_all': true,
-      if (comment != null && comment.isNotEmpty) 'comment': comment,
-    };
-    if (ticket != null) body['ticket'] = ticket;
-    if (volume != null) body['volume'] = volume;
-    return _request(
-      'POST',
-      'close-position/${Uri.encodeComponent(accountId)}/',
-      body: body,
-    );
-  }
 
   Future<Map<String, dynamic>> getPendingOrders(String accountId) =>
       _request(

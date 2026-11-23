@@ -167,24 +167,9 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (!mounted) return;
       if (authenticated) {
-        try {
-          final statusRes = await AuthApi.instance.status();
-          final isAuthed = statusRes['status'] == 'authenticated' ||
-              statusRes['authenticated'] == true ||
-              statusRes['is_authenticated'] == true;
-          if (!isAuthed) {
-            throw const AuthApiException('Not authenticated');
-          }
-          if (!mounted) return;
-          HapticFeedback.selectionClick();
-          widget.onLogin?.call();
-        } on AuthApiException {
-          if (mounted) {
-            showAppMessage(
-              'Sign in with your password first, then try biometric sign-in again.',
-            );
-          }
-        }
+        if (!mounted) return;
+        HapticFeedback.selectionClick();
+        widget.onLogin?.call();
       } else {
         showAppMessage(
           'Biometric sign-in was canceled. Use your login ID and password instead.',
@@ -265,12 +250,19 @@ class _LoginPageState extends State<LoginPage> {
           'The server still requires a login verification code.',
         );
       }
+      if (response['captcha_required'] == true) {
+        throw AuthApiException(
+          response['message'] as String? ??
+              'CAPTCHA verification is required. Please verify via the web portal or disable Login CAPTCHA in Security Settings.',
+        );
+      }
       if (response['success'] == false || response['authenticated'] == false) {
         throw AuthApiException(_apiResponseMessage(response));
       }
       final hasToken = response['access'] != null ||
           response['access_token'] != null ||
-          response['token'] != null;
+          response['token'] != null ||
+          AuthApi.instance.hasToken;
       if (!await AuthApi.instance.isAuthenticated()) {
         if (!hasToken) {
           throw const AuthApiException(
@@ -296,17 +288,24 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _requiresLoginOtp(Map<String, dynamic> response) {
     for (final key in const [
+      'verification_required',
+      'requires_verification',
       'otp_required',
       'requires_otp',
       'email_verification_required',
-      'requires_verification',
+      'otp',
     ]) {
       if (response[key] == true) return true;
     }
     final status = (response['status'] ?? response['state'] ?? '')
         .toString()
         .toLowerCase();
-    return status.contains('otp') || status.contains('verification_required');
+    if (status.contains('otp') || status.contains('verification_required')) {
+      return true;
+    }
+    final message = (response['message'] ?? '').toString().toLowerCase();
+    return message.contains('verification code') ||
+        message.contains('verify to continue');
   }
 
   String _apiResponseMessage(Map<String, dynamic> response) {
@@ -320,21 +319,37 @@ class _LoginPageState extends State<LoginPage> {
   Future<String?> _requestLoginOtp(String email) async {
     final otpController = TextEditingController();
     try {
-      await AuthApi.instance.loginOtpStatus(email);
+      unawaited(
+        AuthApi.instance
+            .loginOtpStatus(email)
+            .catchError((_) => <String, dynamic>{}),
+      );
       if (!mounted) return null;
       return await showDialog<String>(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Verify your login'),
-          content: TextField(
-            controller: otpController,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Email verification code',
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'A verification code was sent to $email. Please enter it below to continue.',
+                style: const TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: otpController,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'Email verification code',
+                  hintText: 'Enter 6-digit code',
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(

@@ -25,6 +25,12 @@ class AuthApi {
   final Map<String, String> _cookies = <String, String>{};
   String? _accessToken;
 
+  bool get hasToken =>
+      (_accessToken != null && _accessToken!.isNotEmpty) ||
+      _cookies.containsKey('client_access_token') ||
+      _cookies.containsKey('access_token') ||
+      _cookies.containsKey('jwt_token');
+
   Uri get _baseUri {
     if (_configuredBaseUrl.isNotEmpty) {
       final configured = Uri.parse(_configuredBaseUrl);
@@ -129,6 +135,14 @@ class AuthApi {
               ? nested['access'] ?? nested['access_token'] ?? nested['token']
               : null);
       if (token is String && token.isNotEmpty) _accessToken = token;
+    }
+    if (_accessToken == null) {
+      final cookieToken = _cookies['client_access_token'] ??
+          _cookies['access_token'] ??
+          _cookies['jwt_token'];
+      if (cookieToken != null && cookieToken.isNotEmpty) {
+        _accessToken = cookieToken;
+      }
     }
   }
 
@@ -253,6 +267,7 @@ class AuthApi {
       'device_id': deviceId,
       'device_type': deviceType,
       'device_name': deviceName,
+      'client_type': 'app',
     };
   }
 
@@ -334,6 +349,7 @@ class AuthApi {
       return false;
     } on AuthApiException catch (e) {
       if (e.statusCode == 401 ||
+          e.statusCode == 403 ||
           e.message.toLowerCase().contains('unauthenticated') ||
           e.message.toLowerCase().contains('not authenticated') ||
           (e.message.toLowerCase().contains('status check error') &&

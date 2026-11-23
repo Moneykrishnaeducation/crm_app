@@ -2175,6 +2175,11 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   bool _positionsLoading = false;
   String? _positionsError;
   int _positionRequestId = 0;
+  final Set<String> _closingPositionTickets = <String>{};
+  List<ActivityClosedPosition>? _remoteClosedPositions;
+  bool _closedPositionsLoading = false;
+  String? _closedPositionsError;
+  int _closedPositionsRequestId = 0;
   List<ActivityPendingOrder>? _remotePendingOrders;
   bool _pendingLoading = false;
   String? _pendingError;
@@ -2427,6 +2432,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _selectedLogin = widget.selectedAccountLogin!;
       _remoteOpenPositions = null;
       _remotePendingOrders = null;
+      _remoteClosedPositions = null;
       unawaited(_loadTradingAccounts(fresh: true));
     }
     _mergeExternalFunds();
@@ -2492,7 +2498,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _remotePendingOrders ?? _accountPendingOrders[_selectedLogin] ?? [];
 
   List<ActivityClosedPosition> get _currentClosedPositions =>
-      _accountClosedPositions[_selectedLogin] ?? [];
+      _remoteClosedPositions ?? _accountClosedPositions[_selectedLogin] ?? [];
 
   List<ActivityFundTransaction> get _currentFunds =>
       _remoteFunds ?? _accountFunds[_selectedLogin] ?? [];
@@ -2593,6 +2599,9 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _pendingError = null;
       _remoteOpenPositions = null;
       _remotePendingOrders = null;
+      _closedPositionsLoading = _activeTab == 2 && _selectedLogin.isNotEmpty;
+      _closedPositionsError = null;
+      _remoteClosedPositions = null;
     });
     try {
       final response = await AuthApi.instance.getUserTradingAccounts(
@@ -2647,6 +2656,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         if (selectedLogin.isEmpty) {
           _remoteOpenPositions = const [];
           _remotePendingOrders = const [];
+          _remoteClosedPositions = const [];
         }
       });
       if (selectedLogin.isNotEmpty) {
@@ -2659,10 +2669,13 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         _selectedLogin = '';
         _remoteOpenPositions = const [];
         _remotePendingOrders = const [];
+        _remoteClosedPositions = const [];
         _positionsLoading = false;
         _positionsError = null;
         _pendingLoading = false;
         _pendingError = null;
+        _closedPositionsLoading = false;
+        _closedPositionsError = null;
         _accountsError = error is AuthApiException
             ? error.message
             : 'Could not load trading accounts.';
@@ -2682,6 +2695,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       await _loadOpenPositions(accountId);
     } else if (_activeTab == 1) {
       await _loadPendingOrders(accountId);
+    } else if (_activeTab == 2) {
+      await _loadClosedPositions(accountId);
     } else if (_activeTab == 3) {
       await _loadUserTransactions();
     }
@@ -2710,7 +2725,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       final positions = rows.map((item) {
             final type = '${item['type'] ?? ''}'.toLowerCase();
             return ActivityOpenPosition(
-              id: '${item['ticket'] ?? item['id'] ?? ''}',
+              id:
+                  '${item['ticket'] ?? item['position_ticket'] ?? item['position_id'] ?? item['id'] ?? ''}',
               symbol: '${item['symbol'] ?? ''}',
               isBuy: type.contains('buy'),
               lots: _asDouble(item['volume']),
@@ -2797,6 +2813,65 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     }
   }
 
+  Future<void> _loadClosedPositions(String accountId) async {
+    if (!AuthApi.instance.hasToken) return;
+    final requestId = ++_closedPositionsRequestId;
+    if (accountId.isEmpty) {
+      setState(() {
+        _remoteClosedPositions = const [];
+        _closedPositionsLoading = false;
+        _closedPositionsError = null;
+      });
+      return;
+    }
+    setState(() {
+      _closedPositionsLoading = true;
+      _closedPositionsError = null;
+    });
+    try {
+      final daysBack = switch (_activityDateFilter) {
+        'Today' => 1,
+        '7 days' => 7,
+        '30 days' => 30,
+        _ => 90,
+      };
+      final rows = await AuthApi.instance.getClosedPositions(
+        accountId,
+        daysBack: daysBack,
+      );
+      final positions = rows.map((item) {
+        final type = '${item['type'] ?? item['position_type'] ?? ''}'
+            .toLowerCase();
+        return ActivityClosedPosition(
+          id:
+              '${item['ticket'] ?? item['position_ticket'] ?? item['position_id'] ?? item['id'] ?? ''}',
+          symbol: '${item['symbol'] ?? ''}',
+          isBuy: type.contains('buy'),
+          lots: _asDouble(item['volume'] ?? item['volume_closed']),
+          openPrice: _asDouble(item['open_price'] ?? item['price_open']),
+          closePrice: _asDouble(item['close_price'] ?? item['price_close']),
+          netProfit: _asDouble(item['profit'] ?? item['net_profit']),
+          closeTime:
+              '${item['close_time'] ?? item['time_close'] ?? item['closeTime'] ?? ''}',
+        );
+      }).toList();
+      if (!mounted || requestId != _closedPositionsRequestId) return;
+      setState(() {
+        _remoteClosedPositions = positions;
+        _closedPositionsLoading = false;
+      });
+    } catch (error) {
+      if (!mounted || requestId != _closedPositionsRequestId) return;
+      setState(() {
+        _closedPositionsError = error is AuthApiException
+            ? error.message
+            : 'Could not load closed positions.';
+        _remoteClosedPositions = const [];
+        _closedPositionsLoading = false;
+      });
+    }
+  }
+
   double get _currentBalance => _accountBalances[_selectedLogin] ?? 0.0;
 
   double get _currentTotalPL =>
@@ -2813,6 +2888,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         _selectedLogin = login;
         _remoteOpenPositions = null;
         _remotePendingOrders = null;
+        _remoteClosedPositions = null;
       });
       widget.onAccountChanged?.call(login);
     }
@@ -2820,6 +2896,15 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Future<void> _closePosition(ActivityOpenPosition position) async {
+    final ticket = position.id.trim();
+    final accountId = _selectedLogin.trim();
+    if (accountId.isEmpty || ticket.isEmpty) {
+      showAppMessage(
+        'This position is missing its trading account or MT5 ticket.',
+      );
+      return;
+    }
+    if (_closingPositionTickets.contains(ticket)) return;
     final scheme = Theme.of(context).colorScheme;
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -2938,21 +3023,34 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     );
 
     if (confirmed != true || !mounted) return;
+    setState(() => _closingPositionTickets.add(ticket));
     try {
       final result = await AuthApi.instance.closePosition(
-        accountId: _selectedLogin,
-        ticket: position.id,
+        accountId: accountId,
+        ticket: ticket,
       );
+      if (!mounted) return;
+      if (result['success'] == false) {
+        throw AuthApiException(
+          (result['message'] ?? 'MT5 could not close this position.').toString(),
+        );
+      }
       final msg = result['message'] is String
           ? result['message'] as String
           : 'Position closed successfully on MT5.';
       showAppMessage(msg);
-      unawaited(_loadOpenPositions(_selectedLogin));
+      await _loadOpenPositions(accountId);
+      unawaited(_loadClosedPositions(accountId));
       unawaited(_loadTradingAccounts(fresh: true));
     } catch (e) {
+      if (!mounted) return;
       final errorMsg =
           e is AuthApiException ? e.message : 'Failed to close position: $e';
       showAppMessage(errorMsg);
+    } finally {
+      if (mounted) {
+        setState(() => _closingPositionTickets.remove(ticket));
+      }
     }
   }
 
@@ -3780,6 +3878,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                               unawaited(_loadOpenPositions(_selectedLogin));
                             } else if (i == 1) {
                               unawaited(_loadPendingOrders(_selectedLogin));
+                            } else if (i == 2) {
+                              unawaited(_loadClosedPositions(_selectedLogin));
                             } else if (i == 3) {
                               unawaited(_loadUserTransactions());
                             }
@@ -3997,6 +4097,9 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                     if (value != null) {
                       setState(() => _activityDateFilter = value);
                       unawaited(_loadUserTransactions());
+                      if (_activeTab == 2 && _selectedLogin.isNotEmpty) {
+                        unawaited(_loadClosedPositions(_selectedLogin));
+                      }
                     }
                   },
                 ),
@@ -4047,6 +4150,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         final pos = positions[index];
         final isProfit = pos.profit >= 0;
         final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+        final isClosing = _closingPositionTickets.contains(pos.id);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 9),
@@ -4209,23 +4313,32 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                       fontSize: 10.5,
                     ),
                   ),
-                  InkWell(
-                    onTap: () => _closePosition(pos),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                  TextButton(
+                    onPressed: isClosing ? null : () => _closePosition(pos),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      backgroundColor:
+                          const Color(0xFFEF4444).withValues(alpha: 0.1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
                       ),
-                      child: const Text(
-                        'Close',
-                        style: TextStyle(
-                          color: Color(0xFFDC2626),
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: const Color(0xFFEF4444).withValues(
+                            alpha: 0.3,
+                          ),
                         ),
+                      ),
+                    ),
+                    child: Text(
+                      isClosing ? 'Closing…' : 'Close',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -4475,6 +4588,34 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildClosedPositionsList(BuildContext context, bool isDark) {
+    if (_closedPositionsLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_closedPositionsError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+        child: Column(
+          children: [
+            Text(
+              _closedPositionsError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 12,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => unawaited(_loadClosedPositions(_selectedLogin)),
+              icon: const Icon(LucideIcons.refreshCw, size: 15),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
     final positions = _currentClosedPositions.where((p) => _matchesActivity('${p.symbol} ${p.id} ${p.isBuy ? 'buy' : 'sell'}', p.closeTime)).toList();
     if (positions.isEmpty) return _buildEmptyState(context);
 

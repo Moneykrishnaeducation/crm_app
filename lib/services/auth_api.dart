@@ -342,6 +342,53 @@ class AuthApi {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getClosedPositions(
+    String accountId, {
+    int daysBack = 30,
+    String? fromDate,
+    String? toDate,
+  }) async {
+    final id = Uri.encodeComponent(accountId);
+    final query = <String, String>{
+      'days_back': '$daysBack',
+      if (fromDate != null && fromDate.isNotEmpty) 'from_date': fromDate,
+      if (toDate != null && toDate.isNotEmpty) 'to_date': toDate,
+    };
+    final queryString = Uri(queryParameters: query).query;
+    final response = await _request('GET', 'close-position/$id/?$queryString');
+    dynamic payload = response;
+    for (var depth = 0; depth < 4; depth++) {
+      if (payload is List) {
+        return payload
+            .whereType<Map>()
+            .map((item) => item.cast<String, dynamic>())
+            .toList(growable: false);
+      }
+      if (payload is! Map) break;
+      final map = payload.cast<String, dynamic>();
+      final positions = map['closed_positions'] ??
+          map['positions'] ??
+          map['history'] ??
+          map['trades'] ??
+          map['results'] ??
+          (map['data'] is Map
+              ? (map['data']['closed_positions'] ??
+                  map['data']['positions'] ??
+                  map['data']['history'] ??
+                  map['data']['trades'] ??
+                  map['data']['results'])
+              : null);
+      if (positions is List) {
+        return positions
+            .whereType<Map>()
+            .map((item) => item.cast<String, dynamic>())
+            .toList(growable: false);
+      }
+      payload = map['data'] ?? map['result'] ?? map['payload'];
+    }
+    return const [];
+  }
+
   Future<Map<String, dynamic>> closePosition({
     required String accountId,
     required String ticket,
@@ -351,6 +398,7 @@ class AuthApi {
       'POST',
       'close-position/$id/',
       body: <String, dynamic>{
+        'account_id': accountId,
         'ticket': ticket,
         'comment': 'Closed from VTIndex client',
       },
@@ -667,6 +715,24 @@ class AuthApi {
         'GET',
         'get-trading-positions/${Uri.encodeComponent(accountId)}/',
       );
+
+  Future<Map<String, dynamic>> fetchClosedPositions(
+    String accountId, {
+    int daysBack = 30,
+    String? fromDate,
+    String? toDate,
+  }) {
+    final query = <String, String>{
+      'days_back': '$daysBack',
+      if (fromDate != null && fromDate.isNotEmpty) 'from_date': fromDate,
+      if (toDate != null && toDate.isNotEmpty) 'to_date': toDate,
+    };
+    final queryString = Uri(queryParameters: query).query;
+    return _request(
+      'GET',
+      'closed-positions/${Uri.encodeComponent(accountId)}/?$queryString',
+    );
+  }
 
   Future<Map<String, dynamic>> getPendingOrders(String accountId) =>
       _request(

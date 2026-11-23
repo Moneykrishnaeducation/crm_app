@@ -2538,11 +2538,17 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 ])),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                  decoration: BoxDecoration(color: (changePct >= 0 ? green : red).withValues(alpha: .13), borderRadius: BorderRadius.circular(20)),
-                  child: Text((changePct >= 0 ? '+' : '') + changePct.toStringAsFixed(2) + '%', style: TextStyle(color: changePct >= 0 ? green : red, fontSize: 10, fontWeight: FontWeight.w900)),
+                  decoration: BoxDecoration(color: green.withValues(alpha: .13), borderRadius: BorderRadius.circular(20)),
+                  child: const Text('LIVE', style: TextStyle(color: Color(0xFF08D879), fontSize: 10, fontWeight: FontWeight.w900)),
                 ),
               ]),
               const SizedBox(height: 13),
+              Row(children: [
+                Expanded(child: _performanceMetric('Balance', a.balance, fg, muted)),
+                Expanded(child: _performanceMetric('Equity', a.equity, fg, muted)),
+                Expanded(child: _performanceMetric('Floating P/L', pnl == null ? '—' : _money(pnl), pnlColor, muted)),
+              ]),
+              const SizedBox(height: 12),
               if (history.length > 1)
                 LayoutBuilder(builder: (context, constraints) {
                   final chartHeight = (constraints.maxWidth * .30).clamp(92.0, 124.0);
@@ -2592,19 +2598,55 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               }).toList()),
             ])),
             const SizedBox(height: 13),
-            sectionTitle('Trading snapshot', trailing: 'Based on available records'),
-            const SizedBox(height: 9),
-            Row(children: [
-              Expanded(child: stat(LucideIcons.receiptText, 'Closed trades', trades.length.toString(), blue)),
-              const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.target, 'Win rate', trades.isEmpty ? '—' : winRate.toStringAsFixed(1) + '%', blue)),
-            ]),
-            const SizedBox(height: 9),
-            Row(children: [
-              Expanded(child: stat(LucideIcons.trendingUp, 'Winning trades', wins.toString(), green)),
-              const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.trendingDown, 'Losing trades', losses.toString(), red)),
-            ]),
+            Builder(builder: (context) {
+              final openProfit = _livePositions.fold<double>(
+                0, (sum, position) => sum + _apiNumber(position['profit']),
+              );
+              final openVolume = _livePositions.fold<double>(
+                0, (sum, position) => sum + _apiNumber(position['volume']),
+              );
+              final buyCount = _livePositions.where((position) {
+                final side = (position['type'] ?? position['side'] ?? '').toString().toLowerCase();
+                return side == 'buy' || side == '0';
+              }).length;
+              final sellCount = _livePositions.where((position) {
+                final side = (position['type'] ?? position['side'] ?? '').toString().toLowerCase();
+                return side == 'sell' || side == '1';
+              }).length;
+              return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                sectionTitle('Trading snapshot', trailing: 'Live MT5 positions'),
+                const SizedBox(height: 9),
+                if (_positionsLoading && _livePositions.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 18),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (_positionsError != null && _livePositions.isEmpty)
+                  Row(children: [
+                    Expanded(child: Text(_positionsError!, style: TextStyle(color: red, fontSize: 10))),
+                    TextButton(onPressed: _loadOpenPositions, child: const Text('Retry')),
+                  ])
+                else ...[
+                  Row(children: [
+                    Expanded(child: stat(LucideIcons.activity, 'Open positions', _livePositions.length.toString(), blue)),
+                    const SizedBox(width: 9),
+                    Expanded(child: stat(LucideIcons.wallet, 'Open volume', '${openVolume.toStringAsFixed(2)} lots', blue)),
+                  ]),
+                  const SizedBox(height: 9),
+                  Row(children: [
+                    Expanded(child: stat(LucideIcons.trendingUp, 'Buy positions', buyCount.toString(), green)),
+                    const SizedBox(width: 9),
+                    Expanded(child: stat(LucideIcons.trendingDown, 'Sell positions', sellCount.toString(), red)),
+                  ]),
+                  const SizedBox(height: 9),
+                  Row(children: [
+                    Expanded(child: stat(LucideIcons.walletCards, 'Floating P/L', _money(openProfit), openProfit >= 0 ? green : red)),
+                    const SizedBox(width: 9),
+                    Expanded(child: stat(LucideIcons.history, 'Closed-trade stats', 'Not available', muted)),
+                  ]),
+                ],
+              ]);
+            }),
             const SizedBox(height: 13),
             panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               sectionTitle('Account information', trailing: 'MT5'),
@@ -2762,6 +2804,15 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     );
   }
 }
+
+Widget _performanceMetric(String label, String value, Color valueColor, Color muted) => Padding(
+  padding: const EdgeInsets.only(right: 5),
+  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(label, style: TextStyle(color: muted, fontSize: 9, fontWeight: FontWeight.w700)),
+    const SizedBox(height: 5),
+    FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: valueColor, fontSize: 12, fontWeight: FontWeight.w900))),
+  ]),
+);
 
 Widget _detailInfoRow(BuildContext context, IconData icon, String label, String value, Color fg, Color muted, Color border) => Padding(
   padding: const EdgeInsets.symmetric(vertical: 8),

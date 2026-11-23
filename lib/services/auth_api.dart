@@ -304,6 +304,47 @@ class AuthApi {
     return 'The request failed. Please try again.';
   }
 
+  Future<Map<String, dynamic>> getAccountDetails(String accountId) {
+    final id = Uri.encodeComponent(accountId);
+    return _request('GET', 'account-details/$id/');
+  }
+
+  Future<List<Map<String, dynamic>>> getOpenPositions(String accountId) async {
+    final id = Uri.encodeComponent(accountId);
+    final response = await _request('GET', 'open-positions/$id/');
+    dynamic payload = response;
+    for (var depth = 0; depth < 4 && payload is Map; depth++) {
+      final map = payload.cast<String, dynamic>();
+      final positions = map['positions'] ??
+          (map['data'] is Map ? map['data']['positions'] : null);
+      if (positions is List) {
+        return positions
+            .whereType<Map>()
+            .map((item) => item.cast<String, dynamic>())
+            .toList(growable: false);
+      }
+      payload = map['data'] ?? map['result'] ?? map['payload'];
+    }
+    throw const AuthApiException(
+      'The trading server returned an unexpected positions response.',
+    );
+  }
+
+  Future<Map<String, dynamic>> closePosition({
+    required String accountId,
+    required String ticket,
+  }) {
+    final id = Uri.encodeComponent(accountId);
+    return _request(
+      'POST',
+      'close-position/$id/',
+      body: <String, dynamic>{
+        'ticket': ticket,
+        'comment': 'Closed from VTIndex client',
+      },
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getMobileAccounts({bool refresh = false}) async {
     final response = await _request(
       'GET',

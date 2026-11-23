@@ -485,7 +485,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       final records = await AuthApi.instance.getMobileAccounts(refresh: refresh);
       final mapped = records.map(_mapApiAccount)
-          .where((account) => account.login.isNotEmpty)
+          .where((account) =>
+              account.login.isNotEmpty && account.type == 'Live MT5')
           .toList(growable: false);
       if (!mounted) return;
       setState(() {

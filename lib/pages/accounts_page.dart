@@ -398,12 +398,17 @@ class _AccountEmptyState extends StatelessWidget {
 class BrokerAccount {
   const BrokerAccount(this.name, this.login, this.leverage, this.balance, this.equity, this.type, {
     this.server, this.currency = 'USD', this.floatingPnl,
+    this.margin = 0, this.freeMargin = 0, this.marginLevel = 0, this.credit = 0,
+    this.groupName = '', this.accountStatus = 'active', this.isMt5Connected,
+    this.algoTradingEnabled = false, this.isCentAccount = false,
     this.equityHistory = const [], this.openPositions = const [], this.recentTrades = const [],
   });
   final String name, login, leverage, balance, equity, type;
   final String? server;
-  final String currency;
-  final double? floatingPnl;
+  final String currency, groupName, accountStatus;
+  final double? floatingPnl, isMt5Connected;
+  final double margin, freeMargin, marginLevel, credit;
+  final bool algoTradingEnabled, isCentAccount;
   final List<double> equityHistory;
   final List<BrokerOpenPosition> openPositions;
   final List<BrokerTradeRecord> recentTrades;
@@ -418,6 +423,15 @@ class BrokerAccount {
     String? server,
     String? currency,
     double? floatingPnl,
+    double? margin,
+    double? freeMargin,
+    double? marginLevel,
+    double? credit,
+    String? groupName,
+    String? accountStatus,
+    double? isMt5Connected,
+    bool? algoTradingEnabled,
+    bool? isCentAccount,
     List<double>? equityHistory,
     List<BrokerOpenPosition>? openPositions,
     List<BrokerTradeRecord>? recentTrades,
@@ -432,6 +446,15 @@ class BrokerAccount {
       server: server ?? this.server,
       currency: currency ?? this.currency,
       floatingPnl: floatingPnl ?? this.floatingPnl,
+      margin: margin ?? this.margin,
+      freeMargin: freeMargin ?? this.freeMargin,
+      marginLevel: marginLevel ?? this.marginLevel,
+      credit: credit ?? this.credit,
+      groupName: groupName ?? this.groupName,
+      accountStatus: accountStatus ?? this.accountStatus,
+      isMt5Connected: isMt5Connected ?? this.isMt5Connected,
+      algoTradingEnabled: algoTradingEnabled ?? this.algoTradingEnabled,
+      isCentAccount: isCentAccount ?? this.isCentAccount,
       equityHistory: equityHistory ?? this.equityHistory,
       openPositions: openPositions ?? this.openPositions,
       recentTrades: recentTrades ?? this.recentTrades,
@@ -2120,6 +2143,15 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               : '1:$leverageValue',
           currency: currency,
           floatingPnl: _apiNumber(data['profit'] ?? data['floating_pnl'] ?? 0),
+          margin: _apiNumber(data['margin']),
+          freeMargin: _apiNumber(data['free_margin'] ?? data['margin_free']),
+          marginLevel: _apiNumber(data['margin_level']),
+          credit: _apiNumber(data['credit']),
+          groupName: (data['group_name'] ?? data['group'] ?? _account.groupName).toString(),
+          accountStatus: (data['status'] ?? (data['is_enabled'] == false ? 'disabled' : 'active')).toString(),
+          isMt5Connected: data['is_connected'] == true ? 1 : 0,
+          algoTradingEnabled: data['algo_enabled'] == true || data['is_algo_enabled'] == true,
+          isCentAccount: data['is_cent'] == true,
           server: (data['server'] ?? data['server_name'] ?? _account.server)?.toString(),
         );
         _detailsLoading = false;
@@ -2550,7 +2582,15 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               _detailInfoRow(context, LucideIcons.server, 'Server', a.server ?? 'Not provided', fg, muted, border),
               _detailInfoRow(context, LucideIcons.gauge, 'Leverage', a.leverage, fg, muted, border),
               _detailInfoRow(context, LucideIcons.coins, 'Currency', a.currency, fg, muted, border),
+              _detailInfoRow(context, LucideIcons.wallet, 'Used margin', _apiMoney(a.margin, a.currency), fg, muted, border),
+              _detailInfoRow(context, LucideIcons.walletCards, 'Free margin', _apiMoney(a.freeMargin, a.currency), fg, muted, border),
+              _detailInfoRow(context, LucideIcons.gauge, 'Margin level', a.marginLevel > 0 ? '${a.marginLevel.toStringAsFixed(2)}%' : '—', fg, muted, border),
+              _detailInfoRow(context, LucideIcons.coins, 'Credit', _apiMoney(a.credit, a.currency), fg, muted, border),
+              _detailInfoRow(context, LucideIcons.folder, 'Trading group', a.groupName.isEmpty ? '—' : a.groupName, fg, muted, border),
               _detailInfoRow(context, LucideIcons.shieldCheck, 'Account type', a.type, fg, muted, border),
+              _detailInfoRow(context, LucideIcons.activity, 'MT5 connection', a.isMt5Connected == 1 ? 'Connected' : 'Unavailable', fg, muted, border),
+              _detailInfoRow(context, LucideIcons.settings, 'Algo trading', a.algoTradingEnabled ? 'Enabled' : 'Disabled', fg, muted, border),
+              _detailInfoRow(context, LucideIcons.badgeCheck, 'Account status', a.accountStatus, fg, muted, border),
             ])),
           ] else if (_tab == 'Trading Stats') ...[
             Row(children: [

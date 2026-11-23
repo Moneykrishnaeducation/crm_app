@@ -3,9 +3,11 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
 import 'app_notifications.dart';
 export 'app_notifications.dart';
 import 'biometric_sign_in.dart';
+
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
@@ -24,6 +26,7 @@ import 'pages/profile_page.dart';
 import 'pages/security_center_page.dart';
 import 'pages/trade_pattern_analysis_page.dart';
 import 'services/display_refresh_rate_service.dart';
+import 'services/auth_api.dart';
 
 part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
@@ -150,10 +153,7 @@ class _MyAppState extends State<MyApp> {
       theme: _lightTheme,
       darkTheme: _darkTheme,
       themeMode: _themeMode,
-      home: _AppEntry(
-        themeMode: _themeMode,
-        onThemeModeChanged: _setThemeMode,
-      ),
+      home: _AppEntry(themeMode: _themeMode, onThemeModeChanged: _setThemeMode),
     );
   }
 }
@@ -172,10 +172,7 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppEntry extends StatefulWidget {
-  const _AppEntry({
-    this.themeMode = ThemeMode.system,
-    this.onThemeModeChanged,
-  });
+  const _AppEntry({this.themeMode = ThemeMode.system, this.onThemeModeChanged});
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode>? onThemeModeChanged;
 
@@ -278,20 +275,20 @@ class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.white,
-        body: SizedBox.expand(
-          child: _ready
-              ? FittedBox(
-                  fit: BoxFit.fill,
-                  child: SizedBox(
-                    width: _controller.value.size.width,
-                    height: _controller.value.size.height,
-                    child: VideoPlayer(_controller),
-                  ),
-                )
-              : const SizedBox.expand(),
-        ),
-      );
+    backgroundColor: Colors.white,
+    body: SizedBox.expand(
+      child: _ready
+          ? FittedBox(
+              fit: BoxFit.fill,
+              child: SizedBox(
+                width: _controller.value.size.width,
+                height: _controller.value.size.height,
+                child: VideoPlayer(_controller),
+              ),
+            )
+          : const SizedBox.expand(),
+    ),
+  );
 }
 
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
@@ -305,10 +302,18 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _balanceVisible = true;
   final Set<String> _favoriteAccountLogins = <String>{};
   final Map<String, List<ActivityFundTransaction>> _appFundTransactions = {};
-  final ScrollController _dashboardScrollController = ScrollController(keepScrollOffset: false);
-  final ScrollController _transactionsScrollController = ScrollController(keepScrollOffset: false);
-  final ScrollController _accountsScrollController = ScrollController(keepScrollOffset: false);
-  final ScrollController _moreScrollController = ScrollController(keepScrollOffset: false);
+  final ScrollController _dashboardScrollController = ScrollController(
+    keepScrollOffset: false,
+  );
+  final ScrollController _transactionsScrollController = ScrollController(
+    keepScrollOffset: false,
+  );
+  final ScrollController _accountsScrollController = ScrollController(
+    keepScrollOffset: false,
+  );
+  final ScrollController _moreScrollController = ScrollController(
+    keepScrollOffset: false,
+  );
   int _secondaryPageNavId = 0;
   double _lastScreenWidth = 0;
   double _maxWindowHeight = 0;
@@ -388,43 +393,164 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (mounted) performJump();
     });
   }
+
   // Local preview fixtures only. Replace with authenticated MT5 API data before production.
   final List<BrokerAccount> _accounts = [
     BrokerAccount(
-      'Standard', '3315', '1:500', r'$2,560.00', r'$2,742.50', 'Live MT5',
-      server: 'VTIndex-MT5', currency: 'USD', floatingPnl: 182.50,
-      equityHistory: [2380, 2410, 2375, 2460, 2430, 2510, 2480, 2570, 2530, 2620, 2590, 2742.50],
+      'Standard',
+      '3315',
+      '1:500',
+      r'$2,560.00',
+      r'$2,742.50',
+      'Live MT5',
+      server: 'VTIndex-MT5',
+      currency: 'USD',
+      floatingPnl: 182.50,
+      equityHistory: [
+        2380,
+        2410,
+        2375,
+        2460,
+        2430,
+        2510,
+        2480,
+        2570,
+        2530,
+        2620,
+        2590,
+        2742.50,
+      ],
       openPositions: [
-        BrokerOpenPosition(symbol: 'XAUUSD', side: 'buy', volume: '0.10', openPrice: '2,345.20', currentPrice: '2,351.80', profit: 66.00),
-        BrokerOpenPosition(symbol: 'EURUSD', side: 'sell', volume: '0.20', openPrice: '1.08420', currentPrice: '1.08048', profit: 116.50),
+        BrokerOpenPosition(
+          symbol: 'XAUUSD',
+          side: 'buy',
+          volume: '0.10',
+          openPrice: '2,345.20',
+          currentPrice: '2,351.80',
+          profit: 66.00,
+        ),
+        BrokerOpenPosition(
+          symbol: 'EURUSD',
+          side: 'sell',
+          volume: '0.20',
+          openPrice: '1.08420',
+          currentPrice: '1.08048',
+          profit: 116.50,
+        ),
       ],
       recentTrades: [
-        BrokerTradeRecord(symbol: 'GBPUSD', side: 'buy', volume: '0.10', closedAt: 'Today, 09:42', profit: 38.20),
-        BrokerTradeRecord(symbol: 'XAUUSD', side: 'sell', volume: '0.05', closedAt: 'Yesterday', profit: -12.50),
+        BrokerTradeRecord(
+          symbol: 'GBPUSD',
+          side: 'buy',
+          volume: '0.10',
+          closedAt: 'Today, 09:42',
+          profit: 38.20,
+        ),
+        BrokerTradeRecord(
+          symbol: 'XAUUSD',
+          side: 'sell',
+          volume: '0.05',
+          closedAt: 'Yesterday',
+          profit: -12.50,
+        ),
       ],
     ),
     BrokerAccount(
-      'ECN', '3311', '1:500', r'$1,240.00', r'$1,180.20', 'Live MT5',
-      server: 'VTIndex-MT5', currency: 'USD', floatingPnl: -59.80,
-      equityHistory: [1290, 1260, 1280, 1230, 1250, 1200, 1240, 1190, 1220, 1180.20],
+      'ECN',
+      '3311',
+      '1:500',
+      r'$1,240.00',
+      r'$1,180.20',
+      'Live MT5',
+      server: 'VTIndex-MT5',
+      currency: 'USD',
+      floatingPnl: -59.80,
+      equityHistory: [
+        1290,
+        1260,
+        1280,
+        1230,
+        1250,
+        1200,
+        1240,
+        1190,
+        1220,
+        1180.20,
+      ],
       openPositions: [
-        BrokerOpenPosition(symbol: 'NAS100', side: 'sell', volume: '0.10', openPrice: '18,420.0', currentPrice: '18,480.0', profit: -59.80),
+        BrokerOpenPosition(
+          symbol: 'NAS100',
+          side: 'sell',
+          volume: '0.10',
+          openPrice: '18,420.0',
+          currentPrice: '18,480.0',
+          profit: -59.80,
+        ),
       ],
       recentTrades: [
-        BrokerTradeRecord(symbol: 'EURUSD', side: 'buy', volume: '0.20', closedAt: 'Today, 08:15', profit: 24.80),
-        BrokerTradeRecord(symbol: 'USDJPY', side: 'sell', volume: '0.10', closedAt: 'Yesterday', profit: 16.40),
+        BrokerTradeRecord(
+          symbol: 'EURUSD',
+          side: 'buy',
+          volume: '0.20',
+          closedAt: 'Today, 08:15',
+          profit: 24.80,
+        ),
+        BrokerTradeRecord(
+          symbol: 'USDJPY',
+          side: 'sell',
+          volume: '0.10',
+          closedAt: 'Yesterday',
+          profit: 16.40,
+        ),
       ],
     ),
     BrokerAccount(
-      'Pro', '3312', '1:500', r'$5,000.00', r'$5,320.00', 'Live MT5',
-      server: 'VTIndex-MT5', currency: 'USD', floatingPnl: 320.00,
-      equityHistory: [5000, 5080, 5050, 5140, 5100, 5200, 5160, 5270, 5230, 5320],
+      'Pro',
+      '3312',
+      '1:500',
+      r'$5,000.00',
+      r'$5,320.00',
+      'Live MT5',
+      server: 'VTIndex-MT5',
+      currency: 'USD',
+      floatingPnl: 320.00,
+      equityHistory: [
+        5000,
+        5080,
+        5050,
+        5140,
+        5100,
+        5200,
+        5160,
+        5270,
+        5230,
+        5320,
+      ],
       openPositions: [
-        BrokerOpenPosition(symbol: 'BTCUSD', side: 'buy', volume: '0.01', openPrice: '67,100.0', currentPrice: '67,420.0', profit: 320.00),
+        BrokerOpenPosition(
+          symbol: 'BTCUSD',
+          side: 'buy',
+          volume: '0.01',
+          openPrice: '67,100.0',
+          currentPrice: '67,420.0',
+          profit: 320.00,
+        ),
       ],
       recentTrades: [
-        BrokerTradeRecord(symbol: 'XAUUSD', side: 'buy', volume: '0.05', closedAt: 'Today, 07:30', profit: 21.60),
-        BrokerTradeRecord(symbol: 'AUDUSD', side: 'sell', volume: '0.10', closedAt: 'Yesterday', profit: 8.30),
+        BrokerTradeRecord(
+          symbol: 'XAUUSD',
+          side: 'buy',
+          volume: '0.05',
+          closedAt: 'Today, 07:30',
+          profit: 21.60,
+        ),
+        BrokerTradeRecord(
+          symbol: 'AUDUSD',
+          side: 'sell',
+          volume: '0.10',
+          closedAt: 'Yesterday',
+          profit: 8.30,
+        ),
       ],
     ),
   ];
@@ -440,7 +566,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _loadFavoriteAccounts() async {
     final preferences = await SharedPreferences.getInstance();
-    final stored = preferences.getStringList('vtindex_favorite_account_logins') ?? const <String>[];
+    final stored =
+        preferences.getStringList('vtindex_favorite_account_logins') ??
+        const <String>[];
     if (!mounted) return;
     setState(() {
       _favoriteAccountLogins
@@ -456,7 +584,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
     });
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setStringList('vtindex_favorite_account_logins', _favoriteAccountLogins.toList());
+    await preferences.setStringList(
+      'vtindex_favorite_account_logins',
+      _favoriteAccountLogins.toList(),
+    );
   }
 
   @override
@@ -658,12 +789,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   int get _primaryTabIndex => switch (_selectedPage) {
-        'Dashboard' => 0,
-        'Transactions' => 1,
-        'Trading Accounts' => 2,
-        'More' => 3,
-        _ => -1,
-      };
+    'Dashboard' => 0,
+    'Transactions' => 1,
+    'Trading Accounts' => 2,
+    'More' => 3,
+    _ => -1,
+  };
 
   Widget _buildSecondaryPage(String page) {
     return PageStorage(
@@ -672,37 +803,47 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       child: KeyedSubtree(
         key: ValueKey('$page-$_secondaryPageNavId'),
         child: switch (page) {
-        'Deposit' => BrokerFundsPage(
+          'Deposit' => BrokerFundsPage(
             withdrawal: false,
             onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
-        'Withdraw' => BrokerFundsPage(
+          'Withdraw' => BrokerFundsPage(
             withdrawal: true,
             onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
-        'Partnership' => const BrokerPartnershipPage(),
-        'PAMM Account' => PammPage(
+          'Partnership' => const BrokerPartnershipPage(),
+          'PAMM Account' => PammPage(
             onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
-        'Internal Transfer' => BrokerInternalTransferPage(
+          'Internal Transfer' => BrokerInternalTransferPage(
             accounts: _accounts,
             onBack: _handleBack,
             onSelectPage: _selectPage,
             onTransferCompleted: (fromLogin, toLogin, amount) {
               setState(() {
-                final fromIdx = _accounts.indexWhere((a) => a.login == fromLogin);
+                final fromIdx = _accounts.indexWhere(
+                  (a) => a.login == fromLogin,
+                );
                 final toIdx = _accounts.indexWhere((a) => a.login == toLogin);
                 if (fromIdx != -1) {
                   final fromAcc = _accounts[fromIdx];
-                  final cur = double.tryParse(fromAcc.balance.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+                  final cur =
+                      double.tryParse(
+                        fromAcc.balance.replaceAll(RegExp(r'[^\d.]'), ''),
+                      ) ??
+                      0.0;
                   final newBal = (cur - amount).clamp(0.0, double.infinity);
                   final balStr = '\$${newBal.toStringAsFixed(2)}';
                   _accounts[fromIdx] = BrokerAccount(
-                    fromAcc.name, fromAcc.login, fromAcc.leverage,
-                    balStr, balStr, fromAcc.type,
+                    fromAcc.name,
+                    fromAcc.login,
+                    fromAcc.leverage,
+                    balStr,
+                    balStr,
+                    fromAcc.type,
                     server: fromAcc.server,
                     currency: fromAcc.currency,
                     floatingPnl: fromAcc.floatingPnl,
@@ -713,12 +854,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 }
                 if (toIdx != -1) {
                   final toAcc = _accounts[toIdx];
-                  final cur = double.tryParse(toAcc.balance.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+                  final cur =
+                      double.tryParse(
+                        toAcc.balance.replaceAll(RegExp(r'[^\d.]'), ''),
+                      ) ??
+                      0.0;
                   final newBal = cur + amount;
                   final balStr = '\$${newBal.toStringAsFixed(2)}';
                   _accounts[toIdx] = BrokerAccount(
-                    toAcc.name, toAcc.login, toAcc.leverage,
-                    balStr, balStr, toAcc.type,
+                    toAcc.name,
+                    toAcc.login,
+                    toAcc.leverage,
+                    balStr,
+                    balStr,
+                    toAcc.type,
                     server: toAcc.server,
                     currency: toAcc.currency,
                     floatingPnl: toAcc.floatingPnl,
@@ -730,100 +879,109 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
                 // Record transfer in activity funds tab
                 final now = DateTime.now();
-                final timeStr = 'Today, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                final timeStr =
+                    'Today, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
                 final txId = 'trx-${now.millisecondsSinceEpoch % 1000000}';
 
-                _appFundTransactions.putIfAbsent(fromLogin, () => []).insert(
-                  0,
-                  ActivityFundTransaction(
-                    id: '$txId-out',
-                    isDeposit: false,
-                    method: 'Internal Transfer',
-                    amount: amount,
-                    date: timeStr,
-                    status: 'Completed',
-                    sourceLogin: fromLogin,
-                    destinationLogin: toLogin,
-                    isTransfer: true,
-                  ),
-                );
+                _appFundTransactions
+                    .putIfAbsent(fromLogin, () => [])
+                    .insert(
+                      0,
+                      ActivityFundTransaction(
+                        id: '$txId-out',
+                        isDeposit: false,
+                        method: 'Internal Transfer',
+                        amount: amount,
+                        date: timeStr,
+                        status: 'Completed',
+                        sourceLogin: fromLogin,
+                        destinationLogin: toLogin,
+                        isTransfer: true,
+                      ),
+                    );
 
-                _appFundTransactions.putIfAbsent(toLogin, () => []).insert(
-                  0,
-                  ActivityFundTransaction(
-                    id: '$txId-in',
-                    isDeposit: true,
-                    method: 'Internal Transfer',
-                    amount: amount,
-                    date: timeStr,
-                    status: 'Completed',
-                    sourceLogin: fromLogin,
-                    destinationLogin: toLogin,
-                    isTransfer: true,
-                  ),
-                );
+                _appFundTransactions
+                    .putIfAbsent(toLogin, () => [])
+                    .insert(
+                      0,
+                      ActivityFundTransaction(
+                        id: '$txId-in',
+                        isDeposit: true,
+                        method: 'Internal Transfer',
+                        amount: amount,
+                        date: timeStr,
+                        status: 'Completed',
+                        sourceLogin: fromLogin,
+                        destinationLogin: toLogin,
+                        isTransfer: true,
+                      ),
+                    );
               });
             },
           ),
-        'Demo Accounts' => BrokerDemoAccountsPage(
+          'Demo Accounts' => BrokerDemoAccountsPage(
             accounts: _demoAccounts,
             onAccountCreated: _addDemoAccount,
             onOpenLiveAccounts: () => _selectPage('Trading Accounts'),
             onAccountSelected: _openDemoAccount,
           ),
-        'Account Details' when _selectedAccount != null => BrokerAccountDetailsPage(
-            account: _selectedAccount!,
+          'Account Details' when _selectedAccount != null =>
+            BrokerAccountDetailsPage(
+              account: _selectedAccount!,
+              onBack: _handleBack,
+              onSelectPage: _selectPage,
+              isFavorite: _favoriteAccountLogins.contains(
+                _selectedAccount!.login,
+              ),
+              onToggleFavorite: () =>
+                  _toggleFavoriteAccount(_selectedAccount!.login),
+            ),
+          'Profile' => BrokerProfilePage(
             onBack: _handleBack,
             onSelectPage: _selectPage,
-            isFavorite: _favoriteAccountLogins.contains(_selectedAccount!.login),
-            onToggleFavorite: () => _toggleFavoriteAccount(_selectedAccount!.login),
           ),
-        'Profile' => BrokerProfilePage(
-            onBack: _handleBack,
-            onSelectPage: _selectPage,
-          ),
-        'Platform' => const BrokerDownloadCenterPage(),
-        'Settings' => BrokerSettingsPage(
+          'Platform' => const BrokerDownloadCenterPage(),
+          'Settings' => BrokerSettingsPage(
             themeMode: _effectiveThemeMode,
             onThemeModeChanged: _changeThemeMode,
             onSelectPage: _selectPage,
           ),
-        'Theme Mode' => BrokerThemeModePage(
+          'Theme Mode' => BrokerThemeModePage(
             themeMode: _effectiveThemeMode,
             onThemeModeChanged: _changeThemeMode,
           ),
-        'Tickets' => const BrokerTicketsPage(),
-        'Privacy Policy' => const BrokerPrivacyPolicyPage(),
-        'MAM' || 'MAM Account' => MamPage(
+          'Tickets' => const BrokerTicketsPage(),
+          'Privacy Policy' => const BrokerPrivacyPolicyPage(),
+          'MAM' || 'MAM Account' => MamPage(
             key: _mamKey,
             initialTab: 0,
             onBack: _handleBack,
           ),
-        'MAM Manager' => MamPage(
+          'MAM Manager' => MamPage(
             key: _mamKey,
             initialTab: 0,
             onBack: _handleBack,
           ),
-        'MAM Investor' => MamPage(
+          'MAM Investor' => MamPage(
             key: _mamKey,
             initialTab: 1,
             onBack: _handleBack,
           ),
-        'Available MAM' || 'MAM Available' => MamPage(
+          'Available MAM' || 'MAM Available' => MamPage(
             key: _mamKey,
             initialTab: 2,
             onBack: _handleBack,
           ),
-        'Social Trading' => MamPage(
+          'Social Trading' => MamPage(
             key: _mamKey,
             initialTab: 0,
             onBack: _handleBack,
           ),
-        'Security Center' => SecurityCenterPage(
+          'Security Center' => SecurityCenterPage(
             onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
-        'Trade Report' => TradeReportPage(
+          'Trade Report' => TradeReportPage(
             accounts: _accounts,
             selectedAccountLogin: _selectedAccount?.login,
             onAccountChanged: (login) {
@@ -837,16 +995,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             },
             onBack: _handleBack,
           ),
-        'Trade Pattern Analysis' => TradePatternAnalysisPage(
+          'Trade Pattern Analysis' => TradePatternAnalysisPage(
             accounts: _accounts,
             initialAccountLogin: _selectedAccount?.login ?? '3503',
             onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
-        _ => _SectionPage(title: page),
-      },
-    ),
-  );
+          _ => _SectionPage(title: page),
+        },
+      ),
+    );
   }
 
   Widget _buildPrimaryTabLayer({
@@ -875,7 +1033,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final isKeyboardOpen = _isKeyboardOpen(context);
     return PopScope(
       key: const Key('app_shell_pop_scope'),
-      canPop: _selectedPage == 'Dashboard' &&
+      canPop:
+          _selectedPage == 'Dashboard' &&
           _navigationHistory.isEmpty &&
           !(_mamKey.currentState?.hasActiveSubView ?? false),
       onPopInvokedWithResult: (didPop, result) {
@@ -884,7 +1043,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       },
       child: Scaffold(
         appBar: _AppHeader(
-          title: _selectedPage == 'Platform' ? 'Download Center' : _selectedPage,
+          title: _selectedPage == 'Platform'
+              ? 'Download Center'
+              : _selectedPage,
           onBack: switch (_selectedPage) {
             'Dashboard' ||
             'Transactions' ||
@@ -902,103 +1063,117 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             bottom: false,
             child: Stack(
               children: [
-              Positioned.fill(
-                child: RepaintBoundary(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => Center(
-                      child: SizedBox(
-                        width: constraints.maxWidth.clamp(0.0, 1280.0),
-                        height: constraints.maxHeight,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Offstage(
-                              offstage: primaryIndex == -1,
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  _buildPrimaryTabLayer(
-                                    index: 0,
-                                    activeIndex: primaryIndex,
-                                    child: BrokerDashboardPage(
-                                      balanceVisible: _balanceVisible,
-                                      onToggleBalance: () => setState(
-                                        () => _balanceVisible = !_balanceVisible,
+                Positioned.fill(
+                  child: RepaintBoundary(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => Center(
+                        child: SizedBox(
+                          width: constraints.maxWidth.clamp(0.0, 1280.0),
+                          height: constraints.maxHeight,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Offstage(
+                                offstage: primaryIndex == -1,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    _buildPrimaryTabLayer(
+                                      index: 0,
+                                      activeIndex: primaryIndex,
+                                      child: BrokerDashboardPage(
+                                        balanceVisible: _balanceVisible,
+                                        onToggleBalance: () => setState(
+                                          () => _balanceVisible =
+                                              !_balanceVisible,
+                                        ),
+                                        onSelectPage: _selectPage,
+                                        scrollController:
+                                            _dashboardScrollController,
                                       ),
-                                      onSelectPage: _selectPage,
-                                      scrollController: _dashboardScrollController,
                                     ),
-                                  ),
-                                  _buildPrimaryTabLayer(
-                                    index: 1,
-                                    activeIndex: primaryIndex,
-                                    child: BrokerTransactionsPage(
-                                      accounts: _accounts,
-                                      externalFundTransactions: _appFundTransactions,
-                                      scrollController: _transactionsScrollController,
+                                    _buildPrimaryTabLayer(
+                                      index: 1,
+                                      activeIndex: primaryIndex,
+                                      child: BrokerTransactionsPage(
+                                        accounts: _accounts,
+                                        externalFundTransactions:
+                                            _appFundTransactions,
+                                        scrollController:
+                                            _transactionsScrollController,
+                                      ),
                                     ),
-                                  ),
-                                  _buildPrimaryTabLayer(
-                                    index: 2,
-                                    activeIndex: primaryIndex,
-                                    child: BrokerAccountsPage(
-                                      onSelectPage: _selectPage,
-                                      accounts: _accounts,
-                                      onAccountCreated: _addAccount,
-                                      onAccountSelected: _openAccount,
-                                      favoriteLogins: _favoriteAccountLogins,
-                                      onToggleFavorite: _toggleFavoriteAccount,
-                                      scrollController: _accountsScrollController,
+                                    _buildPrimaryTabLayer(
+                                      index: 2,
+                                      activeIndex: primaryIndex,
+                                      child: BrokerAccountsPage(
+                                        onSelectPage: _selectPage,
+                                        accounts: _accounts,
+                                        onAccountCreated: _addAccount,
+                                        onAccountSelected: _openAccount,
+                                        favoriteLogins: _favoriteAccountLogins,
+                                        onToggleFavorite:
+                                            _toggleFavoriteAccount,
+                                        scrollController:
+                                            _accountsScrollController,
+                                      ),
                                     ),
-                                  ),
-                                  _buildPrimaryTabLayer(
-                                    index: 3,
-                                    activeIndex: primaryIndex,
-                                    child: BrokerMorePage(
-                                      onSelectPage: _selectPage,
-                                      scrollController: _moreScrollController,
+                                    _buildPrimaryTabLayer(
+                                      index: 3,
+                                      activeIndex: primaryIndex,
+                                      child: BrokerMorePage(
+                                        onSelectPage: _selectPage,
+                                        scrollController: _moreScrollController,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            if (primaryIndex == -1)
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 280),
-                                reverseDuration: const Duration(milliseconds: 200),
-                                switchInCurve: Curves.easeOutCubic,
-                                switchOutCurve: Curves.easeInCubic,
-                                transitionBuilder: (child, animation) {
-                                  return FadeTransition(opacity: animation, child: child);
-                                },
-                                child: _buildSecondaryPage(_selectedPage),
-                              ),
-                          ],
+                              if (primaryIndex == -1)
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 280),
+                                  reverseDuration: const Duration(
+                                    milliseconds: 200,
+                                  ),
+                                  switchInCurve: Curves.easeOutCubic,
+                                  switchOutCurve: Curves.easeInCubic,
+                                  transitionBuilder: (child, animation) {
+                                    return FadeTransition(
+                                      opacity: animation,
+                                      child: child,
+                                    );
+                                  },
+                                  child: _buildSecondaryPage(_selectedPage),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              if (!isKeyboardOpen &&
-                  !const {'Settings', 'Theme Mode', 'Privacy Policy'}
-                      .contains(_selectedPage))
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: RepaintBoundary(
-                    child: BrokerBottomNavigation(
-                      selectedPage: _selectedPage,
-                      onSelect: _selectPage,
+                if (!isKeyboardOpen &&
+                    !const {
+                      'Settings',
+                      'Theme Mode',
+                      'Privacy Policy',
+                    }.contains(_selectedPage))
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: RepaintBoundary(
+                      child: BrokerBottomNavigation(
+                        selectedPage: _selectedPage,
+                        onSelect: _selectPage,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }

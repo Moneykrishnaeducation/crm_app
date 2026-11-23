@@ -49,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
   bool _biometricBusy = false;
+  bool _loginBusy = false;
 
   BiometricSignIn get _biometricService =>
       widget.biometricSignIn ?? BiometricSignIn.instance;
@@ -56,15 +57,29 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadBiometricSignIn());
+    unawaited(_restoreSessionThenBiometrics());
     unawaited(_loadRememberedLogin());
+    unawaited(
+      AuthApi.instance.getCaptchaConfig().catchError(
+        (_) => <String, dynamic>{},
+      ),
+    );
+  }
+
+  Future<void> _restoreSessionThenBiometrics() async {
+    if (await AuthApi.instance.tryCookieAutoLogin()) {
+      if (mounted) widget.onLogin?.call();
+      return;
+    }
+    if (mounted) await _loadBiometricSignIn();
   }
 
   Future<void> _loadRememberedLogin() async {
     try {
       final preferences = await SharedPreferences.getInstance();
       final remembered = preferences.getBool('vtindex_remember_login') ?? true;
-      final identifier = preferences.getString('vtindex_login_identifier') ?? '';
+      final identifier =
+          preferences.getString('vtindex_login_identifier') ?? '';
       if (!mounted) return;
       setState(() {
         _rememberMe = remembered;
@@ -80,7 +95,10 @@ class _LoginPageState extends State<LoginPage> {
       final preferences = await SharedPreferences.getInstance();
       await preferences.setBool('vtindex_remember_login', _rememberMe);
       if (_rememberMe) {
-        await preferences.setString('vtindex_login_identifier', _emailController.text.trim());
+        await preferences.setString(
+          'vtindex_login_identifier',
+          _emailController.text.trim(),
+        );
       } else {
         await preferences.remove('vtindex_login_identifier');
       }
@@ -92,7 +110,8 @@ class _LoginPageState extends State<LoginPage> {
     try {
       enabled = await _biometricService.isEnabled();
       if (!mounted) return;
-      final available = enabled &&
+      final available =
+          enabled &&
           await _biometricService.isAvailable(
             platform: Theme.of(context).platform,
           );
@@ -132,7 +151,9 @@ class _LoginPageState extends State<LoginPage> {
 
     if (!_biometricEnabled || !_biometricAvailable) {
       if (!_biometricEnabled) {
-        showAppMessage('Biometric sign-in is not enabled. Sign in with your password and enable it in Security Center.');
+        showAppMessage(
+          'Biometric sign-in is not enabled. Sign in with your password and enable it in Security Center.',
+        );
       } else {
         showAppMessage('Biometric sensor is not available on this device.');
       }
@@ -146,18 +167,40 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (!mounted) return;
       if (authenticated) {
-        HapticFeedback.selectionClick();
-        widget.onLogin?.call();
+        try {
+          final statusRes = await AuthApi.instance.status();
+          final isAuthed = statusRes['status'] == 'authenticated' ||
+              statusRes['authenticated'] == true ||
+              statusRes['is_authenticated'] == true;
+          if (!isAuthed) {
+            throw const AuthApiException('Not authenticated');
+          }
+          if (!mounted) return;
+          HapticFeedback.selectionClick();
+          widget.onLogin?.call();
+        } on AuthApiException {
+          if (mounted) {
+            showAppMessage(
+              'Sign in with your password first, then try biometric sign-in again.',
+            );
+          }
+        }
       } else {
-        showAppMessage('Biometric sign-in was canceled. Use your login ID and password instead.');
+        showAppMessage(
+          'Biometric sign-in was canceled. Use your login ID and password instead.',
+        );
       }
     } on PlatformException {
       if (mounted) {
-        showAppMessage('Biometric sign-in failed. Use your login ID and password instead.');
+        showAppMessage(
+          'Biometric sign-in failed. Use your login ID and password instead.',
+        );
       }
     } on MissingPluginException {
       if (mounted) {
-        showAppMessage('Biometric sign-in is unavailable. Use your login ID and password instead.');
+        showAppMessage(
+          'Biometric sign-in is unavailable. Use your login ID and password instead.',
+        );
       }
     } finally {
       if (mounted) setState(() => _biometricBusy = false);
@@ -173,7 +216,8 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_loginBusy) return;
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -202,7 +246,131 @@ class _LoginPageState extends State<LoginPage> {
 
     HapticFeedback.selectionClick();
     unawaited(_saveRememberedLogin());
-    widget.onLogin?.call();
+    setState(() => _loginBusy = true);
+    try {
+      // Fetch the public GeeTest configuration before login. The backend only
+      // exposes the public site ID here; secret validation remains server-side.
+      var response = await AuthApi.instance.login(
+        identifier: email,
+        password: password,
+        rememberMe: _rememberMe,
+      );
+      if (_requiresLoginOtp(response)) {
+        final otp = await _requestLoginOtp(email);
+        if (otp == null || !mounted) return;
+        response = await AuthApi.instance.verifyOtp(email: email, otp: otp);
+      }
+      if (_requiresLoginOtp(response)) {
+        throw const AuthApiException(
+          'The server still requires a login verification code.',
+        );
+      }
+      if (response['success'] == false || response['authenticated'] == false) {
+        throw AuthApiException(_apiResponseMessage(response));
+      }
+      final hasToken = response['access'] != null ||
+          response['access_token'] != null ||
+          response['token'] != null;
+      if (!await AuthApi.instance.isAuthenticated()) {
+        if (!hasToken) {
+          throw const AuthApiException(
+            'The server did not confirm an authenticated session.',
+          );
+        }
+      }
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      widget.onLogin?.call();
+    } on AuthApiException catch (error) {
+      if (mounted) showAppMessage(error.message);
+    } catch (error) {
+      if (mounted) {
+        showAppMessage(
+          'Could not connect to the login server. Check the API host and try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loginBusy = false);
+    }
+  }
+
+  bool _requiresLoginOtp(Map<String, dynamic> response) {
+    for (final key in const [
+      'otp_required',
+      'requires_otp',
+      'email_verification_required',
+      'requires_verification',
+    ]) {
+      if (response[key] == true) return true;
+    }
+    final status = (response['status'] ?? response['state'] ?? '')
+        .toString()
+        .toLowerCase();
+    return status.contains('otp') || status.contains('verification_required');
+  }
+
+  String _apiResponseMessage(Map<String, dynamic> response) {
+    for (final key in const ['message', 'error', 'detail']) {
+      final value = response[key];
+      if (value is String && value.isNotEmpty) return value;
+    }
+    return 'Login could not be completed. Please try again.';
+  }
+
+  Future<String?> _requestLoginOtp(String email) async {
+    final otpController = TextEditingController();
+    try {
+      await AuthApi.instance.loginOtpStatus(email);
+      if (!mounted) return null;
+      return await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Verify your login'),
+          content: TextField(
+            controller: otpController,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Email verification code',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                try {
+                  await AuthApi.instance.resendLoginOtp({'email': email});
+                  if (dialogContext.mounted) {
+                    showAppMessage('A new verification code was sent.');
+                  }
+                } on AuthApiException catch (error) {
+                  if (dialogContext.mounted) showAppMessage(error.message);
+                } catch (_) {
+                  if (dialogContext.mounted) {
+                    showAppMessage('Could not resend the verification code.');
+                  }
+                }
+              },
+              child: const Text('Resend code'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final code = otpController.text.trim();
+                if (code.isNotEmpty) Navigator.pop(dialogContext, code);
+              },
+              child: const Text('Verify'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      otpController.dispose();
+    }
   }
 
   void _submitSignUp() {
@@ -237,15 +405,24 @@ class _LoginPageState extends State<LoginPage> {
       emailErr = 'Please verify your email address to continue.';
     }
 
-    if (nameErr != null || emailErr != null || passErr != null || termsErr != null) {
+    if (nameErr != null ||
+        emailErr != null ||
+        passErr != null ||
+        termsErr != null) {
       setState(() {
         _signUpNameError = nameErr;
         _signUpEmailError = emailErr;
         _signUpPasswordError = passErr;
         _signUpTermsError = termsErr;
       });
-      if (emailErr != null && nameErr == null && passErr == null && termsErr == null && !_emailVerified) {
-        _showSignUpEmailVerificationModal(isDark: Theme.of(context).brightness == Brightness.dark);
+      if (emailErr != null &&
+          nameErr == null &&
+          passErr == null &&
+          termsErr == null &&
+          !_emailVerified) {
+        _showSignUpEmailVerificationModal(
+          isDark: Theme.of(context).brightness == Brightness.dark,
+        );
       }
       return;
     }
@@ -257,14 +434,45 @@ class _LoginPageState extends State<LoginPage> {
       _signUpTermsError = null;
     });
 
-    showAppMessage('Account creation is not connected yet.');
+    unawaited(_createAccount(name, email, password));
+  }
+
+  Future<void> _createAccount(
+    String name,
+    String email,
+    String password,
+  ) async {
+    try {
+      final encryptedPassword = await AuthApi.instance
+          .encryptPasswordForPasswordFlow(password);
+      await AuthApi.instance.signup({
+        'name': name,
+        'email': email,
+        'password': encryptedPassword,
+        'referral_code': _referralController.text.trim(),
+        ...await AuthApi.instance.getDeviceInfo(),
+      });
+      if (mounted) {
+        showAppMessage('Your account request was submitted successfully.');
+      }
+    } on AuthApiException catch (error) {
+      if (mounted) showAppMessage(error.message);
+    } catch (_) {
+      if (mounted) {
+        showAppMessage(
+          'Could not connect to the signup server. Please try again.',
+        );
+      }
+    }
   }
 
   void _showSignUpEmailVerificationModal({required bool isDark}) {
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-      setState(() => _signUpEmailError = 'Please enter a valid email address first.');
+      setState(
+        () => _signUpEmailError = 'Please enter a valid email address first.',
+      );
       return;
     }
     setState(() => _signUpEmailError = null);
@@ -314,7 +522,9 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: isDark ? const Color(0xFF18191E) : const Color(0xFFEAF1FB),
+      backgroundColor: isDark
+          ? const Color(0xFF18191E)
+          : const Color(0xFFEAF1FB),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
@@ -331,8 +541,12 @@ class _LoginPageState extends State<LoginPage> {
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Column(
@@ -344,10 +558,14 @@ class _LoginPageState extends State<LoginPage> {
                             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF25262D) : _loginCardGlassBg,
+                                color: isDark
+                                    ? const Color(0xFF25262D)
+                                    : _loginCardGlassBg,
                                 borderRadius: BorderRadius.circular(38),
                                 border: Border.all(
-                                  color: isDark ? const Color(0x33FFFFFF) : _loginGoldBorder,
+                                  color: isDark
+                                      ? const Color(0x33FFFFFF)
+                                      : _loginGoldBorder,
                                   width: 1.5,
                                 ),
                                 boxShadow: [
@@ -376,8 +594,15 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ],
                               ),
-                              padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
-                              child: _isSignUp ? _buildSignUpContent(isDark: isDark) : _buildLoginContent(isDark: isDark),
+                              padding: const EdgeInsets.fromLTRB(
+                                22,
+                                28,
+                                22,
+                                28,
+                              ),
+                              child: _isSignUp
+                                  ? _buildSignUpContent(isDark: isDark)
+                                  : _buildLoginContent(isDark: isDark),
                             ),
                           ),
                         ),
@@ -388,7 +613,9 @@ class _LoginPageState extends State<LoginPage> {
                           'PLAY  •  COMPETE  •  GROW TOGETHER',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isDark ? const Color(0xFF888F9F) : const Color(0xFF4B5E7D),
+                            color: isDark
+                                ? const Color(0xFF888F9F)
+                                : const Color(0xFF4B5E7D),
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 2.2,
@@ -417,9 +644,7 @@ class _LoginPageState extends State<LoginPage> {
               ? const RadialGradient(
                   colors: [Color(0xFF33353E), Color(0xFF222329)],
                 )
-              : const RadialGradient(
-                  colors: [Colors.white, Color(0xFFF3F7FD)],
-                ),
+              : const RadialGradient(colors: [Colors.white, Color(0xFFF3F7FD)]),
           border: Border.all(
             color: isDark ? const Color(0x44FFFFFF) : _loginGoldRim,
             width: 2.8,
@@ -512,12 +737,18 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildLoginContent({required bool isDark}) {
     final titleColor = isDark ? Colors.white : _loginDarkBlueText;
-    final subtitleColor = isDark ? const Color(0xFF9CA2B2) : _loginMutedBlueText;
-    final dividerColor = isDark ? const Color(0xFF383B47) : const Color(0xFFD4E2F2);
+    final subtitleColor = isDark
+        ? const Color(0xFF9CA2B2)
+        : _loginMutedBlueText;
+    final dividerColor = isDark
+        ? const Color(0xFF383B47)
+        : const Color(0xFFD4E2F2);
     final inputBg = isDark ? const Color(0xFF1C1D23) : const Color(0xFFF4F8FD);
     final inputBorder = isDark ? const Color(0x2EFFFFFF) : _loginGoldBorder;
     final inputTextColor = isDark ? Colors.white : _loginDarkBlueText;
-    final placeholderColor = isDark ? const Color(0xFF757989) : _loginPlaceholderText;
+    final placeholderColor = isDark
+        ? const Color(0xFF757989)
+        : _loginPlaceholderText;
     final prefixIconColor = isDark ? const Color(0xFF8A90A2) : _loginRoyalBlue;
 
     return Column(
@@ -581,7 +812,9 @@ class _LoginPageState extends State<LoginPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: isDark ? const Color(0x40000000) : const Color(0x0F0D47A1),
+                color: isDark
+                    ? const Color(0x40000000)
+                    : const Color(0x0F0D47A1),
                 offset: const Offset(0, 3),
                 blurRadius: 8,
               ),
@@ -601,7 +834,9 @@ class _LoginPageState extends State<LoginPage> {
                 height: 1.25,
               ),
               onChanged: (_) {
-                if (_loginEmailError != null) setState(() => _loginEmailError = null);
+                if (_loginEmailError != null) {
+                  setState(() => _loginEmailError = null);
+                }
               },
               decoration: InputDecoration(
                 border: InputBorder.none,
@@ -618,11 +853,16 @@ class _LoginPageState extends State<LoginPage> {
                   padding: const EdgeInsets.only(left: 18, right: 12),
                   child: Icon(
                     LucideIcons.user,
-                    color: _loginEmailError != null ? _loginErrorColor : prefixIconColor,
+                    color: _loginEmailError != null
+                        ? _loginErrorColor
+                        : prefixIconColor,
                     size: 21,
                   ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
                 contentPadding: const EdgeInsets.only(right: 20),
               ),
             ),
@@ -638,12 +878,16 @@ class _LoginPageState extends State<LoginPage> {
             color: inputBg,
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
-              color: _loginPasswordError != null ? _loginErrorColor : inputBorder,
+              color: _loginPasswordError != null
+                  ? _loginErrorColor
+                  : inputBorder,
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: isDark ? const Color(0x40000000) : const Color(0x0F0D47A1),
+                color: isDark
+                    ? const Color(0x40000000)
+                    : const Color(0x0F0D47A1),
                 offset: const Offset(0, 3),
                 blurRadius: 8,
               ),
@@ -662,11 +906,16 @@ class _LoginPageState extends State<LoginPage> {
                 color: inputTextColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                letterSpacing: (_passwordVisible || _passwordController.text.isEmpty) ? 0 : 2.5,
+                letterSpacing:
+                    (_passwordVisible || _passwordController.text.isEmpty)
+                    ? 0
+                    : 2.5,
                 height: 1.25,
               ),
               onChanged: (_) {
-                if (_loginPasswordError != null) setState(() => _loginPasswordError = null);
+                if (_loginPasswordError != null) {
+                  setState(() => _loginPasswordError = null);
+                }
               },
               decoration: InputDecoration(
                 border: InputBorder.none,
@@ -683,16 +932,25 @@ class _LoginPageState extends State<LoginPage> {
                   padding: const EdgeInsets.only(left: 18, right: 12),
                   child: Icon(
                     LucideIcons.lock,
-                    color: _loginPasswordError != null ? _loginErrorColor : prefixIconColor,
+                    color: _loginPasswordError != null
+                        ? _loginErrorColor
+                        : prefixIconColor,
                     size: 21,
                   ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
-                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 24,
+                ),
                 suffixIcon: Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: GestureDetector(
-                    onTap: () => setState(() => _passwordVisible = !_passwordVisible),
+                    onTap: () =>
+                        setState(() => _passwordVisible = !_passwordVisible),
                     behavior: HitTestBehavior.opaque,
                     child: Icon(
                       _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
@@ -718,7 +976,10 @@ class _LoginPageState extends State<LoginPage> {
                 onTap: () => setState(() => _rememberMe = !_rememberMe),
                 borderRadius: BorderRadius.circular(6),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 4,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -727,26 +988,42 @@ class _LoginPageState extends State<LoginPage> {
                         height: 18,
                         decoration: BoxDecoration(
                           color: _rememberMe
-                              ? (isDark ? const Color(0xFF2575FC) : _loginRoyalBlue)
-                              : (isDark ? const Color(0xFF1E1F24) : Colors.white),
+                              ? (isDark
+                                    ? const Color(0xFF2575FC)
+                                    : _loginRoyalBlue)
+                              : (isDark
+                                    ? const Color(0xFF1E1F24)
+                                    : Colors.white),
                           borderRadius: BorderRadius.circular(5),
                           border: Border.all(
                             color: _rememberMe
-                                ? (isDark ? const Color(0xFF2575FC) : _loginRoyalBlue)
-                                : (isDark ? const Color(0xFF454958) : const Color(0xFFBACADB)),
+                                ? (isDark
+                                      ? const Color(0xFF2575FC)
+                                      : _loginRoyalBlue)
+                                : (isDark
+                                      ? const Color(0xFF454958)
+                                      : const Color(0xFFBACADB)),
                             width: 1.5,
                           ),
                           boxShadow: [
                             if (_rememberMe)
                               BoxShadow(
-                                color: (isDark ? const Color(0xFF2575FC) : const Color(0xFF1E70E8)).withValues(alpha: 0.35),
+                                color:
+                                    (isDark
+                                            ? const Color(0xFF2575FC)
+                                            : const Color(0xFF1E70E8))
+                                        .withValues(alpha: 0.35),
                                 offset: const Offset(0, 2),
                                 blurRadius: 4,
                               ),
                           ],
                         ),
                         child: _rememberMe
-                            ? const Icon(Icons.check, size: 13, color: Colors.white)
+                            ? const Icon(
+                                Icons.check,
+                                size: 13,
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                       const SizedBox(width: 6),
@@ -771,7 +1048,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: Text(
                   'Forgot Password?',
                   style: TextStyle(
-                    color: isDark ? const Color(0xFF6DA2F5) : const Color(0xFF134282),
+                    color: isDark
+                        ? const Color(0xFF6DA2F5)
+                        : const Color(0xFF134282),
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -784,9 +1063,10 @@ class _LoginPageState extends State<LoginPage> {
 
         // Login button (Royal blue gradient pill with gold rim & arrow)
         _buildRaisedButton(
-          label: 'Login',
+          label: _loginBusy ? 'Connecting…' : 'Login',
           onPressed: _submit,
           isDark: isDark,
+          busy: _loginBusy,
         ),
         const SizedBox(height: 28),
 
@@ -813,7 +1093,9 @@ class _LoginPageState extends State<LoginPage> {
                     TextSpan(
                       text: 'Sign up',
                       style: TextStyle(
-                        color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+                        color: isDark
+                            ? const Color(0xFF6DA2F5)
+                            : _loginRoyalBlue,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -831,19 +1113,14 @@ class _LoginPageState extends State<LoginPage> {
             child: Text(
               'Biometric sign-in unavailable. Use your login ID and password.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: subtitleColor,
-                fontSize: 11,
-              ),
+              style: TextStyle(color: subtitleColor, fontSize: 11),
             ),
           ),
         ],
 
         if (_biometricEnabled && _biometricAvailable) ...[
           const SizedBox(height: 24),
-          Center(
-            child: _buildFingerprintButton(isDark: isDark),
-          ),
+          Center(child: _buildFingerprintButton(isDark: isDark)),
         ],
       ],
     );
@@ -851,11 +1128,15 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildSignUpContent({required bool isDark}) {
     final titleColor = isDark ? Colors.white : _loginDarkBlueText;
-    final subtitleColor = isDark ? const Color(0xFF9CA2B2) : _loginMutedBlueText;
+    final subtitleColor = isDark
+        ? const Color(0xFF9CA2B2)
+        : _loginMutedBlueText;
     final inputBg = isDark ? const Color(0xFF1C1D23) : const Color(0xFFF4F8FD);
     final inputBorder = isDark ? const Color(0x2EFFFFFF) : _loginGoldBorder;
     final inputTextColor = isDark ? Colors.white : _loginDarkBlueText;
-    final placeholderColor = isDark ? const Color(0xFF757989) : _loginPlaceholderText;
+    final placeholderColor = isDark
+        ? const Color(0xFF757989)
+        : _loginPlaceholderText;
     final prefixIconColor = isDark ? const Color(0xFF8A90A2) : _loginRoyalBlue;
 
     return Column(
@@ -900,24 +1181,40 @@ class _LoginPageState extends State<LoginPage> {
               controller: _nameController,
               textAlignVertical: TextAlignVertical.center,
               cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
-              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
+              style: TextStyle(
+                color: inputTextColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                height: 1.25,
+              ),
               onChanged: (_) {
-                if (_signUpNameError != null) setState(() => _signUpNameError = null);
+                if (_signUpNameError != null) {
+                  setState(() => _signUpNameError = null);
+                }
               },
               decoration: InputDecoration(
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'Full Name',
-                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
+                hintStyle: TextStyle(
+                  color: placeholderColor,
+                  fontSize: 14.5,
+                  height: 1.25,
+                ),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 18, right: 12),
                   child: Icon(
                     LucideIcons.user,
-                    color: _signUpNameError != null ? _loginErrorColor : prefixIconColor,
+                    color: _signUpNameError != null
+                        ? _loginErrorColor
+                        : prefixIconColor,
                     size: 20,
                   ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
                 contentPadding: const EdgeInsets.only(right: 20),
               ),
             ),
@@ -945,26 +1242,46 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _emailController,
                     textAlignVertical: TextAlignVertical.center,
                     keyboardType: TextInputType.emailAddress,
-                    cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
-                    style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
+                    cursorColor: isDark
+                        ? const Color(0xFF6DA2F5)
+                        : _loginRoyalBlue,
+                    style: TextStyle(
+                      color: inputTextColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      height: 1.25,
+                    ),
                     onChanged: (_) {
-                      if (_emailVerified) setState(() => _emailVerified = false);
-                      if (_signUpEmailError != null) setState(() => _signUpEmailError = null);
+                      if (_emailVerified) {
+                        setState(() => _emailVerified = false);
+                      }
+                      if (_signUpEmailError != null) {
+                        setState(() => _signUpEmailError = null);
+                      }
                     },
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       isDense: true,
                       hintText: 'Email Address',
-                      hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
+                      hintStyle: TextStyle(
+                        color: placeholderColor,
+                        fontSize: 14.5,
+                        height: 1.25,
+                      ),
                       prefixIcon: Padding(
                         padding: const EdgeInsets.only(left: 18, right: 12),
                         child: Icon(
                           LucideIcons.mail,
-                          color: _signUpEmailError != null ? _loginErrorColor : prefixIconColor,
+                          color: _signUpEmailError != null
+                              ? _loginErrorColor
+                              : prefixIconColor,
                           size: 20,
                         ),
                       ),
-                      prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 50,
+                        minHeight: 24,
+                      ),
                       contentPadding: const EdgeInsets.only(right: 12),
                     ),
                   ),
@@ -972,24 +1289,44 @@ class _LoginPageState extends State<LoginPage> {
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: FilledButton(
-                    onPressed: _emailVerified ? null : () => _showSignUpEmailVerificationModal(isDark: isDark),
+                    onPressed: _emailVerified
+                        ? null
+                        : () =>
+                              _showSignUpEmailVerificationModal(isDark: isDark),
                     style: FilledButton.styleFrom(
-                      backgroundColor: _emailVerified ? const Color(0xFF2E7D32) : _loginRoyalBlue,
+                      backgroundColor: _emailVerified
+                          ? const Color(0xFF2E7D32)
+                          : _loginRoyalBlue,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: const Color(0xFF2E7D32),
                       disabledForegroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       minimumSize: const Size(0, 36),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_emailVerified) ...[
-                          const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                          const Icon(
+                            Icons.check_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                           const SizedBox(width: 4),
                         ],
-                        Text(_emailVerified ? 'Verified' : 'Verify', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text(
+                          _emailVerified ? 'Verified' : 'Verify',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1014,17 +1351,33 @@ class _LoginPageState extends State<LoginPage> {
               controller: _referralController,
               textAlignVertical: TextAlignVertical.center,
               cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
-              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
+              style: TextStyle(
+                color: inputTextColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                height: 1.25,
+              ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'IB Referral Code (Optional)',
-                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
+                hintStyle: TextStyle(
+                  color: placeholderColor,
+                  fontSize: 14.5,
+                  height: 1.25,
+                ),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 18, right: 12),
-                  child: Icon(LucideIcons.tag, color: prefixIconColor, size: 20),
+                  child: Icon(
+                    LucideIcons.tag,
+                    color: prefixIconColor,
+                    size: 20,
+                  ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
                 contentPadding: const EdgeInsets.only(right: 20),
               ),
             ),
@@ -1039,7 +1392,9 @@ class _LoginPageState extends State<LoginPage> {
             color: inputBg,
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
-              color: _signUpPasswordError != null ? _loginErrorColor : inputBorder,
+              color: _signUpPasswordError != null
+                  ? _loginErrorColor
+                  : inputBorder,
               width: 1.2,
             ),
           ),
@@ -1054,11 +1409,16 @@ class _LoginPageState extends State<LoginPage> {
                 color: inputTextColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                letterSpacing: (_passwordVisible || _passwordController.text.isEmpty) ? 0 : 2.5,
+                letterSpacing:
+                    (_passwordVisible || _passwordController.text.isEmpty)
+                    ? 0
+                    : 2.5,
                 height: 1.25,
               ),
               onChanged: (_) {
-                if (_signUpPasswordError != null) setState(() => _signUpPasswordError = null);
+                if (_signUpPasswordError != null) {
+                  setState(() => _signUpPasswordError = null);
+                }
               },
               decoration: InputDecoration(
                 border: InputBorder.none,
@@ -1074,16 +1434,25 @@ class _LoginPageState extends State<LoginPage> {
                   padding: const EdgeInsets.only(left: 18, right: 12),
                   child: Icon(
                     LucideIcons.lock,
-                    color: _signUpPasswordError != null ? _loginErrorColor : prefixIconColor,
+                    color: _signUpPasswordError != null
+                        ? _loginErrorColor
+                        : prefixIconColor,
                     size: 20,
                   ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
-                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 24,
+                ),
                 suffixIcon: Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: GestureDetector(
-                    onTap: () => setState(() => _passwordVisible = !_passwordVisible),
+                    onTap: () =>
+                        setState(() => _passwordVisible = !_passwordVisible),
                     behavior: HitTestBehavior.opaque,
                     child: Icon(
                       _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
@@ -1114,9 +1483,13 @@ class _LoginPageState extends State<LoginPage> {
               side: BorderSide(
                 color: _signUpTermsError != null
                     ? _loginErrorColor
-                    : (isDark ? const Color(0xFF454958) : const Color(0xFFBACADB)),
+                    : (isDark
+                          ? const Color(0xFF454958)
+                          : const Color(0xFFBACADB)),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
             Expanded(
               child: GestureDetector(
@@ -1129,9 +1502,25 @@ class _LoginPageState extends State<LoginPage> {
                     text: 'I agree to the ',
                     style: TextStyle(color: subtitleColor, fontSize: 12.5),
                     children: [
-                      TextSpan(text: 'Terms & Conditions', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
+                      TextSpan(
+                        text: 'Terms & Conditions',
+                        style: TextStyle(
+                          color: isDark
+                              ? const Color(0xFF6DA2F5)
+                              : _loginRoyalBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const TextSpan(text: ' and '),
-                      TextSpan(text: 'Privacy Policy', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w600)),
+                      TextSpan(
+                        text: 'Privacy Policy',
+                        style: TextStyle(
+                          color: isDark
+                              ? const Color(0xFF6DA2F5)
+                              : _loginRoyalBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1166,7 +1555,15 @@ class _LoginPageState extends State<LoginPage> {
                   text: 'Already have an account? ',
                   style: TextStyle(color: subtitleColor, fontSize: 13),
                   children: [
-                    TextSpan(text: 'Login', style: TextStyle(color: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue, fontWeight: FontWeight.w700)),
+                    TextSpan(
+                      text: 'Login',
+                      style: TextStyle(
+                        color: isDark
+                            ? const Color(0xFF6DA2F5)
+                            : _loginRoyalBlue,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1179,8 +1576,9 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildRaisedButton({
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     required bool isDark,
+    bool busy = false,
   }) {
     return FilledButton(
       onPressed: onPressed,
@@ -1239,22 +1637,35 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              Positioned(
-                right: 8,
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.22),
+              if (busy)
+                const Positioned(
+                  right: 14,
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                    size: 20,
+                )
+              else
+                Positioned(
+                  right: 8,
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.22),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1306,7 +1717,9 @@ class _LoginPageState extends State<LoginPage> {
               shape: BoxShape.circle,
               color: isDark ? const Color(0xFF202127) : const Color(0xFFF7FAFF),
               border: Border.all(
-                color: isDark ? const Color(0x22FFFFFF) : const Color(0x66D4AF37),
+                color: isDark
+                    ? const Color(0x22FFFFFF)
+                    : const Color(0x66D4AF37),
                 width: 1.0,
               ),
             ),
@@ -1359,18 +1772,25 @@ class _LoginBackgroundPainter extends CustomPainter {
 
     // 2. Subtle top-left radial glow
     final topOrbPaint = Paint()
-      ..shader = const RadialGradient(
-        center: Alignment.topLeft,
-        radius: 1.0,
-        colors: [Color(0x333A3C46), Color(0x003A3C46)],
-      ).createShader(Rect.fromCircle(center: const Offset(40, 70), radius: 210));
+      ..shader =
+          const RadialGradient(
+            center: Alignment.topLeft,
+            radius: 1.0,
+            colors: [Color(0x333A3C46), Color(0x003A3C46)],
+          ).createShader(
+            Rect.fromCircle(center: const Offset(40, 70), radius: 210),
+          );
     canvas.drawCircle(const Offset(40, 70), 210, topOrbPaint);
 
     // 3. Subtle bottom-left 4x4 matrix of dark dots
     final dotPaint = Paint()..color = const Color(0x337A7E8D);
     for (int r = 0; r < 4; r++) {
       for (int c = 0; c < 4; c++) {
-        canvas.drawCircle(Offset(28.0 + (c * 13.0), size.height - 110.0 + (r * 13.0)), 2.2, dotPaint);
+        canvas.drawCircle(
+          Offset(28.0 + (c * 13.0), size.height - 110.0 + (r * 13.0)),
+          2.2,
+          dotPaint,
+        );
       }
     }
   }
@@ -1380,22 +1800,21 @@ class _LoginBackgroundPainter extends CustomPainter {
     final baseGradient = const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [
-        Color(0xFFEFF5FD),
-        Color(0xFFF8FAFE),
-        Color(0xFFE2EDFC),
-      ],
+      colors: [Color(0xFFEFF5FD), Color(0xFFF8FAFE), Color(0xFFE2EDFC)],
     ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, Paint()..shader = baseGradient);
 
     // 2. Top-left ambient royal blue sphere with golden boundary curve
     final blueOrbPaint = Paint()
-      ..shader = const RadialGradient(
-        center: Alignment.topLeft,
-        radius: 1.0,
-        colors: [Color(0xFF2575FC), Color(0xFF0F52BA), Color(0x000F52BA)],
-        stops: [0.0, 0.65, 1.0],
-      ).createShader(Rect.fromCircle(center: const Offset(40, 70), radius: 210));
+      ..shader =
+          const RadialGradient(
+            center: Alignment.topLeft,
+            radius: 1.0,
+            colors: [Color(0xFF2575FC), Color(0xFF0F52BA), Color(0x000F52BA)],
+            stops: [0.0, 0.65, 1.0],
+          ).createShader(
+            Rect.fromCircle(center: const Offset(40, 70), radius: 210),
+          );
     canvas.drawCircle(const Offset(40, 70), 210, blueOrbPaint);
 
     final goldRibbonPaint = Paint()
@@ -1410,36 +1829,69 @@ class _LoginBackgroundPainter extends CustomPainter {
 
     // 3. Right side floating blurred sphere
     final rightOrbPaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Color(0x7386B8F7), Color(0x0086B8F7)],
-      ).createShader(Rect.fromCircle(center: Offset(size.width + 10, size.height * 0.28), radius: 150));
-    canvas.drawCircle(Offset(size.width + 10, size.height * 0.28), 150, rightOrbPaint);
+      ..shader =
+          const RadialGradient(colors: [Color(0x7386B8F7), Color(0x0086B8F7)])
+              .createShader(
+                Rect.fromCircle(
+                  center: Offset(size.width + 10, size.height * 0.28),
+                  radius: 150,
+                ),
+              );
+    canvas.drawCircle(
+      Offset(size.width + 10, size.height * 0.28),
+      150,
+      rightOrbPaint,
+    );
 
     // 4. Bottom-right sweeping fluid royal curves with gold edge
-    final bottomBlueGrad = const RadialGradient(
-      center: Alignment.bottomRight,
-      radius: 1.15,
-      colors: [Color(0xFF0B46A8), Color(0xFF1565C0), Color(0x001976D2)],
-      stops: [0.0, 0.7, 1.0],
-    ).createShader(Rect.fromCircle(center: Offset(size.width, size.height), radius: size.width * 0.85));
+    final bottomBlueGrad =
+        const RadialGradient(
+          center: Alignment.bottomRight,
+          radius: 1.15,
+          colors: [Color(0xFF0B46A8), Color(0xFF1565C0), Color(0x001976D2)],
+          stops: [0.0, 0.7, 1.0],
+        ).createShader(
+          Rect.fromCircle(
+            center: Offset(size.width, size.height),
+            radius: size.width * 0.85,
+          ),
+        );
 
     final bottomPath = Path();
     bottomPath.moveTo(size.width * 0.28, size.height);
-    bottomPath.cubicTo(size.width * 0.48, size.height * 0.88, size.width * 0.74, size.height * 0.82, size.width, size.height * 0.77);
+    bottomPath.cubicTo(
+      size.width * 0.48,
+      size.height * 0.88,
+      size.width * 0.74,
+      size.height * 0.82,
+      size.width,
+      size.height * 0.77,
+    );
     bottomPath.lineTo(size.width, size.height);
     bottomPath.close();
     canvas.drawPath(bottomPath, Paint()..shader = bottomBlueGrad);
 
     final goldBottomPath = Path();
     goldBottomPath.moveTo(size.width * 0.28, size.height);
-    goldBottomPath.cubicTo(size.width * 0.48, size.height * 0.88, size.width * 0.74, size.height * 0.82, size.width, size.height * 0.77);
+    goldBottomPath.cubicTo(
+      size.width * 0.48,
+      size.height * 0.88,
+      size.width * 0.74,
+      size.height * 0.82,
+      size.width,
+      size.height * 0.77,
+    );
     canvas.drawPath(goldBottomPath, goldRibbonPaint);
 
     // 5. Bottom-left 4x4 matrix of subtle light blue dots
     final dotPaint = Paint()..color = const Color(0x999EBCE8);
     for (int r = 0; r < 4; r++) {
       for (int c = 0; c < 4; c++) {
-        canvas.drawCircle(Offset(28.0 + (c * 13.0), size.height - 110.0 + (r * 13.0)), 2.2, dotPaint);
+        canvas.drawCircle(
+          Offset(28.0 + (c * 13.0), size.height - 110.0 + (r * 13.0)),
+          2.2,
+          dotPaint,
+        );
       }
     }
 
@@ -1468,7 +1920,12 @@ class _LoginBackgroundPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(textX + (textPainter.width - 22) / 2, textY + textPainter.height + 6, 22, 2.5),
+          Rect.fromLTWH(
+            textX + (textPainter.width - 22) / 2,
+            textY + textPainter.height + 6,
+            22,
+            2.5,
+          ),
           const Radius.circular(2),
         ),
         barPaint,
@@ -1491,25 +1948,30 @@ class _ForgotPasswordFlowModal extends StatefulWidget {
 
   final String initialEmail;
   final bool isDark;
-  final void Function(String email, String newPassword) onPasswordResetCompleted;
+  final void Function(String email, String newPassword)
+  onPasswordResetCompleted;
 
   @override
-  State<_ForgotPasswordFlowModal> createState() => _ForgotPasswordFlowModalState();
+  State<_ForgotPasswordFlowModal> createState() =>
+      _ForgotPasswordFlowModalState();
 }
 
 class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
-  int _currentStep = 1; // 1: Email, 2: OTP, 3: New & Confirm Password, 4: Success
+  int _currentStep =
+      1; // 1: Email, 2: OTP, 3: New & Confirm Password, 4: Success
 
   late final TextEditingController _emailController;
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _otpFocusNode = FocusNode();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _newPasswordVisible = false;
   bool _confirmPasswordVisible = false;
 
   String? _stepError;
+  String? _resetToken;
   int _resendCountdown = 45;
   Timer? _countdownTimer;
 
@@ -1547,30 +2009,55 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     });
   }
 
+  Future<void> _resendResetOtp() async {
+    try {
+      await AuthApi.instance.sendResetOtp(_emailController.text.trim());
+      if (mounted) _startTimer();
+    } on AuthApiException catch (error) {
+      if (mounted) setState(() => _stepError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _stepError = 'Could not resend the reset code.');
+      }
+    }
+  }
+
   // --- Step 1: Send OTP to Email ---
-  void _submitStep1() {
+  Future<void> _submitStep1() async {
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      setState(() => _stepError = 'Please enter your registered email address.');
+      setState(
+        () => _stepError = 'Please enter your registered email address.',
+      );
       return;
     }
     if (!email.contains('@') || !email.contains('.')) {
       setState(() => _stepError = 'Please enter a valid email address.');
       return;
     }
-    setState(() {
-      _stepError = null;
-      _currentStep = 2;
-    });
-    _startTimer();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _otpFocusNode.requestFocus();
-    });
+    try {
+      await AuthApi.instance.sendResetOtp(email);
+      if (!mounted) return;
+      setState(() {
+        _stepError = null;
+        _currentStep = 2;
+      });
+      _startTimer();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _otpFocusNode.requestFocus();
+      });
+    } on AuthApiException catch (error) {
+      if (mounted) setState(() => _stepError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _stepError = 'Could not send the reset code.');
+      }
+    }
   }
 
   // --- Step 2: Verify OTP ---
-  void _submitStep2() {
+  Future<void> _submitStep2() async {
     FocusScope.of(context).unfocus();
     final otp = _otpController.text.trim();
     if (otp.isEmpty) {
@@ -1578,17 +2065,42 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       return;
     }
     if (otp.length < 4) {
-      setState(() => _stepError = 'Please enter the complete verification code.');
+      setState(
+        () => _stepError = 'Please enter the complete verification code.',
+      );
       return;
     }
-    setState(() {
-      _stepError = null;
-      _currentStep = 3;
-    });
+    try {
+      final result = await AuthApi.instance.verifyOtp(
+        email: _emailController.text.trim(),
+        otp: otp,
+      );
+      final nested = result['data'];
+      final resetToken =
+          result['reset_token'] ??
+          (nested is Map ? nested['reset_token'] : null);
+      if (resetToken is! String || resetToken.isEmpty) {
+        throw const AuthApiException(
+          'The server did not return a password reset token.',
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _stepError = null;
+        _resetToken = resetToken;
+        _currentStep = 3;
+      });
+    } on AuthApiException catch (error) {
+      if (mounted) setState(() => _stepError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _stepError = 'Could not verify the reset code.');
+      }
+    }
   }
 
   // --- Step 3: Set New Password & Confirm Password (in same window one by one) ---
-  void _submitStep3() {
+  Future<void> _submitStep3() async {
     FocusScope.of(context).unfocus();
     final pass = _newPasswordController.text;
     final confirm = _confirmPasswordController.text;
@@ -1597,7 +2109,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       return;
     }
     if (pass.length < 8) {
-      setState(() => _stepError = 'Password must be at least 8 characters long.');
+      setState(
+        () => _stepError = 'Password must be at least 8 characters long.',
+      );
       return;
     }
     if (confirm.isEmpty) {
@@ -1608,14 +2122,30 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       setState(() => _stepError = 'Passwords do not match. Please re-enter.');
       return;
     }
-    setState(() {
-      _stepError = null;
-      _currentStep = 4;
-    });
-    widget.onPasswordResetCompleted(
-      _emailController.text.trim(),
-      _newPasswordController.text,
-    );
+    try {
+      final encryptedPassword = await AuthApi.instance
+          .encryptPasswordForPasswordFlow(_newPasswordController.text);
+      await AuthApi.instance.confirmPasswordReset({
+        'email': _emailController.text.trim(),
+        'new_password': encryptedPassword,
+        'reset_token': _resetToken,
+      });
+      if (!mounted) return;
+      setState(() {
+        _stepError = null;
+        _currentStep = 4;
+      });
+      widget.onPasswordResetCompleted(
+        _emailController.text.trim(),
+        _newPasswordController.text,
+      );
+    } on AuthApiException catch (error) {
+      if (mounted) setState(() => _stepError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _stepError = 'Could not reset your password.');
+      }
+    }
   }
 
   // --- Step 4: Finish & Back to Login ---
@@ -1629,7 +2159,11 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       padding: const EdgeInsets.only(left: 4, top: 8, bottom: 2),
       child: Row(
         children: [
-          const Icon(LucideIcons.alertCircle, size: 14, color: _loginErrorColor),
+          const Icon(
+            LucideIcons.alertCircle,
+            size: 14,
+            color: _loginErrorColor,
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -1712,13 +2246,24 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
   }
 
   // --- View: Step 1 Content ---
-  Widget _buildStep1Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+  Widget _buildStep1Content(
+    Color titleColor,
+    Color subtitleColor,
+    Color inputBg,
+    Color inputBorder,
+    Color inputTextColor,
+    Color placeholderColor,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'Confirm Email Address',
-          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: titleColor,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
@@ -1744,7 +2289,12 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submitStep1(),
               cursorColor: _loginRoyalBlue,
-              style: TextStyle(color: inputTextColor, fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
+              style: TextStyle(
+                color: inputTextColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                height: 1.25,
+              ),
               onChanged: (_) {
                 if (_stepError != null) setState(() => _stepError = null);
               },
@@ -1752,12 +2302,23 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'Email Address',
-                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, height: 1.25),
+                hintStyle: TextStyle(
+                  color: placeholderColor,
+                  fontSize: 14.5,
+                  height: 1.25,
+                ),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 18, right: 12),
-                  child: Icon(LucideIcons.mail, color: _loginRoyalBlue, size: 20),
+                  child: Icon(
+                    LucideIcons.mail,
+                    color: _loginRoyalBlue,
+                    size: 20,
+                  ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
                 contentPadding: const EdgeInsets.only(right: 20),
               ),
             ),
@@ -1765,16 +2326,20 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         ),
         _buildStepErrorFeedback(),
         const SizedBox(height: 24),
-        _buildActionButton(
-          label: 'Send OTP',
-          onPressed: _submitStep1,
-        ),
+        _buildActionButton(label: 'Send OTP', onPressed: _submitStep1),
       ],
     );
   }
 
   // --- View: Step 2 Content (Modern 6-Cell OTP Input with Superior UX) ---
-  Widget _buildStep2Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+  Widget _buildStep2Content(
+    Color titleColor,
+    Color subtitleColor,
+    Color inputBg,
+    Color inputBorder,
+    Color inputTextColor,
+    Color placeholderColor,
+  ) {
     final otpText = _otpController.text;
 
     return Column(
@@ -1785,7 +2350,11 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
             Expanded(
               child: Text(
                 'Enter Verification Code',
-                style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: titleColor,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
             InkWell(
@@ -1801,7 +2370,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 child: Text(
                   'Change',
                   style: TextStyle(
-                    color: widget.isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
+                    color: widget.isDark
+                        ? const Color(0xFF6DA2F5)
+                        : _loginRoyalBlue,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1866,8 +2437,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                   children: List.generate(6, (index) {
                     final hasChar = index < otpText.length;
                     final char = hasChar ? otpText[index] : '';
-                    final isFocusedCell = _otpFocusNode.hasFocus &&
-                        (index == otpText.length || (index == 5 && otpText.length == 6));
+                    final isFocusedCell =
+                        _otpFocusNode.hasFocus &&
+                        (index == otpText.length ||
+                            (index == 5 && otpText.length == 6));
                     final hasError = _stepError != null;
 
                     Color cellBorder;
@@ -1878,7 +2451,11 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                       cellBorder = _loginErrorColor;
                       borderWidth = 1.5;
                       cellShadow = const [
-                        BoxShadow(color: Color(0x26E53935), offset: Offset(0, 3), blurRadius: 8),
+                        BoxShadow(
+                          color: Color(0x26E53935),
+                          offset: Offset(0, 3),
+                          blurRadius: 8,
+                        ),
                       ];
                     } else if (isFocusedCell) {
                       cellBorder = _loginRoyalBlue;
@@ -1891,7 +2468,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                         ),
                       ];
                     } else if (hasChar) {
-                      cellBorder = widget.isDark ? const Color(0xFF4C7FD8) : _loginRoyalBlue.withValues(alpha: 0.65);
+                      cellBorder = widget.isDark
+                          ? const Color(0xFF4C7FD8)
+                          : _loginRoyalBlue.withValues(alpha: 0.65);
                       borderWidth = 1.5;
                       cellShadow = const [
                         BoxShadow(
@@ -1916,7 +2495,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                         decoration: BoxDecoration(
                           color: inputBg,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: cellBorder, width: borderWidth),
+                          border: Border.all(
+                            color: cellBorder,
+                            width: borderWidth,
+                          ),
                           boxShadow: cellShadow,
                         ),
                         child: Center(
@@ -1930,22 +2512,24 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                                   ),
                                 )
                               : isFocusedCell
-                                  ? Container(
-                                      width: 2.2,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        color: _loginRoyalBlue,
-                                        borderRadius: BorderRadius.circular(1),
-                                      ),
-                                    )
-                                  : Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: placeholderColor.withValues(alpha: 0.35),
-                                      ),
+                              ? Container(
+                                  width: 2.2,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: _loginRoyalBlue,
+                                    borderRadius: BorderRadius.circular(1),
+                                  ),
+                                )
+                              : Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: placeholderColor.withValues(
+                                      alpha: 0.35,
                                     ),
+                                  ),
+                                ),
                         ),
                       ),
                     );
@@ -1970,7 +2554,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 if (data?.text != null) {
                   final digits = data!.text!.replaceAll(RegExp(r'\D'), '');
                   if (digits.isNotEmpty) {
-                    final code = digits.substring(0, math.min(6, digits.length));
+                    final code = digits.substring(
+                      0,
+                      math.min(6, digits.length),
+                    );
                     setState(() {
                       _otpController.text = code;
                       if (_stepError != null) _stepError = null;
@@ -1990,13 +2577,17 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                     Icon(
                       LucideIcons.clipboardPaste,
                       size: 14,
-                      color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                      color: widget.isDark
+                          ? const Color(0xFF7E8B9F)
+                          : _loginMutedBlueText,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Paste code',
                       style: TextStyle(
-                        color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                        color: widget.isDark
+                            ? const Color(0xFF7E8B9F)
+                            : _loginMutedBlueText,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -2016,11 +2607,16 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
                   child: Text(
                     'Clear',
                     style: TextStyle(
-                      color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                      color: widget.isDark
+                          ? const Color(0xFF7E8B9F)
+                          : _loginMutedBlueText,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2036,23 +2632,26 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         Center(
           child: _resendCountdown > 0
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
-                    color: widget.isDark ? const Color(0xFF1E2028) : const Color(0xFFF0F5FD),
+                    color: widget.isDark
+                        ? const Color(0xFF1E2028)
+                        : const Color(0xFFF0F5FD),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: widget.isDark ? const Color(0x22FFFFFF) : const Color(0x331E70E8),
+                      color: widget.isDark
+                          ? const Color(0x22FFFFFF)
+                          : const Color(0x331E70E8),
                       width: 1,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        LucideIcons.clock,
-                        size: 14,
-                        color: subtitleColor,
-                      ),
+                      Icon(LucideIcons.clock, size: 14, color: subtitleColor),
                       const SizedBox(width: 6),
                       Text(
                         'Resend code in 00:${_resendCountdown.toString().padLeft(2, '0')}',
@@ -2067,39 +2666,55 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 )
               : TextButton.icon(
                   onPressed: () {
-                    _startTimer();
                     setState(() {
                       _otpController.clear();
                       if (_stepError != null) _stepError = null;
                     });
+                    unawaited(_resendResetOtp());
                     _otpFocusNode.requestFocus();
                   },
-                  icon: const Icon(LucideIcons.rotateCcw, size: 14, color: _loginRoyalBlue),
+                  icon: const Icon(
+                    LucideIcons.rotateCcw,
+                    size: 14,
+                    color: _loginRoyalBlue,
+                  ),
                   label: const Text(
                     'Resend OTP Code',
-                    style: TextStyle(color: _loginRoyalBlue, fontSize: 13, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: _loginRoyalBlue,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
         ),
 
         const SizedBox(height: 20),
 
-        _buildActionButton(
-          label: 'Verify OTP',
-          onPressed: _submitStep2,
-        ),
+        _buildActionButton(label: 'Verify OTP', onPressed: _submitStep2),
       ],
     );
   }
 
   // --- View: Step 3 Content (New Password & Confirm Password in same window one by one) ---
-  Widget _buildStep3Content(Color titleColor, Color subtitleColor, Color inputBg, Color inputBorder, Color inputTextColor, Color placeholderColor) {
+  Widget _buildStep3Content(
+    Color titleColor,
+    Color subtitleColor,
+    Color inputBg,
+    Color inputBorder,
+    Color inputTextColor,
+    Color placeholderColor,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'Create New Password',
-          style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: titleColor,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
@@ -2131,7 +2746,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 color: inputTextColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                letterSpacing: (_newPasswordVisible || _newPasswordController.text.isEmpty) ? 0 : 2.5,
+                letterSpacing:
+                    (_newPasswordVisible || _newPasswordController.text.isEmpty)
+                    ? 0
+                    : 2.5,
                 height: 1.25,
               ),
               onChanged: (_) {
@@ -2141,20 +2759,39 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'New Password (min. 8 characters)',
-                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0, height: 1.25),
+                hintStyle: TextStyle(
+                  color: placeholderColor,
+                  fontSize: 14.5,
+                  letterSpacing: 0,
+                  height: 1.25,
+                ),
                 prefixIcon: const Padding(
                   padding: EdgeInsets.only(left: 18, right: 12),
-                  child: Icon(LucideIcons.lock, color: _loginRoyalBlue, size: 20),
+                  child: Icon(
+                    LucideIcons.lock,
+                    color: _loginRoyalBlue,
+                    size: 20,
+                  ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
-                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 24,
+                ),
                 suffixIcon: Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: GestureDetector(
-                    onTap: () => setState(() => _newPasswordVisible = !_newPasswordVisible),
+                    onTap: () => setState(
+                      () => _newPasswordVisible = !_newPasswordVisible,
+                    ),
                     behavior: HitTestBehavior.opaque,
                     child: Icon(
-                      _newPasswordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
+                      _newPasswordVisible
+                          ? LucideIcons.eye
+                          : LucideIcons.eyeOff,
                       color: placeholderColor,
                       size: 20,
                     ),
@@ -2192,7 +2829,11 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 color: inputTextColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                letterSpacing: (_confirmPasswordVisible || _confirmPasswordController.text.isEmpty) ? 0 : 2.5,
+                letterSpacing:
+                    (_confirmPasswordVisible ||
+                        _confirmPasswordController.text.isEmpty)
+                    ? 0
+                    : 2.5,
                 height: 1.25,
               ),
               onChanged: (_) {
@@ -2202,20 +2843,39 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'Confirm New Password',
-                hintStyle: TextStyle(color: placeholderColor, fontSize: 14.5, letterSpacing: 0, height: 1.25),
+                hintStyle: TextStyle(
+                  color: placeholderColor,
+                  fontSize: 14.5,
+                  letterSpacing: 0,
+                  height: 1.25,
+                ),
                 prefixIcon: const Padding(
                   padding: EdgeInsets.only(left: 18, right: 12),
-                  child: Icon(LucideIcons.lock, color: _loginRoyalBlue, size: 20),
+                  child: Icon(
+                    LucideIcons.lock,
+                    color: _loginRoyalBlue,
+                    size: 20,
+                  ),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 24),
-                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 24),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 50,
+                  minHeight: 24,
+                ),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 24,
+                ),
                 suffixIcon: Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: GestureDetector(
-                    onTap: () => setState(() => _confirmPasswordVisible = !_confirmPasswordVisible),
+                    onTap: () => setState(
+                      () => _confirmPasswordVisible = !_confirmPasswordVisible,
+                    ),
                     behavior: HitTestBehavior.opaque,
                     child: Icon(
-                      _confirmPasswordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
+                      _confirmPasswordVisible
+                          ? LucideIcons.eye
+                          : LucideIcons.eyeOff,
                       color: placeholderColor,
                       size: 20,
                     ),
@@ -2283,11 +2943,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         Text(
           'Your password has been successfully updated. You can now use your new password to sign in.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: subtitleColor,
-            fontSize: 13.5,
-            height: 1.4,
-          ),
+          style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
         ),
         const SizedBox(height: 28),
         _buildActionButton(
@@ -2302,11 +2958,19 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
   @override
   Widget build(BuildContext context) {
     final titleColor = widget.isDark ? Colors.white : _loginDarkBlueText;
-    final subtitleColor = widget.isDark ? const Color(0xFF9EA3B0) : _loginMutedBlueText;
-    final inputBg = widget.isDark ? const Color(0xFF191A20) : const Color(0xFFF4F8FD);
-    final inputBorder = widget.isDark ? const Color(0x33FFFFFF) : _loginGoldBorder;
+    final subtitleColor = widget.isDark
+        ? const Color(0xFF9EA3B0)
+        : _loginMutedBlueText;
+    final inputBg = widget.isDark
+        ? const Color(0xFF191A20)
+        : const Color(0xFFF4F8FD);
+    final inputBorder = widget.isDark
+        ? const Color(0x33FFFFFF)
+        : _loginGoldBorder;
     final inputTextColor = widget.isDark ? Colors.white : _loginDarkBlueText;
-    final placeholderColor = widget.isDark ? const Color(0xFF757885) : _loginPlaceholderText;
+    final placeholderColor = widget.isDark
+        ? const Color(0xFF757885)
+        : _loginPlaceholderText;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -2317,7 +2981,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
           color: widget.isDark ? const Color(0xFF22232A) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           border: Border.all(
-            color: widget.isDark ? const Color(0x33FFFFFF) : const Color(0x66ECC868),
+            color: widget.isDark
+                ? const Color(0x33FFFFFF)
+                : const Color(0x66ECC868),
             width: 1.2,
           ),
           boxShadow: const [
@@ -2345,7 +3011,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                       width: 42,
                       height: 4.5,
                       decoration: BoxDecoration(
-                        color: widget.isDark ? const Color(0xFF454854) : const Color(0x80ECC868),
+                        color: widget.isDark
+                            ? const Color(0xFF454854)
+                            : const Color(0x80ECC868),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -2353,7 +3021,9 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                       onPressed: () => Navigator.pop(context),
                       icon: Icon(
                         LucideIcons.x,
-                        color: widget.isDark ? const Color(0xFF888F9F) : _loginPlaceholderText,
+                        color: widget.isDark
+                            ? const Color(0xFF888F9F)
+                            : _loginPlaceholderText,
                         size: 20,
                       ),
                       tooltip: 'Close',
@@ -2366,9 +3036,30 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   child: switch (_currentStep) {
-                    1 => _buildStep1Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
-                    2 => _buildStep2Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
-                    3 => _buildStep3Content(titleColor, subtitleColor, inputBg, inputBorder, inputTextColor, placeholderColor),
+                    1 => _buildStep1Content(
+                      titleColor,
+                      subtitleColor,
+                      inputBg,
+                      inputBorder,
+                      inputTextColor,
+                      placeholderColor,
+                    ),
+                    2 => _buildStep2Content(
+                      titleColor,
+                      subtitleColor,
+                      inputBg,
+                      inputBorder,
+                      inputTextColor,
+                      placeholderColor,
+                    ),
+                    3 => _buildStep3Content(
+                      titleColor,
+                      subtitleColor,
+                      inputBg,
+                      inputBorder,
+                      inputTextColor,
+                      placeholderColor,
+                    ),
                     _ => _buildStep4Content(titleColor, subtitleColor),
                   },
                 ),
@@ -2394,10 +3085,12 @@ class _SignUpEmailVerificationModal extends StatefulWidget {
   final VoidCallback onVerified;
 
   @override
-  State<_SignUpEmailVerificationModal> createState() => _SignUpEmailVerificationModalState();
+  State<_SignUpEmailVerificationModal> createState() =>
+      _SignUpEmailVerificationModalState();
 }
 
-class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationModal> {
+class _SignUpEmailVerificationModalState
+    extends State<_SignUpEmailVerificationModal> {
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _otpFocusNode = FocusNode();
   String? _error;
@@ -2407,7 +3100,7 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    unawaited(_sendSignupOtp());
     _otpFocusNode.addListener(() {
       if (mounted) setState(() {});
     });
@@ -2438,7 +3131,20 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
     });
   }
 
-  void _verifyOtp() {
+  Future<void> _sendSignupOtp() async {
+    try {
+      await AuthApi.instance.sendSignupOtp(widget.email);
+      if (mounted) _startTimer();
+    } on AuthApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Could not send the verification code.');
+      }
+    }
+  }
+
+  Future<void> _verifyOtp() async {
     FocusScope.of(context).unfocus();
     final otp = _otpController.text.trim();
     if (otp.isEmpty) {
@@ -2449,8 +3155,16 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
       setState(() => _error = 'Please enter the complete verification code.');
       return;
     }
-    widget.onVerified();
-    Navigator.pop(context);
+    try {
+      await AuthApi.instance.verifySignupOtp(email: widget.email, otp: otp);
+      if (!mounted) return;
+      widget.onVerified();
+      Navigator.pop(context);
+    } on AuthApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not verify the code.');
+    }
   }
 
   Widget _buildActionButton() {
@@ -2504,7 +3218,11 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                     shape: BoxShape.circle,
                     color: Colors.white.withValues(alpha: 0.22),
                   ),
-                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ],
@@ -2517,11 +3235,19 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
   @override
   Widget build(BuildContext context) {
     final titleColor = widget.isDark ? Colors.white : _loginDarkBlueText;
-    final subtitleColor = widget.isDark ? const Color(0xFF9EA3B0) : _loginMutedBlueText;
-    final inputBg = widget.isDark ? const Color(0xFF191A20) : const Color(0xFFF4F8FD);
-    final inputBorder = widget.isDark ? const Color(0x33FFFFFF) : _loginGoldBorder;
+    final subtitleColor = widget.isDark
+        ? const Color(0xFF9EA3B0)
+        : _loginMutedBlueText;
+    final inputBg = widget.isDark
+        ? const Color(0xFF191A20)
+        : const Color(0xFFF4F8FD);
+    final inputBorder = widget.isDark
+        ? const Color(0x33FFFFFF)
+        : _loginGoldBorder;
     final inputTextColor = widget.isDark ? Colors.white : _loginDarkBlueText;
-    final placeholderColor = widget.isDark ? const Color(0xFF757885) : _loginPlaceholderText;
+    final placeholderColor = widget.isDark
+        ? const Color(0xFF757885)
+        : _loginPlaceholderText;
     final otpText = _otpController.text;
 
     return Padding(
@@ -2533,7 +3259,9 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
           color: widget.isDark ? const Color(0xFF22232A) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           border: Border.all(
-            color: widget.isDark ? const Color(0x33FFFFFF) : const Color(0x66ECC868),
+            color: widget.isDark
+                ? const Color(0x33FFFFFF)
+                : const Color(0x66ECC868),
             width: 1.2,
           ),
           boxShadow: const [
@@ -2561,7 +3289,9 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                       width: 42,
                       height: 4.5,
                       decoration: BoxDecoration(
-                        color: widget.isDark ? const Color(0xFF454854) : const Color(0x80ECC868),
+                        color: widget.isDark
+                            ? const Color(0xFF454854)
+                            : const Color(0x80ECC868),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -2569,7 +3299,9 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                       onPressed: () => Navigator.pop(context),
                       icon: Icon(
                         LucideIcons.x,
-                        color: widget.isDark ? const Color(0xFF888F9F) : _loginPlaceholderText,
+                        color: widget.isDark
+                            ? const Color(0xFF888F9F)
+                            : _loginPlaceholderText,
                         size: 20,
                       ),
                       tooltip: 'Close',
@@ -2580,18 +3312,28 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
 
                 Text(
                   'Verify Email Address',
-                  style: TextStyle(color: titleColor, fontSize: 20, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text.rich(
                   TextSpan(
                     text: 'We sent a 6-digit verification code to\n',
-                    style: TextStyle(color: subtitleColor, fontSize: 13.5, height: 1.4),
+                    style: TextStyle(
+                      color: subtitleColor,
+                      fontSize: 13.5,
+                      height: 1.4,
+                    ),
                     children: [
                       TextSpan(
                         text: widget.email,
                         style: TextStyle(
-                          color: widget.isDark ? Colors.white : _loginDarkBlueText,
+                          color: widget.isDark
+                              ? Colors.white
+                              : _loginDarkBlueText,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -2635,8 +3377,10 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                           children: List.generate(6, (index) {
                             final hasChar = index < otpText.length;
                             final char = hasChar ? otpText[index] : '';
-                            final isFocusedCell = _otpFocusNode.hasFocus &&
-                                (index == otpText.length || (index == 5 && otpText.length == 6));
+                            final isFocusedCell =
+                                _otpFocusNode.hasFocus &&
+                                (index == otpText.length ||
+                                    (index == 5 && otpText.length == 6));
                             final hasError = _error != null;
 
                             Color cellBorder;
@@ -2647,20 +3391,28 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                               cellBorder = _loginErrorColor;
                               borderWidth = 1.5;
                               cellShadow = const [
-                                BoxShadow(color: Color(0x26E53935), offset: Offset(0, 3), blurRadius: 8),
+                                BoxShadow(
+                                  color: Color(0x26E53935),
+                                  offset: Offset(0, 3),
+                                  blurRadius: 8,
+                                ),
                               ];
                             } else if (isFocusedCell) {
                               cellBorder = _loginRoyalBlue;
                               borderWidth = 2.0;
                               cellShadow = [
                                 BoxShadow(
-                                  color: _loginRoyalBlue.withValues(alpha: 0.28),
+                                  color: _loginRoyalBlue.withValues(
+                                    alpha: 0.28,
+                                  ),
                                   offset: const Offset(0, 4),
                                   blurRadius: 10,
                                 ),
                               ];
                             } else if (hasChar) {
-                              cellBorder = widget.isDark ? const Color(0xFF4C7FD8) : _loginRoyalBlue.withValues(alpha: 0.65);
+                              cellBorder = widget.isDark
+                                  ? const Color(0xFF4C7FD8)
+                                  : _loginRoyalBlue.withValues(alpha: 0.65);
                               borderWidth = 1.5;
                               cellShadow = const [
                                 BoxShadow(
@@ -2685,7 +3437,10 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                                 decoration: BoxDecoration(
                                   color: inputBg,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: cellBorder, width: borderWidth),
+                                  border: Border.all(
+                                    color: cellBorder,
+                                    width: borderWidth,
+                                  ),
                                   boxShadow: cellShadow,
                                 ),
                                 child: Center(
@@ -2699,22 +3454,26 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                                           ),
                                         )
                                       : isFocusedCell
-                                          ? Container(
-                                              width: 2.2,
-                                              height: 22,
-                                              decoration: BoxDecoration(
-                                                color: _loginRoyalBlue,
-                                                borderRadius: BorderRadius.circular(1),
-                                              ),
-                                            )
-                                          : Container(
-                                              width: 8,
-                                              height: 8,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: placeholderColor.withValues(alpha: 0.35),
-                                              ),
+                                      ? Container(
+                                          width: 2.2,
+                                          height: 22,
+                                          decoration: BoxDecoration(
+                                            color: _loginRoyalBlue,
+                                            borderRadius: BorderRadius.circular(
+                                              1,
                                             ),
+                                          ),
+                                        )
+                                      : Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: placeholderColor.withValues(
+                                              alpha: 0.35,
+                                            ),
+                                          ),
+                                        ),
                                 ),
                               ),
                             );
@@ -2730,7 +3489,11 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                     padding: const EdgeInsets.only(left: 4, top: 8, bottom: 2),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.alertCircle, size: 14, color: _loginErrorColor),
+                        const Icon(
+                          LucideIcons.alertCircle,
+                          size: 14,
+                          color: _loginErrorColor,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -2755,9 +3518,15 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                       onTap: () async {
                         final data = await Clipboard.getData('text/plain');
                         if (data?.text != null) {
-                          final digits = data!.text!.replaceAll(RegExp(r'\D'), '');
+                          final digits = data!.text!.replaceAll(
+                            RegExp(r'\D'),
+                            '',
+                          );
                           if (digits.isNotEmpty) {
-                            final code = digits.substring(0, math.min(6, digits.length));
+                            final code = digits.substring(
+                              0,
+                              math.min(6, digits.length),
+                            );
                             setState(() {
                               _otpController.text = code;
                               if (_error != null) _error = null;
@@ -2770,20 +3539,27 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                       },
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               LucideIcons.clipboardPaste,
                               size: 14,
-                              color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                              color: widget.isDark
+                                  ? const Color(0xFF7E8B9F)
+                                  : _loginMutedBlueText,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'Paste code',
                               style: TextStyle(
-                                color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                                color: widget.isDark
+                                    ? const Color(0xFF7E8B9F)
+                                    : _loginMutedBlueText,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2803,11 +3579,16 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
                           child: Text(
                             'Clear',
                             style: TextStyle(
-                              color: widget.isDark ? const Color(0xFF7E8B9F) : _loginMutedBlueText,
+                              color: widget.isDark
+                                  ? const Color(0xFF7E8B9F)
+                                  : _loginMutedBlueText,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -2822,19 +3603,30 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                 Center(
                   child: _countdown > 0
                       ? Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
-                            color: widget.isDark ? const Color(0xFF1E2028) : const Color(0xFFF0F5FD),
+                            color: widget.isDark
+                                ? const Color(0xFF1E2028)
+                                : const Color(0xFFF0F5FD),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: widget.isDark ? const Color(0x22FFFFFF) : const Color(0x331E70E8),
+                              color: widget.isDark
+                                  ? const Color(0x22FFFFFF)
+                                  : const Color(0x331E70E8),
                               width: 1,
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(LucideIcons.clock, size: 14, color: subtitleColor),
+                              Icon(
+                                LucideIcons.clock,
+                                size: 14,
+                                color: subtitleColor,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 'Resend code in 00:${_countdown.toString().padLeft(2, '0')}',
@@ -2849,17 +3641,25 @@ class _SignUpEmailVerificationModalState extends State<_SignUpEmailVerificationM
                         )
                       : TextButton.icon(
                           onPressed: () {
-                            _startTimer();
                             setState(() {
                               _otpController.clear();
                               if (_error != null) _error = null;
                             });
+                            unawaited(_sendSignupOtp());
                             _otpFocusNode.requestFocus();
                           },
-                          icon: const Icon(LucideIcons.rotateCcw, size: 14, color: _loginRoyalBlue),
+                          icon: const Icon(
+                            LucideIcons.rotateCcw,
+                            size: 14,
+                            color: _loginRoyalBlue,
+                          ),
                           label: const Text(
                             'Resend OTP Code',
-                            style: TextStyle(color: _loginRoyalBlue, fontSize: 13, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              color: _loginRoyalBlue,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                 ),

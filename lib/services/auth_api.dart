@@ -76,7 +76,10 @@ class AuthApi {
 
   Map<String, String> get _headers {
     final headers = <String, String>{'Accept': 'application/json'};
-    if (!kIsWeb) {
+    if (!kIsWeb && _configuredBaseUrl.isEmpty &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      // Local development host override only. Production uses the configured API host.
       headers['Host'] = 'client.localhost:8000';
     }
     if (_cookies.isNotEmpty) {

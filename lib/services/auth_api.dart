@@ -166,19 +166,55 @@ class AuthApi {
     final privateKey = pair.privateKey as RSAPrivateKey;
     final keyId = base64Url.encode(_randomBytes(12)).replaceAll('=', '');
     _responseEncryptionPrivateKeys[keyId] = privateKey;
-    // Send the SubjectPublicKeyInfo DER form expected by Django.
-    final rsaPublic = ASN1Sequence()
-      ..add(ASN1Integer(publicKey.modulus!))
-      ..add(ASN1Integer(publicKey.exponent!));
-    final bitString = ASN1BitString(Uint8List.fromList([0, ...rsaPublic.encodedBytes]));
-    final algorithm = ASN1Sequence()
-      ..add(ASN1ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
-      ..add(ASN1Null());
-    final subjectPublicKeyInfo = ASN1Sequence()
-      ..add(algorithm)
-      ..add(bitString);
+
+    // Build DER SubjectPublicKeyInfo explicitly. This avoids ASN.1 library
+    // bit-string encoding differences and matches cryptography.load_der_public_key.
+    List<int> derLength(int length) {
+      if (length < 0x80) return <int>[length];
+      final bytes = <int>[];
+      var remaining = length;
+      while (remaining > 0) {
+        bytes.insert(0, remaining & 0xff);
+        remaining >>= 8;
+      }
+      return <int>[0x80 | bytes.length, ...bytes];
+    }
+
+    List<int> derValue(int tag, List<int> value) => <int>[
+      tag,
+      ...derLength(value.length),
+      ...value,
+    ];
+
+    List<int> unsignedBigIntBytes(BigInt value) {
+      var hex = value.toRadixString(16);
+      if (hex.length.isOdd) hex = '0$hex';
+      final bytes = <int>[
+        for (var offset = 0; offset < hex.length; offset += 2)
+          int.parse(hex.substring(offset, offset + 2), radix: 16),
+      ];
+      if (bytes.isEmpty) return <int>[0];
+      if ((bytes.first & 0x80) != 0) bytes.insert(0, 0);
+      return bytes;
+    }
+
+    final rsaPublicKey = derValue(0x30, <int>[
+      ...derValue(0x02, unsignedBigIntBytes(publicKey.modulus!)),
+      ...derValue(0x02, unsignedBigIntBytes(publicKey.exponent!)),
+    ]);
+    final rsaEncryptionAlgorithm = derValue(0x30, <int>[
+      ...derValue(0x06, <int>[
+        0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01,
+      ]),
+      ...derValue(0x05, const <int>[]),
+    ]);
+    final subjectPublicKeyInfo = derValue(0x30, <int>[
+      ...rsaEncryptionAlgorithm,
+      ...derValue(0x03, <int>[0, ...rsaPublicKey]),
+    ]);
+
     return (
-      publicKey: base64Encode(subjectPublicKeyInfo.encodedBytes),
+      publicKey: base64Encode(subjectPublicKeyInfo),
       keyId: keyId,
     );
   }

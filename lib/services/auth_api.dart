@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:asn1lib/asn1lib.dart';
 import 'package:flutter/foundation.dart';
@@ -162,8 +162,8 @@ class AuthApi {
         secureRandom,
       ));
     final pair = generator.generateKeyPair();
-    final publicKey = pair.publicKey as RSAPublicKey;
-    final privateKey = pair.privateKey as RSAPrivateKey;
+    final publicKey = pair.publicKey;
+    final privateKey = pair.privateKey;
     final keyId = base64Url.encode(_randomBytes(12)).replaceAll('=', '');
     _responseEncryptionPrivateKeys[keyId] = privateKey;
 
@@ -306,7 +306,7 @@ class AuthApi {
     );
     dynamic payload = response;
     for (var depth = 0; depth < 4 && payload is Map; depth++) {
-      final map = (payload as Map).cast<String, dynamic>();
+      final map = payload.cast<String, dynamic>();
       if (map['accounts'] is List) {
         return (map['accounts'] as List)
             .whereType<Map>()

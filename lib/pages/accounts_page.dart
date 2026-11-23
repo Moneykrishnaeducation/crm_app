@@ -2108,12 +2108,16 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
       final data = await AuthApi.instance.getAccountDetails(_account.login);
       if (!mounted) return;
       final currency = (data['currency'] ?? _account.currency).toString();
+      final leverageValue =
+          (data['leverage'] ?? _account.leverage.replaceFirst('1:', '')).toString();
       setState(() {
         _account = _account.copyWith(
           name: (data['account_name'] ?? data['name'] ?? _account.name).toString(),
           balance: _apiMoney(data['balance'] ?? _account.balance, currency),
           equity: _apiMoney(data['equity'] ?? _account.equity, currency),
-          leverage: '1:${data['leverage'] ?? _account.leverage.replaceFirst('1:', '')}',
+          leverage: leverageValue.startsWith('1:')
+              ? leverageValue
+              : '1:$leverageValue',
           currency: currency,
           floatingPnl: _apiNumber(data['profit'] ?? data['floating_pnl'] ?? 0),
           server: (data['server'] ?? data['server_name'] ?? _account.server)?.toString(),
@@ -2436,6 +2440,30 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')]),
           ),
           const SizedBox(height: 13),
+          if (_detailsLoading)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
+          if (_detailsError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: red.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: red.withValues(alpha: .25)),
+                ),
+                child: Row(children: [
+                  Expanded(child: Text(_detailsError!, style: TextStyle(color: red, fontSize: 10))),
+                  TextButton(
+                    onPressed: _detailsLoading ? null : _loadAccountDetails,
+                    child: const Text('Retry'),
+                  ),
+                ]),
+              ),
+            ),
           if (_tab == 'Overview') ...[
             panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [

@@ -172,7 +172,7 @@ class AuthApi {
       ..add(ASN1Integer(publicKey.exponent!));
     final bitString = ASN1BitString(Uint8List.fromList([0, ...rsaPublic.encodedBytes]));
     final algorithm = ASN1Sequence()
-      ..add(ASN1ObjectIdentifier.fromBytes(Uint8List.fromList([0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01])))
+      ..add(ASN1ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
       ..add(ASN1Null());
     final subjectPublicKeyInfo = ASN1Sequence()
       ..add(algorithm)

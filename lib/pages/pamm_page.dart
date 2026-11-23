@@ -64,9 +64,9 @@ class _PammPageState extends State<PammPage> {
   bool get _dark => Theme.of(context).brightness == Brightness.dark;
   Color get _card => _dark ? const Color(0xFF0C1833) : Colors.white;
   Color get _surface => _dark ? const Color(0xFF07142A) : const Color(0xFFF8FAFC);
-  Color get _border => _dark ? const Color(0xFF1E3563) : const Color(0xFFE2E8F0);
-  Color get _text => _dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-  Color get _muted => _dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Color get _border => _dark ? const Color(0xFF223C70) : const Color(0xFFCBD5E1);
+  Color get _text => _dark ? Colors.white : const Color(0xFF0A1629);
+  Color get _muted => _dark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
 
   @override
   void dispose() {
@@ -82,7 +82,14 @@ class _PammPageState extends State<PammPage> {
       child: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: _selectedManagedPool == null && _selectedAvailablePool == null && _connectedInvestorPool == null ? 580 : 1280),
+            constraints: BoxConstraints(
+              maxWidth:
+                  _selectedManagedPool == null &&
+                      _selectedAvailablePool == null &&
+                      _connectedInvestorPool == null
+                  ? 900
+                  : 1280,
+            ),
             child: _connectedInvestorPool != null
                 ? _buildConnectedInvestorPortfolio(_connectedInvestorPool!)
                 : _selectedManagedPool != null
@@ -108,16 +115,6 @@ class _PammPageState extends State<PammPage> {
         ),
       ),
     ),
-    floatingActionButton: _connectedInvestorPool == null && _selectedManagedPool == null && _selectedAvailablePool == null && _tab == 0
-        ? FloatingActionButton.extended(
-            onPressed: _createPool,
-            backgroundColor: _blue,
-            foregroundColor: Colors.white,
-            elevation: 4,
-            icon: const Icon(LucideIcons.plus, size: 18),
-            label: const Text('Create PAMM Pool', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-          )
-        : null,
   );
 
   Widget _topBar() {
@@ -150,33 +147,20 @@ class _PammPageState extends State<PammPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: _green.withValues(alpha: 0.12),
+                  color: _blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _green.withValues(alpha: 0.3)),
+                  border: Border.all(color: _blue.withValues(alpha: 0.22)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: _green,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: _green.withValues(alpha: 0.6),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                    ),
+                    Icon(LucideIcons.layers, color: _blue, size: 12),
                     const SizedBox(width: 5),
                     Text(
-                      'LIVE FEED',
-                      style: GoogleFonts.inter(
-                        color: _green,
-                        fontSize: 9.5,
+                      'PAMM CENTER',
+                      style: GoogleFonts.poppins(
+                        color: _blue,
+                        fontSize: 10,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
                       ),
@@ -210,7 +194,7 @@ class _PammPageState extends State<PammPage> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.easeInOutCubic,
-                          constraints: const BoxConstraints(minHeight: 42),
+                          constraints: const BoxConstraints(minHeight: 44),
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                           decoration: BoxDecoration(
                             gradient: _tab == i
@@ -245,10 +229,10 @@ class _PammPageState extends State<PammPage> {
                                   labels[i],
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                     color: _tab == i ? Colors.white : _text,
-                                    fontSize: 11.5,
-                                    fontWeight: _tab == i ? FontWeight.w800 : FontWeight.w600,
+                                    fontSize: 12.5,
+                                    fontWeight: _tab == i ? FontWeight.w900 : FontWeight.w700,
                                   ),
                                 ),
                               ),
@@ -263,9 +247,9 @@ class _PammPageState extends State<PammPage> {
                                 ),
                                 child: Text(
                                   '${counts[i]}',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                     color: _tab == i ? Colors.white : _muted,
-                                    fontSize: 9.5,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -310,9 +294,9 @@ class _PammPageState extends State<PammPage> {
     children: [
       Text(
         'PAMM Portfolio',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.poppins(
           color: _text,
-          fontSize: 17,
+          fontSize: 18,
           fontWeight: FontWeight.w900,
           letterSpacing: -0.4,
         ),
@@ -322,10 +306,10 @@ class _PammPageState extends State<PammPage> {
         'Percentage Allocation Management Module',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.poppins(
           color: _muted,
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     ],
@@ -335,16 +319,34 @@ class _PammPageState extends State<PammPage> {
 
   Widget _snapshot() {
     final managed = _tab == 0;
-    return Row(
-      children: [
-        Expanded(child: _metricCard(managed ? 'POOL EQUITY' : 'INVESTED EQUITY', r'$0.00', 'Combined capital', LucideIcons.wallet, _blue)),
-        const SizedBox(width: 8),
-        Expanded(child: _metricCard(managed ? 'MANAGED POOLS' : 'NET PROFIT / LOSS', managed ? '${_managed.length}' : '+\$0.00', managed ? 'Accepting deposits' : 'Active allocations', LucideIcons.trendingUp, _green)),
-        const SizedBox(width: 8),
-        Expanded(child: _metricCard('ALLOCATION', 'Proportional', 'Execution MT5', LucideIcons.activity, _gold)),
-      ],
-    );
+    return _metricGrid([
+      _metricCard(managed ? 'POOL EQUITY' : 'INVESTED EQUITY', r'$0.00', 'Combined capital', LucideIcons.wallet, _blue),
+      _metricCard(managed ? 'MANAGED POOLS' : 'NET PROFIT / LOSS', managed ? '${_managed.length}' : '+\$0.00', managed ? 'Accepting deposits' : 'Active allocations', LucideIcons.trendingUp, _green),
+      _metricCard('ALLOCATION', 'Proportional', 'Execution MT5', LucideIcons.activity, _gold),
+    ]);
   }
+
+  Widget _metricGrid(List<Widget> cards) => LayoutBuilder(
+    builder: (context, constraints) {
+      final columns = constraints.maxWidth >= 510 ? 3 : 2;
+      const gap = 8.0;
+      final regularWidth =
+          (constraints.maxWidth - gap * (columns - 1)) / columns;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (var index = 0; index < cards.length; index++)
+            SizedBox(
+              width: columns == 2 && cards.length.isOdd && index == cards.length - 1
+                  ? constraints.maxWidth
+                  : regularWidth,
+              child: cards[index],
+            ),
+        ],
+      );
+    },
+  );
   Widget _featureBanner({
     required IconData icon,
     required String title,
@@ -410,16 +412,16 @@ class _PammPageState extends State<PammPage> {
                               title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 color: _text,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                             decoration: BoxDecoration(
                               color: _gold.withValues(alpha: .15),
                               borderRadius: BorderRadius.circular(6),
@@ -427,10 +429,10 @@ class _PammPageState extends State<PammPage> {
                             ),
                             child: Text(
                               tag,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 color: _gold,
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
@@ -439,9 +441,10 @@ class _PammPageState extends State<PammPage> {
                       const SizedBox(height: 3),
                       Text(
                         subtitle,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           color: _muted,
-                          fontSize: 11,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
                           height: 1.35,
                         ),
                       ),
@@ -453,15 +456,15 @@ class _PammPageState extends State<PammPage> {
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-              height: 42,
+              height: 44,
               child: FilledButton.icon(
                 onPressed: onAction,
                 icon: const Icon(LucideIcons.arrowRight, size: 15),
                 label: Text(
                   actionLabel,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 style: FilledButton.styleFrom(
@@ -503,9 +506,9 @@ class _PammPageState extends State<PammPage> {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     color: _muted,
-                    fontSize: 8.5,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
                   ),
@@ -527,10 +530,10 @@ class _PammPageState extends State<PammPage> {
             fit: BoxFit.scaleDown,
             child: Text(
               value,
-              style: GoogleFonts.jetBrainsMono(
+              style: GoogleFonts.poppins(
                 color: _text,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -539,10 +542,10 @@ class _PammPageState extends State<PammPage> {
             subtext,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               color: _muted,
-              fontSize: 9.5,
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -554,7 +557,7 @@ class _PammPageState extends State<PammPage> {
     return Column(
       children: [
         Container(
-          height: 44,
+          height: 48,
           decoration: BoxDecoration(
             color: _card,
             borderRadius: BorderRadius.circular(14),
@@ -563,10 +566,10 @@ class _PammPageState extends State<PammPage> {
           child: TextField(
             controller: _search,
             onChanged: (v) => setState(() => _query = v),
-            style: GoogleFonts.inter(color: _text, fontSize: 12.5),
+            style: GoogleFonts.poppins(color: _text, fontSize: 12.5),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(color: _muted, fontSize: 11.5),
+              hintStyle: GoogleFonts.poppins(color: _muted, fontSize: 11.5),
               prefixIcon: Icon(LucideIcons.search, color: _muted, size: 17),
               suffixIcon: _query.isNotEmpty
                   ? IconButton(
@@ -585,7 +588,7 @@ class _PammPageState extends State<PammPage> {
         if (filters.isNotEmpty) ...[
           const SizedBox(height: 10),
           SizedBox(
-            height: 32,
+            height: 44,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: filters.length,
@@ -597,6 +600,7 @@ class _PammPageState extends State<PammPage> {
                   onTap: () => setState(() => _selectedFilter = f),
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
+                    constraints: const BoxConstraints(minHeight: 40),
                     alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
@@ -608,7 +612,7 @@ class _PammPageState extends State<PammPage> {
                     ),
                     child: Text(
                       f,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         color: isSelected ? Colors.white : _muted,
                         fontSize: 10.5,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -647,7 +651,7 @@ class _PammPageState extends State<PammPage> {
         Expanded(
           child: Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               color: _text,
               fontSize: 13,
               fontWeight: FontWeight.w800,
@@ -662,10 +666,10 @@ class _PammPageState extends State<PammPage> {
             border: Border.all(color: _border),
           ),
           child: Text(
-            '$count pools',
-            style: GoogleFonts.inter(
+            '$count ${count == 1 ? 'item' : 'items'}',
+            style: GoogleFonts.poppins(
               color: _muted,
-              fontSize: 10,
+              fontSize: 11.5,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -773,7 +777,7 @@ class _PammPageState extends State<PammPage> {
             children: [
               Container(width: 4, height: 20, decoration: BoxDecoration(color: _blue, borderRadius: BorderRadius.circular(4))),
               const SizedBox(width: 10),
-              Expanded(child: Text('Connected investor portfolio', style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800))),
+              Expanded(child: Text('Connected investor portfolio', style: TextStyle(color: _text, fontSize: 15.5, fontWeight: FontWeight.w800))),
               IconButton(
                 tooltip: 'Close portfolio',
                 onPressed: () => setState(() => _connectedInvestorPool = null),
@@ -812,11 +816,11 @@ class _PammPageState extends State<PammPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('PAMM MANAGER', style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .8)),
+                            Text('PAMM MANAGER', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .8)),
                             const SizedBox(height: 4),
-                            Text(pool.name, style: TextStyle(color: _text, fontSize: 15, fontWeight: FontWeight.w800)),
+                            Text(pool.name, style: TextStyle(color: _text, fontSize: 16.5, fontWeight: FontWeight.w800)),
                             const SizedBox(height: 3),
-                            Text('Account ID: ${pool.login} · Investor allocation overview', style: TextStyle(color: _muted, fontSize: 9)),
+                            Text('Account ID: ${pool.login} · Investor allocation overview', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
                           ],
                         ),
                       ],
@@ -855,11 +859,11 @@ class _PammPageState extends State<PammPage> {
                         child: Row(
                           children: [
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _muted, fontSize: 9)),
+                              Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w600)),
                               const SizedBox(height: 6),
-                              Text(item.$2, style: TextStyle(color: _text, fontSize: 15, fontWeight: FontWeight.w800)),
+                              Text(item.$2, style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w800)),
                             ])),
-                            Icon(item.$3, size: 15, color: _blue),
+                            Icon(item.$3, size: 16, color: _blue),
                           ],
                         ),
                       ),
@@ -872,11 +876,11 @@ class _PammPageState extends State<PammPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Investor accounts', style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w800)),
+                    Text('Investor accounts', style: TextStyle(color: _text, fontSize: 13.5, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 3),
-                    Text('Individual balances, allocation, performance and fee breakdown', style: TextStyle(color: _muted, fontSize: 9)),
+                    Text('Individual balances, allocation, performance and fee breakdown', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500)),
                   ])),
-                  Text('Total units: ${investors.length}', style: TextStyle(color: _muted, fontSize: 9)),
+                  Text('Total units: ${investors.length}', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w600)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -889,9 +893,9 @@ class _PammPageState extends State<PammPage> {
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Container(width: 42, height: 42, decoration: BoxDecoration(color: _blue.withValues(alpha: .06), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.people_outline, color: _blue, size: 21)),
                     const SizedBox(height: 10),
-                    Text('No connected investors yet', style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w800)),
+                    Text('No connected investors yet', style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 4),
-                    Text('Investor accounts and their portfolio details will appear here once they join this pool.', textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 9)),
+                    Text('Investor accounts and their portfolio details will appear here once they join this pool.', textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 11.5, height: 1.35)),
                   ]),
                 )
               else
@@ -904,7 +908,7 @@ class _PammPageState extends State<PammPage> {
           decoration: BoxDecoration(border: Border(top: BorderSide(color: _border))),
           child: Row(
             children: [
-              Expanded(child: Text('Values reflect saved PAMM investment records in this preview.', style: TextStyle(color: _muted, fontSize: 9))),
+              Expanded(child: Text('Values reflect saved PAMM investment records in this preview.', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500))),
               OutlinedButton(onPressed: () => setState(() => _connectedInvestorPool = null), child: const Text('Close portfolio')),
             ],
           ),
@@ -916,7 +920,7 @@ class _PammPageState extends State<PammPage> {
   Widget _portfolioBadge(String label, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(color: color.withValues(alpha: .06), borderRadius: BorderRadius.circular(18), border: Border.all(color: color.withValues(alpha: .35))),
-    child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+    child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800)),
   );
 
   Widget _connectedInvestorCard(_PammInvestment investment, double managerShare) => Container(
@@ -929,9 +933,9 @@ class _PammPageState extends State<PammPage> {
       runSpacing: 10,
       children: [
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(investment.name, style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w800)),
+          Text(investment.name, style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w800)),
           const SizedBox(height: 3),
-          Text('Investor account · MT5 ${investment.login}', style: TextStyle(color: _muted, fontSize: 9)),
+          Text('Investor account · MT5 ${investment.login}', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
         ]),
         Wrap(spacing: 22, runSpacing: 8, children: [
           _joinPoolValue('Capital invested', _money(investment.deposit)),
@@ -996,7 +1000,7 @@ class _PammPageState extends State<PammPage> {
                         'PAMM overview',
                         style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w800),
                       ),
-                      Text('Review account details, equity and allocations.', style: TextStyle(color: _muted, fontSize: 10)),
+                      Text('Review account details, equity and allocations.', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
@@ -1015,11 +1019,11 @@ class _PammPageState extends State<PammPage> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _text,
                     side: BorderSide(color: _border),
-                    textStyle: const TextStyle(fontSize: 10),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ),
                 const Spacer(),
-                Text('Pool status  ', style: TextStyle(color: _muted, fontSize: 9)),
+                Text('Pool status  ', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
                 _statusPill(status),
               ],
             ),
@@ -1110,11 +1114,11 @@ class _PammPageState extends State<PammPage> {
               decoration: BoxDecoration(color: _blue.withValues(alpha: .1), borderRadius: BorderRadius.circular(8)),
               child: Text(
                 investment == null ? 'Available PAMM pool' : 'My investment',
-                style: TextStyle(color: _blue, fontSize: 10, fontWeight: FontWeight.w800),
+                style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: 8),
-            Text('MT5 login  ${pool.login}', style: TextStyle(color: _muted, fontSize: 10)),
+            Text('MT5 login  ${pool.login}', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w600)),
             IconButton(
               visualDensity: VisualDensity.compact,
               tooltip: 'Copy MT5 login',
@@ -1136,9 +1140,9 @@ class _PammPageState extends State<PammPage> {
                     style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
-                  Text('Manager: ${pool.manager}', style: TextStyle(color: _muted, fontSize: 10)),
+                  Text('Manager: ${pool.manager}', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 3),
-                  Text('Review your allocation, current value and investment performance.', style: TextStyle(color: _muted, fontSize: 10)),
+                  Text('Review your allocation, current value and investment performance.', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -1146,12 +1150,12 @@ class _PammPageState extends State<PammPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Net current value', style: TextStyle(color: _muted, fontSize: 9)),
+                Text('Net current value', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
                 Text(
                   _money(investment?.value ?? pool.equity),
                   style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w800),
                 ),
-                Text('USD', style: TextStyle(color: _muted, fontSize: 9)),
+                Text('USD', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
               ],
             ),
           ],
@@ -1169,7 +1173,7 @@ class _PammPageState extends State<PammPage> {
                 style: FilledButton.styleFrom(
                   backgroundColor: _blue,
                   foregroundColor: Colors.white,
-                  textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                 ),
               )
             else ...[
@@ -1180,7 +1184,7 @@ class _PammPageState extends State<PammPage> {
                 style: FilledButton.styleFrom(
                   backgroundColor: _blue,
                   foregroundColor: Colors.white,
-                  textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                 ),
               ),
               OutlinedButton.icon(
@@ -1190,7 +1194,7 @@ class _PammPageState extends State<PammPage> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _text,
                   side: BorderSide(color: _border),
-                  textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -1201,7 +1205,7 @@ class _PammPageState extends State<PammPage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: _text,
                 side: BorderSide(color: _border),
-                textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -1222,7 +1226,7 @@ class _PammPageState extends State<PammPage> {
       ),
       child: Text(
         status,
-        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700),
+        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -1345,11 +1349,11 @@ class _PammPageState extends State<PammPage> {
               decoration: BoxDecoration(color: _blue.withValues(alpha: .1), borderRadius: BorderRadius.circular(8)),
               child: Text(
                 'PAMM manager',
-                style: TextStyle(color: _blue, fontSize: 10, fontWeight: FontWeight.w800),
+                style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: 8),
-            Text('MT5 login  ${pool.login}', style: TextStyle(color: _muted, fontSize: 10)),
+            Text('MT5 login  ${pool.login}', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w600)),
             IconButton(
               visualDensity: VisualDensity.compact,
               tooltip: 'Copy MT5 login',
@@ -1371,7 +1375,7 @@ class _PammPageState extends State<PammPage> {
                     style: TextStyle(color: _text, fontSize: 21, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
-                  Text('Manage your pool, review equity and monitor investor activity.', style: TextStyle(color: _muted, fontSize: 11, height: 1.35)),
+                  Text('Manage your pool, review equity and monitor investor activity.', style: TextStyle(color: _muted, fontSize: 12.5, fontWeight: FontWeight.w500, height: 1.35)),
                 ],
               ),
             ),
@@ -1379,7 +1383,7 @@ class _PammPageState extends State<PammPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Manager balance', style: TextStyle(color: _muted, fontSize: 9)),
+                Text('Manager balance', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
                 Text(
                   _money(pool.managerBalance),
                   style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w800),
@@ -1400,7 +1404,7 @@ class _PammPageState extends State<PammPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: _blue,
                 foregroundColor: Colors.white,
-                textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
             OutlinedButton.icon(
@@ -1410,7 +1414,7 @@ class _PammPageState extends State<PammPage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: _text,
                 side: BorderSide(color: _border),
-                textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
             OutlinedButton.icon(
@@ -1420,7 +1424,7 @@ class _PammPageState extends State<PammPage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: _text,
                 side: BorderSide(color: _border),
-                textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
             OutlinedButton.icon(
@@ -1430,7 +1434,7 @@ class _PammPageState extends State<PammPage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: _text,
                 side: BorderSide(color: _border),
-                textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -1449,13 +1453,13 @@ class _PammPageState extends State<PammPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: TextStyle(color: _muted, fontSize: 10)),
+        Text(title, style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
         const SizedBox(height: 5),
         Text(
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800),
+          style: TextStyle(color: _text, fontSize: 15.5, fontWeight: FontWeight.w800),
         ),
       ],
     ),
@@ -1486,10 +1490,10 @@ class _PammPageState extends State<PammPage> {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w800),
+                    style: TextStyle(color: _text, fontSize: 14.5, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 10)),
+                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -1511,21 +1515,21 @@ class _PammPageState extends State<PammPage> {
     child: Row(
       children: [
         Expanded(
-          child: Text(label, style: TextStyle(color: _muted, fontSize: 10)),
+          child: Text(label, style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w600)),
         ),
         Flexible(
           child: Text(
             value,
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w700),
+            style: TextStyle(color: _text, fontSize: 12.5, fontWeight: FontWeight.w700),
           ),
         ),
         if (copyValue != null) ...[
           const SizedBox(width: 4),
           InkWell(
             onTap: () => _copyPammValue(copyValue),
-            child: Icon(Icons.copy_outlined, size: 13, color: _muted),
+            child: Icon(Icons.copy_outlined, size: 14, color: _muted),
           ),
         ],
       ],
@@ -1553,10 +1557,10 @@ class _PammPageState extends State<PammPage> {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
-                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 9)),
+                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -1676,9 +1680,9 @@ class _PammPageState extends State<PammPage> {
                       pool.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         color: _text,
-                        fontSize: 14,
+                        fontSize: 15.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1687,10 +1691,10 @@ class _PammPageState extends State<PammPage> {
                       children: [
                         Text(
                           'MT5 ${pool.login}',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             color: _muted,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -1701,7 +1705,7 @@ class _PammPageState extends State<PammPage> {
                             padding: const EdgeInsets.all(2),
                             child: Icon(
                               Icons.copy_outlined,
-                              size: 11,
+                              size: 12,
                               color: _muted,
                             ),
                           ),
@@ -1709,9 +1713,10 @@ class _PammPageState extends State<PammPage> {
                         if (!managed) ...[
                           Text(
                             ' • ${pool.manager}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               color: _muted,
-                              fontSize: 10,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1723,7 +1728,7 @@ class _PammPageState extends State<PammPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: _green.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
@@ -1733,19 +1738,19 @@ class _PammPageState extends State<PammPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 5,
-                      height: 5,
+                      width: 6,
+                      height: 6,
                       decoration: const BoxDecoration(
                         color: _green,
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 5),
                     Text(
                       'ACTIVE',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         color: _green,
-                        fontSize: 8.5,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.4,
                       ),
@@ -1781,9 +1786,9 @@ class _PammPageState extends State<PammPage> {
               Expanded(
                 child: Text(
                   managed ? 'Managed PAMM Pool' : 'Open for Investor Allocation',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     color: _muted,
-                    fontSize: 10,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1791,8 +1796,8 @@ class _PammPageState extends State<PammPage> {
               if (managed) ...[
                 OutlinedButton.icon(
                   onPressed: () => _openManagedDetails(pool),
-                  icon: const Icon(LucideIcons.chevronRight, size: 13),
-                  label: const Text('Details'),
+                  icon: const Icon(LucideIcons.chevronRight, size: 14),
+                  label: const Text('Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _text,
                     side: BorderSide(color: _border),
@@ -1800,7 +1805,7 @@ class _PammPageState extends State<PammPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 10),
-                    minimumSize: const Size(0, 34),
+                    minimumSize: const Size(0, 44),
                   ),
                 ),
                 const SizedBox(width: 7),
@@ -1812,12 +1817,12 @@ class _PammPageState extends State<PammPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    minimumSize: const Size(0, 34),
+                    minimumSize: const Size(0, 44),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
                   child: const Text(
                     'Deposit',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                   ),
                 ),
               ] else
@@ -1826,19 +1831,19 @@ class _PammPageState extends State<PammPage> {
                   children: [
                     FilledButton.icon(
                       onPressed: () => _joinInvestmentDialog(pool),
-                      icon: const Icon(LucideIcons.trendingUp, size: 14),
+                      icon: const Icon(LucideIcons.trendingUp, size: 15),
                       style: FilledButton.styleFrom(
                         backgroundColor: _blue,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        minimumSize: const Size(0, 36),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        minimumSize: const Size(0, 44),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                       ),
                       label: const Text(
                         'Invest Now',
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
                       ),
                     ),
                   ],
@@ -1857,9 +1862,9 @@ class _PammPageState extends State<PammPage> {
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.poppins(
           color: _muted,
-          fontSize: 8.5,
+          fontSize: 10.5,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.4,
         ),
@@ -1869,9 +1874,9 @@ class _PammPageState extends State<PammPage> {
         value,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.jetBrainsMono(
+        style: GoogleFonts.poppins(
           color: color ?? _text,
-          fontSize: 12,
+          fontSize: 13.5,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -1925,9 +1930,9 @@ class _PammPageState extends State<PammPage> {
                   children: [
                     Text(
                       item.name,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         color: _text,
-                        fontSize: 14,
+                        fontSize: 15.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1936,10 +1941,10 @@ class _PammPageState extends State<PammPage> {
                       'MT5 ${item.login}  •  Manager: ${item.manager}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         color: _muted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1964,24 +1969,24 @@ class _PammPageState extends State<PammPage> {
               Expanded(
                 child: Text(
                   'Active PAMM Allocation',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     color: _muted,
-                    fontSize: 10,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               OutlinedButton.icon(
                 onPressed: () => _openInvestmentDetails(item),
-                icon: const Icon(LucideIcons.chevronRight, size: 13),
-                label: const Text('Details'),
+                icon: const Icon(LucideIcons.chevronRight, size: 14),
+                label: const Text('Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _text,
                   side: BorderSide(color: _border),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  minimumSize: const Size(0, 34),
+                  minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                 ),
               ),
@@ -1994,10 +1999,10 @@ class _PammPageState extends State<PammPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  minimumSize: const Size(0, 34),
+                  minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                child: const Text('Deposit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                child: const Text('Deposit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
               ),
             ],
           ),
@@ -2019,7 +2024,7 @@ class _PammPageState extends State<PammPage> {
         const SizedBox(height: 10),
         Text(
           title,
-          style: GoogleFonts.inter(color: _text, fontSize: 14, fontWeight: FontWeight.w700),
+          style: GoogleFonts.poppins(color: _text, fontSize: 14, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 5),
         Text(
@@ -2040,7 +2045,7 @@ class _PammPageState extends State<PammPage> {
     ),
     child: Text(
       '${value.toStringAsFixed(2)}%',
-      style: const TextStyle(color: Color(0xFF99620A), fontSize: 9, fontWeight: FontWeight.w800),
+      style: const TextStyle(color: Color(0xFF99620A), fontSize: 11, fontWeight: FontWeight.w800),
     ),
   );
 
@@ -2079,13 +2084,13 @@ class _PammPageState extends State<PammPage> {
                 decoration: BoxDecoration(color: _blue.withValues(alpha: .08), borderRadius: BorderRadius.circular(5)),
                 child: Text(
                   number,
-                  style: TextStyle(color: _blue, fontSize: 9, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _blue, fontSize: 11, fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 title.toUpperCase(),
-                style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .25),
+                style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .25),
               ),
               const Spacer(),
               if (hint != null)
@@ -2093,7 +2098,7 @@ class _PammPageState extends State<PammPage> {
                   child: Text(
                     hint,
                     textAlign: TextAlign.right,
-                    style: TextStyle(color: _muted, fontSize: 9),
+                    style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500),
                   ),
                 ),
             ],
@@ -2107,7 +2112,7 @@ class _PammPageState extends State<PammPage> {
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w700),
                     children: [
                       TextSpan(text: label),
                       if (required)
@@ -2122,7 +2127,7 @@ class _PammPageState extends State<PammPage> {
               if (suffix != null)
                 Text(
                   suffix,
-                  style: TextStyle(color: _blue, fontSize: 10, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w800),
                 ),
             ],
           ),
@@ -2130,7 +2135,7 @@ class _PammPageState extends State<PammPage> {
 
         InputDecoration inputDecoration(String hint, {Widget? prefix, Widget? suffix}) => InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: _muted, fontSize: 11),
+          hintStyle: TextStyle(color: _muted, fontSize: 12.5),
           prefixIcon: prefix,
           suffixIcon: suffix,
           isDense: true,
@@ -2164,7 +2169,7 @@ class _PammPageState extends State<PammPage> {
                 controller: controller,
                 obscureText: password && !visible,
                 keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-                style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w600),
+                style: TextStyle(color: _text, fontSize: 12.5, fontWeight: FontWeight.w600),
                 decoration: inputDecoration(
                   hint,
                   suffix: password
@@ -2568,8 +2573,8 @@ class _PammPageState extends State<PammPage> {
         return StatefulBuilder(
           builder: (sheetContext, setModalState) {
             final isDark = _dark;
-            final modalText = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF14265A);
-            final modalMuted = isDark ? const Color(0xFF9AABC4) : const Color(0xFF6D7F9D);
+            final modalText = isDark ? Colors.white : const Color(0xFF091836);
+            final modalMuted = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
             final modalCard = _card;
             final modalBorder = _border;
 
@@ -2598,7 +2603,7 @@ class _PammPageState extends State<PammPage> {
               padding: const EdgeInsets.only(bottom: 9),
               child: Text(
                 text.toUpperCase(),
-                style: TextStyle(color: modalText, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: .25),
+                style: TextStyle(color: modalText, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .25),
               ),
             );
 
@@ -2627,14 +2632,14 @@ class _PammPageState extends State<PammPage> {
                             const SizedBox(width: 7),
                             Text(
                               title,
-                              style: TextStyle(color: selected ? Colors.white : modalText, fontSize: 11, fontWeight: FontWeight.w800),
+                              style: TextStyle(color: selected ? Colors.white : modalText, fontSize: 12.5, fontWeight: FontWeight.w800),
                             ),
                           ],
                         ),
                         const SizedBox(height: 5),
                         Text(
                           subtitle,
-                          style: TextStyle(color: selected ? Colors.white.withValues(alpha: .85) : modalMuted, fontSize: 9, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: selected ? Colors.white.withValues(alpha: .85) : modalMuted, fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -2785,10 +2790,10 @@ class _PammPageState extends State<PammPage> {
                                             children: [
                                               Text(
                                                 'PAYMENT INSTRUCTIONS',
-                                                style: TextStyle(color: modalText, fontSize: 10, fontWeight: FontWeight.w900),
+                                                style: TextStyle(color: modalText, fontSize: 11.5, fontWeight: FontWeight.w900),
                                               ),
                                               const SizedBox(height: 5),
-                                              Text(method == 0 ? 'Send USDT using the TRC20 network and upload your transaction screenshot for verification.' : 'Contact Live Support for official bank details before transferring, then upload your payment proof.', style: TextStyle(color: modalMuted, fontSize: 10, height: 1.4)),
+                                              Text(method == 0 ? 'Send USDT using the TRC20 network and upload your transaction screenshot for verification.' : 'Contact Live Support for official bank details before transferring, then upload your payment proof.', style: TextStyle(color: modalMuted, fontSize: 11.5, height: 1.4)),
                                             ],
                                           ),
                                         ),
@@ -2806,7 +2811,7 @@ class _PammPageState extends State<PammPage> {
                                   const SizedBox(height: 6),
                                   Text(
                                     r'Minimum deposit: $10.00',
-                                    style: TextStyle(color: modalMuted, fontSize: 9, fontWeight: FontWeight.w600),
+                                    style: TextStyle(color: modalMuted, fontSize: 11, fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 17),
                                   sectionLabel('Upload payment proof'),
@@ -2848,16 +2853,16 @@ class _PammPageState extends State<PammPage> {
                                                   proof?.name ?? 'Choose transaction proof',
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(color: modalText, fontSize: 11, fontWeight: FontWeight.w800),
+                                                  style: TextStyle(color: modalText, fontSize: 12.5, fontWeight: FontWeight.w800),
                                                 ),
                                                 const SizedBox(height: 4),
-                                                Text(proof == null ? 'JPG or PNG · Tap to browse' : 'Selected · Tap to change file', style: TextStyle(color: modalMuted, fontSize: 9)),
+                                                Text(proof == null ? 'JPG or PNG · Tap to browse' : 'Selected · Tap to change file', style: TextStyle(color: modalMuted, fontSize: 11)),
                                               ],
                                             ),
                                           ),
                                           Text(
                                             'Browse',
-                                            style: TextStyle(color: _blue, fontSize: 9, fontWeight: FontWeight.w900),
+                                            style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w900),
                                           ),
                                         ],
                                       ),
@@ -2890,7 +2895,7 @@ class _PammPageState extends State<PammPage> {
                                         elevation: 0,
                                       ),
                                       icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                                      label: const Text('SUBMIT DEPOSIT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: .2)),
+                                      label: const Text('SUBMIT DEPOSIT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: .2)),
                                     ),
                                   ),
                                 ],
@@ -2930,7 +2935,7 @@ class _PammPageState extends State<PammPage> {
       const SizedBox(width: 6),
       Text(
         label,
-        style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w700),
+        style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w700),
       ),
     ],
   );
@@ -2970,9 +2975,9 @@ class _PammPageState extends State<PammPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Join PAMM Investment Pool', style: TextStyle(color: _text, fontSize: 14, fontWeight: FontWeight.w800)),
+                          Text('Join PAMM Investment Pool', style: TextStyle(color: _text, fontSize: 15, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 2),
-                          Text('Review pool terms and create your investment account', style: TextStyle(color: _muted, fontSize: 9)),
+                          Text('Review pool terms and create your investment account', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
                         ],
                       ),
                     ),
@@ -2996,7 +3001,7 @@ class _PammPageState extends State<PammPage> {
                         TextFormField(
                           controller: alias,
                           textCapitalization: TextCapitalization.words,
-                          style: TextStyle(color: _text, fontSize: 12),
+                          style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w600),
                           decoration: _joinInputDecoration('e.g. My PAMM Investment'),
                           validator: (value) => value == null || value.trim().isEmpty ? 'Enter an account alias' : null,
                         ),
@@ -3005,7 +3010,7 @@ class _PammPageState extends State<PammPage> {
                         TextFormField(
                           initialValue: pool.login,
                           readOnly: true,
-                          style: TextStyle(color: _text, fontSize: 12),
+                          style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w700),
                           decoration: _joinInputDecoration(''),
                         ),
                         const SizedBox(height: 16),
@@ -3034,9 +3039,9 @@ class _PammPageState extends State<PammPage> {
                                       children: [
                                         Text(
                                           'Pool details',
-                                          style: TextStyle(color: _text, fontSize: 11, fontWeight: FontWeight.w800),
+                                          style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w800),
                                         ),
-                                        Text('Review the manager settings before joining', style: TextStyle(color: _muted, fontSize: 9)),
+                                        Text('Review the manager settings before joining', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500)),
                                       ],
                                     ),
                                   ],
@@ -3051,7 +3056,7 @@ class _PammPageState extends State<PammPage> {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         'ACCOUNT DETAILS',
-                                        style: TextStyle(color: _muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4),
+                                        style: TextStyle(color: _muted, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .4),
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -3077,7 +3082,7 @@ class _PammPageState extends State<PammPage> {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         'INVESTMENT TERMS',
-                                        style: TextStyle(color: _muted, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: .4),
+                                        style: TextStyle(color: _muted, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .4),
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -3094,13 +3099,13 @@ class _PammPageState extends State<PammPage> {
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: Text('Investment availability', style: TextStyle(color: _muted, fontSize: 9)),
+                                          child: Text('Investment availability', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
                                         ),
                                         _statusPill(pool.status == 'Open' ? 'Open for investors' : 'Closed'),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
-                                    Text('Manager profit share is the percentage of eligible profits allocated to the manager, according to the platform’s PAMM rules. Trading returns are variable and are not guaranteed.', style: TextStyle(color: _muted, fontSize: 9, height: 1.45)),
+                                    Text('Manager profit share is the percentage of eligible profits allocated to the manager, according to the platform’s PAMM rules. Trading returns are variable and are not guaranteed.', style: TextStyle(color: _muted, fontSize: 11, height: 1.45)),
                                   ],
                                 ),
                               ),
@@ -3126,7 +3131,7 @@ class _PammPageState extends State<PammPage> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('Cancel'),
+                        child: const Text('Cancel', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -3152,7 +3157,7 @@ class _PammPageState extends State<PammPage> {
                                 showAppMessage('Investment added to your portfolio preview.');
                               },
                         style: FilledButton.styleFrom(backgroundColor: _gold, foregroundColor: const Color(0xFF17233D), elevation: 0, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                        child: const Text('Confirm Investment', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                        child: const Text('Confirm Investment', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
                       ),
                     ),
                   ],
@@ -3169,13 +3174,13 @@ class _PammPageState extends State<PammPage> {
     padding: const EdgeInsets.only(bottom: 6),
     child: Text(
       label,
-      style: TextStyle(color: _muted, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .35),
+      style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .35),
     ),
   );
 
   InputDecoration _joinInputDecoration(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(color: _muted.withValues(alpha: .75), fontSize: 10, fontWeight: FontWeight.w600),
+    hintStyle: TextStyle(color: _muted.withValues(alpha: .75), fontSize: 12, fontWeight: FontWeight.w600),
     filled: true,
     fillColor: _surface,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -3196,11 +3201,11 @@ class _PammPageState extends State<PammPage> {
   Widget _joinPoolValue(String label, String value, {Color? valueColor}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: TextStyle(color: _muted, fontSize: 9)),
+      Text(label, style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500)),
       const SizedBox(height: 4),
       Text(
         value,
-        style: TextStyle(color: valueColor ?? _text, fontSize: 10, fontWeight: FontWeight.w800),
+        style: TextStyle(color: valueColor ?? _text, fontSize: 12.5, fontWeight: FontWeight.w800),
       ),
     ],
   );

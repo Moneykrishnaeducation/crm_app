@@ -18,41 +18,30 @@ List<Widget> _buildPammAvailableTabContent(_PammPageState state) {
       : '${(state._available.fold<double>(0, (value, pool) => value + pool.share) / state._available.length).toStringAsFixed(1)}%';
 
   return [
-
     const SizedBox(height: 12),
-    Row(
-      children: [
-        Expanded(
-          child: state._metricCard(
-            'AVAILABLE POOLS',
-            '${state._available.length}',
-            'Open for investment',
-            LucideIcons.layers,
-            _PammPageState._blue,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: state._metricCard(
-            'TOTAL POOL EQUITY',
-            state._money(totalEquity),
-            'Across listed pools',
-            LucideIcons.wallet,
-            _PammPageState._green,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: state._metricCard(
-            'AVG. PROFIT SHARE',
-            averageProfitShare,
-            'Pool allocation',
-            LucideIcons.chartNoAxesCombined,
-            _PammPageState._gold,
-          ),
-        ),
-      ],
-    ),
+    state._metricGrid([
+      state._metricCard(
+        'AVAILABLE POOLS',
+        '${state._available.length}',
+        'Open for investment',
+        LucideIcons.layers,
+        _PammPageState._blue,
+      ),
+      state._metricCard(
+        'TOTAL POOL EQUITY',
+        state._money(totalEquity),
+        'Across listed pools',
+        LucideIcons.wallet,
+        _PammPageState._green,
+      ),
+      state._metricCard(
+        'AVG. PROFIT SHARE',
+        averageProfitShare,
+        'Pool allocation',
+        LucideIcons.chartNoAxesCombined,
+        _PammPageState._gold,
+      ),
+    ]),
     const SizedBox(height: 14),
     state._buildSearchAndFilters(
       'Search available pools by name or MT5 login...',

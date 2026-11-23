@@ -13,46 +13,36 @@ List<Widget> _buildPammManagedTabContent(_PammPageState state) {
   return [
     state._buildCreatePammBanner(),
     const SizedBox(height: 12),
-    Row(
-      children: [
-        Expanded(
-          child: state._metricCard(
-            'MANAGED EQUITY',
-            state._money(
-              state._managed.fold<double>(
-                0,
-                (total, pool) => total + pool.equity,
-              ),
-            ),
-            'Combined pool equity',
-            LucideIcons.wallet,
-            _PammPageState._blue,
+    state._metricGrid([
+      state._metricCard(
+        'MANAGED EQUITY',
+        state._money(
+          state._managed.fold<double>(
+            0,
+            (total, pool) => total + pool.equity,
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: state._metricCard(
-            'MANAGED POOLS',
-            '${state._managed.length}',
-            'Your active pools',
-            LucideIcons.layers,
-            _PammPageState._green,
-          ),
+        'Combined pool equity',
+        LucideIcons.wallet,
+        _PammPageState._blue,
+      ),
+      state._metricCard(
+        'MANAGED POOLS',
+        '${state._managed.length}',
+        'Your active pools',
+        LucideIcons.layers,
+        _PammPageState._green,
+      ),
+      state._metricCard(
+        'PROFIT / LOSS',
+        state._money(
+          state._managed.fold<double>(0, (total, pool) => total + pool.pnl),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: state._metricCard(
-            'PROFIT / LOSS',
-            state._money(
-              state._managed.fold<double>(0, (total, pool) => total + pool.pnl),
-            ),
-            'Pool performance',
-            LucideIcons.trendingUp,
-            _PammPageState._gold,
-          ),
-        ),
-      ],
-    ),
+        'Pool performance',
+        LucideIcons.trendingUp,
+        _PammPageState._gold,
+      ),
+    ]),
     const SizedBox(height: 14),
     state._buildSearchAndFilters(
       'Search managed pools by name or MT5 login...',

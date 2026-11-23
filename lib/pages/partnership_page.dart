@@ -55,10 +55,10 @@ class _PartnershipColors {
       canvas: Theme.of(context).scaffoldBackgroundColor,
       card: isDark ? const Color(0xFF17243A) : Colors.white,
       subCard: isDark ? const Color(0xFF132238) : const Color(0xFFF3F6FB),
-      border: isDark ? const Color(0xFF2A3A53) : const Color(0xFFE2E8F1),
-      subBorder: isDark ? const Color(0xFF22354E) : const Color(0xFFEAF1FA),
-      text: isDark ? const Color(0xFFF2F5FA) : const Color(0xFF10264B),
-      muted: isDark ? const Color(0xFF94A3B8) : const Color(0xFF71809A),
+      border: isDark ? const Color(0xFF2A3A53) : const Color(0xFFCBD5E1),
+      subBorder: isDark ? const Color(0xFF22354E) : const Color(0xFFE2E8F0),
+      text: isDark ? Colors.white : const Color(0xFF091836),
+      muted: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
       navy: isDark ? const Color(0xFF1E3A5F) : const Color(0xFF10264B),
       blue: const Color(0xFF174A8B),
       gold: const Color(0xFFD8A82E),
@@ -497,8 +497,8 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                                 'IB PARTNER',
                                 style: TextStyle(
                                   color: colors.text,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w900,
                                   letterSpacing: .4,
                                 ),
                               ),
@@ -648,41 +648,10 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: compact ? 8 : 10,
-                                    fontWeight: FontWeight.w800,
+                                    fontSize: compact ? 10.5 : 12,
+                                    fontWeight: FontWeight.w900,
                                     letterSpacing: 0.8,
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: _showReferralQr,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(LucideIcons.qrCode, color: Colors.white, size: 13),
-                              SizedBox(width: 5),
-                              Text(
-                                'Referral QR',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -696,9 +665,9 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                   Text(
                     'Total IB Earnings',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: compact ? 10 : 12.5,
-                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      fontSize: compact ? 12 : 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -706,8 +675,8 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                     r'$4,820.00 USD',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: compact ? 22 : 28,
-                      fontWeight: FontWeight.w800,
+                      fontSize: compact ? 26 : 30,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -721,9 +690,9 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                             Text(
                               'Network Clients',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.72),
-                                fontSize: compact ? 9 : 11,
-                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.90),
+                                fontSize: compact ? 11.5 : 13,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -731,8 +700,8 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                               '2,458 Clients',
                               style: TextStyle(
                                 color: colors.gold,
-                                fontSize: compact ? 13 : 15,
-                                fontWeight: FontWeight.w700,
+                                fontSize: compact ? 15.5 : 17.5,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ],
@@ -745,9 +714,9 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                             Text(
                               'Executed Volume',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.72),
-                                fontSize: compact ? 9 : 11,
-                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.90),
+                                fontSize: compact ? 11.5 : 13,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -755,8 +724,8 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                               '142.80 Lots',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: compact ? 13 : 15,
-                                fontWeight: FontWeight.w700,
+                                fontSize: compact ? 15.5 : 17.5,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ],
@@ -778,7 +747,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
     children: [
       _PartnershipGlassPanel(
         colors: colors,
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         radius: 20,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,13 +755,28 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
             Row(
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: colors.blue.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [colors.blue, colors.navy],
+                    ),
+                    borderRadius: BorderRadius.circular(13),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.blue.withValues(alpha: .2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Icon(LucideIcons.share2, color: colors.blue, size: 17),
+                  child: const Icon(
+                    LucideIcons.share2,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -803,36 +787,42 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                         'Your partner code',
                         style: TextStyle(
                           color: colors.text,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Share this code to invite and onboard new clients.',
-                        style: TextStyle(color: colors.muted, fontSize: 10),
+                        style: TextStyle(
+                          color: colors.muted,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          height: 1.35,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 18),
             Text(
               'SELECT PARTNER PROFILE',
               style: TextStyle(
                 color: colors.muted,
-                fontSize: 9,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
+                letterSpacing: 0.8,
               ),
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+              constraints: const BoxConstraints(minHeight: 48),
               decoration: BoxDecoration(
-                color: colors.subCard,
-                borderRadius: BorderRadius.circular(9),
+                color: colors.card,
+                borderRadius: BorderRadius.circular(13),
                 border: Border.all(color: colors.border),
               ),
               child: DropdownButtonHideUnderline(
@@ -842,7 +832,11 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                   isExpanded: true,
                   dropdownColor: colors.card,
                   iconEnabledColor: colors.blue,
-                  style: TextStyle(color: colors.text, fontSize: 12.5),
+                  style: TextStyle(
+                    color: colors.text,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                   items: [
                     for (var i = 0; i < _partners.length; i++)
                       DropdownMenuItem(
@@ -863,20 +857,28 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: colors.subCard,
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: colors.border),
+                color: colors.chipBg,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: colors.blue.withValues(alpha: .16)),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    LucideIcons.link,
-                    color: colors.blue,
-                    size: 16,
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: colors.blue.withValues(alpha: .1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      LucideIcons.link,
+                      color: colors.blue,
+                      size: 17,
+                    ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -885,8 +887,9 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                           'INVITATION CODE',
                           style: TextStyle(
                             color: colors.muted,
-                            fontSize: 8,
+                            fontSize: 10,
                             fontWeight: FontWeight.w800,
+                            letterSpacing: .55,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -894,9 +897,9 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                           _selectedPartner.code,
                           style: TextStyle(
                             color: colors.text,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: .8,
                           ),
                         ),
                       ],
@@ -916,16 +919,6 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                       size: 18,
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Show referral QR code',
-                    constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-                    onPressed: _showReferralQr,
-                    icon: Icon(
-                      LucideIcons.qrCode,
-                      color: colors.blue,
-                      size: 19,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -937,13 +930,16 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                 style: FilledButton.styleFrom(
                   backgroundColor: colors.blue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(13),
                   ),
                 ),
-                icon: const Icon(LucideIcons.qrCode, size: 17),
-                label: const Text('Show referral QR'),
+                icon: const Icon(LucideIcons.qrCode, size: 18),
+                label: const Text(
+                  'Show referral QR',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                ),
               ),
             ),
           ],
@@ -1224,13 +1220,13 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                     'Commission Profiles',
                     style: TextStyle(
                       color: colors.text,
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
                     'Select any profile to view its dedicated referral link, metrics, and shareable materials.',
-                    style: TextStyle(color: colors.muted, fontSize: 10),
+                    style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -1250,7 +1246,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
               'SELECT ROUTE:',
               style: TextStyle(
                 color: colors.muted,
-                fontSize: 9,
+                fontSize: 11,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -1268,7 +1264,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                 selectedColor: colors.blue,
                 labelStyle: TextStyle(
                   color: selected == i ? Colors.white : colors.text,
-                  fontSize: 9.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1306,7 +1302,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                           route.name.toUpperCase(),
                           style: TextStyle(
                             color: colors.text,
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -1318,14 +1314,14 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                   const SizedBox(height: 3),
                   Text(
                     'Tier 024',
-                    style: TextStyle(color: colors.muted, fontSize: 10),
+                    style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 7),
                   Text(
                     'REFERRAL CODE',
                     style: TextStyle(
                       color: colors.muted,
-                      fontSize: 8,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -1335,7 +1331,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                         route.code,
                         style: TextStyle(
                           color: colors.blue,
-                          fontSize: 12,
+                          fontSize: 14.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: .7,
                         ),
@@ -1346,7 +1342,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                         icon: Icon(
                           LucideIcons.copy,
                           color: colors.muted,
-                          size: 13,
+                          size: 15,
                         ),
                       ),
                     ],
@@ -1396,7 +1392,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                       'Active Commission Route',
                       style: TextStyle(
                         color: colors.text,
-                        fontSize: 12,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1407,7 +1403,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
               const SizedBox(height: 3),
               Text(
                 'Share this verified link or referral code to automatically route clients into this tier.',
-                style: TextStyle(color: colors.muted, fontSize: 10),
+                style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 11),
               _ReferralLinkRow(
@@ -1467,7 +1463,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                     'VT INDEX · REFERRAL STUDIO',
                     style: TextStyle(
                       color: colors.blue,
-                      fontSize: 8,
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1,
                     ),
@@ -1476,13 +1472,13 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                     'Share your partner QR',
                     style: TextStyle(
                       color: colors.text,
-                      fontSize: 12,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
                     'Scan to join directly',
-                    style: TextStyle(color: colors.muted, fontSize: 9),
+                    style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -1519,7 +1515,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
           'REFERRAL CODE',
           style: TextStyle(
             color: colors.muted,
-            fontSize: 8,
+            fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: .8,
           ),
@@ -1529,7 +1525,7 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
           route.code,
           style: TextStyle(
             color: colors.gold,
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w900,
             letterSpacing: 1.4,
           ),
@@ -1583,10 +1579,10 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
           width: double.infinity,
           child: FilledButton.icon(
             onPressed: () => showAppMessage('PDF export is ready for distribution.'),
-            icon: const Icon(LucideIcons.download, size: 14),
+            icon: const Icon(LucideIcons.download, size: 15),
             label: const Text(
               'DOWNLOAD PDF CARD',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900),
             ),
             style: FilledButton.styleFrom(
               backgroundColor: colors.blue,
@@ -1653,8 +1649,8 @@ class _ReferralMetric extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: colors.muted,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1672,7 +1668,7 @@ class _ReferralMetric extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: color,
-                    fontSize: 8,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1707,7 +1703,7 @@ class _ReferralMiniStat extends StatelessWidget {
           label,
           style: TextStyle(
             color: colors.muted,
-            fontSize: 8,
+            fontSize: 11,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -1715,7 +1711,7 @@ class _ReferralMiniStat extends StatelessWidget {
           value,
           style: TextStyle(
             color: colors.text,
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -1738,7 +1734,7 @@ class _ReferralPremiumPill extends StatelessWidget {
       '★ PREMIUM',
       style: TextStyle(
         color: Color(0xFFB97800),
-        fontSize: 8.5,
+        fontSize: 11,
         fontWeight: FontWeight.w900,
       ),
     ),
@@ -1779,7 +1775,7 @@ class _ReferralLinkRow extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: colors.muted,
-                    fontSize: 8,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1789,7 +1785,7 @@ class _ReferralLinkRow extends StatelessWidget {
                   maxLines: 1,
                   style: TextStyle(
                     color: colors.text,
-                    fontSize: 9.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1799,10 +1795,10 @@ class _ReferralLinkRow extends StatelessWidget {
           const SizedBox(width: 6),
           FilledButton.icon(
             onPressed: onPressed,
-            icon: const Icon(LucideIcons.copy, size: 11),
+            icon: const Icon(LucideIcons.copy, size: 12),
             label: Text(
               buttonLabel,
-              style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
             ),
             style: FilledButton.styleFrom(
               backgroundColor: colors.blue,
@@ -1970,7 +1966,7 @@ class _BrokerCommissionWithdrawalPageState
                         'VT-INDEX VAULT',
                         style: TextStyle(
                           color: Color(0xFFDCE5FF),
-                          fontSize: 9,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 1.2,
                         ),
@@ -1979,7 +1975,7 @@ class _BrokerCommissionWithdrawalPageState
                         'Commission Balance',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -1987,7 +1983,7 @@ class _BrokerCommissionWithdrawalPageState
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(12),
@@ -1996,7 +1992,7 @@ class _BrokerCommissionWithdrawalPageState
                     'USD',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -2006,7 +2002,7 @@ class _BrokerCommissionWithdrawalPageState
             const SizedBox(height: 28),
             const Text(
               'Available to Withdraw',
-              style: TextStyle(color: Color(0xFFDCE5FF), fontSize: 10),
+              style: TextStyle(color: Color(0xFFDCE5FF), fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 5),
             Text(
@@ -2029,14 +2025,14 @@ class _BrokerCommissionWithdrawalPageState
                   Expanded(
                     child: Text(
                       'Transfer Settlement',
-                      style: TextStyle(color: Color(0xFFDCE5FF), fontSize: 10),
+                      style: TextStyle(color: Color(0xFFDCE5FF), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                   Text(
                     'Direct MT5 Account Credit',
                     style: TextStyle(
                       color: Color(0xFF00D7A2),
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -2137,8 +2133,9 @@ class _BrokerCommissionWithdrawalPageState
                     'Funds are credited directly to your standard trading account. No external banking delays or transaction fees.',
                     style: TextStyle(
                       color: colors.muted,
-                      fontSize: 10,
+                      fontSize: 12,
                       height: 1.5,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -2176,7 +2173,7 @@ class _BrokerCommissionWithdrawalPageState
                 'COMMISSION PAYOUT DESK',
                 style: TextStyle(
                   color: colors.gold,
-                  fontSize: 9,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -2195,14 +2192,14 @@ class _BrokerCommissionWithdrawalPageState
         const SizedBox(height: 4),
         Text(
           'Select your live receiving account and specify the withdrawal amount.',
-          style: TextStyle(color: colors.muted, fontSize: 11),
+          style: TextStyle(color: colors.muted, fontSize: 12.5, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 23),
         Text(
           'RECEIVING TRADING ACCOUNT *',
           style: TextStyle(
             color: colors.text,
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -2225,7 +2222,7 @@ class _BrokerCommissionWithdrawalPageState
                   child: Text(
                     _account,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: colors.text),
+                    style: TextStyle(fontSize: 13, color: colors.text, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -2248,15 +2245,15 @@ class _BrokerCommissionWithdrawalPageState
               Expanded(
                 child: Text(
                   'Target Account Balance:',
-                  style: TextStyle(color: colors.muted, fontSize: 10),
+                  style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
                 ),
               ),
               Text(
                 r'$0.00 USD',
                 style: TextStyle(
                   color: colors.blue,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -2272,7 +2269,7 @@ class _BrokerCommissionWithdrawalPageState
                 'AMOUNT TO WITHDRAW *',
                 style: TextStyle(
                   color: colors.text,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -2281,7 +2278,7 @@ class _BrokerCommissionWithdrawalPageState
               'Max: USD ${_availableBalance.toStringAsFixed(2)}',
               style: const TextStyle(
                 color: Color(0xFF00B98B),
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -2348,7 +2345,7 @@ class _BrokerCommissionWithdrawalPageState
               'QUICK PRESETS:',
               style: TextStyle(
                 color: colors.muted,
-                fontSize: 8,
+                fontSize: 11,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -2422,8 +2419,8 @@ class _PayoutBreakdownRow extends StatelessWidget {
               label,
               style: TextStyle(
                 color: strong ? colors.text : colors.muted,
-                fontSize: strong ? 10 : 9,
-                fontWeight: strong ? FontWeight.w800 : FontWeight.w500,
+                fontSize: strong ? 12 : 11,
+                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
           ),
@@ -2432,7 +2429,7 @@ class _PayoutBreakdownRow extends StatelessWidget {
             value,
             style: TextStyle(
               color: colors.text,
-              fontSize: strong ? 11 : 9,
+              fontSize: strong ? 13 : 11,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -2455,8 +2452,8 @@ class _PayoutPreset extends StatelessWidget {
         label,
         style: TextStyle(
           color: colors.text,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
       onPressed: onTap,
@@ -2495,13 +2492,13 @@ class _PartnershipSectionLabel extends StatelessWidget {
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: TextStyle(
         color: colors.text,
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
+        fontSize: 12,
+        fontWeight: FontWeight.w900,
         letterSpacing: .8,
       )),
       if (subtitle != null) ...[
         const SizedBox(height: 3),
-        Text(subtitle!, style: TextStyle(color: colors.muted, fontSize: 10)),
+        Text(subtitle!, style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500)),
       ],
     ]),
   );
@@ -2545,8 +2542,8 @@ class _PartnershipStat extends StatelessWidget {
             children: [
               Text(label, style: TextStyle(
                 color: colors.muted,
-                fontSize: compact ? 8 : 10,
-                fontWeight: FontWeight.w600,
+                fontSize: compact ? 11 : 12.5,
+                fontWeight: FontWeight.w700,
               )),
               SizedBox(height: compact ? 2 : 4),
               FittedBox(
@@ -2554,8 +2551,8 @@ class _PartnershipStat extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(value, style: TextStyle(
                   color: colors.text,
-                  fontSize: compact ? 13 : 16,
-                  fontWeight: FontWeight.w800,
+                  fontSize: compact ? 16 : 18.5,
+                  fontWeight: FontWeight.w900,
                 )),
               ),
             ],
@@ -2607,14 +2604,15 @@ class _PartnershipShortcut extends StatelessWidget {
               children: [
                 Text(label, style: TextStyle(
                   color: colors.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
                 )),
                 if (subtitle != null) ...[
                   const SizedBox(height: 3),
                   Text(subtitle!, style: TextStyle(
                     color: colors.muted,
-                    fontSize: 9,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
                     height: 1.25,
                   )),
                 ],
@@ -2854,8 +2852,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                     'CLIENT HIERARCHY',
                     style: TextStyle(
                       color: colors.text,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: .45,
                     ),
                   ),
@@ -2934,8 +2932,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                     'CLIENTS PER PAGE',
                     style: TextStyle(
                       color: colors.muted,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const Spacer(),
@@ -2943,7 +2941,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                     'Showing ${visibleChildren.length + (rootMatches ? 1 : 0)} of $_networkCount',
                     style: TextStyle(
                       color: colors.muted,
-                      fontSize: 10,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -2967,8 +2966,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           'PARTNER NETWORK',
           style: TextStyle(
             color: colors.blue,
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w900,
             letterSpacing: 1.2,
           ),
         ),
@@ -2977,7 +2976,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           'Your client network',
           style: TextStyle(
             color: colors.text,
-            fontSize: 21,
+            fontSize: 22,
             fontWeight: FontWeight.w800,
             height: 1.1,
           ),
@@ -2987,7 +2986,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           'Follow referrals, account activity, and each connection in your network.',
           style: TextStyle(
             color: colors.muted,
-            fontSize: 11,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -3000,12 +3000,13 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     child: TextField(
       controller: _searchController,
       onChanged: (value) => setState(() => _query = value),
-      style: TextStyle(color: colors.text, fontSize: 11.5),
+      style: TextStyle(color: colors.text, fontSize: 13),
       decoration: InputDecoration(
         hintText: 'Search name, email, referral code, profile or account...',
         hintStyle: TextStyle(
           color: colors.muted,
-          fontSize: 10.5,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w500,
         ),
         prefixIcon: Icon(LucideIcons.search, color: colors.blue, size: 17),
         suffixIcon: _query.isEmpty
@@ -3043,7 +3044,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           'No matching clients',
           style: TextStyle(
             color: colors.text,
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -3052,7 +3053,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           'Try a different name, email or referral code.',
           style: TextStyle(
             color: colors.muted,
-            fontSize: 10,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -3063,7 +3065,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     foregroundColor: colors.text,
     side: BorderSide(color: colors.border),
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
+    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     visualDensity: VisualDensity.compact,
   );
@@ -3176,8 +3178,8 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                         'PARTNER NETWORK ONBOARDING',
                         style: TextStyle(
                           color: colors.blue,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
                           letterSpacing: .4,
                         ),
                       ),
@@ -3186,7 +3188,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                         'Client Registration Information',
                         style: TextStyle(
                           color: colors.text,
-                          fontSize: 16,
+                          fontSize: 16.5,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -3196,7 +3198,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                 TextButton.icon(
                   onPressed: _reset,
                   icon: Icon(LucideIcons.rotateCcw, size: 13, color: colors.muted),
-                  label: Text('Reset', style: TextStyle(color: colors.muted)),
+                  label: Text('Reset', style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -3275,7 +3277,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                           controlAffinity: ListTileControlAffinity.leading,
                           title: Text(
                             'Use primary referral profile',
-                            style: TextStyle(color: colors.blue, fontSize: 10),
+                            style: TextStyle(color: colors.blue, fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -3435,7 +3437,8 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
                         '${_partnerProfiles[i].name}  ${_partnerProfiles[i].primary ? 'PRIMARY  ' : ''}${_partnerProfiles[i].code}  ·  ${_partnerProfiles[i].clients} clients',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
                           color: colors.text,
                         ),
                       ),
@@ -3456,7 +3459,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
             partner.primary ? '✓ Assigned' : 'Assigned',
             style: const TextStyle(
               color: Color(0xFF0BAE7A),
-              fontSize: 9.5,
+              fontSize: 11.5,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -3484,7 +3487,7 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
               label,
               style: TextStyle(
                 color: colors.text,
-                fontSize: 8.5,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -3494,21 +3497,21 @@ class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
               '*',
               style: TextStyle(
                 color: Color(0xFFFF5366),
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
             ),
           if (suffix != null)
             Text(
               suffix,
-              style: TextStyle(color: colors.muted, fontSize: 8),
+              style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w600),
             ),
         ],
       );
 
   InputDecoration _decoration(String hint, IconData icon, _PartnershipColors colors) => InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(color: colors.muted, fontSize: 10),
+    hintStyle: TextStyle(color: colors.muted, fontSize: 12.5, fontWeight: FontWeight.w500),
     prefixIcon: Icon(icon, color: colors.muted, size: 14),
     isDense: true,
     filled: true,
@@ -3592,13 +3595,13 @@ class _TreeStat extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: colors.muted,
-                    fontSize: 8,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     letterSpacing: .35,
                   ),
                 ),
               ),
-              Icon(icon, color: accent, size: 13),
+              Icon(icon, color: accent, size: 14),
             ],
           ),
           const Spacer(),
@@ -3616,7 +3619,7 @@ class _TreeStat extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: colors.muted, fontSize: 8),
+            style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -3671,7 +3674,7 @@ class _TreeMemberCard extends StatelessWidget {
                   member.initials,
                   style: TextStyle(
                     color: accent,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -3690,7 +3693,7 @@ class _TreeMemberCard extends StatelessWidget {
                           member.name,
                           style: TextStyle(
                             color: colors.text,
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -3714,7 +3717,7 @@ class _TreeMemberCard extends StatelessWidget {
                       member.email,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: colors.muted, fontSize: 9),
+                      style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
                     ),
                     Wrap(
                       spacing: 9,
@@ -3723,12 +3726,12 @@ class _TreeMemberCard extends StatelessWidget {
                         if (member.phone != null)
                           Text(
                             member.phone!,
-                            style: TextStyle(color: colors.muted, fontSize: 9),
+                            style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
                           ),
                         if (member.joined != null)
                           Text(
                             'Joined ${member.joined}',
-                            style: TextStyle(color: colors.muted, fontSize: 9),
+                            style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
                           ),
                         if (showReferralLink && member.referralCode != null)
                           Row(
@@ -3737,14 +3740,14 @@ class _TreeMemberCard extends StatelessWidget {
                               Icon(
                                 LucideIcons.link,
                                 color: colors.blue,
-                                size: 10,
+                                size: 12,
                               ),
                               const SizedBox(width: 3),
                               Text(
                                 member.referralCode!,
                                 style: TextStyle(
                                   color: colors.blue,
-                                  fontSize: 8,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -3821,8 +3824,8 @@ class _TreePill extends StatelessWidget {
         label,
         style: TextStyle(
           color: dark ? const Color(0xFFCFD8E7) : color,
-          fontSize: 8,
-          fontWeight: FontWeight.w700,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -4119,13 +4122,14 @@ class _BrokerCommissionLedgerPageState
                         onChanged: (v) => setState(() => _ledgerSearch = v),
                         style: TextStyle(
                           color: colors.text,
-                          fontSize: 11,
+                          fontSize: 13,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search clients, emails, accounts, deal tickets, or symbols...',
                           hintStyle: TextStyle(
                             color: colors.muted,
-                            fontSize: 10,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
                           ),
                           prefixIcon: Icon(
                             LucideIcons.search,
@@ -4238,7 +4242,7 @@ class _BrokerCommissionLedgerPageState
                                       e.initials,
                                       style: TextStyle(
                                         color: colors.blue,
-                                        fontSize: 9,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
@@ -4257,7 +4261,7 @@ class _BrokerCommissionLedgerPageState
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             color: colors.text,
-                                            fontSize: 10,
+                                            fontSize: 12.5,
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
@@ -4267,7 +4271,8 @@ class _BrokerCommissionLedgerPageState
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             color: colors.muted,
-                                            fontSize: 9,
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ],
@@ -4336,7 +4341,8 @@ class _BrokerCommissionLedgerPageState
                       'Showing 1–${entries.length} of 47',
                       style: TextStyle(
                         color: colors.muted,
-                        fontSize: 10,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const Spacer(),
@@ -4344,7 +4350,7 @@ class _BrokerCommissionLedgerPageState
                       'PAGE 1 OF 4',
                       style: TextStyle(
                         color: colors.text,
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -4400,8 +4406,8 @@ class _CommissionTableHeading extends StatelessWidget {
       label,
       style: TextStyle(
         color: colors.muted,
-        fontSize: 9,
-        fontWeight: FontWeight.w800,
+        fontSize: 11.5,
+        fontWeight: FontWeight.w900,
         letterSpacing: .2,
       ),
     );
@@ -4425,8 +4431,8 @@ class _CommissionCell extends StatelessWidget {
       value,
       style: TextStyle(
         color: color ?? colors.text,
-        fontSize: 10,
-        fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
+        fontSize: 12.5,
+        fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
       ),
     );
   }
@@ -4456,7 +4462,7 @@ class _CommissionPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700),
+        style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -4497,7 +4503,7 @@ class _CommissionMetric extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: colors.muted,
-                    fontSize: 8,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -4523,7 +4529,7 @@ class _CommissionMetric extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: colors.muted, fontSize: 8),
+            style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -4563,7 +4569,7 @@ class _CommissionDropdown extends StatelessWidget {
           ),
           style: TextStyle(
             color: colors.text,
-            fontSize: 9.5,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
           items: [

@@ -348,6 +348,70 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final ScrollController _moreScrollController = ScrollController(
     keepScrollOffset: false,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    FocusManager.instance.addListener(_handleFocusChange);
+    _currentThemeMode = widget.themeMode;
+    _loadFavoriteAccounts();
+    unawaited(_loadTradingAccounts());
+  }
+
+  Future<void> _loadFavoriteAccounts() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final stored =
+          preferences.getStringList('vtindex_favorite_account_logins') ??
+          const <String>[];
+      if (!mounted) return;
+      setState(() {
+        _favoriteAccountLogins
+          ..clear()
+          ..addAll(stored);
+      });
+    } catch (_) {
+      // Favorites are optional; the accounts page remains usable.
+    }
+  }
+
+  Future<void> _toggleFavoriteAccount(String login) async {
+    setState(() {
+      if (!_favoriteAccountLogins.add(login)) {
+        _favoriteAccountLogins.remove(login);
+      }
+    });
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setStringList(
+        'vtindex_favorite_account_logins',
+        _favoriteAccountLogins.toList(),
+      );
+    } catch (_) {
+      if (mounted) showAppMessage('Could not save account favorites on this device.');
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.themeMode != widget.themeMode) {
+      _currentThemeMode = widget.themeMode;
+    }
+  }
+
+  void _changeThemeMode(ThemeMode mode) {
+    if (_effectiveThemeMode != mode) {
+      setState(() => _currentThemeMode = mode);
+    }
+    widget.onThemeModeChanged?.call(mode);
+  }
+
+  void _addAccount(BrokerAccount account) {
+    setState(() => _accounts.insert(0, account));
+  }
+
   int _secondaryPageNavId = 0;
   double _lastScreenWidth = 0;
   double _maxWindowHeight = 0;

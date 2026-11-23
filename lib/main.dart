@@ -182,9 +182,32 @@ class _AppEntry extends StatefulWidget {
 
 class _AppEntryState extends State<_AppEntry> {
   bool _splashFinished = false;
+  bool _sessionCheckComplete = false;
+  bool _openingDashboard = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_restoreExistingSession());
+  }
+
+  Future<void> _restoreExistingSession() async {
+    try {
+      await AuthApi.instance.restoreSession();
+      if (AuthApi.instance.hasToken &&
+          await AuthApi.instance.isAuthenticated()) {
+        _openDashboard();
+        return;
+      }
+    } catch (_) {
+      // A failed session check falls back to the login screen.
+    }
+    if (mounted) setState(() => _sessionCheckComplete = true);
+  }
 
   void _openDashboard() {
-    if (!mounted) return;
+    if (!mounted || _openingDashboard) return;
+    _openingDashboard = true;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => AppShell(
@@ -196,13 +219,24 @@ class _AppEntryState extends State<_AppEntry> {
   }
 
   @override
-  Widget build(BuildContext context) => _splashFinished
-      ? LoginPage(onLogin: _openDashboard)
-      : _LogoAnimationSplash(
-          onFinished: () {
-            if (mounted) setState(() => _splashFinished = true);
-          },
-        );
+  Widget build(BuildContext context) {
+    if (!_splashFinished) {
+      return _LogoAnimationSplash(
+        onFinished: () {
+          if (mounted) setState(() => _splashFinished = true);
+        },
+      );
+    }
+    if (!_sessionCheckComplete) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1424),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFFFFC533)),
+        ),
+      );
+    }
+    return LoginPage(onLogin: _openDashboard);
+  }
 }
 
 class _LogoAnimationSplash extends StatefulWidget {

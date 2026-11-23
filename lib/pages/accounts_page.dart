@@ -2534,15 +2534,81 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             Row(children: [
               Expanded(child: stat(LucideIcons.chartLine, 'Net P/L (shown trades)', _money(totalProfit), totalProfit >= 0 ? green : red)),
               const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.activity, 'Open positions', a.openPositions.length.toString(), blue)),
+              Expanded(child: stat(LucideIcons.activity, 'Open positions', _livePositions.length.toString(), blue)),
             ]),
             const SizedBox(height: 13),
             panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              sectionTitle('Open positions', trailing: a.openPositions.length.toString() + ' positions'),
-              const SizedBox(height: 8),
-              if (a.openPositions.isEmpty)
-                Padding(padding: const EdgeInsets.symmetric(vertical: 17), child: Center(child: Text('No open positions.', style: TextStyle(color: muted, fontSize: 11)))),
-              ...a.openPositions.map((p) => _detailTradeRow(context, p.symbol, p.side.toUpperCase() + ' • ' + p.volume + ' lots • Entry ' + p.openPrice + ' • Mark ' + p.currentPrice, _money(p.profit), p.profit >= 0 ? green : red, fg, muted, border)),
+              Row(children: [
+                Expanded(child: sectionTitle('Open positions', trailing: '${_livePositions.length} positions')),
+                IconButton(
+                  tooltip: 'Refresh positions',
+                  onPressed: _positionsLoading ? null : _loadOpenPositions,
+                  icon: _positionsLoading
+                      ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(LucideIcons.refreshCw, size: 17),
+                ),
+              ]),
+              if (_positionsError != null) ...[
+                Text(_positionsError!, style: TextStyle(color: red, fontSize: 10)),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(onPressed: _loadOpenPositions, child: const Text('Retry')),
+                ),
+              ] else if (_positionsLoading && _livePositions.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 22),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_livePositions.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 17),
+                  child: Center(child: Text('No open positions on this account.', style: TextStyle(color: muted, fontSize: 11))),
+                )
+              else
+                ..._livePositions.map((position) {
+                  final ticket = (position['ticket'] ?? position['id'] ?? '').toString();
+                  final symbol = (position['symbol'] ?? 'Unknown symbol').toString();
+                  final side = (position['type'] ?? position['side'] ?? '').toString().toUpperCase();
+                  final volume = _apiNumber(position['volume']).toStringAsFixed(2);
+                  final openPrice = _apiNumber(position['open_price'] ?? position['price']).toString();
+                  final currentPrice = _apiNumber(position['current_price'] ?? position['open_price'] ?? position['price']).toString();
+                  final profit = _apiNumber(position['profit']);
+                  final closing = _closingTickets.contains(ticket);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    child: Column(children: [
+                      Row(children: [
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(symbol, style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 3),
+                          Text('$side • $volume lots • Ticket $ticket', style: TextStyle(color: muted, fontSize: 9)),
+                          const SizedBox(height: 3),
+                          Text('Open $openPrice  ·  Current $currentPrice', style: TextStyle(color: muted, fontSize: 9)),
+                        ])),
+                        const SizedBox(width: 8),
+                        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text(_money(profit), style: TextStyle(color: profit >= 0 ? green : red, fontSize: 11, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 6),
+                          OutlinedButton(
+                            onPressed: closing ? null : () => _confirmAndClosePosition(position),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: red,
+                              side: BorderSide(color: red.withValues(alpha: .65)),
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                              minimumSize: const Size(0, 30),
+                            ),
+                            child: closing
+                                ? const SizedBox(width: 13, height: 13, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Text('Close', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+                          ),
+                        ]),
+                      ]),
+                      const SizedBox(height: 9),
+                      Container(height: 1, color: border),
+                    ]),
+                  );
+                }),
             ])),
           ] else ...[
             panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -2085,10 +2085,13 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   String _range = '1W';
   late BrokerAccount _account = widget.account;
   List<Map<String, dynamic>> _livePositions = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _transactions = <Map<String, dynamic>>[];
   bool _detailsLoading = false;
   bool _positionsLoading = false;
+  bool _historyLoading = false;
   String? _detailsError;
   String? _positionsError;
+  String? _historyError;
   final Set<String> _closingTickets = <String>{};
 
   @override
@@ -2123,6 +2126,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     await Future.wait<void>([
       _loadAccountDetails(),
       _loadOpenPositions(),
+      _loadTradingHistory(),
     ]);
   }
 
@@ -2186,6 +2190,32 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
       setState(() {
         _positionsLoading = false;
         _positionsError = 'Unable to load open positions. Try again.';
+      });
+    }
+  }
+
+  Future<void> _loadTradingHistory() async {
+    if (mounted) setState(() { _historyLoading = true; _historyError = null; });
+    try {
+      final response = await AuthApi.instance.getTradingAccountHistory(_account.login);
+      final raw = response['transactions'];
+      final data = raw is Map ? raw.cast<String, dynamic>() : <String, dynamic>{};
+      final rows = data['results'] ?? data['transactions'] ?? raw;
+      if (!mounted) return;
+      setState(() {
+        _transactions = rows is List
+            ? rows.whereType<Map>().map((row) => row.cast<String, dynamic>()).toList()
+            : <Map<String, dynamic>>[];
+        _historyLoading = false;
+      });
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() { _historyLoading = false; _historyError = error.message; });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _historyLoading = false;
+        _historyError = 'Unable to load account history. Try again.';
       });
     }
   }
@@ -2681,11 +2711,40 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             ])),
           ] else ...[
             panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              sectionTitle('Trade history', trailing: trades.length.toString() + ' records'),
-              const SizedBox(height: 8),
-              if (trades.isEmpty)
-                Padding(padding: const EdgeInsets.symmetric(vertical: 17), child: Center(child: Text('No closed trades are available in this account preview.', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 10)))),
-              ...trades.map((t) => _detailTradeRow(context, t.symbol, t.side.toUpperCase() + ' • ' + t.volume + ' lots • ' + t.closedAt, _money(t.profit), t.profit >= 0 ? green : red, fg, muted, border)),
+              Row(children: [
+                Expanded(child: sectionTitle('Account history', trailing: '${_transactions.length} records')),
+                IconButton(
+                  tooltip: 'Refresh history',
+                  onPressed: _historyLoading ? null : _loadTradingHistory,
+                  icon: _historyLoading
+                      ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(LucideIcons.refreshCw, size: 17),
+                ),
+              ]),
+              if (_historyError != null) ...[
+                Text(_historyError!, style: TextStyle(color: red, fontSize: 10)),
+                Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _loadTradingHistory, child: const Text('Retry'))),
+              ] else if (_historyLoading && _transactions.isEmpty)
+                const Padding(padding: EdgeInsets.symmetric(vertical: 22), child: Center(child: CircularProgressIndicator()))
+              else if (_transactions.isEmpty)
+                Padding(padding: const EdgeInsets.symmetric(vertical: 17), child: Center(child: Text('No account transactions found for this period.', style: TextStyle(color: muted, fontSize: 10))))
+              else
+                ..._transactions.map((tx) {
+                  final type = (tx['transaction_type'] ?? 'transaction').toString().replaceAll('_', ' ').toUpperCase();
+                  final description = (tx['description'] ?? tx['source'] ?? '').toString();
+                  final date = (tx['created_at'] ?? '').toString();
+                  final status = (tx['status'] ?? '').toString();
+                  final amount = _apiNumber(tx['amount']);
+                  final isCredit = type.contains('DEPOSIT') || type.contains('CREDIT');
+                  return _detailTradeRow(
+                    context,
+                    type,
+                    '${date.isEmpty ? '' : date} • ${status.toUpperCase()}${description.isEmpty ? '' : ' • $description'}',
+                    '${isCredit ? '+' : ''}${_money(amount)}',
+                    isCredit ? green : fg,
+                    fg, muted, border,
+                  );
+                }),
             ])),
           ],
         ],

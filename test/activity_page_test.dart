@@ -4,10 +4,88 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:crm_app/main.dart';
 
 void main() {
+  const sampleAccounts = [
+    BrokerAccount(
+      'V Tamizharasan',
+      '52132132',
+      '1:500',
+      '\$12,300.00',
+      '\$12,450.00',
+      'Live MT5',
+    ),
+    BrokerAccount(
+      'XRSIM-USD-1',
+      '3315',
+      '1:500',
+      '\$0.00',
+      '\$0.00',
+      'Live MT5',
+    ),
+  ];
+
+  final sampleFunds = {
+    '52132132': [
+      const ActivityFundTransaction(
+        id: 'tx-104',
+        isDeposit: true,
+        method: 'Internal Transfer',
+        amount: 850.00,
+        date: '2026-11-17 11:20',
+        status: 'Completed',
+        sourceLogin: '3315',
+        destinationLogin: '52132132',
+        tradingAccount: '52132132',
+        isTransfer: true,
+      ),
+      const ActivityFundTransaction(
+        id: 'tx-101',
+        isDeposit: true,
+        method: 'Bank Transfer',
+        amount: 5000.00,
+        date: '2026-11-16 14:20',
+        status: 'Completed',
+        tradingAccount: '52132132',
+      ),
+      const ActivityFundTransaction(
+        id: 'tx-102',
+        isDeposit: false,
+        method: 'USDT TRC20',
+        amount: 1200.00,
+        date: '2026-11-15 11:35',
+        status: 'Completed',
+        tradingAccount: '52132132',
+      ),
+      const ActivityFundTransaction(
+        id: 'tx-105',
+        isDeposit: true,
+        method: 'Crypto Deposit',
+        amount: 300.00,
+        date: '2026-11-18 09:00',
+        status: 'Pending',
+        tradingAccount: '52132132',
+      ),
+    ],
+    '3315': [
+      const ActivityFundTransaction(
+        id: 'tx-301',
+        isDeposit: false,
+        method: 'Internal Transfer',
+        amount: 850.00,
+        date: '2026-11-17 11:20',
+        status: 'Completed',
+        sourceLogin: '3315',
+        destinationLogin: '52132132',
+        tradingAccount: '3315',
+        isTransfer: true,
+      ),
+    ],
+  };
+
   Widget buildTestableWidget({
-    List<BrokerAccount>? accounts,
+    List<BrokerAccount>? accounts = sampleAccounts,
     String? selectedAccountLogin,
     ValueChanged<String>? onAccountChanged,
+    Map<String, List<ActivityFundTransaction>>? externalFundTransactions,
     Brightness brightness = Brightness.light,
   }) {
     return MaterialApp(
@@ -27,13 +105,14 @@ void main() {
           accounts: accounts,
           selectedAccountLogin: selectedAccountLogin,
           onAccountChanged: onAccountChanged,
+          externalFundTransactions: externalFundTransactions,
         ),
       ),
     );
   }
 
   group('BrokerTransactionsPage Activity & Orders Workspace Tests', () {
-    testWidgets('renders account selector bar, hero card, 4 tabs, and open positions', (tester) async {
+    testWidgets('renders account selector bar, hero card, 4 tabs, and No Data without fallback', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -59,18 +138,13 @@ void main() {
       expect(find.textContaining('USD'), findsWidgets);
 
       // Verify 4 Tabs
-      expect(find.text('Open 2'), findsOneWidget);
-      expect(find.text('Pending 1'), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
+      expect(find.text('Pending'), findsOneWidget);
       expect(find.text('Closed'), findsOneWidget);
       expect(find.text('Funds'), findsOneWidget);
 
-      // Verify Open Positions populated
-      expect(find.text('EURUSD'), findsOneWidget);
-      expect(find.text('XAUUSD'), findsOneWidget);
-      expect(find.text('BUY'), findsWidgets);
-      expect(find.text('SELL'), findsWidgets);
-      expect(find.text('0.50 Lots'), findsOneWidget);
-      expect(find.text('0.20 Lots'), findsOneWidget);
+      // Verify Authentic "No Data" with custom painter
+      expect(find.text('No Data'), findsOneWidget);
     });
 
     testWidgets('toggles eye icon to obscure equity and balance', (tester) async {
@@ -132,7 +206,7 @@ void main() {
       expect(find.text('Live | 52132132'), findsOneWidget);
     });
 
-    testWidgets('switching to empty account 3315 triggers No Data vector illustration and zero balance', (tester) async {
+    testWidgets('switching account updates selected account and zero balance for 3315', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -161,106 +235,99 @@ void main() {
       expect(find.text('Live | 3315'), findsOneWidget);
       expect(find.text('0.00 USD'), findsOneWidget);
       expect(find.text('0.00'), findsNWidgets(2)); // P&L and Balance
-
-      // Verify Tabs show 0 counts
-      expect(find.text('Open 0'), findsOneWidget);
-      expect(find.text('Pending 0'), findsOneWidget);
-
-      // Verify Authentic "No Data" with custom painter
+      expect(find.text('Open'), findsOneWidget);
       expect(find.text('No Data'), findsOneWidget);
     });
 
-    testWidgets('tab switching across Pending, Closed, and Funds displays appropriate data', (tester) async {
+    testWidgets('Funds tab replaces All with Pending and displays selected trading account details only', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(buildTestableWidget());
+      await tester.pumpWidget(
+        buildTestableWidget(
+          externalFundTransactions: sampleFunds,
+        ),
+      );
       await tester.pumpAndSettle();
 
-      // 1. Switch to Pending Tab
-      await tester.tap(find.text('Pending 1'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('GBPUSD'), findsOneWidget);
-      expect(find.text('BUY LIMIT'), findsOneWidget);
-      expect(find.text('0.10 Lots'), findsOneWidget);
-      expect(find.text('Order Price'), findsOneWidget);
-      expect(find.text('1.294'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-
-      // 2. Switch to Closed Tab
-      await tester.tap(find.text('Closed'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('BTCUSD'), findsOneWidget);
-      expect(find.text('HK50c'), findsOneWidget);
-      expect(find.text('+\$112.50'), findsOneWidget);
-      expect(find.text('-\$60.00'), findsOneWidget);
-      expect(find.text('Open Price'), findsWidgets);
-      expect(find.text('Close Price'), findsWidgets);
-
-      // 3. Switch to Funds Tab
+      // Switch to Funds Tab
       await tester.tap(find.text('Funds'));
       await tester.pumpAndSettle();
 
-      // Filter chips in Funds tab
-      expect(find.text('All'), findsOneWidget);
-      expect(find.text('Deposits'), findsOneWidget);
-      expect(find.text('Withdrawals'), findsOneWidget);
+      // Verify 'All' filter chip is REMOVED and replaced with 'Pending'
+      expect(find.text('All'), findsNothing);
+      expect(find.widgetWithText(AnimatedContainer, 'Pending'), findsNWidgets(2));
+      expect(find.widgetWithText(AnimatedContainer, 'Deposits'), findsOneWidget);
+      expect(find.widgetWithText(AnimatedContainer, 'Withdrawals'), findsOneWidget);
+      expect(find.widgetWithText(AnimatedContainer, 'Transfers'), findsOneWidget);
 
-      // Fund transactions
-      expect(find.text('Deposit'), findsWidgets);
-      expect(find.text('Withdrawal'), findsOneWidget);
-      expect(find.text('+\$5000.00'), findsOneWidget);
-      expect(find.text('-\$1200.00'), findsOneWidget);
-      expect(find.text('+\$2500.00'), findsOneWidget);
-      expect(find.text('Completed'), findsWidgets);
+      // Under 'Pending' filter (active by default), only pending transactions for selected account (52132132) show
+      expect(find.textContaining('Crypto Deposit'), findsOneWidget);
+      expect(find.text('+\$300.00'), findsOneWidget);
+      expect(find.textContaining('Bank Transfer'), findsNothing);
 
-      // Filter to Withdrawals only
-      await tester.tap(find.text('Withdrawals'));
+      // Filter to Deposits
+      await tester.tap(find.widgetWithText(AnimatedContainer, 'Deposits'));
       await tester.pumpAndSettle();
 
+      expect(find.textContaining('Bank Transfer'), findsOneWidget);
+      expect(find.text('+\$5000.00'), findsOneWidget);
+      expect(find.textContaining('USDT TRC20'), findsNothing);
+
+      // Filter to Withdrawals
+      await tester.tap(find.widgetWithText(AnimatedContainer, 'Withdrawals'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('USDT TRC20'), findsOneWidget);
       expect(find.text('-\$1200.00'), findsOneWidget);
-      expect(find.text('+\$5000.00'), findsNothing);
+      expect(find.textContaining('Bank Transfer'), findsNothing);
+
+      // Filter to Transfers
+      await tester.tap(find.widgetWithText(AnimatedContainer, 'Transfers'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Transfer In'), findsOneWidget);
+      expect(find.text('INTERNAL'), findsOneWidget);
+      expect(find.text('+\$850.00'), findsOneWidget);
+      expect(find.textContaining('From #3315'), findsOneWidget);
     });
 
-    testWidgets('close position dialog confirms closing and moves trade to closed tab', (tester) async {
+    testWidgets('Funds tab only shows selected account transactions when switched', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(buildTestableWidget());
+      await tester.pumpWidget(
+        buildTestableWidget(
+          externalFundTransactions: sampleFunds,
+        ),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text('Open 2'), findsOneWidget);
-
-      // Tap Close on first position (EURUSD)
-      await tester.tap(find.text('Close').first);
+      // Switch account to 3315
+      await tester.tap(find.text('V Tamizharasan'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('XRSIM-USD-1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Close Position'), findsOneWidget);
-      expect(find.textContaining('Are you sure you want to close EURUSD'), findsOneWidget);
-      expect(find.text('Confirm Close'), findsOneWidget);
-
-      // Confirm close
-      await tester.tap(find.text('Confirm Close'));
+      // Switch to Funds Tab
+      await tester.tap(find.text('Funds'));
       await tester.pumpAndSettle();
 
-      // Tab count decrements to Open 1
-      expect(find.text('Open 1'), findsOneWidget);
+      // For account 3315, pending has no transactions -> shows No Data
+      expect(find.text('No Data'), findsOneWidget);
 
-      // SnackBar displayed
-      expect(find.text('Position EURUSD closed successfully'), findsOneWidget);
-
-      // Verify EURUSD now in Closed tab
-      await tester.tap(find.text('Closed'));
+      // Filter to Transfers for account 3315
+      await tester.tap(find.text('Transfers'));
       await tester.pumpAndSettle();
 
-      expect(find.text('EURUSD'), findsOneWidget);
-      expect(find.text('Just now'), findsOneWidget);
+      // Only 3315's Transfer Out shows, 52132132's Bank Transfer does not show
+      expect(find.text('Transfer Out'), findsOneWidget);
+      expect(find.text('-\$850.00'), findsOneWidget);
+      expect(find.text('+\$5000.00'), findsNothing);
     });
 
     testWidgets('renders cleanly in dark mode without any errors', (tester) async {
@@ -274,38 +341,8 @@ void main() {
 
       expect(find.text('V Tamizharasan'), findsOneWidget);
       expect(find.text('Equity'), findsOneWidget);
-      expect(find.text('Open 2'), findsOneWidget);
-    });
-
-    testWidgets('internal transfer records load in Funds tab and filter by Transfers chip', (tester) async {
-      tester.view.physicalSize = const Size(800, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle();
-
-      // Switch to Funds Tab
-      await tester.tap(find.text('Funds'));
-      await tester.pumpAndSettle();
-
-      // Under 'All', internal transfer record is visible
-      expect(find.text('Transfers'), findsOneWidget);
-      expect(find.text('Transfer In'), findsOneWidget);
-      expect(find.text('INTERNAL'), findsOneWidget);
-      expect(find.text('+\$850.00'), findsOneWidget);
-      expect(find.textContaining('From #3315'), findsOneWidget);
-
-      // Tap 'Transfers' filter chip
-      await tester.tap(find.text('Transfers'));
-      await tester.pumpAndSettle();
-
-      // Only internal transfers remain visible
-      expect(find.text('Transfer In'), findsOneWidget);
-      expect(find.text('+\$850.00'), findsOneWidget);
-      expect(find.text('+\$5000.00'), findsNothing);
-      expect(find.text('-\$1200.00'), findsNothing);
+      expect(find.text('Open'), findsOneWidget);
+      expect(find.text('No Data'), findsOneWidget);
     });
   });
 }

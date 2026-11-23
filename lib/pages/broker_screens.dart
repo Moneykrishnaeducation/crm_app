@@ -2121,6 +2121,7 @@ class ActivityFundTransaction {
     required this.status,
     this.sourceLogin,
     this.destinationLogin,
+    this.tradingAccount,
     this.isTransfer = false,
   });
 
@@ -2132,6 +2133,7 @@ class ActivityFundTransaction {
   final String status;
   final String? sourceLogin;
   final String? destinationLogin;
+  final String? tradingAccount;
   final bool isTransfer;
 }
 
@@ -2163,7 +2165,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   late String _selectedLogin;
   bool _hideEquity = false;
   int _activeTab = 0; // 0: Open, 1: Pending, 2: Closed, 3: Funds
-  String _fundsFilter = 'All'; // 'All', 'Deposits', 'Withdrawals'
+  String _fundsFilter = 'Pending'; // 'Pending', 'Deposits', 'Withdrawals', 'Transfers'
   String _activitySearch = '';
   String _activityDateFilter = 'All time';
   List<ActivityFundTransaction>? _remoteFunds;
@@ -2188,237 +2190,21 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   int _pendingRequestId = 0;
   bool _hasLoadedTradingData = false;
 
-  late final Map<String, List<ActivityOpenPosition>> _accountOpenPositions;
-  late final Map<String, List<ActivityPendingOrder>> _accountPendingOrders;
-  late final Map<String, List<ActivityClosedPosition>> _accountClosedPositions;
-  late final Map<String, List<ActivityFundTransaction>> _accountFunds;
-  late final Map<String, double> _accountBalances;
+  final Map<String, double> _accountBalances = <String, double>{};
 
   @override
   void initState() {
     super.initState();
-    _selectedLogin = widget.selectedAccountLogin ?? '52132132';
-
-    _accountOpenPositions = {
-      '52132132': [
-        const ActivityOpenPosition(
-          id: 'pos-101',
-          symbol: 'EURUSD',
-          isBuy: true,
-          lots: 0.50,
-          openPrice: 1.08500,
-          currentPrice: 1.08820,
-          profit: 160.00,
-          sl: 1.08100,
-          tp: 1.09200,
-          openTime: '2026-11-17 09:15',
-        ),
-        const ActivityOpenPosition(
-          id: 'pos-102',
-          symbol: 'XAUUSD',
-          isBuy: false,
-          lots: 0.20,
-          openPrice: 2635.40,
-          currentPrice: 2635.89,
-          profit: -9.80,
-          sl: 2642.00,
-          tp: 2620.00,
-          openTime: '2026-11-17 10:02',
-        ),
-      ],
-      '3315': [],
-      '3311': [
-        const ActivityOpenPosition(
-          id: 'pos-201',
-          symbol: 'USDJPY',
-          isBuy: true,
-          lots: 0.30,
-          openPrice: 154.20,
-          currentPrice: 154.55,
-          profit: 85.50,
-          sl: 153.80,
-          tp: 155.00,
-          openTime: '2026-11-17 10:11',
-        ),
-      ],
-      '3312': [],
-      '3327': [],
-    };
-
-    _accountPendingOrders = {
-      '52132132': [
-        const ActivityPendingOrder(
-          id: 'ord-101',
-          symbol: 'GBPUSD',
-          orderType: 'Buy Limit',
-          lots: 0.10,
-          orderPrice: 1.29400,
-          currentPrice: 1.29850,
-          placedTime: '2026-11-17 08:30',
-        ),
-      ],
-      '3315': [],
-      '3311': [],
-      '3312': [],
-      '3327': [],
-    };
-
-    _accountClosedPositions = {
-      '52132132': [
-        const ActivityClosedPosition(
-          id: 'cls-101',
-          symbol: 'BTCUSD',
-          isBuy: true,
-          lots: 0.05,
-          openPrice: 89200.00,
-          closePrice: 91450.00,
-          netProfit: 112.50,
-          closeTime: '2026-11-16 19:40',
-        ),
-        const ActivityClosedPosition(
-          id: 'cls-102',
-          symbol: 'HK50c',
-          isBuy: false,
-          lots: 1.00,
-          openPrice: 19850.00,
-          closePrice: 19910.00,
-          netProfit: -60.00,
-          closeTime: '2026-11-16 15:10',
-        ),
-      ],
-      '3315': [],
-      '3311': [
-        const ActivityClosedPosition(
-          id: 'cls-201',
-          symbol: 'EURUSD',
-          isBuy: false,
-          lots: 0.20,
-          openPrice: 1.0880,
-          closePrice: 1.0840,
-          netProfit: 80.00,
-          closeTime: '2026-11-16 16:22',
-        ),
-      ],
-      '3312': [],
-      '3327': [],
-    };
-
-    _accountFunds = {
-      '52132132': [
-        const ActivityFundTransaction(
-          id: 'tx-104',
-          isDeposit: true,
-          method: 'Internal Transfer',
-          amount: 850.00,
-          date: '2026-11-17 11:20',
-          status: 'Completed',
-          sourceLogin: '3315',
-          destinationLogin: '52132132',
-          isTransfer: true,
-        ),
-        const ActivityFundTransaction(
-          id: 'tx-101',
-          isDeposit: true,
-          method: 'Bank Transfer',
-          amount: 5000.00,
-          date: '2026-11-16 14:20',
-          status: 'Completed',
-        ),
-        const ActivityFundTransaction(
-          id: 'tx-102',
-          isDeposit: false,
-          method: 'USDT TRC20',
-          amount: 1200.00,
-          date: '2026-11-15 11:35',
-          status: 'Completed',
-        ),
-        const ActivityFundTransaction(
-          id: 'tx-103',
-          isDeposit: true,
-          method: 'Cheese Pay',
-          amount: 2500.00,
-          date: '2026-11-14 09:10',
-          status: 'Completed',
-        ),
-      ],
-      '3315': [
-        const ActivityFundTransaction(
-          id: 'tx-301',
-          isDeposit: false,
-          method: 'Internal Transfer',
-          amount: 850.00,
-          date: '2026-11-17 11:20',
-          status: 'Completed',
-          sourceLogin: '3315',
-          destinationLogin: '52132132',
-          isTransfer: true,
-        ),
-        const ActivityFundTransaction(
-          id: 'tx-302',
-          isDeposit: true,
-          method: 'Internal Transfer',
-          amount: 500.00,
-          date: '2026-11-16 16:45',
-          status: 'Completed',
-          sourceLogin: '3312',
-          destinationLogin: '3315',
-          isTransfer: true,
-        ),
-      ],
-      '3311': [
-        const ActivityFundTransaction(
-          id: 'tx-201',
-          isDeposit: true,
-          method: 'USDT TRC20',
-          amount: 4820.00,
-          date: '2026-11-15 14:00',
-          status: 'Completed',
-        ),
-      ],
-      '3312': [
-        const ActivityFundTransaction(
-          id: 'tx-401',
-          isDeposit: false,
-          method: 'Internal Transfer',
-          amount: 500.00,
-          date: '2026-11-16 16:45',
-          status: 'Completed',
-          sourceLogin: '3312',
-          destinationLogin: '3315',
-          isTransfer: true,
-        ),
-      ],
-      '3327': [],
-    };
-
-    _accountBalances = {
-      '52132132': 12300.00,
-      '3315': 0.00,
-      '3311': 4820.00,
-      '3312': 1100.00,
-      '3327': 0.00,
-    };
-
-    _mergeExternalFunds();
+    _selectedLogin = widget.selectedAccountLogin ??
+        (widget.accounts != null && widget.accounts!.isNotEmpty
+            ? widget.accounts!.first.login
+            : '');
   }
 
   @override
   void dispose() {
     _transactionSearchDebounce?.cancel();
     super.dispose();
-  }
-
-  void _mergeExternalFunds() {
-    if (widget.externalFundTransactions != null) {
-      widget.externalFundTransactions!.forEach((login, list) {
-        final current = _accountFunds.putIfAbsent(login, () => []);
-        for (final tx in list) {
-          if (!current.any((e) => e.id == tx.id)) {
-            current.insert(0, tx);
-          }
-        }
-      });
-    }
   }
 
   @override
@@ -2439,44 +2225,17 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       _remoteOpenPositions = null;
       _remotePendingOrders = null;
       _remoteClosedPositions = null;
+      _remoteFunds = null;
       unawaited(_loadTradingAccounts(fresh: true));
     }
-    _mergeExternalFunds();
   }
 
   List<BrokerAccount> get _allAccounts {
     if (_remoteAccounts != null) return _remoteAccounts!;
-    final list = <BrokerAccount>[];
     if (widget.accounts != null && widget.accounts!.isNotEmpty) {
-      list.addAll(widget.accounts!);
+      return widget.accounts!;
     }
-    final logins = list.map((a) => a.login).toSet();
-    if (!logins.contains('52132132')) {
-      list.insert(
-        0,
-        const BrokerAccount(
-          'V Tamizharasan',
-          '52132132',
-          '1:500',
-          '\$12,300.00',
-          '\$12,450.00',
-          'Live MT5',
-        ),
-      );
-    }
-    if (!logins.contains('3315')) {
-      list.add(
-        const BrokerAccount(
-          'XRSIM-USD-1',
-          '3315',
-          '1:500',
-          '\$0.00',
-          '\$0.00',
-          'Live MT5',
-        ),
-      );
-    }
-    return list;
+    return const [];
   }
 
   BrokerAccount get _currentAccount {
@@ -2498,16 +2257,41 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   List<ActivityOpenPosition> get _currentOpenPositions =>
-      _remoteOpenPositions ?? _accountOpenPositions[_selectedLogin] ?? [];
+      _remoteOpenPositions ?? const [];
 
   List<ActivityPendingOrder> get _currentPendingOrders =>
-      _remotePendingOrders ?? _accountPendingOrders[_selectedLogin] ?? [];
+      _remotePendingOrders ?? const [];
 
   List<ActivityClosedPosition> get _currentClosedPositions =>
-      _remoteClosedPositions ?? _accountClosedPositions[_selectedLogin] ?? [];
+      _remoteClosedPositions ?? const [];
 
-  List<ActivityFundTransaction> get _currentFunds =>
-      _remoteFunds ?? _accountFunds[_selectedLogin] ?? [];
+  List<ActivityFundTransaction> get _currentFunds {
+    final list = _remoteFunds ?? const <ActivityFundTransaction>[];
+    final externalMap = widget.externalFundTransactions;
+    final externalList = (externalMap != null && _selectedLogin.isNotEmpty)
+        ? (externalMap[_selectedLogin] ?? const <ActivityFundTransaction>[])
+        : const <ActivityFundTransaction>[];
+
+    final combined = <ActivityFundTransaction>[];
+    for (final tx in externalList) {
+      if (!combined.any((e) => e.id == tx.id)) {
+        combined.add(tx);
+      }
+    }
+
+    for (final tx in list) {
+      if (_selectedLogin.isNotEmpty) {
+        final matches = (tx.tradingAccount != null && tx.tradingAccount == _selectedLogin) ||
+            (tx.destinationLogin != null && tx.destinationLogin == _selectedLogin) ||
+            (tx.sourceLogin != null && tx.sourceLogin == _selectedLogin);
+        if (!matches) continue;
+      }
+      if (!combined.any((e) => e.id == tx.id)) {
+        combined.add(tx);
+      }
+    }
+    return combined;
+  }
 
   Future<void> _loadUserTransactions() async {
     if (!AuthApi.instance.hasToken) return;
@@ -2536,14 +2320,46 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         ? null
         : '${from.year.toString().padLeft(4, '0')}-${from.month.toString().padLeft(2, '0')}-${from.day.toString().padLeft(2, '0')}';
     try {
-      final response = await AuthApi.instance.getUserTransactions(
-        type: type,
-        search: _activitySearch,
-        dateFrom: dateFrom,
-        dateTo: dateTo,
-        page: 1,
-        pageSize: 100,
-      );
+      final Map<String, dynamic> response;
+      if (_fundsFilter == 'Pending') {
+        Map<String, dynamic>? pendingResp;
+        try {
+          pendingResp = await AuthApi.instance.getPendingTransactions(
+            type: type,
+            search: _activitySearch,
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+            page: 1,
+            pageSize: 100,
+          );
+        } catch (_) {
+          pendingResp = null;
+        }
+        if (pendingResp != null &&
+            (pendingResp['results'] is List ||
+                pendingResp['transactions'] is List ||
+                pendingResp['data'] is List)) {
+          response = pendingResp;
+        } else {
+          response = await AuthApi.instance.getUserTransactions(
+            type: type,
+            search: _activitySearch,
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+            page: 1,
+            pageSize: 100,
+          );
+        }
+      } else {
+        response = await AuthApi.instance.getUserTransactions(
+          type: type,
+          search: _activitySearch,
+          dateFrom: dateFrom,
+          dateTo: dateTo,
+          page: 1,
+          pageSize: 100,
+        );
+      }
       final nested = response['data'];
       final payload = nested is Map
           ? nested.cast<String, dynamic>()
@@ -2557,13 +2373,21 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         final rawType = '${item['transaction_type_display'] ?? item['transaction_type'] ?? item['type'] ?? ''}';
         final normalizedType = rawType.toLowerCase();
         final isTransfer = normalizedType.contains('transfer');
-        final destination = item['to_account']?.toString();
-        final source = item['from_account']?.toString();
+        final rawTradingAccount = (item['trading_account'] ??
+                item['trading_account_id'] ??
+                item['account_id'] ??
+                item['account'] ??
+                item['login'] ??
+                item['account_number'])
+            ?.toString();
+        final destination = (item['to_account'] ?? item['destination_account'] ?? (isTransfer ? null : rawTradingAccount))?.toString();
+        final source = (item['from_account'] ?? item['source_account'] ?? (isTransfer ? null : rawTradingAccount))?.toString();
         final amountValue = item['amount'] ?? item['raw_amount'] ?? 0;
         final amount = amountValue is num
             ? amountValue.toDouble()
             : double.tryParse(amountValue.toString()) ?? 0;
         final date = item['created_at'] ?? item['createdAt'] ?? item['created'] ?? item['date'];
+        final defaultStatus = _fundsFilter == 'Pending' ? 'Pending' : 'Completed';
         return ActivityFundTransaction(
           id: '${item['id'] ?? item['transaction_id'] ?? ''}',
           isDeposit: isTransfer
@@ -2572,9 +2396,10 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
           method: isTransfer ? 'Internal Transfer' : rawType,
           amount: amount.abs(),
           date: date?.toString() ?? '',
-          status: '${item['status'] ?? 'Completed'}',
+          status: '${item['status'] ?? defaultStatus}',
           sourceLogin: source,
           destinationLogin: destination,
+          tradingAccount: rawTradingAccount ?? (isTransfer ? null : (destination ?? source)),
           isTransfer: isTransfer,
         );
       }).toList();
@@ -2589,6 +2414,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         _transactionsError = error is AuthApiException
             ? error.message
             : 'Could not load transactions.';
+        _remoteFunds = const [];
         _transactionsLoading = false;
       });
     }
@@ -2813,7 +2639,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         _pendingError = error is AuthApiException
             ? error.message
             : 'Could not load pending orders.';
-        _remotePendingOrders = null;
+        _remotePendingOrders = const [];
         _pendingLoading = false;
       });
     }
@@ -2878,7 +2704,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     }
   }
 
-  double get _currentBalance => _accountBalances[_selectedLogin] ?? 0.0;
+  double get _currentBalance =>
+      _accountBalances[_selectedLogin] ?? _parseCurrency(_currentAccount.balance);
 
   double get _currentTotalPL =>
       _currentOpenPositions.fold(0.0, (sum, p) => sum + p.profit);
@@ -2895,6 +2722,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
         _remoteOpenPositions = null;
         _remotePendingOrders = null;
         _remoteClosedPositions = null;
+        _remoteFunds = null;
       });
       widget.onAccountChanged?.call(login);
     }
@@ -4795,13 +4623,23 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   Widget _buildFundsTab(BuildContext context, bool isDark) {
     final allFunds = _currentFunds.where((f) => _matchesActivity('${f.method} ${f.id} ${f.status} ${f.sourceLogin ?? ''} ${f.destinationLogin ?? ''}', f.date)).toList();
     final filteredFunds = switch (_fundsFilter) {
+      'Pending' => allFunds.where((f) {
+          final s = f.status.toLowerCase();
+          return s.contains('pending') ||
+              s.contains('process') ||
+              s.contains('review') ||
+              s.contains('submit') ||
+              s.contains('hold') ||
+              s == 'initiated' ||
+              s == 'waiting';
+        }).toList(),
       'Deposits' => allFunds.where((f) => f.isDeposit && !f.isTransfer && f.method != 'Internal Transfer').toList(),
       'Withdrawals' => allFunds.where((f) => !f.isDeposit && !f.isTransfer && f.method != 'Internal Transfer').toList(),
       'Transfers' => allFunds.where((f) => f.isTransfer || f.method == 'Internal Transfer').toList(),
       _ => allFunds,
     };
 
-    final filterOptions = ['All', 'Deposits', 'Withdrawals', 'Transfers'];
+    final filterOptions = ['Pending', 'Deposits', 'Withdrawals', 'Transfers'];
 
     return Column(
       children: [

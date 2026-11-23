@@ -2308,15 +2308,6 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     final isLive = a.type == 'Live MT5';
     final pnl = a.floatingPnl;
     final pnlColor = pnl == null ? muted : pnl >= 0 ? green : red;
-    final trades = a.recentTrades;
-    final wins = trades.where((t) => t.profit > 0).length;
-    final losses = trades.where((t) => t.profit < 0).length;
-    final winRate = trades.isEmpty ? 0.0 : wins * 100 / trades.length;
-    final totalProfit = trades.fold<double>(0, (sum, t) => sum + t.profit);
-    final winningTrades = trades.where((t) => t.profit > 0).toList();
-    final losingTrades = trades.where((t) => t.profit < 0).toList();
-    final averageWin = winningTrades.isEmpty ? 0.0 : winningTrades.fold<double>(0, (sum, t) => sum + t.profit) / winningTrades.length;
-    final averageLoss = losingTrades.isEmpty ? 0.0 : losingTrades.fold<double>(0, (sum, t) => sum + t.profit.abs()) / losingTrades.length;
     final history = a.equityHistory;
     final rangeCount = switch (_range) { '1D' => 3, '1W' => 5, '1M' => 8, '3M' => 10, 'YTD' => 12, _ => history.length };
     final chartHistory = history.length > rangeCount ? history.sublist(history.length - rangeCount) : history;

@@ -2060,12 +2060,145 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   String _tab = 'Overview';
   String _range = '1W';
   late BrokerAccount _account = widget.account;
+  List<Map<String, dynamic>> _livePositions = <Map<String, dynamic>>[];
+  bool _detailsLoading = false;
+  bool _positionsLoading = false;
+  String? _detailsError;
+  String? _positionsError;
+  final Set<String> _closingTickets = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccountData();
+  }
 
   @override
   void didUpdateWidget(covariant BrokerAccountDetailsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.account != widget.account) {
+    if (oldWidget.account.login != widget.account.login) {
       _account = widget.account;
+      _livePositions = <Map<String, dynamic>>[];
+      _loadAccountData();
+    } else if (oldWidget.account != widget.account) {
+      _account = widget.account;
+    }
+  }
+
+  double _apiNumber(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String _apiMoney(dynamic value, String currency) {
+    final amount = _apiNumber(value);
+    return '$currency ' + amount.toStringAsFixed(2);
+  }
+
+  Future<void> _loadAccountData() async {
+    await Future.wait<void>([
+      _loadAccountDetails(),
+      _loadOpenPositions(),
+    ]);
+  }
+
+  Future<void> _loadAccountDetails() async {
+    if (mounted) setState(() { _detailsLoading = true; _detailsError = null; });
+    try {
+      final data = await AuthApi.instance.getAccountDetails(_account.login);
+      if (!mounted) return;
+      final currency = (data['currency'] ?? _account.currency).toString();
+      setState(() {
+        _account = _account.copyWith(
+          name: (data['account_name'] ?? data['name'] ?? _account.name).toString(),
+          balance: _apiMoney(data['balance'] ?? _account.balance, currency),
+          equity: _apiMoney(data['equity'] ?? _account.equity, currency),
+          leverage: '1:${data['leverage'] ?? _account.leverage.replaceFirst('1:', '')}',
+          currency: currency,
+          floatingPnl: _apiNumber(data['profit'] ?? data['floating_pnl'] ?? 0),
+          server: (data['server'] ?? data['server_name'] ?? _account.server)?.toString(),
+        );
+        _detailsLoading = false;
+      });
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() { _detailsLoading = false; _detailsError = error.message; });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _detailsLoading = false;
+        _detailsError = 'Unable to load account information. Try again.';
+      });
+    }
+  }
+
+  Future<void> _loadOpenPositions() async {
+    if (mounted) setState(() { _positionsLoading = true; _positionsError = null; });
+    try {
+      final positions = await AuthApi.instance.getOpenPositions(_account.login);
+      if (!mounted) return;
+      setState(() {
+        _livePositions = positions;
+        _positionsLoading = false;
+      });
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() { _positionsLoading = false; _positionsError = error.message; });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _positionsLoading = false;
+        _positionsError = 'Unable to load open positions. Try again.';
+      });
+    }
+  }
+
+  Future<void> _confirmAndClosePosition(Map<String, dynamic> position) async {
+    final ticket = (position['ticket'] ?? position['id'] ?? '').toString();
+    if (ticket.isEmpty) {
+      showAppMessage('This position does not include a valid MT5 ticket.');
+      return;
+    }
+    final symbol = (position['symbol'] ?? 'this position').toString();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Close position?'),
+        content: Text('You are about to close $symbol (ticket $ticket). This action will be sent to MT5 and cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Close position'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _closingTickets.add(ticket));
+    try {
+      final result = await AuthApi.instance.closePosition(
+        accountId: _account.login,
+        ticket: ticket,
+      );
+      if (!mounted) return;
+      if (result['success'] == false) {
+        throw AuthApiException(
+          (result['message'] ?? 'MT5 could not close this position.').toString(),
+        );
+      }
+      showAppMessage((result['message'] ?? 'Position closed successfully.').toString());
+      await _loadAccountData();
+    } on AuthApiException catch (error) {
+      if (mounted) showAppMessage(error.message);
+    } catch (_) {
+      if (mounted) showAppMessage('Unable to close this position. Refresh and check its status before retrying.');
+    } finally {
+      if (mounted) setState(() => _closingTickets.remove(ticket));
     }
   }
 

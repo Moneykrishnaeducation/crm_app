@@ -127,6 +127,8 @@ class AuthApi {
         decoded.cast<String, dynamic>(),
         responseKeyPair.keyId,
       );
+    } else {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
     }
     final data = responsePayload is Map<String, dynamic>
         ? responsePayload
@@ -231,6 +233,8 @@ class AuthApi {
         unawaited(_persistAccessToken());
       }
     }
+    // Some authentication responses are encrypted by the same response-key
+    // contract; token persistence must happen after _request decrypts them.
     if (_accessToken == null) {
       final cookieToken = _cookies['client_access_token'] ??
           _cookies['access_token'] ??

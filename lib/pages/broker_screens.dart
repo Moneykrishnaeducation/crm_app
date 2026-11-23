@@ -2162,6 +2162,21 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   String _fundsFilter = 'All'; // 'All', 'Deposits', 'Withdrawals'
   String _activitySearch = '';
   String _activityDateFilter = 'All time';
+  List<ActivityFundTransaction>? _remoteFunds;
+  bool _transactionsLoading = false;
+  String? _transactionsError;
+  Timer? _transactionSearchDebounce;
+  List<BrokerAccount>? _remoteAccounts;
+  bool _accountsLoading = false;
+  String? _accountsError;
+  List<ActivityOpenPosition>? _remoteOpenPositions;
+  bool _positionsLoading = false;
+  String? _positionsError;
+  int _positionRequestId = 0;
+  List<ActivityPendingOrder>? _remotePendingOrders;
+  bool _pendingLoading = false;
+  String? _pendingError;
+  int _pendingRequestId = 0;
 
   late final Map<String, List<ActivityOpenPosition>> _accountOpenPositions;
   late final Map<String, List<ActivityPendingOrder>> _accountPendingOrders;
@@ -2172,7 +2187,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   @override
   void initState() {
     super.initState();
-    _selectedLogin = widget.selectedAccountLogin ?? '52132132';
+    _selectedLogin = '';
 
     _accountOpenPositions = {
       '52132132': [
@@ -2366,15 +2381,17 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       '3327': [],
     };
 
-    _accountBalances = {
-      '52132132': 12300.00,
-      '3315': 0.00,
-      '3311': 4820.00,
-      '3312': 1100.00,
-      '3327': 0.00,
-    };
+    _accountBalances = {};
 
     _mergeExternalFunds();
+    unawaited(_loadTradingAccounts());
+    unawaited(_loadUserTransactions());
+  }
+
+  @override
+  void dispose() {
+    _transactionSearchDebounce?.cancel();
+    super.dispose();
   }
 
   void _mergeExternalFunds() {
@@ -2394,48 +2411,33 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   void didUpdateWidget(covariant BrokerTransactionsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedAccountLogin != null &&
+        _allAccounts.any((a) => a.login == widget.selectedAccountLogin) &&
         widget.selectedAccountLogin != _selectedLogin) {
-      setState(() => _selectedLogin = widget.selectedAccountLogin!);
+      _selectedLogin = widget.selectedAccountLogin!;
+      _remoteOpenPositions = null;
+      _remotePendingOrders = null;
+      unawaited(_loadOpenPositions(_selectedLogin));
+      unawaited(_loadPendingOrders(_selectedLogin));
     }
     _mergeExternalFunds();
   }
 
   List<BrokerAccount> get _allAccounts {
-    final list = <BrokerAccount>[];
-    if (widget.accounts != null && widget.accounts!.isNotEmpty) {
-      list.addAll(widget.accounts!);
-    }
-    final logins = list.map((a) => a.login).toSet();
-    if (!logins.contains('52132132')) {
-      list.insert(
-        0,
-        const BrokerAccount(
-          'V Tamizharasan',
-          '52132132',
-          '1:500',
-          '\$12,300.00',
-          '\$12,450.00',
-          'Live MT5',
-        ),
-      );
-    }
-    if (!logins.contains('3315')) {
-      list.add(
-        const BrokerAccount(
-          'XRSIM-USD-1',
-          '3315',
-          '1:500',
-          '\$0.00',
-          '\$0.00',
-          'Live MT5',
-        ),
-      );
-    }
-    return list;
+    return _remoteAccounts ?? const [];
   }
 
   BrokerAccount get _currentAccount {
     final accounts = _allAccounts;
+    if (accounts.isEmpty) {
+      return const BrokerAccount(
+        'Select Trading Account',
+        '',
+        '',
+        '\$0.00',
+        '\$0.00',
+        '',
+      );
+    }
     return accounts.firstWhere(
       (a) => a.login == _selectedLogin,
       orElse: () => accounts.first,
@@ -2443,27 +2445,329 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   List<ActivityOpenPosition> get _currentOpenPositions =>
-      _accountOpenPositions[_selectedLogin] ?? [];
+      _remoteOpenPositions ?? const [];
 
   List<ActivityPendingOrder> get _currentPendingOrders =>
-      _accountPendingOrders[_selectedLogin] ?? [];
+      _remotePendingOrders ?? _accountPendingOrders[_selectedLogin] ?? [];
 
   List<ActivityClosedPosition> get _currentClosedPositions =>
       _accountClosedPositions[_selectedLogin] ?? [];
 
   List<ActivityFundTransaction> get _currentFunds =>
-      _accountFunds[_selectedLogin] ?? [];
+      _remoteFunds ?? _accountFunds[_selectedLogin] ?? [];
+
+  Future<void> _loadUserTransactions() async {
+    setState(() {
+      _transactionsLoading = true;
+      _transactionsError = null;
+    });
+    final type = switch (_fundsFilter) {
+      'Deposits' => 'deposit',
+      'Withdrawals' => 'withdrawal',
+      'Transfers' => 'internal_transfer',
+      _ => null,
+    };
+    final now = DateTime.now();
+    final dateTo = _activityDateFilter == 'All time'
+        ? null
+        : '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final daysBack = switch (_activityDateFilter) {
+      'Today' => 0,
+      '7 days' => 6,
+      '30 days' => 29,
+      _ => null,
+    };
+    final from = daysBack == null ? null : now.subtract(Duration(days: daysBack));
+    final dateFrom = from == null
+        ? null
+        : '${from.year.toString().padLeft(4, '0')}-${from.month.toString().padLeft(2, '0')}-${from.day.toString().padLeft(2, '0')}';
+    try {
+      final response = await AuthApi.instance.getUserTransactions(
+        type: type,
+        search: _activitySearch,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        page: 1,
+        pageSize: 100,
+      );
+      final nested = response['data'];
+      final payload = nested is Map
+          ? nested.cast<String, dynamic>()
+          : response;
+      final rows = payload['results'] ??
+          payload['transactions'] ??
+          payload['data'];
+      final list = rows is List ? rows : (response['data'] is List ? response['data'] as List : const []);
+      final funds = list.whereType<Map>().map((raw) {
+        final item = raw.cast<String, dynamic>();
+        final rawType = '${item['transaction_type_display'] ?? item['transaction_type'] ?? item['type'] ?? ''}';
+        final normalizedType = rawType.toLowerCase();
+        final isTransfer = normalizedType.contains('transfer');
+        final destination = item['to_account']?.toString();
+        final source = item['from_account']?.toString();
+        final amountValue = item['amount'] ?? item['raw_amount'] ?? 0;
+        final amount = amountValue is num
+            ? amountValue.toDouble()
+            : double.tryParse(amountValue.toString()) ?? 0;
+        final date = item['created_at'] ?? item['createdAt'] ?? item['created'] ?? item['date'];
+        return ActivityFundTransaction(
+          id: '${item['id'] ?? item['transaction_id'] ?? ''}',
+          isDeposit: isTransfer
+              ? destination == _selectedLogin
+              : !(normalizedType.contains('withdraw') || normalizedType == 'debit'),
+          method: isTransfer ? 'Internal Transfer' : rawType,
+          amount: amount.abs(),
+          date: date?.toString() ?? '',
+          status: '${item['status'] ?? 'Completed'}',
+          sourceLogin: source,
+          destinationLogin: destination,
+          isTransfer: isTransfer,
+        );
+      }).toList();
+      if (!mounted) return;
+      setState(() {
+        _remoteFunds = funds;
+        _transactionsLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _transactionsError = error is AuthApiException
+            ? error.message
+            : 'Could not load transactions.';
+        _transactionsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadTradingAccounts({bool fresh = true}) async {
+    setState(() {
+      _accountsLoading = true;
+      _accountsError = null;
+      _positionsLoading = _selectedLogin.isNotEmpty;
+      _positionsError = null;
+      _remoteOpenPositions = null;
+    });
+    try {
+      final response = await AuthApi.instance.getUserTradingAccounts(
+        fresh: fresh,
+      );
+      final rows = response['accounts'];
+      final accounts = (rows is List ? rows : const <dynamic>[])
+          .whereType<Map>()
+          .map((raw) {
+            final item = raw.cast<String, dynamic>();
+            final login = '${item['account_id'] ?? ''}';
+            final name = '${item['account_name'] ?? 'Trading account'}';
+            final balance = _asDouble(item['balance']);
+            final equity = _asDouble(item['equity'], fallback: balance);
+            final isDemo = item['is_demo'] == true ||
+                '${item['account_type']}'.toLowerCase() == 'demo';
+            return BrokerAccount(
+              name,
+              login,
+              '${item['leverage'] ?? ''}',
+              '\$${balance.toStringAsFixed(2)}',
+              '\$${equity.toStringAsFixed(2)}',
+              isDemo ? 'Demo' : 'Live MT5',
+              floatingPnl: equity - balance,
+            );
+          })
+          .where((account) => account.login.isNotEmpty)
+          .toList();
+      if (!mounted) return;
+      final requestedLogin = widget.selectedAccountLogin;
+      var selectedLogin = '';
+      if (accounts.isNotEmpty) {
+        if (accounts.any((a) => a.login == _selectedLogin)) {
+          selectedLogin = _selectedLogin;
+        } else if (requestedLogin != null &&
+            accounts.any((a) => a.login == requestedLogin)) {
+          selectedLogin = requestedLogin;
+        } else {
+          selectedLogin = accounts.first.login;
+        }
+      }
+      setState(() {
+        _remoteAccounts = accounts;
+        _selectedLogin = selectedLogin;
+        _accountsLoading = false;
+        if (accounts.isNotEmpty) {
+          for (final account in accounts) {
+            _accountBalances[account.login] =
+                _parseCurrency(account.balance);
+          }
+        }
+        if (selectedLogin.isEmpty) {
+          _remoteOpenPositions = const [];
+          _remotePendingOrders = const [];
+        }
+      });
+      if (selectedLogin.isNotEmpty) {
+        await Future.wait([
+          _loadOpenPositions(selectedLogin),
+          _loadPendingOrders(selectedLogin),
+        ]);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _remoteAccounts = const [];
+        _selectedLogin = '';
+        _remoteOpenPositions = const [];
+        _remotePendingOrders = const [];
+        _positionsLoading = false;
+        _positionsError = null;
+        _pendingLoading = false;
+        _pendingError = null;
+        _accountsError = error is AuthApiException
+            ? error.message
+            : 'Could not load trading accounts.';
+        _accountsLoading = false;
+      });
+    }
+  }
+
+  double _asDouble(dynamic value, {double fallback = 0}) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  double _parseCurrency(String value) =>
+      double.tryParse(value.replaceAll(RegExp(r'[^0-9.\-]'), '')) ?? 0;
+
+  Future<void> _loadOpenPositions(String accountId) async {
+    final requestId = ++_positionRequestId;
+    if (accountId.isEmpty) {
+      setState(() {
+        _remoteOpenPositions = const [];
+        _positionsLoading = false;
+        _positionsError = null;
+      });
+      return;
+    }
+    setState(() {
+      _positionsLoading = true;
+      _positionsError = null;
+    });
+    try {
+      final response = await AuthApi.instance.getOpenPositions(accountId);
+      final nested = response['data'];
+      final rows = response['positions'] ??
+          (nested is Map ? nested['positions'] : null) ??
+          (nested is List ? nested : null);
+      final positions = (rows is List ? rows : const <dynamic>[])
+          .whereType<Map>()
+          .map((raw) {
+            final item = raw.cast<String, dynamic>();
+            final type = '${item['type'] ?? ''}'.toLowerCase();
+            return ActivityOpenPosition(
+              id: '${item['ticket'] ?? item['id'] ?? ''}',
+              symbol: '${item['symbol'] ?? ''}',
+              isBuy: type.contains('buy'),
+              lots: _asDouble(item['volume']),
+              openPrice: _asDouble(item['open_price'] ?? item['openPrice']),
+              currentPrice: _asDouble(
+                item['current_price'] ?? item['currentPrice'],
+              ),
+              profit: _asDouble(item['profit']),
+              sl: _asDouble(item['sl']),
+              tp: _asDouble(item['tp']),
+              openTime: '${item['open_time'] ?? item['openTime'] ?? ''}',
+            );
+          })
+          .toList();
+      if (!mounted || requestId != _positionRequestId) return;
+      setState(() {
+        _remoteOpenPositions = positions;
+        _positionsLoading = false;
+      });
+    } catch (error) {
+      if (!mounted || requestId != _positionRequestId) return;
+      setState(() {
+        _positionsError = error is AuthApiException
+            ? error.message
+            : 'Could not load open positions.';
+        _remoteOpenPositions = const [];
+        _positionsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadPendingOrders(String accountId) async {
+    final requestId = ++_pendingRequestId;
+    if (accountId.isEmpty) {
+      setState(() {
+        _remotePendingOrders = const [];
+        _pendingLoading = false;
+        _pendingError = null;
+      });
+      return;
+    }
+    setState(() {
+      _pendingLoading = true;
+      _pendingError = null;
+    });
+    try {
+      final response = await AuthApi.instance.getPendingOrders(accountId);
+      final nested = response['data'];
+      final rows = response['orders'] ??
+          (nested is Map ? nested['orders'] : null) ??
+          (nested is List ? nested : null);
+      final orders = (rows is List ? rows : const <dynamic>[])
+          .whereType<Map>()
+          .map((raw) {
+            final item = raw.cast<String, dynamic>();
+            return ActivityPendingOrder(
+              id: '${item['ticket'] ?? item['order_id'] ?? item['id'] ?? ''}',
+              symbol: '${item['symbol'] ?? ''}',
+              orderType: '${item['type'] ?? 'PENDING'}',
+              lots: _asDouble(item['volume'] ?? item['volume_initial']),
+              orderPrice: _asDouble(item['price_order'] ?? item['priceOrder']),
+              currentPrice: _asDouble(
+                item['price_current'] ?? item['priceCurrent'],
+              ),
+              placedTime: '${item['time_setup'] ?? item['timeSetup'] ?? ''}',
+            );
+          })
+          .toList();
+      if (!mounted || requestId != _pendingRequestId) return;
+      setState(() {
+        _remotePendingOrders = orders;
+        _pendingLoading = false;
+      });
+    } catch (error) {
+      if (!mounted || requestId != _pendingRequestId) return;
+      setState(() {
+        _pendingError = error is AuthApiException
+            ? error.message
+            : 'Could not load pending orders.';
+        _remotePendingOrders = null;
+        _pendingLoading = false;
+      });
+    }
+  }
 
   double get _currentBalance => _accountBalances[_selectedLogin] ?? 0.0;
 
   double get _currentTotalPL =>
       _currentOpenPositions.fold(0.0, (sum, p) => sum + p.profit);
 
-  double get _currentEquity => _currentBalance + _currentTotalPL;
+  double get _currentEquity => _remoteAccounts == null
+      ? _currentBalance + _currentTotalPL
+      : _parseCurrency(_currentAccount.equity);
 
   void _selectAccount(String login) {
-    setState(() => _selectedLogin = login);
-    widget.onAccountChanged?.call(login);
+    if (login.isEmpty) return;
+    if (login != _selectedLogin) {
+      setState(() {
+        _selectedLogin = login;
+        _remoteOpenPositions = null;
+        _remotePendingOrders = null;
+      });
+      widget.onAccountChanged?.call(login);
+    }
+    unawaited(_loadTradingAccounts(fresh: true));
   }
 
   Future<void> _closePosition(ActivityOpenPosition position) async {
@@ -2585,25 +2889,22 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     );
 
     if (confirmed != true || !mounted) return;
-    setState(() {
-      _accountOpenPositions[_selectedLogin]?.removeWhere((p) => p.id == position.id);
-      _accountClosedPositions[_selectedLogin]?.insert(
-        0,
-        ActivityClosedPosition(
-          id: 'cls-${DateTime.now().millisecondsSinceEpoch}',
-          symbol: position.symbol,
-          isBuy: position.isBuy,
-          lots: position.lots,
-          openPrice: position.openPrice,
-          closePrice: position.currentPrice,
-          netProfit: position.profit,
-          closeTime: 'Just now',
-        ),
+    try {
+      final result = await AuthApi.instance.closePosition(
+        accountId: _selectedLogin,
+        ticket: position.id,
       );
-      _accountBalances[_selectedLogin] =
-          (_accountBalances[_selectedLogin] ?? 0.0) + position.profit;
-    });
-    showAppMessage('Position preview updated for ${position.symbol}. No MT5 close order was submitted.');
+      final msg = result['message'] is String
+          ? result['message'] as String
+          : 'Position closed successfully on MT5.';
+      showAppMessage(msg);
+      unawaited(_loadOpenPositions(_selectedLogin));
+      unawaited(_loadTradingAccounts(fresh: true));
+    } catch (e) {
+      final errorMsg =
+          e is AuthApiException ? e.message : 'Failed to close position: $e';
+      showAppMessage(errorMsg);
+    }
   }
 
   Future<void> _cancelPendingOrder(ActivityPendingOrder order) async {
@@ -2720,10 +3021,21 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     );
 
     if (confirmed != true || !mounted) return;
-    setState(() {
-      _accountPendingOrders[_selectedLogin]?.removeWhere((o) => o.id == order.id);
-    });
-    showAppMessage('Cancellation preview updated for ${order.symbol}. No MT5 cancellation was submitted.');
+    try {
+      final result = await AuthApi.instance.closePendingOrder(
+        accountId: _selectedLogin,
+        ticket: order.id,
+      );
+      final msg = result['message'] is String
+          ? result['message'] as String
+          : 'Pending order cancelled successfully on MT5.';
+      showAppMessage(msg);
+      unawaited(_loadPendingOrders(_selectedLogin));
+    } catch (e) {
+      final errorMsg =
+          e is AuthApiException ? e.message : 'Failed to cancel pending order: $e';
+      showAppMessage(errorMsg);
+    }
   }
 
   Widget _activityConfirmRow(
@@ -2749,6 +3061,15 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   void _openAccountSwitchSheet(BuildContext context) {
+    if (_accountsLoading) {
+      showAppMessage('Trading accounts are still loading.');
+      return;
+    }
+    if (_accountsError != null) {
+      unawaited(_loadTradingAccounts());
+      showAppMessage('Refreshing trading accounts. Please try again shortly.');
+      return;
+    }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accounts = _allAccounts;
 
@@ -2795,6 +3116,18 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                 ],
               ),
               const SizedBox(height: 12),
+              if (accounts.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
+                    'No trading accounts found.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               for (final acc in accounts) ...[
                 InkWell(
                   onTap: () {
@@ -3393,6 +3726,9 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                           if (_activeTab != i) {
                             setState(() => _activeTab = i);
                           }
+                          if (i == 0 && _selectedLogin.isNotEmpty) {
+                            unawaited(_loadTradingAccounts(fresh: true));
+                          }
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: AnimatedContainer(
@@ -3603,7 +3939,10 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
                       .toList(),
                   onChanged: (value) {
-                    if (value != null) setState(() => _activityDateFilter = value);
+                    if (value != null) {
+                      setState(() => _activityDateFilter = value);
+                      unawaited(_loadUserTransactions());
+                    }
                   },
                 ),
               ),
@@ -3615,6 +3954,32 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildOpenPositionsList(BuildContext context, bool isDark) {
+    if ((_accountsLoading && _remoteOpenPositions == null) ||
+        _positionsLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(28),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_positionsError != null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
+        child: Column(
+          children: [
+            Text(
+              _positionsError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+            ),
+            TextButton.icon(
+              onPressed: () => unawaited(_loadOpenPositions(_selectedLogin)),
+              icon: const Icon(LucideIcons.refreshCw, size: 15),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
     final positions = _currentOpenPositions.where((p) => _matchesActivity('${p.symbol} ${p.id} ${p.isBuy ? 'buy' : 'sell'}', p.openTime)).toList();
     if (positions.isEmpty) return _buildEmptyState(context);
 
@@ -3819,6 +4184,62 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   }
 
   Widget _buildPendingOrdersList(BuildContext context, bool isDark) {
+    if ((_accountsLoading && _remotePendingOrders == null) ||
+        _pendingLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(strokeWidth: 2.6),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Loading live pending orders...',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_pendingError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _pendingError!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextButton.icon(
+                onPressed: () => unawaited(_loadPendingOrders(_selectedLogin)),
+                icon: const Icon(LucideIcons.refreshCw, size: 15),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final orders = _currentPendingOrders.where((o) => _matchesActivity('${o.symbol} ${o.orderType} ${o.id}', o.placedTime)).toList();
     if (orders.isEmpty) return _buildEmptyState(context);
 
@@ -4195,7 +4616,14 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                 for (final filter in filterOptions)
                   Expanded(
                     child: InkWell(
-                      onTap: () => setState(() => _fundsFilter = filter),
+                      onTap: () {
+                        if (_fundsFilter == filter) return;
+                        setState(() {
+                          _fundsFilter = filter;
+                          _remoteFunds = null;
+                        });
+                        unawaited(_loadUserTransactions());
+                      },
                       borderRadius: BorderRadius.circular(10),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
@@ -4224,7 +4652,30 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
             ),
           ),
         ),
-        if (filteredFunds.isEmpty)
+        if (_transactionsLoading)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_transactionsError != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+            child: Column(
+              children: [
+                Text(
+                  _transactionsError!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                ),
+                TextButton.icon(
+                  onPressed: () => unawaited(_loadUserTransactions()),
+                  icon: const Icon(LucideIcons.refreshCw, size: 15),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          )
+        else if (filteredFunds.isEmpty)
           _buildEmptyState(context)
         else
           ListView.builder(

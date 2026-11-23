@@ -70,8 +70,15 @@ class AuthApi {
     String method,
     String path, {
     Map<String, dynamic>? body,
+    bool requireEncryptedResponse = false,
   }) async {
     final headers = _headers;
+    RSAPrivateKey? responsePrivateKey;
+    if (requireEncryptedResponse) {
+      final responseKey = _createResponseEncryptionKey();
+      responsePrivateKey = responseKey.privateKey;
+      headers['X-Response-Encryption-Key'] = responseKey.publicKeyBase64;
+    }
     if (body != null) headers['Content-Type'] = 'application/json';
     final request = http.Request(method, _uri(path))..headers.addAll(headers);
     if (body != null) request.body = jsonEncode(body);
@@ -91,9 +98,15 @@ class AuthApi {
         statusCode: response.statusCode,
       );
     }
-    final data = decoded is Map<String, dynamic>
+    var data = decoded is Map<String, dynamic>
         ? decoded
         : <String, dynamic>{'data': decoded};
+    if (response.statusCode >= 200 &&
+        response.statusCode < 300 &&
+        requireEncryptedResponse &&
+        data['encrypted'] == true) {
+      data = _decryptResponseEnvelope(data, responsePrivateKey!);
+    }
     final apiCode = data['code'];
     final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
     final hasErrorMessage =
@@ -386,6 +399,206 @@ class AuthApi {
       _request('GET', 'profile/security/captcha/');
   Future<Map<String, dynamic>> getTwoFactorSettings() =>
       _request('GET', 'profile/security/two-factor/');
+
+  /// Fetches the signed-in user's transaction history using the same filters
+  /// as Client/src/pages/Transactions.jsx.
+  Future<Map<String, dynamic>> getUserTransactions({
+    String? type,
+    String? search,
+    String? dateFrom,
+    String? dateTo,
+    int page = 1,
+    int pageSize = 100,
+  }) {
+    final query = <String, String>{
+      if (type != null && type.isNotEmpty) 'type': type,
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
+      'page': '$page',
+      'page_size': '$pageSize',
+    };
+    final queryString = Uri(queryParameters: query).query;
+    return _request(
+      'GET',
+      '/api/user-transactions/?$queryString',
+      requireEncryptedResponse: true,
+    );
+  }
+
+  Future<Map<String, dynamic>> getPendingTransactions({
+    String? type,
+    String? search,
+    String? dateFrom,
+    String? dateTo,
+    int page = 1,
+    int pageSize = 100,
+  }) {
+    final query = <String, String>{
+      if (type != null && type.isNotEmpty) 'type': type,
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
+      'page': '$page',
+      'page_size': '$pageSize',
+    };
+    final queryString = Uri(queryParameters: query).query;
+    return _request(
+      'GET',
+      '/api/pending-transactions/?$queryString',
+      requireEncryptedResponse: true,
+    );
+  }
+
+  Future<Map<String, dynamic>> getUserTradingAccounts({bool fresh = false}) =>
+      _request(
+        'GET',
+        '/api/user-trading-accounts/${fresh ? '?fresh=true' : ''}',
+        requireEncryptedResponse: true,
+      );
+
+  Future<Map<String, dynamic>> getOpenPositions(String accountId) =>
+      _request(
+        'GET',
+        '/api/open-positions/${Uri.encodeComponent(accountId)}/',
+        requireEncryptedResponse: false,
+      );
+
+  Future<Map<String, dynamic>> getTradingPositions(String accountId) =>
+      _request(
+        'GET',
+        '/api/get-trading-positions/${Uri.encodeComponent(accountId)}/',
+        requireEncryptedResponse: false,
+      );
+
+  Future<Map<String, dynamic>> closePosition({
+    required String accountId,
+    dynamic ticket,
+    double? volume,
+    bool closeAll = false,
+    String? comment,
+  }) {
+    final body = <String, dynamic>{
+      if (ticket != null) 'ticket': ticket,
+      if (volume != null) 'volume': volume,
+      if (closeAll) 'close_all': true,
+      if (comment != null && comment.isNotEmpty) 'comment': comment,
+    };
+    return _request(
+      'POST',
+      '/api/close-position/${Uri.encodeComponent(accountId)}/',
+      body: body,
+      requireEncryptedResponse: false,
+    );
+  }
+
+  Future<Map<String, dynamic>> getPendingOrders(String accountId) =>
+      _request(
+        'GET',
+        '/api/pending-orders/${Uri.encodeComponent(accountId)}/',
+        requireEncryptedResponse: false,
+      );
+
+  Future<Map<String, dynamic>> closePendingOrder({
+    required String accountId,
+    dynamic ticket,
+    bool cancelAll = false,
+  }) {
+    final body = <String, dynamic>{
+      if (ticket != null) 'ticket': ticket,
+      if (cancelAll) 'cancel_all': true,
+      if (cancelAll) 'close_all': true,
+    };
+    return _request(
+      'POST',
+      '/api/close-pending-order/${Uri.encodeComponent(accountId)}/',
+      body: body,
+      requireEncryptedResponse: false,
+    );
+  }
+
+  Future<Map<String, dynamic>> cancelPendingOrder({
+    required String accountId,
+    dynamic ticket,
+    bool cancelAll = false,
+  }) =>
+      closePendingOrder(
+        accountId: accountId,
+        ticket: ticket,
+        cancelAll: cancelAll,
+      );
+
+  ({String publicKeyBase64, RSAPrivateKey privateKey})
+  _createResponseEncryptionKey() {
+    final secureRandom = FortunaRandom()
+      ..seed(KeyParameter(_randomBytes(32)));
+    final generator = RSAKeyGenerator()
+      ..init(
+        ParametersWithRandom(
+          RSAKeyGeneratorParameters(BigInt.from(65537), 2048, 64),
+          secureRandom,
+        ),
+      );
+    final pair = generator.generateKeyPair();
+    final publicKey = pair.publicKey;
+    final privateKey = pair.privateKey;
+
+    final rsaSequence = ASN1Sequence()
+      ..add(ASN1Integer(publicKey.modulus!))
+      ..add(ASN1Integer(publicKey.exponent!));
+    final algorithmSequence = ASN1Sequence()
+      ..add(ASN1ObjectIdentifier.fromComponentString('1.2.840.113549.1.1.1'))
+      ..add(ASN1Object.fromBytes(Uint8List.fromList([0x05, 0x00])));
+    final subjectPublicKeyInfo = ASN1Sequence()
+      ..add(algorithmSequence)
+      ..add(ASN1BitString(rsaSequence.encodedBytes));
+
+    return (
+      publicKeyBase64: base64Encode(subjectPublicKeyInfo.encodedBytes),
+      privateKey: privateKey,
+    );
+  }
+
+  Map<String, dynamic> _decryptResponseEnvelope(
+    Map<String, dynamic> envelope,
+    RSAPrivateKey privateKey,
+  ) {
+    if (envelope['encrypted'] != true ||
+        envelope['version'] != 1 ||
+        envelope['algorithm'] != 'RSA-OAEP-256+A256GCM') {
+      throw const AuthApiException(
+        'The server returned an invalid encrypted response.',
+      );
+    }
+
+    try {
+      final aad = Uint8List.fromList(utf8.encode('vtindex:user-info:v1'));
+      final wrappedKey = base64Decode(envelope['wrapped_key'] as String);
+      final nonce = base64Decode(envelope['nonce'] as String);
+      final ciphertext = base64Decode(envelope['ciphertext'] as String);
+      final rsa = OAEPEncoding.withSHA256(RSAEngine(), aad)
+        ..init(false, PrivateKeyParameter<RSAPrivateKey>(privateKey));
+      final aesKey = rsa.process(Uint8List.fromList(wrappedKey));
+      final aes = GCMBlockCipher(AESEngine())
+        ..init(
+          false,
+          AEADParameters(KeyParameter(aesKey), 128, nonce, aad),
+        );
+      final plaintext = aes.process(Uint8List.fromList(ciphertext));
+      final decoded = jsonDecode(utf8.decode(plaintext));
+      if (decoded is Map<String, dynamic>) return decoded;
+      throw const AuthApiException(
+        'The server returned an invalid encrypted response payload.',
+      );
+    } on AuthApiException {
+      rethrow;
+    } catch (_) {
+      throw const AuthApiException(
+        'Could not decrypt the server response. Please retry.',
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> setCaptchaSettings(bool enabled) =>
       _request('POST', 'profile/security/captcha/', body: {'enabled': enabled});
   Future<Map<String, dynamic>> setTwoFactorSettings(bool enabled) => _request(

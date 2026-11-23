@@ -183,6 +183,7 @@ class _AppEntry extends StatefulWidget {
 class _AppEntryState extends State<_AppEntry> {
   bool _splashFinished = false;
   bool _sessionCheckComplete = false;
+  bool _hasRestoredSession = false;
   bool _openingDashboard = false;
 
   @override
@@ -196,13 +197,14 @@ class _AppEntryState extends State<_AppEntry> {
       await AuthApi.instance.restoreSession();
       if (AuthApi.instance.hasToken &&
           await AuthApi.instance.isAuthenticated()) {
-        _openDashboard();
-        return;
+        _hasRestoredSession = true;
       }
     } catch (_) {
       // A failed session check falls back to the login screen.
     }
-    if (mounted) setState(() => _sessionCheckComplete = true);
+    if (!mounted) return;
+    setState(() => _sessionCheckComplete = true);
+    if (_splashFinished && _hasRestoredSession) _openDashboard();
   }
 
   void _openDashboard() {
@@ -223,7 +225,11 @@ class _AppEntryState extends State<_AppEntry> {
     if (!_splashFinished) {
       return _LogoAnimationSplash(
         onFinished: () {
-          if (mounted) setState(() => _splashFinished = true);
+          if (!mounted) return;
+          setState(() => _splashFinished = true);
+          if (_sessionCheckComplete && _hasRestoredSession) {
+            _openDashboard();
+          }
         },
       );
     }

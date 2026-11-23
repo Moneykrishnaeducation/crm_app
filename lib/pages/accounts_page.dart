@@ -399,14 +399,15 @@ class BrokerAccount {
   const BrokerAccount(this.name, this.login, this.leverage, this.balance, this.equity, this.type, {
     this.server, this.currency = 'USD', this.floatingPnl,
     this.margin = 0, this.freeMargin = 0, this.marginLevel = 0, this.credit = 0,
-    this.groupName = '', this.accountStatus = 'active', this.isMt5Connected,
+    this.groupName = '', this.accountStatus = 'active', this.isMt5Connected = false,
     this.algoTradingEnabled = false, this.isCentAccount = false,
     this.equityHistory = const [], this.openPositions = const [], this.recentTrades = const [],
   });
   final String name, login, leverage, balance, equity, type;
   final String? server;
   final String currency, groupName, accountStatus;
-  final double? floatingPnl, isMt5Connected;
+  final double? floatingPnl;
+  final bool isMt5Connected;
   final double margin, freeMargin, marginLevel, credit;
   final bool algoTradingEnabled, isCentAccount;
   final List<double> equityHistory;
@@ -429,7 +430,7 @@ class BrokerAccount {
     double? credit,
     String? groupName,
     String? accountStatus,
-    double? isMt5Connected,
+    bool? isMt5Connected,
     bool? algoTradingEnabled,
     bool? isCentAccount,
     List<double>? equityHistory,
@@ -2149,7 +2150,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
           credit: _apiNumber(data['credit']),
           groupName: (data['group_name'] ?? data['group'] ?? _account.groupName).toString(),
           accountStatus: (data['status'] ?? (data['is_enabled'] == false ? 'disabled' : 'active')).toString(),
-          isMt5Connected: data['is_connected'] == true ? 1 : 0,
+          isMt5Connected: data['is_connected'] == true,
           algoTradingEnabled: data['algo_enabled'] == true || data['is_algo_enabled'] == true,
           isCentAccount: data['is_cent'] == true,
           server: (data['server'] ?? data['server_name'] ?? _account.server)?.toString(),
@@ -2583,14 +2584,14 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               _detailInfoRow(context, LucideIcons.gauge, 'Leverage', a.leverage, fg, muted, border),
               _detailInfoRow(context, LucideIcons.coins, 'Currency', a.currency, fg, muted, border),
               _detailInfoRow(context, LucideIcons.wallet, 'Used margin', _apiMoney(a.margin, a.currency), fg, muted, border),
-              _detailInfoRow(context, LucideIcons.walletCards, 'Free margin', _apiMoney(a.freeMargin, a.currency), fg, muted, border),
+              _detailInfoRow(context, LucideIcons.wallet, 'Free margin', _apiMoney(a.freeMargin, a.currency), fg, muted, border),
               _detailInfoRow(context, LucideIcons.gauge, 'Margin level', a.marginLevel > 0 ? '${a.marginLevel.toStringAsFixed(2)}%' : '—', fg, muted, border),
               _detailInfoRow(context, LucideIcons.coins, 'Credit', _apiMoney(a.credit, a.currency), fg, muted, border),
               _detailInfoRow(context, LucideIcons.folder, 'Trading group', a.groupName.isEmpty ? '—' : a.groupName, fg, muted, border),
               _detailInfoRow(context, LucideIcons.shieldCheck, 'Account type', a.type, fg, muted, border),
-              _detailInfoRow(context, LucideIcons.activity, 'MT5 connection', a.isMt5Connected == 1 ? 'Connected' : 'Unavailable', fg, muted, border),
+              _detailInfoRow(context, LucideIcons.activity, 'MT5 connection', a.isMt5Connected ? 'Connected' : 'Unavailable', fg, muted, border),
               _detailInfoRow(context, LucideIcons.settings, 'Algo trading', a.algoTradingEnabled ? 'Enabled' : 'Disabled', fg, muted, border),
-              _detailInfoRow(context, LucideIcons.badgeCheck, 'Account status', a.accountStatus, fg, muted, border),
+              _detailInfoRow(context, LucideIcons.shieldCheck, 'Account status', a.accountStatus, fg, muted, border),
             ])),
           ] else if (_tab == 'Trading Stats') ...[
             Row(children: [

@@ -787,6 +787,226 @@ class AuthApi {
         body: {'password': password},
       );
 
+  /// Trading groups for account creation (type: 'real' or 'demo')
+  Future<Map<String, dynamic>> getTradingGroups({String type = 'real'}) =>
+      _request('GET', 'trading-groups/?type=$type');
+
+  /// Create real MT5 trading account
+  Future<Map<String, dynamic>> createTradingAccount({
+    required String accountName,
+    required String leverage,
+    required dynamic group,
+    required String masterPassword,
+    required String investorPassword,
+    String accountType = 'real',
+  }) {
+    final cleanLeverage = leverage.contains(':') ? leverage.split(':').last : leverage;
+    return _request(
+      'POST',
+      'create-trading-account/',
+      body: {
+        'accountName': accountName,
+        'leverage': cleanLeverage,
+        'group': group,
+        'masterPassword': masterPassword,
+        'investorPassword': investorPassword,
+        'accountType': accountType,
+      },
+    );
+  }
+
+  /// Create virtual demo MT5 account
+  Future<Map<String, dynamic>> createDemoAccount({
+    required String balance,
+    required String leverage,
+    String? masterPassword,
+    String? investorPassword,
+  }) {
+    final cleanLeverage = leverage.contains(':') ? leverage.split(':').last : leverage;
+    return _request(
+      'POST',
+      'create-demo-account/',
+      body: {
+        'balance': balance,
+        'leverage': cleanLeverage,
+        if (masterPassword != null && masterPassword.isNotEmpty)
+          'masterPassword': masterPassword,
+        if (investorPassword != null && investorPassword.isNotEmpty)
+          'investorPassword': investorPassword,
+      },
+    );
+  }
+
+  /// Fetch non-demo accounts (for internal transfer)
+  Future<Map<String, dynamic>> getNonDemoAccounts({bool fresh = false}) =>
+      _request('GET', 'non-demo-accounts/${fresh ? '?fresh=true' : ''}');
+
+  /// Internal transfer between trading accounts
+  Future<Map<String, dynamic>> createInternalTransfer({
+    required String fromAccount,
+    required String toAccount,
+    required double amount,
+    String comment = 'Internal Transfer',
+  }) =>
+      _request(
+        'POST',
+        'internal-transfer/',
+        body: {
+          'from_account_id': fromAccount,
+          'to_account_id': toAccount,
+          'amount': amount,
+          'comment': comment,
+        },
+      );
+
+  /// Live USD to INR exchange rate
+  Future<double> getUsdInrRate() async {
+    try {
+      final res = await _request('GET', 'get-usd-inr-rate/')
+          .timeout(const Duration(seconds: 4));
+      final rate = res['rate'];
+      if (rate is num && rate > 0) return rate.toDouble();
+    } catch (_) {
+      try {
+        final res = await _request('GET', 'usd-inr-rate/')
+            .timeout(const Duration(seconds: 4));
+        final rate = res['rate'];
+        if (rate is num && rate > 0) return rate.toDouble();
+      } catch (_) {}
+    }
+    return 83.5;
+  }
+
+  /// Withdrawal information for an account
+  Future<Map<String, dynamic>> getWithdrawalInfo(String accountId) async {
+    try {
+      return await _request('GET', 'withdrawal/info/${Uri.encodeComponent(accountId)}/');
+    } catch (_) {
+      return await _request('GET', 'withdraw-info/${Uri.encodeComponent(accountId)}/');
+    }
+  }
+
+  /// Request withdrawal from account
+  Future<Map<String, dynamic>> requestWithdrawal({
+    required String accountId,
+    required double amount,
+    required String method,
+    String description = '',
+  }) async {
+    final body = {
+      'account_id': accountId,
+      'mam_id': accountId,
+      'amount': amount,
+      'method': method,
+      'description': description.isNotEmpty ? description : 'Withdrawal via ${method.toUpperCase()}',
+    };
+    try {
+      return await _request('POST', 'withdrawal/request/', body: body);
+    } catch (_) {
+      return await _request('POST', 'withdraw-request/', body: body);
+    }
+  }
+
+  /// Initiate CheesePay deposit
+  Future<Map<String, dynamic>> initiateCheesePay({
+    required String accountId,
+    required double amountUsd,
+    required double amountInr,
+  }) =>
+      _request(
+        'POST',
+        'cheesepay-initiate/',
+        body: {
+          'account_id': accountId,
+          'mam_id': accountId,
+          'amount_usd': amountUsd.toStringAsFixed(2),
+          'amount_inr': amountInr.toStringAsFixed(2),
+        },
+      );
+
+  /// Initiate USDT deposit
+  Future<Map<String, dynamic>> initiateUsdtDeposit({
+    required String accountId,
+    required double amountUsd,
+  }) =>
+      _request(
+        'POST',
+        'usdt-deposit/',
+        body: {
+          'mam_id': accountId,
+          'account_id': accountId,
+          'amount': amountUsd.toStringAsFixed(2),
+        },
+      );
+
+  /// Submit manual wire deposit with proof
+  Future<Map<String, dynamic>> submitManualDeposit({
+    required String accountId,
+    required double amountUsd,
+    List<int>? proofBytes,
+    String? proofFileName,
+  }) async {
+    await restoreSession();
+    final headers = _headers;
+    final responseKeyPair = _createResponseEncryptionKeyPair();
+    headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
+
+    final request = http.MultipartRequest('POST', _uri('manual-deposit/'));
+    request.headers.addAll(headers);
+    request.fields['mam_id'] = accountId;
+    request.fields['amount'] = amountUsd.toStringAsFixed(2);
+
+    if (proofBytes != null && proofBytes.isNotEmpty) {
+      request.files.add(http.MultipartFile.fromBytes(
+        'proof',
+        proofBytes,
+        filename: proofFileName ?? 'proof.jpg',
+      ));
+    }
+
+    final streamed = await _client.send(request).timeout(const Duration(seconds: 25));
+    final response = await http.Response.fromStream(streamed);
+    _captureSession(response);
+
+    dynamic decoded;
+    try {
+      decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+    } catch (_) {
+      throw AuthApiException('Invalid response from server.', statusCode: response.statusCode);
+    }
+
+    dynamic responsePayload = decoded;
+    if (decoded is Map && decoded['encrypted'] == true) {
+      responsePayload = _decryptResponseEnvelope(
+        decoded.cast<String, dynamic>(),
+        responseKeyPair.keyId,
+      );
+    } else {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+    }
+
+    final data = responsePayload is Map<String, dynamic>
+        ? responsePayload
+        : <String, dynamic>{'data': responsePayload};
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AuthApiException(
+        _messageFrom(data),
+        statusCode: response.statusCode,
+        data: data,
+      );
+    }
+    return data;
+  }
+
+  /// Get approved user bank details
+  Future<Map<String, dynamic>> getBankDetails() =>
+      _request('GET', 'profile/bank-details/');
+
+  /// Get approved user crypto details
+  Future<Map<String, dynamic>> getCryptoDetails() =>
+      _request('GET', 'profile/crypto-details/');
+
   Future<String> encryptPasswordForPasswordFlow(String password) async {
     final response = await requestPasswordKey();
     final kid = _findString(response, const ['kid']);

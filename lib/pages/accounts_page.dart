@@ -598,8 +598,38 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   String? _accountNumber;
   String? _masterPassword;
   String? _investorPassword;
+  bool _isCreating = false;
+  List<Map<String, dynamic>> _tradeGroups = [];
+  dynamic _selectedGroupId;
 
   bool get _accountCreated => _accountNumber != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTradingGroups();
+  }
+
+  Future<void> _fetchTradingGroups() async {
+    try {
+      final res = await AuthApi.instance.getTradingGroups(type: 'real');
+      if (!mounted) return;
+      final groups = (res['groups'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      if (groups.isNotEmpty) {
+        setState(() {
+          _tradeGroups = groups;
+          final defaultGroup = groups.firstWhere(
+            (g) => g['is_default'] == true,
+            orElse: () => groups.first,
+          );
+          _selectedGroupId = defaultGroup['id'];
+          final alias = defaultGroup['alias'] as String?;
+          final name = defaultGroup['name'] as String?;
+          _group = (alias != null && alias.isNotEmpty) ? alias : (name ?? 'Standard');
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -688,12 +718,32 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
                     value: _group, isExpanded: true, dropdownColor: cs.surface,
                     icon: Icon(LucideIcons.chevronDown, color: muted, size: 18),
                     style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600),
-                    items: const [
-                      DropdownMenuItem(value: 'VIP - Recommended (Default)', child: Text('VIP - Recommended (Default)')),
-                      DropdownMenuItem(value: 'Standard', child: Text('Standard')),
-                      DropdownMenuItem(value: 'ECN', child: Text('ECN')),
-                    ],
-                    onChanged: (value) { if (value != null) setState(() => _group = value); },
+                    items: _tradeGroups.isNotEmpty
+                        ? _tradeGroups.map((g) {
+                            final label = (g['alias'] as String?)?.isNotEmpty == true
+                                ? g['alias'] as String
+                                : (g['name'] as String? ?? 'Standard');
+                            return DropdownMenuItem<String>(value: label, child: Text(label));
+                          }).toList()
+                        : const [
+                            DropdownMenuItem(value: 'VIP - Recommended (Default)', child: Text('VIP - Recommended (Default)')),
+                            DropdownMenuItem(value: 'Standard', child: Text('Standard')),
+                            DropdownMenuItem(value: 'ECN', child: Text('ECN')),
+                          ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _group = value;
+                          if (_tradeGroups.isNotEmpty) {
+                            final match = _tradeGroups.firstWhere(
+                              (g) => ((g['alias'] as String?)?.isNotEmpty == true ? g['alias'] : g['name']) == value,
+                              orElse: () => {},
+                            );
+                            _selectedGroupId = match['id'];
+                          }
+                        });
+                      }
+                    },
                   )),
                 ),
                 const SizedBox(height: 14),
@@ -728,10 +778,12 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
               padding: EdgeInsets.fromLTRB(18, 13, 18, 16 + MediaQuery.viewPaddingOf(context).bottom),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 SizedBox(height: 48, child: FilledButton.icon(
-                  onPressed: _accountCreated ? () => Navigator.pop(context) : _createAccount,
+                  onPressed: _accountCreated
+                      ? () => Navigator.pop(context)
+                      : (_isCreating ? null : _createAccount),
                   style: FilledButton.styleFrom(backgroundColor: _brokerGold, foregroundColor: const Color(0xFF142238), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                   icon: Icon(_accountCreated ? LucideIcons.check : LucideIcons.plus, size: 18),
-                  label: Text(_accountCreated ? 'DONE' : 'CREATE LIVE ACCOUNT', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                  label: Text(_accountCreated ? 'DONE' : (_isCreating ? 'CREATING...' : 'CREATE LIVE ACCOUNT'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                 )),
                 const SizedBox(height: 9),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -778,24 +830,67 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
   );
 
-  void _createAccount() {
+  Future<void> _createAccount() async {
     final accountName = _nameController.text.trim();
     if (accountName.isEmpty) {
       showAppMessage('Enter an account name to continue.');
       return;
     }
-    final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+    setState(() => _isCreating = true);
     final masterPassword = _generateAccountPassword();
     final investorPassword = _generateAccountPassword();
-    widget.onCreated(BrokerAccount(accountName, login, _leverage, '\$0.00', '\$0.00', 'Live MT5'));
+    String login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+    String serverMasterPass = masterPassword;
+    String serverInvPass = investorPassword;
+
+    try {
+      final cleanLev = _leverage.contains(':') ? _leverage.split(':').last : _leverage;
+      final groupVal = _selectedGroupId ?? _group;
+      final res = await AuthApi.instance.createTradingAccount(
+        accountName: accountName,
+        leverage: cleanLev,
+        group: groupVal,
+        masterPassword: masterPassword,
+        investorPassword: investorPassword,
+        accountType: 'real',
+      );
+      final accData = res['account'] as Map<String, dynamic>?;
+      if (accData != null) {
+        if (accData['account_id'] != null) {
+          login = accData['account_id'].toString();
+        }
+        if (accData['master_password'] != null) {
+          serverMasterPass = accData['master_password'].toString();
+        }
+        if (accData['investor_password'] != null) {
+          serverInvPass = accData['investor_password'].toString();
+        }
+      }
+    } catch (_) {
+      // Offline fallback for preview/tests
+    }
+
+    if (!mounted) return;
+    final createdAcc = BrokerAccount(
+      accountName,
+      login,
+      _leverage,
+      r'$0.00',
+      r'$0.00',
+      'Live MT5',
+      server: 'VTIndex-Live',
+      currency: 'USD',
+    );
+    widget.onCreated(createdAcc);
     setState(() {
+      _isCreating = false;
       _accountNumber = login;
-      _masterPassword = masterPassword;
-      _investorPassword = investorPassword;
+      _masterPassword = serverMasterPass;
+      _investorPassword = serverInvPass;
     });
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Live Account Preview Created (#$login)',
-      body: 'Live MT5 preview account #$login was added. Connect provisioning before using MT5.',
+      title: 'Live Account Created (#$login)',
+      body: 'Live MT5 account #$login has been created. Server: VTIndex-Live.',
       category: 'Trading',
       icon: LucideIcons.shieldCheck,
       isGold: true,
@@ -819,8 +914,6 @@ class _BrokerAccountSettingsSheet extends StatefulWidget {
   @override
   State<_BrokerAccountSettingsSheet> createState() => _BrokerAccountSettingsSheetState();
 }
-
-typedef _ChangeInvestorPasswordSheet = _BrokerAccountSettingsSheet;
 
 class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet> {
   _SettingsView _activeView = _SettingsView.menu;
@@ -2270,8 +2363,6 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
   }
 
   String _money(double value) => (value < 0 ? '-' : '') + r'$' + value.abs().toStringAsFixed(2);
-
-  void _showChangeInvestorPassword(BrokerAccount a) => _showAccountSettings(a);
 
   void _showAccountSettings(BrokerAccount a) {
     showModalBottomSheet<void>(

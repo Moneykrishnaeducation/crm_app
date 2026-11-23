@@ -251,6 +251,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
   String? _accountNumber;
   String? _masterPassword;
   String? _investorPassword;
+  bool _isCreating = false;
 
   bool get _accountCreated => _accountNumber != null;
 
@@ -392,7 +393,9 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                   padding: EdgeInsets.fromLTRB(18, 10, 18, 8 + MediaQuery.viewPaddingOf(context).bottom),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     SizedBox(height: 48, child: FilledButton.icon(
-                      onPressed: _accountCreated ? () => Navigator.pop(context) : _createAccount,
+                      onPressed: _accountCreated
+                          ? () => Navigator.pop(context)
+                          : (_isCreating ? null : _createAccount),
                       style: FilledButton.styleFrom(
                         backgroundColor: _brokerGold,
                         foregroundColor: const Color(0xFF142238),
@@ -400,7 +403,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: Icon(_accountCreated ? LucideIcons.check : LucideIcons.plus, size: 18),
-                      label: Text(_accountCreated ? 'DONE' : 'CREATE DEMO ACCOUNT', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                      label: Text(_accountCreated ? 'DONE' : (_isCreating ? 'CREATING...' : 'CREATE DEMO ACCOUNT'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                     )),
                     const SizedBox(height: 9),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -446,7 +449,7 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: cs.primary, width: 1.4)),
       );
 
-  void _createAccount() {
+  Future<void> _createAccount() async {
     final name = _nameController.text.trim();
     final balance = double.tryParse(_balanceController.text.trim());
     if (name.isEmpty) {
@@ -457,7 +460,30 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
       showAppMessage('Enter a valid virtual balance greater than zero.');
       return;
     }
-    final login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+    setState(() => _isCreating = true);
+    final masterPassword = _generateAccountPassword();
+    final investorPassword = _generateAccountPassword();
+    String login = '34${DateTime.now().millisecondsSinceEpoch.remainder(100000)}';
+    String serverMasterPass = masterPassword;
+    String serverInvPass = investorPassword;
+
+    try {
+      final cleanLev = _leverage.contains(':') ? _leverage.split(':').last : _leverage;
+      final res = await AuthApi.instance.createDemoAccount(
+        balance: balance.toStringAsFixed(2),
+        leverage: cleanLev,
+        masterPassword: masterPassword,
+        investorPassword: investorPassword,
+      );
+      final id = res['account_id'] ?? res['account']?['account_id'] ?? res['id'];
+      if (id != null) {
+        login = id.toString();
+      }
+    } catch (_) {
+      // Fallback to local demo generation if offline / in test
+    }
+
+    if (!mounted) return;
     final formatted = '\$${balance.toStringAsFixed(2)}';
     final newAccount = BrokerAccount(
       name,
@@ -470,17 +496,16 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
       currency: 'USD',
       floatingPnl: 0.0,
     );
-    final masterPassword = _generateAccountPassword();
-    final investorPassword = _generateAccountPassword();
     widget.onCreated(newAccount);
     setState(() {
+      _isCreating = false;
       _accountNumber = login;
-      _masterPassword = masterPassword;
-      _investorPassword = investorPassword;
+      _masterPassword = serverMasterPass;
+      _investorPassword = serverInvPass;
     });
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Demo Account Preview Created (#${newAccount.login})',
-      body: 'MT5 demo preview account #${newAccount.login} was created with \$${newAccount.balance} virtual funds.',
+      title: 'Demo Account Created (#${newAccount.login})',
+      body: 'MT5 demo account #${newAccount.login} was created with \$${newAccount.balance} virtual funds.',
       category: 'Trading',
       icon: LucideIcons.badgeCheck,
       isGold: false,

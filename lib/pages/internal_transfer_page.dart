@@ -138,6 +138,45 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
       );
       _destination = other.login;
     }
+
+    _loadLiveAccounts();
+  }
+
+  Future<void> _loadLiveAccounts() async {
+    try {
+      final res = await AuthApi.instance.getNonDemoAccounts();
+      final accs = (res['accounts'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      if (accs.isNotEmpty && mounted) {
+        final liveAccs = <BrokerAccount>[];
+        for (final m in accs) {
+          final id = m['account_id']?.toString() ?? '';
+          if (id.isEmpty) continue;
+          final bal = (m['balance'] as num?)?.toDouble() ?? 0.0;
+          final eq = (m['equity'] as num?)?.toDouble() ?? bal;
+          final name = m['name'] ?? m['account_name'] ?? 'Live MT5';
+          final lev = m['leverage'] != null ? '1:${m['leverage']}' : '1:500';
+          liveAccs.add(BrokerAccount(
+            name.toString(), id, lev, _formatMoney(bal), _formatMoney(eq), 'Live MT5',
+            server: 'VTIndex-Live', currency: 'USD',
+          ));
+        }
+        if (liveAccs.isNotEmpty) {
+          setState(() {
+            _accountList.clear();
+            _accountList.addAll(liveAccs);
+            for (final a in liveAccs) {
+              _balances[a.login] = _parseBalance(a.balance);
+            }
+            if (!_accountList.any((a) => a.login == _source)) {
+              _source = _accountList.first.login;
+            }
+            if (!_accountList.any((a) => a.login == _destination)) {
+              _destination = _accountList.length > 1 ? _accountList[1].login : _accountList.first.login;
+            }
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -1385,20 +1424,39 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
       );
     }
 
+    String trxId = 'TRX-${(100000 + math.Random().nextInt(900000))}';
+    String transferStatus = 'Completed';
+    try {
+      final res = await AuthApi.instance.createInternalTransfer(
+        fromAccount: fromLogin,
+        toAccount: toLogin,
+        amount: amount,
+      );
+      if (res['transaction_id'] != null) {
+        trxId = 'TRX-${res['transaction_id']}';
+      }
+    } catch (_) {
+      transferStatus = 'Preview';
+    }
+
     final record = _InternalTransferRecord(
-      id: 'TRX-${(100000 + math.Random().nextInt(900000))}',
+      id: trxId,
       sourceLogin: fromLogin,
       destinationLogin: toLogin,
       amount: amount,
       timestamp: DateTime.now(),
-      status: 'Preview',
+      status: transferStatus,
     );
 
     widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
 
     unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Internal Transfer Preview (\${amount.toStringAsFixed(2)})',
-      body: 'Local preview only: \${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin. No server-side transfer was submitted. Ref: ${record.id}.',
+      title: transferStatus == 'Completed'
+          ? 'Internal Transfer Successful (\${amount.toStringAsFixed(2)})'
+          : 'Internal Transfer Preview (\${amount.toStringAsFixed(2)})',
+      body: transferStatus == 'Completed'
+          ? 'Transferred \${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin successfully. Ref: ${record.id}.'
+          : 'Local preview only: \${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin. Ref: ${record.id}.',
       category: 'Funds',
       icon: LucideIcons.arrowLeftRight,
       isGold: false,

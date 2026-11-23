@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -24,12 +25,35 @@ class AuthApi {
   final http.Client _client = createAuthHttpClient();
   final Map<String, String> _cookies = <String, String>{};
   String? _accessToken;
+  static const _accessTokenStorageKey = 'vtindex_client_access_token';
+  Future<void>? _restoreFuture;
+  final Map<String, dynamic> _responseEncryptionPrivateKeys = <String, dynamic>{};
 
   bool get hasToken =>
       (_accessToken != null && _accessToken!.isNotEmpty) ||
       _cookies.containsKey('client_access_token') ||
       _cookies.containsKey('access_token') ||
       _cookies.containsKey('jwt_token');
+
+  Future<void> restoreSession() {
+    return _restoreFuture ??= _restoreStoredSession();
+  }
+
+  Future<void> _restoreStoredSession() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      _accessToken ??= preferences.getString(_accessTokenStorageKey);
+    } catch (_) {
+      // A missing local session is handled by the API's 401 response.
+    }
+  }
+
+  Future<void> _persistAccessToken() async {
+    final token = _accessToken;
+    if (token == null || token.isEmpty) return;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_accessTokenStorageKey, token);
+  }
 
   Uri get _baseUri {
     if (_configuredBaseUrl.isNotEmpty) {
@@ -52,7 +76,10 @@ class AuthApi {
 
   Map<String, String> get _headers {
     final headers = <String, String>{'Accept': 'application/json'};
-    if (!kIsWeb) {
+    if (!kIsWeb && _configuredBaseUrl.isEmpty &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      // Local development host override only. Production uses the configured API host.
       headers['Host'] = 'client.localhost:8000';
     }
     if (_cookies.isNotEmpty) {
@@ -64,21 +91,22 @@ class AuthApi {
     return headers;
   }
 
-  Uri _uri(String path) => _baseUri.resolve(path);
+  Uri _uri(String path) {
+    final cleanPath = path.startsWith('/api/')
+        ? path.substring(5)
+        : (path.startsWith('/') ? path.substring(1) : path);
+    return _baseUri.resolve(cleanPath);
+  }
 
   Future<Map<String, dynamic>> _request(
     String method,
     String path, {
     Map<String, dynamic>? body,
-    bool requireEncryptedResponse = false,
   }) async {
+    await restoreSession();
     final headers = _headers;
-    RSAPrivateKey? responsePrivateKey;
-    if (requireEncryptedResponse) {
-      final responseKey = _createResponseEncryptionKey();
-      responsePrivateKey = responseKey.privateKey;
-      headers['X-Response-Encryption-Key'] = responseKey.publicKeyBase64;
-    }
+    final responseKeyPair = _createResponseEncryptionKeyPair();
+    headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
     if (body != null) headers['Content-Type'] = 'application/json';
     final request = http.Request(method, _uri(path))..headers.addAll(headers);
     if (body != null) request.body = jsonEncode(body);
@@ -98,15 +126,18 @@ class AuthApi {
         statusCode: response.statusCode,
       );
     }
-    var data = decoded is Map<String, dynamic>
-        ? decoded
-        : <String, dynamic>{'data': decoded};
-    if (response.statusCode >= 200 &&
-        response.statusCode < 300 &&
-        requireEncryptedResponse &&
-        data['encrypted'] == true) {
-      data = _decryptResponseEnvelope(data, responsePrivateKey!);
+    dynamic responsePayload = decoded;
+    if (decoded is Map && decoded['encrypted'] == true) {
+      responsePayload = _decryptResponseEnvelope(
+        decoded.cast<String, dynamic>(),
+        responseKeyPair.keyId,
+      );
+    } else {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
     }
+    final data = responsePayload is Map<String, dynamic>
+        ? responsePayload
+        : <String, dynamic>{'data': responsePayload};
     final apiCode = data['code'];
     final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
     final hasErrorMessage =
@@ -122,6 +153,97 @@ class AuthApi {
       );
     }
     return data;
+  }
+
+  ({String publicKey, String keyId}) _createResponseEncryptionKeyPair() {
+    final random = Random.secure();
+    final secureRandom = FortunaRandom()
+      ..seed(KeyParameter(Uint8List.fromList(
+        List<int>.generate(32, (_) => random.nextInt(256)),
+      )));
+    final generator = RSAKeyGenerator()
+      ..init(ParametersWithRandom(
+        RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64),
+        secureRandom,
+      ));
+    final pair = generator.generateKeyPair();
+    final publicKey = pair.publicKey;
+    final privateKey = pair.privateKey;
+    final keyId = base64Url.encode(_randomBytes(12)).replaceAll('=', '');
+    _responseEncryptionPrivateKeys[keyId] = privateKey;
+
+    // Build DER SubjectPublicKeyInfo explicitly. This avoids ASN.1 library
+    // bit-string encoding differences and matches cryptography.load_der_public_key.
+    List<int> derLength(int length) {
+      if (length < 0x80) return <int>[length];
+      final bytes = <int>[];
+      var remaining = length;
+      while (remaining > 0) {
+        bytes.insert(0, remaining & 0xff);
+        remaining >>= 8;
+      }
+      return <int>[0x80 | bytes.length, ...bytes];
+    }
+
+    List<int> derValue(int tag, List<int> value) => <int>[
+      tag,
+      ...derLength(value.length),
+      ...value,
+    ];
+
+    List<int> unsignedBigIntBytes(BigInt value) {
+      var hex = value.toRadixString(16);
+      if (hex.length.isOdd) hex = '0$hex';
+      final bytes = <int>[
+        for (var offset = 0; offset < hex.length; offset += 2)
+          int.parse(hex.substring(offset, offset + 2), radix: 16),
+      ];
+      if (bytes.isEmpty) return <int>[0];
+      if ((bytes.first & 0x80) != 0) bytes.insert(0, 0);
+      return bytes;
+    }
+
+    final rsaPublicKey = derValue(0x30, <int>[
+      ...derValue(0x02, unsignedBigIntBytes(publicKey.modulus!)),
+      ...derValue(0x02, unsignedBigIntBytes(publicKey.exponent!)),
+    ]);
+    final rsaEncryptionAlgorithm = derValue(0x30, <int>[
+      ...derValue(0x06, <int>[
+        0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01,
+      ]),
+      ...derValue(0x05, const <int>[]),
+    ]);
+    final subjectPublicKeyInfo = derValue(0x30, <int>[
+      ...rsaEncryptionAlgorithm,
+      ...derValue(0x03, <int>[0, ...rsaPublicKey]),
+    ]);
+
+    return (
+      publicKey: base64Encode(subjectPublicKeyInfo),
+      keyId: keyId,
+    );
+  }
+
+  dynamic _decryptResponseEnvelope(Map<String, dynamic> envelope, String keyId) {
+    final privateKey = _responseEncryptionPrivateKeys.remove(keyId);
+    if (privateKey is! RSAPrivateKey) {
+      throw const AuthApiException('The encrypted server response could not be opened.');
+    }
+    final wrappedKey = base64Decode(envelope['wrapped_key'] as String);
+    final nonce = base64Decode(envelope['nonce'] as String);
+    final ciphertext = base64Decode(envelope['ciphertext'] as String);
+    final rsa = OAEPEncoding.withSHA256(RSAEngine(), Uint8List.fromList(utf8.encode('vtindex:user-info:v1')))
+      ..init(false, PrivateKeyParameter<RSAPrivateKey>(privateKey));
+    final aesKey = rsa.process(wrappedKey);
+    final gcm = GCMBlockCipher(AESEngine())
+      ..init(false, AEADParameters(
+        KeyParameter(aesKey),
+        128,
+        nonce,
+        Uint8List.fromList(utf8.encode('vtindex:user-info:v1')),
+      ));
+    final plaintext = gcm.process(ciphertext);
+    return jsonDecode(utf8.decode(plaintext));
   }
 
   void _captureSession(http.Response response) {
@@ -147,14 +269,20 @@ class AuthApi {
           (nested is Map
               ? nested['access'] ?? nested['access_token'] ?? nested['token']
               : null);
-      if (token is String && token.isNotEmpty) _accessToken = token;
+      if (token is String && token.isNotEmpty) {
+        _accessToken = token;
+        unawaited(_persistAccessToken());
+      }
     }
+    // Some authentication responses are encrypted by the same response-key
+    // contract; token persistence must happen after _request decrypts them.
     if (_accessToken == null) {
       final cookieToken = _cookies['client_access_token'] ??
           _cookies['access_token'] ??
           _cookies['jwt_token'];
       if (cookieToken != null && cookieToken.isNotEmpty) {
         _accessToken = cookieToken;
+        unawaited(_persistAccessToken());
       }
     }
   }
@@ -174,6 +302,27 @@ class AuthApi {
       if (value is List && value.isNotEmpty) return value.join(' ');
     }
     return 'The request failed. Please try again.';
+  }
+
+  Future<List<Map<String, dynamic>>> getMobileAccounts({bool refresh = false}) async {
+    final response = await _request(
+      'GET',
+      refresh ? 'mobile/accounts/?fresh=true' : 'mobile/accounts/',
+    );
+    dynamic payload = response;
+    for (var depth = 0; depth < 4 && payload is Map; depth++) {
+      final map = payload.cast<String, dynamic>();
+      if (map['accounts'] is List) {
+        return (map['accounts'] as List)
+            .whereType<Map>()
+            .map((item) => item.cast<String, dynamic>())
+            .toList(growable: false);
+      }
+      payload = map['data'] ?? map['result'] ?? map['payload'];
+    }
+    throw const AuthApiException(
+      'The account service returned an unexpected response.',
+    );
   }
 
   Future<Map<String, dynamic>> getCaptchaConfig() =>
@@ -237,6 +386,7 @@ class AuthApi {
   }
 
   Future<bool> tryCookieAutoLogin() async {
+    if (!hasToken && _cookies.isEmpty) return false;
     try {
       final result = await _request('POST', 'login/', body: const {});
       if (result['success'] == false || result['authenticated'] == false) {
@@ -381,6 +531,11 @@ class AuthApi {
     } finally {
       _cookies.clear();
       _accessToken = null;
+      try {
+        final preferences = await SharedPreferences.getInstance();
+        await preferences.remove(_accessTokenStorageKey);
+      } catch (_) {}
+      _restoreFuture = null;
     }
   }
 
@@ -421,8 +576,7 @@ class AuthApi {
     final queryString = Uri(queryParameters: query).query;
     return _request(
       'GET',
-      '/api/user-transactions/?$queryString',
-      requireEncryptedResponse: true,
+      'user-transactions/?$queryString',
     );
   }
 
@@ -445,30 +599,26 @@ class AuthApi {
     final queryString = Uri(queryParameters: query).query;
     return _request(
       'GET',
-      '/api/pending-transactions/?$queryString',
-      requireEncryptedResponse: true,
+      'pending-transactions/?$queryString',
     );
   }
 
   Future<Map<String, dynamic>> getUserTradingAccounts({bool fresh = false}) =>
       _request(
         'GET',
-        '/api/user-trading-accounts/${fresh ? '?fresh=true' : ''}',
-        requireEncryptedResponse: true,
+        'user-trading-accounts/${fresh ? '?fresh=true' : ''}',
       );
 
   Future<Map<String, dynamic>> getOpenPositions(String accountId) =>
       _request(
         'GET',
-        '/api/open-positions/${Uri.encodeComponent(accountId)}/',
-        requireEncryptedResponse: false,
+        'open-positions/${Uri.encodeComponent(accountId)}/',
       );
 
   Future<Map<String, dynamic>> getTradingPositions(String accountId) =>
       _request(
         'GET',
-        '/api/get-trading-positions/${Uri.encodeComponent(accountId)}/',
-        requireEncryptedResponse: false,
+        'get-trading-positions/${Uri.encodeComponent(accountId)}/',
       );
 
   Future<Map<String, dynamic>> closePosition({
@@ -479,24 +629,22 @@ class AuthApi {
     String? comment,
   }) {
     final body = <String, dynamic>{
-      if (ticket != null) 'ticket': ticket,
-      if (volume != null) 'volume': volume,
       if (closeAll) 'close_all': true,
       if (comment != null && comment.isNotEmpty) 'comment': comment,
     };
+    if (ticket != null) body['ticket'] = ticket;
+    if (volume != null) body['volume'] = volume;
     return _request(
       'POST',
-      '/api/close-position/${Uri.encodeComponent(accountId)}/',
+      'close-position/${Uri.encodeComponent(accountId)}/',
       body: body,
-      requireEncryptedResponse: false,
     );
   }
 
   Future<Map<String, dynamic>> getPendingOrders(String accountId) =>
       _request(
         'GET',
-        '/api/pending-orders/${Uri.encodeComponent(accountId)}/',
-        requireEncryptedResponse: false,
+        'pending-orders/${Uri.encodeComponent(accountId)}/',
       );
 
   Future<Map<String, dynamic>> closePendingOrder({
@@ -505,15 +653,14 @@ class AuthApi {
     bool cancelAll = false,
   }) {
     final body = <String, dynamic>{
-      if (ticket != null) 'ticket': ticket,
       if (cancelAll) 'cancel_all': true,
       if (cancelAll) 'close_all': true,
     };
+    if (ticket != null) body['ticket'] = ticket;
     return _request(
       'POST',
-      '/api/close-pending-order/${Uri.encodeComponent(accountId)}/',
+      'close-pending-order/${Uri.encodeComponent(accountId)}/',
       body: body,
-      requireEncryptedResponse: false,
     );
   }
 
@@ -527,77 +674,6 @@ class AuthApi {
         ticket: ticket,
         cancelAll: cancelAll,
       );
-
-  ({String publicKeyBase64, RSAPrivateKey privateKey})
-  _createResponseEncryptionKey() {
-    final secureRandom = FortunaRandom()
-      ..seed(KeyParameter(_randomBytes(32)));
-    final generator = RSAKeyGenerator()
-      ..init(
-        ParametersWithRandom(
-          RSAKeyGeneratorParameters(BigInt.from(65537), 2048, 64),
-          secureRandom,
-        ),
-      );
-    final pair = generator.generateKeyPair();
-    final publicKey = pair.publicKey;
-    final privateKey = pair.privateKey;
-
-    final rsaSequence = ASN1Sequence()
-      ..add(ASN1Integer(publicKey.modulus!))
-      ..add(ASN1Integer(publicKey.exponent!));
-    final algorithmSequence = ASN1Sequence()
-      ..add(ASN1ObjectIdentifier.fromComponentString('1.2.840.113549.1.1.1'))
-      ..add(ASN1Object.fromBytes(Uint8List.fromList([0x05, 0x00])));
-    final subjectPublicKeyInfo = ASN1Sequence()
-      ..add(algorithmSequence)
-      ..add(ASN1BitString(rsaSequence.encodedBytes));
-
-    return (
-      publicKeyBase64: base64Encode(subjectPublicKeyInfo.encodedBytes),
-      privateKey: privateKey,
-    );
-  }
-
-  Map<String, dynamic> _decryptResponseEnvelope(
-    Map<String, dynamic> envelope,
-    RSAPrivateKey privateKey,
-  ) {
-    if (envelope['encrypted'] != true ||
-        envelope['version'] != 1 ||
-        envelope['algorithm'] != 'RSA-OAEP-256+A256GCM') {
-      throw const AuthApiException(
-        'The server returned an invalid encrypted response.',
-      );
-    }
-
-    try {
-      final aad = Uint8List.fromList(utf8.encode('vtindex:user-info:v1'));
-      final wrappedKey = base64Decode(envelope['wrapped_key'] as String);
-      final nonce = base64Decode(envelope['nonce'] as String);
-      final ciphertext = base64Decode(envelope['ciphertext'] as String);
-      final rsa = OAEPEncoding.withSHA256(RSAEngine(), aad)
-        ..init(false, PrivateKeyParameter<RSAPrivateKey>(privateKey));
-      final aesKey = rsa.process(Uint8List.fromList(wrappedKey));
-      final aes = GCMBlockCipher(AESEngine())
-        ..init(
-          false,
-          AEADParameters(KeyParameter(aesKey), 128, nonce, aad),
-        );
-      final plaintext = aes.process(Uint8List.fromList(ciphertext));
-      final decoded = jsonDecode(utf8.decode(plaintext));
-      if (decoded is Map<String, dynamic>) return decoded;
-      throw const AuthApiException(
-        'The server returned an invalid encrypted response payload.',
-      );
-    } on AuthApiException {
-      rethrow;
-    } catch (_) {
-      throw const AuthApiException(
-        'Could not decrypt the server response. Please retry.',
-      );
-    }
-  }
 
   Future<Map<String, dynamic>> setCaptchaSettings(bool enabled) =>
       _request('POST', 'profile/security/captcha/', body: {'enabled': enabled});

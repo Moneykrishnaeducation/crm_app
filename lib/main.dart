@@ -182,9 +182,34 @@ class _AppEntry extends StatefulWidget {
 
 class _AppEntryState extends State<_AppEntry> {
   bool _splashFinished = false;
+  bool _sessionCheckComplete = false;
+  bool _hasRestoredSession = false;
+  bool _openingDashboard = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_restoreExistingSession());
+  }
+
+  Future<void> _restoreExistingSession() async {
+    try {
+      await AuthApi.instance.restoreSession();
+      if (AuthApi.instance.hasToken &&
+          await AuthApi.instance.isAuthenticated()) {
+        _hasRestoredSession = true;
+      }
+    } catch (_) {
+      // A failed session check falls back to the login screen.
+    }
+    if (!mounted) return;
+    setState(() => _sessionCheckComplete = true);
+    if (_splashFinished && _hasRestoredSession) _openDashboard();
+  }
 
   void _openDashboard() {
-    if (!mounted) return;
+    if (!mounted || _openingDashboard) return;
+    _openingDashboard = true;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => AppShell(
@@ -196,13 +221,28 @@ class _AppEntryState extends State<_AppEntry> {
   }
 
   @override
-  Widget build(BuildContext context) => _splashFinished
-      ? LoginPage(onLogin: _openDashboard)
-      : _LogoAnimationSplash(
-          onFinished: () {
-            if (mounted) setState(() => _splashFinished = true);
-          },
-        );
+  Widget build(BuildContext context) {
+    if (!_splashFinished) {
+      return _LogoAnimationSplash(
+        onFinished: () {
+          if (!mounted) return;
+          setState(() => _splashFinished = true);
+          if (_sessionCheckComplete && _hasRestoredSession) {
+            _openDashboard();
+          }
+        },
+      );
+    }
+    if (!_sessionCheckComplete) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1424),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFFFFC533)),
+        ),
+      );
+    }
+    return LoginPage(onLogin: _openDashboard);
+  }
 }
 
 class _LogoAnimationSplash extends StatefulWidget {
@@ -314,6 +354,70 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final ScrollController _moreScrollController = ScrollController(
     keepScrollOffset: false,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    FocusManager.instance.addListener(_handleFocusChange);
+    _currentThemeMode = widget.themeMode;
+    _loadFavoriteAccounts();
+    unawaited(_loadTradingAccounts());
+  }
+
+  Future<void> _loadFavoriteAccounts() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final stored =
+          preferences.getStringList('vtindex_favorite_account_logins') ??
+          const <String>[];
+      if (!mounted) return;
+      setState(() {
+        _favoriteAccountLogins
+          ..clear()
+          ..addAll(stored);
+      });
+    } catch (_) {
+      // Favorites are optional; the accounts page remains usable.
+    }
+  }
+
+  Future<void> _toggleFavoriteAccount(String login) async {
+    setState(() {
+      if (!_favoriteAccountLogins.add(login)) {
+        _favoriteAccountLogins.remove(login);
+      }
+    });
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setStringList(
+        'vtindex_favorite_account_logins',
+        _favoriteAccountLogins.toList(),
+      );
+    } catch (_) {
+      if (mounted) showAppMessage('Could not save account favorites on this device.');
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.themeMode != widget.themeMode) {
+      _currentThemeMode = widget.themeMode;
+    }
+  }
+
+  void _changeThemeMode(ThemeMode mode) {
+    if (_effectiveThemeMode != mode) {
+      setState(() => _currentThemeMode = mode);
+    }
+    widget.onThemeModeChanged?.call(mode);
+  }
+
+  void _addAccount(BrokerAccount account) {
+    setState(() => _accounts.insert(0, account));
+  }
+
   int _secondaryPageNavId = 0;
   double _lastScreenWidth = 0;
   double _maxWindowHeight = 0;
@@ -394,219 +498,89 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     });
   }
 
-  // Local preview fixtures only. Replace with authenticated MT5 API data before production.
-  final List<BrokerAccount> _accounts = [
-    BrokerAccount(
-      'Standard',
-      '3315',
-      '1:500',
-      r'$2,560.00',
-      r'$2,742.50',
-      'Live MT5',
-      server: 'VTIndex-MT5',
-      currency: 'USD',
-      floatingPnl: 182.50,
-      equityHistory: [
-        2380,
-        2410,
-        2375,
-        2460,
-        2430,
-        2510,
-        2480,
-        2570,
-        2530,
-        2620,
-        2590,
-        2742.50,
-      ],
-      openPositions: [
-        BrokerOpenPosition(
-          symbol: 'XAUUSD',
-          side: 'buy',
-          volume: '0.10',
-          openPrice: '2,345.20',
-          currentPrice: '2,351.80',
-          profit: 66.00,
-        ),
-        BrokerOpenPosition(
-          symbol: 'EURUSD',
-          side: 'sell',
-          volume: '0.20',
-          openPrice: '1.08420',
-          currentPrice: '1.08048',
-          profit: 116.50,
-        ),
-      ],
-      recentTrades: [
-        BrokerTradeRecord(
-          symbol: 'GBPUSD',
-          side: 'buy',
-          volume: '0.10',
-          closedAt: 'Today, 09:42',
-          profit: 38.20,
-        ),
-        BrokerTradeRecord(
-          symbol: 'XAUUSD',
-          side: 'sell',
-          volume: '0.05',
-          closedAt: 'Yesterday',
-          profit: -12.50,
-        ),
-      ],
-    ),
-    BrokerAccount(
-      'ECN',
-      '3311',
-      '1:500',
-      r'$1,240.00',
-      r'$1,180.20',
-      'Live MT5',
-      server: 'VTIndex-MT5',
-      currency: 'USD',
-      floatingPnl: -59.80,
-      equityHistory: [
-        1290,
-        1260,
-        1280,
-        1230,
-        1250,
-        1200,
-        1240,
-        1190,
-        1220,
-        1180.20,
-      ],
-      openPositions: [
-        BrokerOpenPosition(
-          symbol: 'NAS100',
-          side: 'sell',
-          volume: '0.10',
-          openPrice: '18,420.0',
-          currentPrice: '18,480.0',
-          profit: -59.80,
-        ),
-      ],
-      recentTrades: [
-        BrokerTradeRecord(
-          symbol: 'EURUSD',
-          side: 'buy',
-          volume: '0.20',
-          closedAt: 'Today, 08:15',
-          profit: 24.80,
-        ),
-        BrokerTradeRecord(
-          symbol: 'USDJPY',
-          side: 'sell',
-          volume: '0.10',
-          closedAt: 'Yesterday',
-          profit: 16.40,
-        ),
-      ],
-    ),
-    BrokerAccount(
-      'Pro',
-      '3312',
-      '1:500',
-      r'$5,000.00',
-      r'$5,320.00',
-      'Live MT5',
-      server: 'VTIndex-MT5',
-      currency: 'USD',
-      floatingPnl: 320.00,
-      equityHistory: [
-        5000,
-        5080,
-        5050,
-        5140,
-        5100,
-        5200,
-        5160,
-        5270,
-        5230,
-        5320,
-      ],
-      openPositions: [
-        BrokerOpenPosition(
-          symbol: 'BTCUSD',
-          side: 'buy',
-          volume: '0.01',
-          openPrice: '67,100.0',
-          currentPrice: '67,420.0',
-          profit: 320.00,
-        ),
-      ],
-      recentTrades: [
-        BrokerTradeRecord(
-          symbol: 'XAUUSD',
-          side: 'buy',
-          volume: '0.05',
-          closedAt: 'Today, 07:30',
-          profit: 21.60,
-        ),
-        BrokerTradeRecord(
-          symbol: 'AUDUSD',
-          side: 'sell',
-          volume: '0.10',
-          closedAt: 'Yesterday',
-          profit: 8.30,
-        ),
-      ],
-    ),
-  ];
+  final List<BrokerAccount> _accounts = <BrokerAccount>[];
+  bool _accountsLoading = false;
+  String? _accountsError;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    FocusManager.instance.addListener(_handleFocusChange);
-    _currentThemeMode = widget.themeMode;
-    _loadFavoriteAccounts();
+  double _accountNumber(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value.replaceAll(',', '').trim()) ?? 0;
+    return 0;
   }
 
-  Future<void> _loadFavoriteAccounts() async {
-    final preferences = await SharedPreferences.getInstance();
-    final stored =
-        preferences.getStringList('vtindex_favorite_account_logins') ??
-        const <String>[];
-    if (!mounted) return;
-    setState(() {
-      _favoriteAccountLogins
-        ..clear()
-        ..addAll(stored);
-    });
+  String _accountMoney(dynamic value, String currency) {
+    final prefix = currency.toUpperCase() == 'USD' ? r'$' : '';
+    return '$prefix${_accountNumber(value).toStringAsFixed(2)}';
   }
 
-  Future<void> _toggleFavoriteAccount(String login) async {
-    setState(() {
-      if (!_favoriteAccountLogins.add(login)) {
-        _favoriteAccountLogins.remove(login);
-      }
-    });
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setStringList(
-      'vtindex_favorite_account_logins',
-      _favoriteAccountLogins.toList(),
+  BrokerAccount _mapApiAccount(Map<String, dynamic> item) {
+    final login = (item['account_id'] ?? item['login'] ?? item['account'] ?? '').toString();
+    final accountType = (item['account_type'] ?? '').toString().toLowerCase();
+    final group = (item['group_name'] ?? item['group_alias'] ?? '').toString();
+    final isDemo = accountType == 'demo' || group.toLowerCase().contains('demo');
+    final currency = (item['currency'] ?? 'USD').toString();
+    final balance = _accountNumber(item['balance']);
+    final equity = _accountNumber(item['equity'] ?? item['balance']);
+    final profit = item['profit'] ?? item['floating_pnl'] ?? item['floatingPnl'];
+    final server = item['server'] ?? item['server_name'] ?? item['serverName'];
+    final leverage = (item['leverage'] ?? 100).toString();
+    return BrokerAccount(
+      (item['account_name'] ?? item['name'] ?? (isDemo ? 'Demo Account' : 'Trading Account')).toString(),
+      login,
+      leverage.startsWith('1:') ? leverage : '1:$leverage',
+      _accountMoney(balance, currency),
+      _accountMoney(equity, currency),
+      isDemo ? 'Demo MT5' : 'Live MT5',
+      server: server?.toString().isNotEmpty == true ? server.toString() : null,
+      currency: currency,
+      floatingPnl: item['is_active'] == false || item['is_enabled'] == false
+          ? null
+          : profit == null ? equity - balance : _accountNumber(profit),
     );
   }
 
-  @override
-  void didUpdateWidget(covariant AppShell oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.themeMode != widget.themeMode) {
-      _currentThemeMode = widget.themeMode;
+  Future<void> _loadTradingAccounts({bool refresh = false}) async {
+    if (_accountsLoading) return;
+    setState(() {
+      _accountsLoading = true;
+      _accountsError = null;
+    });
+    try {
+      await AuthApi.instance.restoreSession();
+      if (!AuthApi.instance.hasToken) {
+        throw const AuthApiException(
+          'Your session has expired. Sign in again to load trading accounts.',
+          statusCode: 401,
+        );
+      }
+      final records = await AuthApi.instance.getMobileAccounts(refresh: refresh);
+      final mapped = records.map(_mapApiAccount)
+          .where((account) =>
+              account.login.isNotEmpty && account.type == 'Live MT5')
+          .toList(growable: false);
+      if (!mounted) return;
+      setState(() {
+        _accounts
+          ..clear()
+          ..addAll(mapped);
+        _accountsLoading = false;
+      });
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _accountsLoading = false;
+        _accountsError = error.statusCode == 401 || error.statusCode == 403
+            ? 'Your session is no longer valid. Please sign in again.'
+            : error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _accountsLoading = false;
+        _accountsError = 'Unable to load trading accounts. Check your connection and try again.';
+      });
     }
   }
-
-  void _changeThemeMode(ThemeMode mode) {
-    if (_effectiveThemeMode != mode) {
-      setState(() => _currentThemeMode = mode);
-    }
-    widget.onThemeModeChanged?.call(mode);
-  }
-
-  void _addAccount(BrokerAccount account) =>
-      setState(() => _accounts.insert(0, account));
 
   final List<BrokerAccount> _demoAccounts = [
     BrokerAccount(
@@ -1116,6 +1090,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                             _toggleFavoriteAccount,
                                         scrollController:
                                             _accountsScrollController,
+                                        isLoading: _accountsLoading,
+                                        loadError: _accountsError,
+                                        onRetry: () => _loadTradingAccounts(refresh: true),
                                       ),
                                     ),
                                     _buildPrimaryTabLayer(

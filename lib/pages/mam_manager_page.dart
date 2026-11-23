@@ -382,13 +382,17 @@ class _MamManagerPageState extends State<MamManagerPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'MAM Manager',
-                  style: GoogleFonts.inter(
-                    color: _c.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'MAM Manager',
+                    style: GoogleFonts.inter(
+                      color: _c.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                 ),
                 Text(
@@ -539,13 +543,17 @@ class _MamManagerPageState extends State<MamManagerPage> {
                       Row(
                         children: [
                           Flexible(
-                            child: Text(
-                              'Create Master Node',
-                              style: GoogleFonts.inter(
-                                color: _c.text,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.2,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Create Master Node',
+                                style: GoogleFonts.inter(
+                                  color: _c.text,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
                               ),
                             ),
                           ),
@@ -597,12 +605,15 @@ class _MamManagerPageState extends State<MamManagerPage> {
               child: FilledButton.icon(
                 onPressed: _openCreateMasterSheet,
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: Text(
-                  '+ Create Master Node',
-                  style: GoogleFonts.inter(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '+ Create Master Node',
+                    style: GoogleFonts.inter(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
                 style: FilledButton.styleFrom(
@@ -680,26 +691,34 @@ class _MamManagerPageState extends State<MamManagerPage> {
               Icon(icon, size: 14, color: accent),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _c.muted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _c.muted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 5),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              color: _c.text,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
+          FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                color: _c.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
@@ -725,12 +744,18 @@ class _MamManagerPageState extends State<MamManagerPage> {
             children: [
               Icon(LucideIcons.lightbulb, size: 16, color: _c.blue),
               const SizedBox(width: 8),
-              Text(
-                'How MAM Management Works',
-                style: GoogleFonts.inter(
-                  color: _c.text,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'How MAM Management Works',
+                    style: GoogleFonts.inter(
+                      color: _c.text,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -933,14 +958,18 @@ class _MamManagerPageState extends State<MamManagerPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        master.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          color: _c.text,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
+                      FittedBox(
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          master.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            color: _c.text,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -962,49 +991,52 @@ class _MamManagerPageState extends State<MamManagerPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive ? _c.greenLight : _c.goldLight,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: isActive
-                          ? _c.green.withValues(alpha: 0.35)
-                          : _c.goldBorder,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: statusColor.withValues(alpha: 0.6),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
+                    decoration: BoxDecoration(
+                      color: isActive ? _c.greenLight : _c.goldLight,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isActive
+                            ? _c.green.withValues(alpha: 0.35)
+                            : _c.goldBorder,
                       ),
-                      const SizedBox(width: 4.5),
-                      Text(
-                        master.status.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          color: statusColor,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.3,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: statusColor.withValues(alpha: 0.6),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4.5),
+                        Text(
+                          master.status.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            color: statusColor,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1066,122 +1098,172 @@ class _MamManagerPageState extends State<MamManagerPage> {
             ),
             const SizedBox(height: 11),
 
-            // Action Buttons (min height 44px)
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 44,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _toggleMasterStatus(master),
-                      icon: Icon(
-                        isActive ? LucideIcons.pause : LucideIcons.play,
-                        size: 14,
-                        color: isActive ? _c.gold : _c.green,
-                      ),
-                      label: Text(
-                        isActive ? 'Pause Node' : 'Resume Node',
-                        style: TextStyle(
-                          color: _c.text,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+            // Responsive Action Section (min height 44px)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Row 1: Dual financial actions 50/50
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: FilledButton.icon(
+                              onPressed: () => _depositToMaster(master),
+                              icon: const Icon(LucideIcons.plusCircle, size: 14),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Deposit Funds',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: _c.blue,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _c.blueLight,
+                                foregroundColor: _c.blue,
+                                elevation: 0,
+                                minimumSize: const Size.fromHeight(44),
+                                side: BorderSide(color: _c.blueBorder),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: _c.border),
-                        minimumSize: const Size.fromHeight(44),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: FilledButton.icon(
+                              onPressed: () => _withdrawFromMaster(master),
+                              icon: Icon(
+                                LucideIcons.arrowUpRight,
+                                size: 14,
+                                color: _c.gold,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Withdraw Payout',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: _c.gold,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _c.goldLight,
+                                foregroundColor: _c.gold,
+                                elevation: 0,
+                                minimumSize: const Size.fromHeight(44),
+                                side: BorderSide(color: _c.goldBorder),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 44,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _openMasterDetails(master),
-                      icon: const Icon(LucideIcons.settings2, size: 14),
-                      label: const Text(
-                        'Account Details',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                    const SizedBox(height: 8),
+                    // Row 2: Node Status & Detail Actions 50/50
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _toggleMasterStatus(master),
+                              icon: Icon(
+                                isActive ? LucideIcons.pause : LucideIcons.play,
+                                size: 14,
+                                color: isActive ? _c.gold : _c.green,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  isActive ? 'Pause Node' : 'Resume Node',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    color: isActive ? _c.gold : _c.green,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: isActive
+                                      ? _c.goldBorder
+                                      : _c.green.withValues(alpha: 0.4),
+                                ),
+                                minimumSize: const Size.fromHeight(44),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _c.blue,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        minimumSize: const Size.fromHeight(44),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: FilledButton.icon(
+                              onPressed: () => _openMasterDetails(master),
+                              icon: const Icon(
+                                LucideIcons.settings2,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Account Details',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _c.blue,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                minimumSize: const Size.fromHeight(44),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
+                      ],
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: FilledButton.tonalIcon(
-                      onPressed: () => _depositToMaster(master),
-                      icon: const Icon(LucideIcons.arrowDownToLine, size: 14),
-                      label: const Text(
-                        'Deposit Funds',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _c.blueLight,
-                        foregroundColor: _c.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(color: _c.blueBorder),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: FilledButton.tonalIcon(
-                      onPressed: () => _withdrawFromMaster(master),
-                      icon: const Icon(LucideIcons.arrowUpFromLine, size: 14),
-                      label: const Text(
-                        'Withdraw Payout',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _c.goldLight,
-                        foregroundColor: _c.gold,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(color: _c.goldBorder),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -1219,25 +1301,33 @@ class _MamManagerPageState extends State<MamManagerPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _c.muted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _c.muted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 1.5),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    color: valueColor ?? _c.text,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      color: valueColor ?? _c.text,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

@@ -188,6 +188,8 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     );
   }
 
+  void _toggleMasterStatus() => _toggleNodeStatus();
+
   // ---------------------------------------------------------------------------
   // INTERACTIVE MODALS
   // ---------------------------------------------------------------------------
@@ -1183,109 +1185,416 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            '\$${_master.balance.toStringAsFixed(2)} USD',
-            style: GoogleFonts.inter(
-              fontSize: 30,
-              fontWeight: FontWeight.w900,
-              color: c.text,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 16),
 
-          // Action Buttons: 2x2 Mobile-Friendly Grid
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: FilledButton.icon(
-                    onPressed: () => _openDepositSheet(c),
-                    icon: const Icon(LucideIcons.plus, size: 16),
-                    label: Text(
-                      'Quick Fund',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: c.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openWithdrawSheet(c),
-                    icon: Icon(LucideIcons.arrowUpRight, size: 16, color: c.text),
-                    label: Text(
-                      'Withdraw',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.text),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: c.border),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+          // Responsive Balance & Action Controls Layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 440;
+              final isActive = _master.status == 'Active';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Large Balance Display
+                  FittedBox(
+                    alignment: Alignment.centerLeft,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '\$${_master.balance.toStringAsFixed(2)} USD',
+                      style: GoogleFonts.inter(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: c.text,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openPerformanceSheet(c),
-                    icon: Icon(LucideIcons.barChart2, size: 16, color: c.text),
-                    label: Text(
-                      'Performance',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.text),
+                  const SizedBox(height: 16),
+
+                  if (isMobile) ...[
+                    // Row 1 (Primary Financial Actions)
+                    Row(
+                      children: [
+                        // [+ Quick Fund]
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: FilledButton.icon(
+                              onPressed: () => _openQuickFundSheet(c),
+                              icon: const Icon(LucideIcons.plus, size: 16),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Quick Fund',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: c.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // [↗ Withdraw]
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openWithdrawSheet(c),
+                              icon: Icon(
+                                LucideIcons.arrowUpRight,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Withdraw',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: c.border),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    const SizedBox(height: 10),
+
+                    // Row 2 (Master Node Status & Broadcast Control Strip)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? c.greenLight.withValues(alpha: 0.5)
+                            : c.goldLight.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isActive ? c.greenBorder : c.goldBorder,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isActive ? LucideIcons.radio : LucideIcons.pause,
+                            size: 16,
+                            color: isActive ? c.green : c.gold,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isActive
+                                      ? 'Master Node Active'
+                                      : 'Master Node Paused',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: c.text,
+                                  ),
+                                ),
+                                Text(
+                                  isActive
+                                      ? 'Broadcasting orders to ${_master.investorsCount} followers'
+                                      : 'Broadcasting suspended by manager',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10.5,
+                                    color: c.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 36,
+                            child: OutlinedButton.icon(
+                              onPressed: _toggleMasterStatus,
+                              icon: Icon(
+                                isActive ? LucideIcons.pause : LucideIcons.play,
+                                size: 13,
+                                color: isActive ? c.gold : c.green,
+                              ),
+                              label: Text(
+                                isActive ? 'Pause' : 'Resume',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isActive ? c.gold : c.green,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: c.card,
+                                side: BorderSide(
+                                  color: isActive ? c.goldBorder : c.greenBorder,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                minimumSize: const Size(0, 36),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openManageInvestorsSheet(c),
-                    icon: Icon(LucideIcons.users, size: 16, color: c.text),
-                    label: Text(
-                      'Investor Pool',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.text),
+                    const SizedBox(height: 10),
+
+                    // Row 3 (Workspace Navigation Actions)
+                    Row(
+                      children: [
+                        // [Performance]
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openPerformanceSheet(c),
+                              icon: Icon(
+                                LucideIcons.barChart2,
+                                size: 15,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Performance',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // [Investor Pool]
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openManageInvestorsSheet(c),
+                              icon: Icon(
+                                LucideIcons.users,
+                                size: 15,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Investor Pool',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: c.border),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ] else ...[
+                    // Tablet / Desktop screens (maxWidth >= 440): 4-button 2x2 grid
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: FilledButton.icon(
+                              onPressed: () => _openDepositSheet(c),
+                              icon: const Icon(LucideIcons.plus, size: 16),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Quick Fund',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: c.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openWithdrawSheet(c),
+                              icon: Icon(
+                                LucideIcons.arrowUpRight,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Withdraw',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-            ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openPerformanceSheet(c),
+                              icon: Icon(
+                                LucideIcons.barChart2,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Performance',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openManageInvestorsSheet(c),
+                              icon: Icon(
+                                LucideIcons.users,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Investor Pool',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -1371,24 +1680,43 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF94A3B8),
-              letterSpacing: 0.4,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF94A3B8),
+                letterSpacing: 0.4,
+              ),
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w800,
-              color: valueColor,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: GoogleFonts.inter(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: valueColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

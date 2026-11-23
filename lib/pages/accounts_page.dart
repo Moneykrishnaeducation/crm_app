@@ -2624,17 +2624,27 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               _detailInfoRow(context, LucideIcons.shieldCheck, 'Account status', a.accountStatus, fg, muted, border),
             ])),
           ] else if (_tab == 'Trading Stats') ...[
-            Row(children: [
-              Expanded(child: stat(LucideIcons.trendingUp, 'Average win', _money(averageWin), green)),
-              const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.trendingDown, 'Average loss', _money(-averageLoss), red)),
-            ]),
-            const SizedBox(height: 9),
-            Row(children: [
-              Expanded(child: stat(LucideIcons.chartLine, 'Net P/L (shown trades)', _money(totalProfit), totalProfit >= 0 ? green : red)),
-              const SizedBox(width: 9),
-              Expanded(child: stat(LucideIcons.activity, 'Open positions', _livePositions.length.toString(), blue)),
-            ]),
+            Builder(builder: (context) {
+              final openProfit = _livePositions.fold<double>(
+                0, (sum, position) => sum + _apiNumber(position['profit']),
+              );
+              final openVolume = _livePositions.fold<double>(
+                0, (sum, position) => sum + _apiNumber(position['volume']),
+              );
+              return Column(children: [
+                Row(children: [
+                  Expanded(child: stat(LucideIcons.activity, 'Open positions', _livePositions.length.toString(), blue)),
+                  const SizedBox(width: 9),
+                  Expanded(child: stat(LucideIcons.wallet, 'Open volume', '${openVolume.toStringAsFixed(2)} lots', fg)),
+                ]),
+                const SizedBox(height: 9),
+                Row(children: [
+                  Expanded(child: stat(LucideIcons.chartLine, 'Floating P/L', _money(openProfit), openProfit >= 0 ? green : red)),
+                  const SizedBox(width: 9),
+                  Expanded(child: stat(LucideIcons.info, 'Closed-trade stats', 'Not available', muted)),
+                ]),
+              ]);
+            }),
             const SizedBox(height: 13),
             panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [

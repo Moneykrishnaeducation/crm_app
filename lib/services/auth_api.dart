@@ -304,6 +304,18 @@ class AuthApi {
     return 'The request failed. Please try again.';
   }
 
+  Future<Map<String, dynamic>> getTradingAccountHistory(
+    String accountId, {
+    int page = 1,
+    int pageSize = 50,
+  }) {
+    final id = Uri.encodeComponent(accountId);
+    return _request(
+      'GET',
+      'trading-account-history/$id/?page=$page&page_size=$pageSize&include_mt5_deals=true',
+    );
+  }
+
   Future<Map<String, dynamic>> getAccountDetails(String accountId) {
     final id = Uri.encodeComponent(accountId);
     return _request('GET', 'account-details/$id/');

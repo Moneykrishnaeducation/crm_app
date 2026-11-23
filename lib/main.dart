@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
+import 'pages/funds_action_dialog.dart';
+export 'pages/funds_action_dialog.dart';
 import 'pages/mam_page.dart';
 import 'pages/pamm_page.dart';
 import 'pages/partnership_page.dart';
@@ -27,7 +29,6 @@ part 'widgets/app_header.dart';
 part 'pages/dashboard_page.dart';
 part 'pages/broker_screens.dart';
 part 'pages/trade_report_page.dart';
-part 'pages/funds_action_dialog.dart';
 part 'pages/accounts_page.dart';
 part 'pages/internal_transfer_page.dart';
 part 'pages/demo_accounts_page.dart';

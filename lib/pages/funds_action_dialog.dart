@@ -1,8 +1,17 @@
-part of '../main.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:file_picker/file_picker.dart';
+import '../app_notifications.dart';
 
 const _fundInk = Color(0xFF10213E);
 const _fundSurface = Color(0xFFF7FAFF);
 const _fundBorder = Color(0xFFDCE5F2);
+const _muted = Color(0xFF71809A);
+const _gold = Color(0xFFD8A82E);
+const _brokerGold = Color(0xFFD8A82E);
 
 class BrokerFundsPage extends StatefulWidget {
   const BrokerFundsPage({
@@ -10,11 +19,19 @@ class BrokerFundsPage extends StatefulWidget {
     required this.withdrawal,
     required this.onBack,
     required this.onSelectPage,
+    this.accountId,
+    this.accountLabel,
+    this.initialAmount,
+    this.onCompleted,
   });
 
   final bool withdrawal;
   final VoidCallback onBack;
   final ValueChanged<String> onSelectPage;
+  final String? accountId;
+  final String? accountLabel;
+  final double? initialAmount;
+  final ValueChanged<double>? onCompleted;
 
   @override
   State<BrokerFundsPage> createState() => _BrokerFundsPageState();
@@ -29,40 +46,91 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   String? _uploadedProofName;
   int _selectedAccountIndex = 0;
 
-  final List<Map<String, dynamic>> _tradingAccounts = const [
-    {
-      'id': '3311',
-      'label': 'Live MT5 · 3311',
-      'tier': 'STANDARD',
-      'available': 2560.00,
-      'equity': 3740.00,
-      'margin': 1180.00,
-      'leverage': '1:500',
-    },
-    {
-      'id': '3312',
-      'label': 'Live MT5 · 3312',
-      'tier': 'PRO ZERO',
-      'available': 5820.00,
-      'equity': 7100.00,
-      'margin': 1280.00,
-      'leverage': '1:200',
-    },
-    {
-      'id': '3315',
-      'label': 'Live MT5 · 3315',
-      'tier': 'ECN RAW',
-      'available': 14100.00,
-      'equity': 18500.00,
-      'margin': 4400.00,
-      'leverage': '1:500',
-    },
-  ];
+  late final List<Map<String, dynamic>> _tradingAccounts;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      _amount.text = widget.initialAmount!.toStringAsFixed(2);
+    }
+
+    final accounts = <Map<String, dynamic>>[
+      {
+        'id': '3311',
+        'label': 'Live MT5 · 3311',
+        'tier': 'STANDARD',
+        'available': 2560.00,
+        'equity': 3740.00,
+        'margin': 1180.00,
+        'leverage': '1:500',
+      },
+      {
+        'id': '3312',
+        'label': 'Live MT5 · 3312',
+        'tier': 'PRO ZERO',
+        'available': 5820.00,
+        'equity': 7100.00,
+        'margin': 1280.00,
+        'leverage': '1:200',
+      },
+      {
+        'id': '3315',
+        'label': 'Live MT5 · 3315',
+        'tier': 'ECN RAW',
+        'available': 14100.00,
+        'equity': 18500.00,
+        'margin': 4400.00,
+        'leverage': '1:500',
+      },
+    ];
+
+    if (widget.accountId != null || widget.accountLabel != null) {
+      final index = accounts.indexWhere((acc) {
+        if (widget.accountId != null &&
+            (acc['id'] == widget.accountId ||
+             acc['label'].toString().contains(widget.accountId!))) {
+          return true;
+        }
+        if (widget.accountLabel != null &&
+            acc['label'].toString().toLowerCase().contains(widget.accountLabel!.toLowerCase())) {
+          return true;
+        }
+        return false;
+      });
+      if (index != -1) {
+        _selectedAccountIndex = index;
+      } else {
+        final id = widget.accountId ?? 'Custom';
+        final label = widget.accountLabel ?? 'Live MT5 · $id';
+        accounts.insert(0, {
+          'id': id,
+          'label': label,
+          'tier': 'LIVE',
+          'available': 10000.00,
+          'equity': 10000.00,
+          'margin': 0.00,
+          'leverage': '1:500',
+        });
+        _selectedAccountIndex = 0;
+      }
+    }
+
+    _tradingAccounts = accounts;
+  }
 
   Map<String, dynamic> get _activeTradingAccount =>
       _tradingAccounts[_selectedAccountIndex.clamp(0, _tradingAccounts.length - 1)];
 
-  final String _selectedAccount = 'Mohanprasath R - 3311 - \$2,560.00';
+  String get _selectedAccount {
+    final acc = _activeTradingAccount;
+    final avail = (acc['available'] as double);
+    final formattedAvail = avail >= 1000
+        ? '${(avail / 1000).floor()},${(avail % 1000).toStringAsFixed(2).padLeft(6, '0')}'
+        : avail.toStringAsFixed(2);
+    final userLabel = widget.accountLabel ?? 'Mohanprasath R';
+    return '$userLabel - ${acc['id']} - \$$formattedAvail';
+  }
 
   String get _withdrawSourceAccount {
     final acc = _activeTradingAccount;
@@ -1995,6 +2063,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       sendToMobilePanel: true,
     ));
 
+    if (widget.onCompleted != null) {
+      widget.onCompleted!(parsedAmount);
+    }
+
     _showDepositResponseModal(
       context,
       refId: refId,
@@ -2060,6 +2132,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           final refId =
               'VTX-WTH-${100000 + DateTime.now().millisecondsSinceEpoch % 900000}';
           final amtStr = amount.toStringAsFixed(2);
+
+          if (widget.onCompleted != null) {
+            widget.onCompleted!(amount);
+          }
 
           unawaited(AppNotificationCenter.instance.sendNotification(
             title: 'Withdrawal Request Submitted',
@@ -2787,8 +2863,20 @@ class _WithdrawReceiptSheet extends StatelessWidget {
 
 /// Backwards compatibility dialog wrapper
 class FundsActionDialog extends StatelessWidget {
-  const FundsActionDialog({super.key, required this.withdrawal});
+  const FundsActionDialog({
+    super.key,
+    required this.withdrawal,
+    this.accountId,
+    this.accountLabel,
+    this.initialAmount,
+    this.onCompleted,
+  });
+
   final bool withdrawal;
+  final String? accountId;
+  final String? accountLabel;
+  final double? initialAmount;
+  final ValueChanged<double>? onCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -2803,6 +2891,10 @@ class FundsActionDialog extends StatelessWidget {
           color: Theme.of(context).scaffoldBackgroundColor,
           child: BrokerFundsPage(
             withdrawal: withdrawal,
+            accountId: accountId,
+            accountLabel: accountLabel,
+            initialAmount: initialAmount,
+            onCompleted: onCompleted,
             onBack: () => Navigator.of(context).pop(),
             onSelectPage: (_) => Navigator.of(context).pop(),
           ),
@@ -2810,4 +2902,25 @@ class FundsActionDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> showFundsActionDialog(
+  BuildContext context, {
+  required bool withdrawal,
+  String? accountId,
+  String? accountLabel,
+  double? initialAmount,
+  ValueChanged<double>? onCompleted,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) => FundsActionDialog(
+      withdrawal: withdrawal,
+      accountId: accountId,
+      accountLabel: accountLabel,
+      initialAmount: initialAmount,
+      onCompleted: onCompleted,
+    ),
+  );
 }

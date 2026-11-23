@@ -155,6 +155,8 @@ files = [
     r'lib/pages/mam_investor_page.dart',
     r'lib/pages/mam_available_page.dart',
     r'lib/pages/broker_screens.dart',
+    r'lib/pages/funds_action_dialog.dart',
+    r'lib/widgets/mam_master_node_workspace.dart',
 ]
 
 all_ok = True

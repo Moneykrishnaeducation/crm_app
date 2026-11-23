@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../app_notifications.dart';
+import '../pages/funds_action_dialog.dart';
 
 // -----------------------------------------------------------------------------
 // MAM MASTER ACCOUNT DATA MODEL
@@ -190,422 +191,34 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   // ---------------------------------------------------------------------------
   // INTERACTIVE MODALS
   // ---------------------------------------------------------------------------
-  void _openQuickFundSheet(MamWorkspaceColors c) {
-    final amountController = TextEditingController(text: '100');
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            final presets = [50, 100, 250, 500, 1000];
-            return Container(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: c.card,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                border: Border.all(color: c.border),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: c.muted.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Quick Fund Master Node',
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                          onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Fund Node: ${_master.name} (#${_master.login})',
-                      style: TextStyle(fontSize: 12, color: c.muted),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Current Balance Card
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: c.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: c.subBorder),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Available Balance', style: TextStyle(color: c.muted, fontSize: 12)),
-                          Text(
-                            '\$${_master.balance.toStringAsFixed(2)} USD',
-                            style: GoogleFonts.inter(
-                              color: c.blue,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Preset Chips
-                    Text(
-                      'SELECT AMOUNT',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: c.muted,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: presets.map((amt) {
-                        final isSelected = amountController.text == amt.toString();
-                        return InkWell(
-                          onTap: () {
-                            setModalState(() {
-                              amountController.text = amt.toString();
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            constraints: const BoxConstraints(minHeight: 44, minWidth: 60),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected ? c.blue : c.subCard,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSelected ? c.blue : c.border,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '+\$$amt',
-                                style: GoogleFonts.inter(
-                                  color: isSelected ? Colors.white : c.text,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Custom Amount Field
-                    TextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: c.text,
-                      ),
-                      decoration: InputDecoration(
-                        prefixText: '\$ ',
-                        prefixStyle: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: c.text,
-                        ),
-                        labelText: 'Deposit Amount (USD)',
-                        labelStyle: TextStyle(color: c.muted, fontSize: 13),
-                        filled: true,
-                        fillColor: c.subCard,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: c.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: c.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: c.blue, width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // Confirm Deposit Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          final depositAmt = double.tryParse(amountController.text) ?? 0.0;
-                          if (depositAmt <= 0) {
-                            showAppMessage('Please enter a valid deposit amount');
-                            return;
-                          }
-                          Navigator.pop(ctx);
-                          setState(() {
-                            _master.balance += depositAmt;
-                          });
-                          _notifyUpdate();
-                          showAppMessage(
-                            'Successfully funded \$${depositAmt.toStringAsFixed(2)} into Master #${_master.login}!',
-                          );
-                        },
-                        icon: const Icon(LucideIcons.plusCircle, size: 18),
-                        label: Text(
-                          'Confirm & Deposit Funds',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: c.blue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+  void _openDepositSheet(MamWorkspaceColors c) {
+    showFundsActionDialog(
+      context,
+      withdrawal: false,
+      accountId: _master.login,
+      accountLabel: '${_master.name} · Master #${_master.login}',
+      onCompleted: (amt) {
+        setState(() {
+          _master.balance += amt;
+        });
+        widget.onUpdate?.call(_master);
       },
     );
   }
 
+  void _openQuickFundSheet(MamWorkspaceColors c) => _openDepositSheet(c);
+
   void _openWithdrawSheet(MamWorkspaceColors c) {
-    final amountController = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Container(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: c.card,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                border: Border.all(color: c.border),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: c.muted.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Withdraw from Master Node',
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                          onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Transfer capital out of Node: ${_master.name}',
-                      style: TextStyle(fontSize: 12, color: c.muted),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Available Balance Card
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: c.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: c.subBorder),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Available Net Balance', style: TextStyle(color: c.muted, fontSize: 12)),
-                          Text(
-                            '\$${_master.balance.toStringAsFixed(2)} USD',
-                            style: GoogleFonts.inter(
-                              color: c.text,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Quick Percentage Chips
-                    Row(
-                      children: [25, 50, 75, 100].map((pct) {
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 3),
-                            child: SizedBox(
-                              height: 44,
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  final calc = (_master.balance * (pct / 100.0));
-                                  setModalState(() {
-                                    amountController.text = calc.toStringAsFixed(2);
-                                  });
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  side: BorderSide(color: c.border),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  '$pct%',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: c.text,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 14),
-
-                    TextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: c.text,
-                      ),
-                      decoration: InputDecoration(
-                        prefixText: '\$ ',
-                        prefixStyle: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: c.text,
-                        ),
-                        labelText: 'Withdrawal Amount (USD)',
-                        labelStyle: TextStyle(color: c.muted, fontSize: 13),
-                        filled: true,
-                        fillColor: c.subCard,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: c.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: c.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: c.blue, width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          final withdrawAmt = double.tryParse(amountController.text) ?? 0.0;
-                          if (withdrawAmt <= 0) {
-                            showAppMessage('Please enter a valid amount');
-                            return;
-                          }
-                          if (withdrawAmt > _master.balance) {
-                            showAppMessage('Insufficient available balance for withdrawal');
-                            return;
-                          }
-                          Navigator.pop(ctx);
-                          setState(() {
-                            _master.balance -= withdrawAmt;
-                          });
-                          _notifyUpdate();
-                          showAppMessage(
-                            'Withdrawal request for \$${withdrawAmt.toStringAsFixed(2)} submitted successfully',
-                          );
-                        },
-                        icon: const Icon(LucideIcons.arrowUpRight, size: 18),
-                        label: Text(
-                          'Submit Withdrawal',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: c.navy,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+    showFundsActionDialog(
+      context,
+      withdrawal: true,
+      accountId: _master.login,
+      accountLabel: '${_master.name} · Master #${_master.login}',
+      onCompleted: (amt) {
+        setState(() {
+          _master.balance = (_master.balance - amt).clamp(0.0, double.infinity);
+        });
+        widget.onUpdate?.call(_master);
       },
     );
   }
@@ -1588,7 +1201,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 child: SizedBox(
                   height: 44,
                   child: FilledButton.icon(
-                    onPressed: () => _openQuickFundSheet(c),
+                    onPressed: () => _openDepositSheet(c),
                     icon: const Icon(LucideIcons.plus, size: 16),
                     label: Text(
                       'Quick Fund',

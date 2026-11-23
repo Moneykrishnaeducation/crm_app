@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import '../app_notifications.dart';
 import '../widgets/mam_modals.dart';
+import 'funds_action_dialog.dart';
 
 // -----------------------------------------------------------------------------
 // DYNAMIC THEME COLORS HELPER
@@ -391,6 +393,20 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Tooltip(
+            message: 'Deposit Funds',
+            child: IconButton(
+              icon: Icon(LucideIcons.wallet, color: _c.blue, size: 20),
+              onPressed: () {
+                showFundsActionDialog(
+                  context,
+                  withdrawal: false,
+                );
+              },
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             ),
           ),
         ],
@@ -927,6 +943,31 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
               const SizedBox(width: 8),
               SizedBox(
                 height: 44,
+                width: 44,
+                child: Tooltip(
+                  message: 'Deposit Funds',
+                  child: OutlinedButton(
+                    onPressed: () {
+                      showFundsActionDialog(
+                        context,
+                        withdrawal: false,
+                        initialAmount: pool.minDeposit,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      side: BorderSide(color: _c.blueBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Icon(LucideIcons.wallet, size: 16, color: _c.blue),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 44,
                 child: ElevatedButton.icon(
                   onPressed: () => _openInvestModal(pool),
                   icon: const Icon(LucideIcons.plus, size: 15),
@@ -1013,7 +1054,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
       manager: data,
       onInvestTap: () {
         Navigator.pop(context);
-        _openPasswordInvestModal(pool, data);
+        _openInvestModal(pool);
       },
     );
   }
@@ -1036,8 +1077,46 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   }
 
   void _openInvestModal(AvailableMamPool pool) {
-    _openManagerProfileModal(pool);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _InvestInMamModal(
+        pool: pool,
+        colors: _c,
+        onConfirmed: (allocatedAmount) {
+          setState(() {
+            pool.copiersCount += 1;
+            pool.totalAum += allocatedAmount;
+          });
+          if (widget.onJoinedPool != null) {
+            widget.onJoinedPool!(pool);
+          }
+          showAppMessage(
+            'Successfully invested \$${allocatedAmount.toStringAsFixed(0)} in ${pool.name}!',
+          );
+        },
+      ),
+    );
   }
+}
+
+void showInvestInMamModal(
+  BuildContext context, {
+  required AvailableMamPool pool,
+  required ValueChanged<double> onConfirmed,
+}) {
+  final colors = _AvailableColors.of(context);
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => _InvestInMamModal(
+      pool: pool,
+      colors: colors,
+      onConfirmed: onConfirmed,
+    ),
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -1186,6 +1265,59 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
               onChanged: (val) {
                 if (val != null) setState(() => _selectedAccount = val);
               },
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: c.blueLight.withValues(alpha: c.isDark ? 0.25 : 0.6),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: c.blueBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.wallet, size: 14, color: c.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Need to deposit funds?',
+                      style: TextStyle(
+                        color: c.muted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      showFundsActionDialog(
+                        context,
+                        withdrawal: false,
+                        initialAmount: widget.pool.minDeposit,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Deposit Now',
+                            style: GoogleFonts.inter(
+                              color: c.blue,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Icon(LucideIcons.arrowUpRight, size: 13, color: c.blue),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -1446,6 +1578,27 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                 child: Text(
                   'Confirm Investment',
                   style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  showFundsActionDialog(
+                    context,
+                    withdrawal: false,
+                    initialAmount: widget.pool.minDeposit,
+                  );
+                },
+                icon: Icon(LucideIcons.arrowDownToLine, size: 14, color: c.blue),
+                label: Text(
+                  'Need to deposit funds? Deposit Now',
+                  style: GoogleFonts.inter(
+                    color: c.blue,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

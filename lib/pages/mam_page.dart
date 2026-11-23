@@ -9,6 +9,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../widgets/mam_master_node_workspace.dart';
 import '../widgets/mam_modals.dart';
 import 'mam_investor_page.dart';
+import 'funds_action_dialog.dart';
 
 export '../widgets/mam_master_node_workspace.dart' show MamMasterAccount;
 export '../widgets/mam_modals.dart';
@@ -725,6 +726,50 @@ class MamPageState extends State<MamPage> {
               const SizedBox(width: 12),
               Expanded(child: _brandTitle()),
               _buildLiveStatusBadge(),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Deposit Funds',
+                icon: const Icon(LucideIcons.arrowDownToLine, size: 16),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                style: IconButton.styleFrom(
+                  backgroundColor: _c.blueLight,
+                  foregroundColor: _brandBlue,
+                  padding: const EdgeInsets.all(7),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: _c.blueBorder),
+                  ),
+                ),
+                onPressed: () {
+                  if (_tab == 0 && _masters.isNotEmpty) {
+                    _depositToMaster(_masters.first);
+                  } else {
+                    _openAccount3511DepositModal();
+                  }
+                },
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                tooltip: 'Withdraw Funds',
+                icon: const Icon(LucideIcons.arrowUpFromLine, size: 16),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                style: IconButton.styleFrom(
+                  backgroundColor: _c.goldLight,
+                  foregroundColor: _c.gold,
+                  padding: const EdgeInsets.all(7),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: _c.goldBorder),
+                  ),
+                ),
+                onPressed: () {
+                  if (_tab == 0 && _masters.isNotEmpty) {
+                    _withdrawFromMaster(_masters.first);
+                  } else {
+                    _openAccount3511WithdrawModal();
+                  }
+                },
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1574,6 +1619,62 @@ class MamPageState extends State<MamPage> {
                         minimumSize: const Size.fromHeight(44),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 38,
+                    child: FilledButton.tonalIcon(
+                      onPressed: () => _depositToMaster(master),
+                      icon: const Icon(LucideIcons.arrowDownToLine, size: 14),
+                      label: Text(
+                        'Deposit Funds',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _c.blueLight,
+                        foregroundColor: _brandBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: _c.blueBorder),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 38,
+                    child: FilledButton.tonalIcon(
+                      onPressed: () => _withdrawFromMaster(master),
+                      icon: const Icon(LucideIcons.arrowUpFromLine, size: 14),
+                      label: Text(
+                        'Withdraw Funds',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _c.goldLight,
+                        foregroundColor: _c.gold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: _c.goldBorder),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
@@ -3100,488 +3201,61 @@ class MamPageState extends State<MamPage> {
   }
 
   void _openAccount3511DepositModal() {
-    final amountController = TextEditingController();
+    showFundsActionDialog(
+      context,
+      withdrawal: false,
+      accountId: '3511',
+      accountLabel: 'Live MT5 · 3511',
+      onCompleted: (amt) {
+        setState(() {
+          _account3511Balance += amt;
+        });
+      },
+    );
+  }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            final presets = [100, 250, 500, 1000, 2500];
+  void _depositToMaster(MamMasterAccount master) {
+    showFundsActionDialog(
+      context,
+      withdrawal: false,
+      accountId: master.login,
+      accountLabel: '${master.name} · Master #${master.login}',
+      onCompleted: (amt) {
+        setState(() {
+          master.balance += amt;
+          master.totalAum += amt;
+        });
+        showAppMessage('Deposited \$${amt.toStringAsFixed(2)} to Master Node #${master.login}');
+      },
+    );
+  }
 
-            return Container(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: _c.card,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                border: Border.all(color: _c.border),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: _c.muted.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Deposit Funds',
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: _c.text,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
-                          onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(
-                            minWidth: 44,
-                            minHeight: 44,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'Fund Account #3511 (testtest1 - Investment)',
-                      style: TextStyle(fontSize: 12, color: _c.muted),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Available Balance
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _c.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _c.subBorder),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Current Available Balance',
-                            style: TextStyle(color: _c.muted, fontSize: 12),
-                          ),
-                          Text(
-                            '\$${_account3511Balance.toStringAsFixed(2)} USD',
-                            style: GoogleFonts.inter(
-                              color: _c.blue,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Presets
-                    Text(
-                      'QUICK PRESETS',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: _c.muted,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: presets.map((amt) {
-                        final isSel = amountController.text == amt.toString();
-                        return InkWell(
-                          onTap: () {
-                            setModalState(() {
-                              amountController.text = amt.toString();
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            constraints: const BoxConstraints(
-                              minHeight: 44,
-                              minWidth: 64,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSel ? _c.blue : _c.subCard,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSel ? _c.blue : _c.border,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '\$$amt',
-                              style: GoogleFonts.inter(
-                                color: isSel ? Colors.white : _c.text,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Amount input
-                    Text(
-                      'DEPOSIT AMOUNT (USD)',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: _c.muted,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: _c.text,
-                      ),
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          LucideIcons.dollarSign,
-                          size: 18,
-                          color: _c.blue,
-                        ),
-                        hintText: '0.00',
-                        hintStyle: TextStyle(color: _c.muted),
-                        filled: true,
-                        fillColor: _c.subCard,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: _c.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: _c.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: _c.blue, width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          final depositAmt =
-                              double.tryParse(amountController.text) ?? 0.0;
-                          if (depositAmt <= 0) {
-                            showAppMessage(
-                              'Please enter a valid deposit amount',
-                            );
-                            return;
-                          }
-                          Navigator.pop(ctx);
-                          setState(() {
-                            _account3511Balance += depositAmt;
-                          });
-                          showAppMessage(
-                            'Successfully deposited \$${depositAmt.toStringAsFixed(2)} to Account #3511!',
-                          );
-                        },
-                        icon: const Icon(LucideIcons.plusCircle, size: 18),
-                        label: Text(
-                          'Confirm & Deposit Funds',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _brandBlue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+  void _withdrawFromMaster(MamMasterAccount master) {
+    showFundsActionDialog(
+      context,
+      withdrawal: true,
+      accountId: master.login,
+      accountLabel: '${master.name} · Master #${master.login}',
+      onCompleted: (amt) {
+        setState(() {
+          master.balance = (master.balance - amt).clamp(0.0, double.infinity);
+          master.totalAum = (master.totalAum - amt).clamp(0.0, double.infinity);
+        });
+        showAppMessage('Withdrew \$${amt.toStringAsFixed(2)} from Master Node #${master.login}');
       },
     );
   }
 
   void _openAccount3511WithdrawModal() {
-    final amountController = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Container(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: _c.card,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                border: Border.all(color: _c.border),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: _c.muted.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Withdraw Funds',
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: _c.text,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
-                          onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(
-                            minWidth: 44,
-                            minHeight: 44,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'Transfer funds from Account #3511',
-                      style: TextStyle(fontSize: 12, color: _c.muted),
-                    ),
-                    const SizedBox(height: 14),
-
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _c.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _c.subBorder),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Available Net Balance',
-                            style: TextStyle(color: _c.muted, fontSize: 12),
-                          ),
-                          Text(
-                            '\$${_account3511Balance.toStringAsFixed(2)} USD',
-                            style: GoogleFonts.inter(
-                              color: _c.text,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Quick Percent Chips
-                    Row(
-                      children: [25, 50, 75, 100].map((pct) {
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 3),
-                            child: SizedBox(
-                              height: 44,
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  final calc =
-                                      (_account3511Balance * (pct / 100.0));
-                                  setModalState(() {
-                                    amountController.text = calc
-                                        .toStringAsFixed(2);
-                                  });
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  side: BorderSide(color: _c.border),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  '$pct%',
-                                  style: GoogleFonts.inter(
-                                    color: _c.text,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Amount input
-                    Text(
-                      'WITHDRAWAL AMOUNT (USD)',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: _c.muted,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: _c.text,
-                      ),
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          LucideIcons.dollarSign,
-                          size: 18,
-                          color: _c.text,
-                        ),
-                        hintText: '0.00',
-                        hintStyle: TextStyle(color: _c.muted),
-                        filled: true,
-                        fillColor: _c.subCard,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: _c.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: _c.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: _c.blue, width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          final withdrawAmt =
-                              double.tryParse(amountController.text) ?? 0.0;
-                          if (withdrawAmt <= 0) {
-                            showAppMessage(
-                              'Please enter a valid withdrawal amount',
-                            );
-                            return;
-                          }
-                          if (withdrawAmt > _account3511Balance) {
-                            showAppMessage('Insufficient available balance');
-                            return;
-                          }
-                          Navigator.pop(ctx);
-                          setState(() {
-                            _account3511Balance -= withdrawAmt;
-                          });
-                          showAppMessage(
-                            'Withdrawal request for \$${withdrawAmt.toStringAsFixed(2)} submitted!',
-                          );
-                        },
-                        icon: const Icon(LucideIcons.arrowUpRight, size: 18),
-                        label: Text(
-                          'Confirm Withdrawal',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _brandBlue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+    showFundsActionDialog(
+      context,
+      withdrawal: true,
+      accountId: '3511',
+      accountLabel: 'Live MT5 · 3511',
+      onCompleted: (amt) {
+        setState(() {
+          _account3511Balance = (_account3511Balance - amt).clamp(0.0, double.infinity);
+        });
       },
     );
   }

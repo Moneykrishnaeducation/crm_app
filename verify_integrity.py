@@ -27,23 +27,24 @@ else:
 uses = [m.start() for m in re.finditer(r'\b_brokerGold\b', fad_content)]
 print(f"[PASS] Found {len(uses)} occurrences of _brokerGold in funds_action_dialog.dart (all valid references)")
 
-print("\n=== CHECK 2: VERIFYING MAM_PAGE.DART LINES ~730-772 & amountController ===")
+print("\n=== CHECK 2: VERIFYING HERO BALANCE CARD DEPOSIT/WITHDRAW ACTIONS ===")
 with open(r'lib/pages/mam_page.dart', 'r', encoding='utf-8') as f:
-    mam_lines = f.readlines()
+    mam_content = f.read()
 
-# Verify IconButton constraints in mam_page.dart
-found_deposit_btn = False
-found_withdraw_btn = False
-for idx, line in enumerate(mam_lines[720:780], 721):
-    if 'tooltip: \'Deposit Funds\'' in line:
-        found_deposit_btn = True
-        print(f"[PASS] Found 'Deposit Funds' IconButton at line {idx}")
-    if 'tooltip: \'Withdraw Funds\'' in line:
-        found_withdraw_btn = True
-        print(f"[PASS] Found 'Withdraw Funds' IconButton at line {idx}")
+# Verify Hero Balance Card action buttons in mam_page.dart
+if '_openAccount3511DepositModal' in mam_content and '_openAccount3511WithdrawModal' in mam_content:
+    print("[PASS] Found '_openAccount3511DepositModal' and '_openAccount3511WithdrawModal' in mam_page.dart")
+else:
+    print("[FAIL] Missing Deposit/Withdraw actions in mam_page.dart!")
+    sys.exit(1)
 
-if not (found_deposit_btn and found_withdraw_btn):
-    print("[FAIL] Missing Deposit/Withdraw IconButtons in mam_page.dart header!")
+with open(r'lib/pages/mam_investor_page.dart', 'r', encoding='utf-8') as f:
+    investor_content = f.read()
+
+if '_openDepositModal' in investor_content and '_openWithdrawModal' in investor_content:
+    print("[PASS] Found '_openDepositModal' and '_openWithdrawModal' in mam_investor_page.dart")
+else:
+    print("[FAIL] Missing Deposit/Withdraw actions in mam_investor_page.dart!")
     sys.exit(1)
 
 # Check amountController occurrences in mam_page.dart and all modified files

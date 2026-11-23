@@ -2132,33 +2132,40 @@ class MamPageState extends State<MamPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4.5,
-                ),
-                decoration: BoxDecoration(
-                  color: _c.blueLight,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _c.blueBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.wallet, size: 12, color: _c.blue),
-                    const SizedBox(width: 5),
-                    Text(
-                      'TESTTEST1 - INVESTMENT',
-                      style: GoogleFonts.inter(
-                        color: _c.blue,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _c.blueLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _c.blueBorder),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.wallet, size: 12, color: _c.blue),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'TESTTEST1 - INVESTMENT',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            color: _c.blue,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => _copyToClipboard('3511', 'Account ID'),
                 borderRadius: BorderRadius.circular(8),
@@ -2206,130 +2213,331 @@ class MamPageState extends State<MamPage> {
           const SizedBox(height: 4),
 
           // Large Balance Display
-          Text(
-            '\$${_account3511Balance.toStringAsFixed(2)} USD',
-            style: GoogleFonts.inter(
-              color: _c.text,
-              fontSize: 30,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.6,
+          FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '\$${_account3511Balance.toStringAsFixed(2)} USD',
+              style: GoogleFonts.inter(
+                color: _c.text,
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.6,
+              ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // 3 Action Buttons (touch height >= 44px)
-          Row(
-            children: [
-              Expanded(
-                flex: 4,
-                child: SizedBox(
-                  height: 44,
-                  child: FilledButton.icon(
-                    onPressed: _openAccount3511DepositModal,
-                    icon: const Icon(LucideIcons.plusCircle, size: 14),
-                    label: Text(
-                      'Deposit Funds',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+          // Responsive Action Section
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 440;
+              if (isMobile) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Row 1 (Primary Financial Actions)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: FilledButton.icon(
+                              onPressed: _openAccount3511DepositModal,
+                              icon: const Icon(LucideIcons.plusCircle, size: 15),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Deposit Funds',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _brandBlue,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size.fromHeight(46),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: OutlinedButton.icon(
+                              onPressed: _openAccount3511WithdrawModal,
+                              icon: Icon(
+                                LucideIcons.arrowUpRight,
+                                size: 15,
+                                color: _c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Withdraw Funds',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    color: _c.text,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(46),
+                                side: BorderSide(color: _c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Row 2 (Copy Trading Status & Control Strip)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _brandBlue,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 4,
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _account3511IsCopying = !_account3511IsCopying;
-                      });
-                      showAppMessage(
-                        _account3511IsCopying
-                            ? 'Trade copying resumed for Account 3511'
-                            : 'Trade copying paused for Account 3511',
-                      );
-                    },
-                    icon: Icon(
-                      _account3511IsCopying
-                          ? LucideIcons.circleSlash
-                          : LucideIcons.play,
-                      size: 14,
-                      color: _account3511IsCopying ? _c.gold : _c.green,
-                    ),
-                    label: Text(
-                      _account3511IsCopying ? 'Pause Copy' : 'Resume Copy',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: _account3511IsCopying ? _c.gold : _c.green,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                      side: BorderSide(
+                      decoration: BoxDecoration(
                         color: _account3511IsCopying
-                            ? _c.goldBorder
-                            : _c.greenLight,
+                            ? _c.greenLight.withValues(alpha: 0.5)
+                            : _c.goldLight.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _account3511IsCopying
+                              ? _c.greenBorder
+                              : _c.goldBorder,
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _account3511IsCopying
+                                ? LucideIcons.activity
+                                : LucideIcons.circleSlash,
+                            size: 16,
+                            color: _account3511IsCopying ? _c.green : _c.gold,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _account3511IsCopying
+                                      ? 'Trade Copying Active'
+                                      : 'Trade Copying Paused',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: _c.text,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  _account3511IsCopying
+                                      ? 'Orders mirrored automatically'
+                                      : 'Mirroring paused by user',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10.5,
+                                    color: _c.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 36,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _account3511IsCopying = !_account3511IsCopying;
+                                });
+                                showAppMessage(
+                                  _account3511IsCopying
+                                      ? 'Trade copying resumed for Account 3511'
+                                      : 'Trade copying paused for Account 3511',
+                                );
+                              },
+                              icon: Icon(
+                                _account3511IsCopying
+                                    ? LucideIcons.pause
+                                    : LucideIcons.play,
+                                size: 13,
+                                color: _account3511IsCopying ? _c.gold : _c.green,
+                              ),
+                              label: Text(
+                                _account3511IsCopying ? 'Pause' : 'Resume',
+                                style: GoogleFonts.inter(
+                                  color: _account3511IsCopying ? _c.gold : _c.green,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: _account3511IsCopying
+                                      ? _c.goldBorder
+                                      : _c.greenBorder,
+                                ),
+                                backgroundColor: _c.card,
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                  ],
+                );
+              }
+
+              // Tablet / Desktop screens (>= 440px)
+              return Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: SizedBox(
+                      height: 44,
+                      child: FilledButton.icon(
+                        onPressed: _openAccount3511DepositModal,
+                        icon: const Icon(LucideIcons.plusCircle, size: 14),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Deposit Funds',
+                            maxLines: 1,
+                            softWrap: false,
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _brandBlue,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 4,
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: _openAccount3511WithdrawModal,
-                    icon: Icon(
-                      LucideIcons.arrowUpRight,
-                      size: 14,
-                      color: _c.text,
-                    ),
-                    label: Text(
-                      'Withdraw Funds',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: _c.text,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 4,
+                    child: SizedBox(
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _account3511IsCopying = !_account3511IsCopying;
+                          });
+                          showAppMessage(
+                            _account3511IsCopying
+                                ? 'Trade copying resumed for Account 3511'
+                                : 'Trade copying paused for Account 3511',
+                          );
+                        },
+                        icon: Icon(
+                          _account3511IsCopying
+                              ? LucideIcons.circleSlash
+                              : LucideIcons.play,
+                          size: 14,
+                          color: _account3511IsCopying ? _c.gold : _c.green,
+                        ),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _account3511IsCopying ? 'Pause Copy' : 'Resume Copy',
+                            maxLines: 1,
+                            softWrap: false,
+                            style: GoogleFonts.inter(
+                              color: _account3511IsCopying ? _c.gold : _c.green,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(44),
+                          side: BorderSide(
+                            color: _account3511IsCopying
+                                ? _c.goldBorder
+                                : _c.greenBorder,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
                       ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                      side: BorderSide(color: _c.border),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
                     ),
                   ),
-                ),
-              ),
-            ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 4,
+                    child: SizedBox(
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: _openAccount3511WithdrawModal,
+                        icon: Icon(
+                          LucideIcons.arrowUpRight,
+                          size: 14,
+                          color: _c.text,
+                        ),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Withdraw Funds',
+                            maxLines: 1,
+                            softWrap: false,
+                            style: GoogleFonts.inter(
+                              color: _c.text,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(44),
+                          side: BorderSide(color: _c.border),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -3069,7 +3277,7 @@ class MamPageState extends State<MamPage> {
     Widget? trailing,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -3102,13 +3310,21 @@ class MamPageState extends State<MamPage> {
                 ),
                 const SizedBox(height: 2),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      value,
-                      style: GoogleFonts.inter(
-                        color: valueColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          value,
+                          maxLines: 1,
+                          style: GoogleFonts.inter(
+                            color: valueColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
                     if (trailing != null) ...[

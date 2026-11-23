@@ -77,6 +77,7 @@ void main() {
 
     // Markets section with filter pills
     expect(find.text('Markets'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
     expect(find.text('Favorites'), findsOneWidget);
     expect(find.text('Metals'), findsOneWidget);
     expect(find.text('Energy'), findsOneWidget);
@@ -88,7 +89,7 @@ void main() {
     await tester.ensureVisible(find.text('Metals'));
     await tester.tap(find.text('Metals'));
     await tester.pumpAndSettle();
-    expect(find.descendant(of: find.byType(BrokerDashboardPage), matching: find.text('XAUUSD')), findsOneWidget);
+    expect(find.descendant(of: find.byType(BrokerDashboardPage), matching: find.text('XAUUSD')), findsWidgets);
     expect(find.text('XAGUSD'), findsOneWidget);
 
     // 3. Customer support modal bottom sheet

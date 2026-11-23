@@ -4,7 +4,7 @@ const _brokerNavy = Color(0xFF10264B);
 const _brokerBlue = Color(0xFF174A8B);
 const _brokerGold = Color(0xFFD8A82E);
 
-class BrokerDashboardPage extends StatelessWidget {
+class BrokerDashboardPage extends StatefulWidget {
   const BrokerDashboardPage({
     super.key,
     required this.balanceVisible,
@@ -18,14 +18,26 @@ class BrokerDashboardPage extends StatelessWidget {
   final ScrollController? scrollController;
 
   @override
+  State<BrokerDashboardPage> createState() => _BrokerDashboardPageState();
+}
+
+class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
+  int _selectedMarketTabIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
+    final marketItems = _getDashboardMarketItemsForTab(_selectedMarketTabIndex);
+    final quickTradeItem = marketItems.isNotEmpty
+        ? marketItems.first
+        : _allDashboardMarketItems.first;
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 680),
           child: SingleChildScrollView(
-            controller: scrollController,
+            controller: widget.scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
@@ -52,8 +64,8 @@ class BrokerDashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 _PortfolioSummaryCard(
-                  visible: balanceVisible,
-                  onToggle: onToggleBalance,
+                  visible: widget.balanceVisible,
+                  onToggle: widget.onToggleBalance,
                 ),
                 const SizedBox(height: 16),
                 const _PortfolioPerformance(),
@@ -63,18 +75,29 @@ class BrokerDashboardPage extends StatelessWidget {
                   subtitle: 'Manage your trading funds',
                 ),
                 const SizedBox(height: 10),
-                _QuickActionsRow(onSelectPage: onSelectPage),
+                _QuickActionsRow(onSelectPage: widget.onSelectPage),
                 const SizedBox(height: 20),
                 _DashboardSectionHeading(
                   title: 'Explore',
                   subtitle: 'Tools and opportunities',
                 ),
                 const SizedBox(height: 10),
-                _DualFeatureCards(onSelectPage: onSelectPage),
+                _DualFeatureCards(
+                  onSelectPage: widget.onSelectPage,
+                  quickTradeItem: quickTradeItem,
+                ),
                 const SizedBox(height: 14),
                 const _MarketInsightsBanner(),
                 const SizedBox(height: 24),
-                _MarketsSection(onSelectPage: onSelectPage),
+                _MarketsSection(
+                  onSelectPage: widget.onSelectPage,
+                  selectedTabIndex: _selectedMarketTabIndex,
+                  onTabSelected: (index) {
+                    setState(() {
+                      _selectedMarketTabIndex = index;
+                    });
+                  },
+                ),
               ],
             ),
           ),
@@ -607,8 +630,12 @@ class _QuickActionItem extends StatelessWidget {
 }
 
 class _DualFeatureCards extends StatelessWidget {
-  const _DualFeatureCards({required this.onSelectPage});
+  const _DualFeatureCards({
+    required this.onSelectPage,
+    this.quickTradeItem,
+  });
   final ValueChanged<String> onSelectPage;
+  final _DashboardMarketItem? quickTradeItem;
 
   @override
   Widget build(BuildContext context) {
@@ -617,13 +644,21 @@ class _DualFeatureCards extends StatelessWidget {
     final borderColor = isDark ? const Color(0xFF223656) : const Color(0xFFE5EBF5);
     final shadowColor = Colors.black.withValues(alpha: isDark ? 0.2 : 0.035);
     final compact = MediaQuery.sizeOf(context).width < 360;
+    final item = quickTradeItem ?? _allDashboardMarketItems.first;
 
     return Row(
       children: [
         // Quick Trade Card
         Expanded(
           child: InkWell(
-            onTap: () => _showQuickTradeDialog(context),
+            onTap: () => _showQuickTradeDialog(
+              context,
+              symbol: item.symbol,
+              sellPrice: item.sellPrice,
+              buyPrice: item.buyPrice,
+              sellDisplay: item.sell,
+              buyDisplay: item.buy,
+            ),
             borderRadius: BorderRadius.circular(18),
             child: Container(
               height: compact ? 148 : 140,
@@ -670,7 +705,7 @@ class _DualFeatureCards extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'EURUSD',
+                        item.symbol,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -683,21 +718,29 @@ class _DualFeatureCards extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(
-                        '1.10090',
-                        style: GoogleFonts.inter(
-                          fontSize: compact ? 15 : 18,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurface,
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            item.sell,
+                            style: GoogleFonts.inter(
+                              fontSize: compact ? 15 : 18,
+                              fontWeight: FontWeight.w800,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 5),
-                      const Text(
-                        '↘ 0.10%',
+                      Text(
+                        item.change,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFFDC2626),
+                          color: item.isChangePositive
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
                         ),
                       ),
                     ],
@@ -931,24 +974,245 @@ class _StackedCoinsPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _MarketsSection extends StatefulWidget {
-  const _MarketsSection({required this.onSelectPage});
-  final ValueChanged<String> onSelectPage;
+class _DashboardMarketItem {
+  const _DashboardMarketItem({
+    required this.badge,
+    required this.symbol,
+    required this.change,
+    required this.isChangePositive,
+    required this.time,
+    required this.sell,
+    required this.buy,
+    required this.sellPrice,
+    required this.buyPrice,
+    this.sellColor,
+    this.buyColor,
+    required this.categories,
+  });
 
-  @override
-  State<_MarketsSection> createState() => _MarketsSectionState();
+  final Widget badge;
+  final String symbol;
+  final String change;
+  final bool isChangePositive;
+  final String time;
+  final String sell;
+  final String buy;
+  final double sellPrice;
+  final double buyPrice;
+  final Color? sellColor;
+  final Color? buyColor;
+  final List<String> categories;
 }
 
-class _MarketsSectionState extends State<_MarketsSection> {
-  int _selectedTabIndex = 0;
-  final List<String> _tabs = [
+const List<_DashboardMarketItem> _allDashboardMarketItems = [
+  _DashboardMarketItem(
+    badge: _EUFlagBadge(),
+    symbol: 'EURUSD',
+    change: '↘ 0.10%',
+    isChangePositive: false,
+    time: '14:35:30',
+    sell: '1.10090',
+    buy: '1.10103',
+    sellPrice: 1.10090,
+    buyPrice: 1.10103,
+    buyColor: Color(0xFFDC2626),
+    categories: ['Favorites'],
+  ),
+  _DashboardMarketItem(
+    badge: _UKFlagBadge(),
+    symbol: 'GBPUSD',
+    change: '↘ 0.10%',
+    isChangePositive: false,
+    time: '14:35:31',
+    sell: '1.31966',
+    buy: '1.31979',
+    sellPrice: 1.31966,
+    buyPrice: 1.31979,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Favorites'],
+  ),
+  _DashboardMarketItem(
+    badge: _USTECHBadge(),
+    symbol: 'XAUUSD',
+    change: '↗ 0.35%',
+    isChangePositive: true,
+    time: '14:35:28',
+    sell: '2,654.12',
+    buy: '2,654.48',
+    sellPrice: 2654.12,
+    buyPrice: 2654.48,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Metals'],
+  ),
+  _DashboardMarketItem(
+    badge: _USTECHBadge(),
+    symbol: 'XAGUSD',
+    change: '↘ 0.22%',
+    isChangePositive: false,
+    time: '14:35:22',
+    sell: '31.420',
+    buy: '31.450',
+    sellPrice: 31.42,
+    buyPrice: 31.45,
+    buyColor: Color(0xFFDC2626),
+    categories: ['Metals'],
+  ),
+  _DashboardMarketItem(
+    badge: _USTECHBadge(),
+    symbol: 'USOIL',
+    change: '↗ 0.82%',
+    isChangePositive: true,
+    time: '14:35:10',
+    sell: '70.24',
+    buy: '70.28',
+    sellPrice: 70.24,
+    buyPrice: 70.28,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Energy'],
+  ),
+  _DashboardMarketItem(
+    badge: _UKFlagBadge(),
+    symbol: 'UKOIL',
+    change: '↗ 0.74%',
+    isChangePositive: true,
+    time: '14:35:12',
+    sell: '74.15',
+    buy: '74.19',
+    sellPrice: 74.15,
+    buyPrice: 74.19,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Energy'],
+  ),
+  _DashboardMarketItem(
+    badge: _HKFlagBadge(),
+    symbol: 'HK50c',
+    change: '↗ 0.41%',
+    isChangePositive: true,
+    time: '14:35:30',
+    sell: '23,815.24',
+    buy: '23,828.94',
+    sellPrice: 23815.24,
+    buyPrice: 23828.94,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Favorites', 'Index'],
+  ),
+  _DashboardMarketItem(
+    badge: _USTECHBadge(),
+    symbol: 'USTECHc',
+    change: '↘ 0.98%',
+    isChangePositive: false,
+    time: '14:35:26',
+    sell: '27,535.38',
+    buy: '27,538.16',
+    sellPrice: 27535.38,
+    buyPrice: 27538.16,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Favorites', 'Index'],
+  ),
+  _DashboardMarketItem(
+    badge: _EUFlagBadge(),
+    symbol: 'EURGBP',
+    change: '↘ 0.08%',
+    isChangePositive: false,
+    time: '14:35:20',
+    sell: '0.83420',
+    buy: '0.83435',
+    sellPrice: 0.83420,
+    buyPrice: 0.83435,
+    buyColor: Color(0xFFDC2626),
+    categories: ['FX Minors'],
+  ),
+  _DashboardMarketItem(
+    badge: _EUFlagBadge(),
+    symbol: 'EURJPY',
+    change: '↗ 0.15%',
+    isChangePositive: true,
+    time: '14:35:18',
+    sell: '162.450',
+    buy: '162.470',
+    sellPrice: 162.450,
+    buyPrice: 162.470,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['FX Minors'],
+  ),
+  _DashboardMarketItem(
+    badge: _CryptoBadge(symbol: '₿', color: Color(0xFFF7931A)),
+    symbol: 'BTCUSD',
+    change: '↗ 2.40%',
+    isChangePositive: true,
+    time: '14:35:32',
+    sell: '67,420.00',
+    buy: '67,440.00',
+    sellPrice: 67420.00,
+    buyPrice: 67440.00,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Cryptos'],
+  ),
+  _DashboardMarketItem(
+    badge: _CryptoBadge(symbol: 'Ξ', color: Color(0xFF627EEA)),
+    symbol: 'ETHUSD',
+    change: '↗ 1.85%',
+    isChangePositive: true,
+    time: '14:35:29',
+    sell: '3,485.20',
+    buy: '3,487.50',
+    sellPrice: 3485.20,
+    buyPrice: 3487.50,
+    sellColor: Color(0xFF16A34A),
+    buyColor: Color(0xFF16A34A),
+    categories: ['Cryptos'],
+  ),
+];
+
+List<_DashboardMarketItem> _getDashboardMarketItemsForTab(int tabIndex) {
+  if (tabIndex < 0 || tabIndex >= _MarketsSection._tabs.length) {
+    return _allDashboardMarketItems;
+  }
+  final tabName = _MarketsSection._tabs[tabIndex];
+  if (tabName == 'All') {
+    return _allDashboardMarketItems;
+  }
+  return _allDashboardMarketItems
+      .where((item) => item.categories.contains(tabName))
+      .toList();
+}
+
+class _MarketsSection extends StatefulWidget {
+  const _MarketsSection({
+    required this.onSelectPage,
+    this.selectedTabIndex,
+    this.onTabSelected,
+  });
+  final ValueChanged<String> onSelectPage;
+  final int? selectedTabIndex;
+  final ValueChanged<int>? onTabSelected;
+
+  static const List<String> _tabs = [
     'Favorites',
     'Metals',
     'Energy',
     'FX Minors',
     'Index',
     'Cryptos',
+    'All',
   ];
+
+  @override
+  State<_MarketsSection> createState() => _MarketsSectionState();
+}
+
+class _MarketsSectionState extends State<_MarketsSection> {
+  int _internalTabIndex = 0;
+
+  int get _effectiveTabIndex => widget.selectedTabIndex ?? _internalTabIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -956,7 +1220,8 @@ class _MarketsSectionState extends State<_MarketsSection> {
     final compactLayout = MediaQuery.sizeOf(context).width < 380;
     final quoteColumnWidth = compactLayout ? 64.0 : 72.0;
     final quoteColumnGap = compactLayout ? 6.0 : 10.0;
-    final hasQuotes = _selectedTabIndex != 3 && _selectedTabIndex != 5;
+    final items = _getDashboardMarketItemsForTab(_effectiveTabIndex);
+    final hasQuotes = items.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1010,14 +1275,17 @@ class _MarketsSectionState extends State<_MarketsSection> {
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: List.generate(_tabs.length, (index) {
-            final active = _selectedTabIndex == index;
+          children: List.generate(_MarketsSection._tabs.length, (index) {
+            final active = _effectiveTabIndex == index;
             return Semantics(
               button: true,
               selected: active,
-              label: '${_tabs[index]} market category',
+              label: '${_MarketsSection._tabs[index]} market category',
               child: InkWell(
-                onTap: () => setState(() => _selectedTabIndex = index),
+                onTap: () {
+                  setState(() => _internalTabIndex = index);
+                  widget.onTabSelected?.call(index);
+                },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 40),
@@ -1037,7 +1305,7 @@ class _MarketsSectionState extends State<_MarketsSection> {
                     ),
                   ),
                   child: Text(
-                    _tabs[index],
+                    _MarketsSection._tabs[index],
                     style: TextStyle(
                       fontSize: compactLayout ? 12 : 13,
                       fontWeight: active ? FontWeight.w700 : FontWeight.w500,
@@ -1095,7 +1363,103 @@ class _MarketsSectionState extends State<_MarketsSection> {
         ),
         if (hasQuotes) const SizedBox(height: 8),
         if (hasQuotes) const Divider(height: 1, thickness: 0.8, color: _border),
-        ..._buildQuotesForTab(context),
+        if (hasQuotes)
+          ...items.map((item) => _MarketQuoteRow(
+            badge: item.badge,
+            symbol: item.symbol,
+            change: item.change,
+            isChangePositive: item.isChangePositive,
+            time: item.time,
+            sell: item.sell,
+            buy: item.buy,
+            sellColor: item.sellColor,
+            buyColor: item.buyColor,
+            onTap: () => _showQuickTradeDialog(
+              context,
+              symbol: item.symbol,
+              sellPrice: item.sellPrice,
+              buyPrice: item.buyPrice,
+              sellDisplay: item.sell,
+              buyDisplay: item.buy,
+            ),
+          ))
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 156),
+              padding: EdgeInsets.symmetric(
+                horizontal: compactLayout ? 14 : 22,
+                vertical: 20,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor.withValues(alpha: 0.48),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.55),
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      LucideIcons.barChart2,
+                      size: 21,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 11),
+                  Text(
+                    'No ${_MarketsSection._tabs[_effectiveTabIndex]} instruments yet',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    child: Text(
+                      'This category will populate when its market feed is available.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 11),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'AWAITING MARKET FEED',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         const SizedBox(height: 12),
         Text(
           'Indicative sample prices only. Quotes are not connected to a live market feed.',
@@ -1105,283 +1469,8 @@ class _MarketsSectionState extends State<_MarketsSection> {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-
       ],
     );
-  }
-
-  List<Widget> _buildQuotesForTab(BuildContext context) {
-    if (_selectedTabIndex == 1) {
-      // Metals
-      return [
-        _MarketQuoteRow(
-          badge: const _USTECHBadge(),
-          symbol: 'XAUUSD',
-          change: '↗ 0.35%',
-          isChangePositive: true,
-          time: '14:35:28',
-          sell: '2,654.12',
-          buy: '2,654.48',
-          sellColor: const Color(0xFF16A34A),
-          buyColor: const Color(0xFF16A34A),
-          onTap: () => _showQuickTradeDialog(
-            context,
-            symbol: 'XAUUSD',
-            sellPrice: 2654.12,
-            buyPrice: 2654.48,
-          ),
-        ),
-        _MarketQuoteRow(
-          badge: const _USTECHBadge(),
-          symbol: 'XAGUSD',
-          change: '↘ 0.22%',
-          isChangePositive: false,
-          time: '14:35:22',
-          sell: '31.420',
-          buy: '31.450',
-          buyColor: const Color(0xFFDC2626),
-          onTap: () => _showQuickTradeDialog(
-            context,
-            symbol: 'XAGUSD',
-            sellPrice: 31.42,
-            buyPrice: 31.45,
-          ),
-        ),
-      ];
-    }
-
-    if (_selectedTabIndex == 3 || _selectedTabIndex == 5) {
-      final category = _selectedTabIndex == 3 ? 'FX Minors' : 'Cryptos';
-      return [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 156),
-            padding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.sizeOf(context).width < 380 ? 14 : 22,
-              vertical: 20,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withValues(alpha: 0.48),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.55),
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _selectedTabIndex == 3 ? LucideIcons.coins : LucideIcons.bitcoin,
-                    size: 21,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 11),
-                Text(
-                  'No $category instruments yet',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  child: Text(
-                    'This category will populate when its market feed is available.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 11,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 11),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'AWAITING MARKET FEED',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.45,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ];
-    }
-
-    if (_selectedTabIndex == 4) {
-      // Index instruments currently available in the sample set.
-      return [
-        _MarketQuoteRow(
-          badge: const _HKFlagBadge(),
-          symbol: 'HK50c',
-          change: '↗ 0.41%',
-          isChangePositive: true,
-          time: '14:35:30',
-          sell: '23,815.24',
-          buy: '23,828.94',
-          sellColor: const Color(0xFF16A34A),
-          buyColor: const Color(0xFF16A34A),
-          onTap: () => _showQuickTradeDialog(
-            context,
-            symbol: 'HK50c',
-            sellPrice: 23815.24,
-            buyPrice: 23828.94,
-          ),
-        ),
-        _MarketQuoteRow(
-          badge: const _USTECHBadge(),
-          symbol: 'USTECHc',
-          change: '↘ 0.98%',
-          isChangePositive: false,
-          time: '14:35:26',
-          sell: '27,535.38',
-          buy: '27,538.16',
-          sellColor: const Color(0xFF16A34A),
-          buyColor: const Color(0xFF16A34A),
-          onTap: () => _showQuickTradeDialog(
-            context,
-            symbol: 'USTECHc',
-            sellPrice: 27535.38,
-            buyPrice: 27538.16,
-          ),
-        ),
-      ];
-    }
-
-    if (_selectedTabIndex == 2) {
-      // Energy
-      return [
-        _MarketQuoteRow(
-          badge: const _USTECHBadge(),
-          symbol: 'USOIL',
-          change: '↗ 0.82%',
-          isChangePositive: true,
-          time: '14:35:10',
-          sell: '70.24',
-          buy: '70.28',
-          sellColor: const Color(0xFF16A34A),
-          buyColor: const Color(0xFF16A34A),
-          onTap: () => _showQuickTradeDialog(
-            context,
-            symbol: 'USOIL',
-            sellPrice: 70.24,
-            buyPrice: 70.28,
-          ),
-        ),
-        _MarketQuoteRow(
-          badge: const _UKFlagBadge(),
-          symbol: 'UKOIL',
-          change: '↗ 0.74%',
-          isChangePositive: true,
-          time: '14:35:12',
-          sell: '74.15',
-          buy: '74.19',
-          sellColor: const Color(0xFF16A34A),
-          buyColor: const Color(0xFF16A34A),
-          onTap: () => _showQuickTradeDialog(
-            context,
-            symbol: 'UKOIL',
-            sellPrice: 74.15,
-            buyPrice: 74.19,
-          ),
-        ),
-      ];
-    }
-
-    // Default Favorites
-    return [
-      _MarketQuoteRow(
-        badge: const _EUFlagBadge(),
-        symbol: 'EURUSD',
-        change: '↘ 0.10%',
-        isChangePositive: false,
-        time: '14:35:30',
-        sell: '1.10090',
-        buy: '1.10103',
-        buyColor: const Color(0xFFDC2626),
-        onTap: () => _showQuickTradeDialog(
-          context,
-          symbol: 'EURUSD',
-          sellPrice: 1.10090,
-          buyPrice: 1.10103,
-        ),
-      ),
-      _MarketQuoteRow(
-        badge: const _UKFlagBadge(),
-        symbol: 'GBPUSD',
-        change: '↘ 0.10%',
-        isChangePositive: false,
-        time: '14:35:31',
-        sell: '1.31966',
-        buy: '1.31979',
-        sellColor: const Color(0xFF16A34A),
-        buyColor: const Color(0xFF16A34A),
-        onTap: () => _showQuickTradeDialog(
-          context,
-          symbol: 'GBPUSD',
-          sellPrice: 1.31966,
-          buyPrice: 1.31979,
-        ),
-      ),
-      _MarketQuoteRow(
-        badge: const _HKFlagBadge(),
-        symbol: 'HK50c',
-        change: '↗ 0.41%',
-        isChangePositive: true,
-        time: '14:35:30',
-        sell: '23,815.24',
-        buy: '23,828.94',
-        sellColor: const Color(0xFF16A34A),
-        buyColor: const Color(0xFF16A34A),
-        onTap: () => _showQuickTradeDialog(
-          context,
-          symbol: 'HK50c',
-          sellPrice: 23815.24,
-          buyPrice: 23828.94,
-        ),
-      ),
-      _MarketQuoteRow(
-        badge: const _USTECHBadge(),
-        symbol: 'USTECHc',
-        change: '↘ 0.98%',
-        isChangePositive: false,
-        time: '14:35:26',
-        sell: '27,535.38',
-        buy: '27,538.16',
-        sellColor: const Color(0xFF16A34A),
-        buyColor: const Color(0xFF16A34A),
-        onTap: () => _showQuickTradeDialog(
-          context,
-          symbol: 'USTECHc',
-          sellPrice: 27535.38,
-          buyPrice: 27538.16,
-        ),
-      ),
-    ];
   }
 }
 
@@ -1670,14 +1759,50 @@ class _USTECHBadge extends StatelessWidget {
   }
 }
 
+class _CryptoBadge extends StatelessWidget {
+  const _CryptoBadge({required this.symbol, required this.color});
+  final String symbol;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+      child: Center(
+        child: Text(
+          symbol,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 void _showQuickTradeDialog(
   BuildContext context, {
   String symbol = 'EURUSD',
   double sellPrice = 1.10090,
   double buyPrice = 1.10103,
+  String? sellDisplay,
+  String? buyDisplay,
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   double lotSize = 0.10;
+  final displaySell = sellDisplay ??
+      (sellPrice >= 100 ? sellPrice.toStringAsFixed(2) : sellPrice.toStringAsFixed(5));
+  final displayBuy = buyDisplay ??
+      (buyPrice >= 100 ? buyPrice.toStringAsFixed(2) : buyPrice.toStringAsFixed(5));
+  final spreadPips =
+      ((buyPrice - sellPrice).abs() * (buyPrice > 100 ? 10 : 10000)).toStringAsFixed(1);
 
   showModalBottomSheet<void>(
     context: context,
@@ -1726,7 +1851,7 @@ void _showQuickTradeDialog(
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'Spread: ${((buyPrice - sellPrice) * 10000).toStringAsFixed(1)} pips',
+                          'Spread: $spreadPips pips',
                           style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
@@ -1846,7 +1971,7 @@ void _showQuickTradeDialog(
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            sellPrice.toStringAsFixed(5),
+                            displaySell,
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -1875,7 +2000,7 @@ void _showQuickTradeDialog(
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            buyPrice.toStringAsFixed(5),
+                            displayBuy,
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                           ),
                         ],

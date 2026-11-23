@@ -725,51 +725,6 @@ class MamPageState extends State<MamPage> {
               _brandIcon(),
               const SizedBox(width: 12),
               Expanded(child: _brandTitle()),
-              _buildLiveStatusBadge(),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Deposit Funds',
-                icon: const Icon(LucideIcons.arrowDownToLine, size: 16),
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                style: IconButton.styleFrom(
-                  backgroundColor: _c.blueLight,
-                  foregroundColor: _brandBlue,
-                  padding: const EdgeInsets.all(7),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: _c.blueBorder),
-                  ),
-                ),
-                onPressed: () {
-                  if (_tab == 0 && _masters.isNotEmpty) {
-                    _depositToMaster(_masters.first);
-                  } else {
-                    _openAccount3511DepositModal();
-                  }
-                },
-              ),
-              const SizedBox(width: 6),
-              IconButton(
-                tooltip: 'Withdraw Funds',
-                icon: const Icon(LucideIcons.arrowUpFromLine, size: 16),
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                style: IconButton.styleFrom(
-                  backgroundColor: _c.goldLight,
-                  foregroundColor: _c.gold,
-                  padding: const EdgeInsets.all(7),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: _c.goldBorder),
-                  ),
-                ),
-                onPressed: () {
-                  if (_tab == 0 && _masters.isNotEmpty) {
-                    _withdrawFromMaster(_masters.first);
-                  } else {
-                    _openAccount3511WithdrawModal();
-                  }
-                },
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -829,36 +784,6 @@ class MamPageState extends State<MamPage> {
       ),
     ],
   );
-
-  Widget _buildLiveStatusBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: _c.greenLight,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _c.green.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: _c.green, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            'Live',
-            style: GoogleFonts.inter(
-              color: _c.green,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildTabsBar(List<String> labels) {
     final icons = [
@@ -3225,7 +3150,9 @@ class MamPageState extends State<MamPage> {
           master.balance += amt;
           master.totalAum += amt;
         });
-        showAppMessage('Deposited \$${amt.toStringAsFixed(2)} to Master Node #${master.login}');
+        showAppMessage(
+          'Deposited \$${amt.toStringAsFixed(2)} to Master Node #${master.login}',
+        );
       },
     );
   }
@@ -3241,7 +3168,9 @@ class MamPageState extends State<MamPage> {
           master.balance = (master.balance - amt).clamp(0.0, double.infinity);
           master.totalAum = (master.totalAum - amt).clamp(0.0, double.infinity);
         });
-        showAppMessage('Withdrew \$${amt.toStringAsFixed(2)} from Master Node #${master.login}');
+        showAppMessage(
+          'Withdrew \$${amt.toStringAsFixed(2)} from Master Node #${master.login}',
+        );
       },
     );
   }
@@ -3254,7 +3183,10 @@ class MamPageState extends State<MamPage> {
       accountLabel: 'Live MT5 · 3511',
       onCompleted: (amt) {
         setState(() {
-          _account3511Balance = (_account3511Balance - amt).clamp(0.0, double.infinity);
+          _account3511Balance = (_account3511Balance - amt).clamp(
+            0.0,
+            double.infinity,
+          );
         });
       },
     );

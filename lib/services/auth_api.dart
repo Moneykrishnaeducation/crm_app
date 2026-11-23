@@ -24,12 +24,34 @@ class AuthApi {
   final http.Client _client = createAuthHttpClient();
   final Map<String, String> _cookies = <String, String>{};
   String? _accessToken;
+  static const _accessTokenStorageKey = 'vtindex_client_access_token';
+  Future<void>? _restoreFuture;
 
   bool get hasToken =>
       (_accessToken != null && _accessToken!.isNotEmpty) ||
       _cookies.containsKey('client_access_token') ||
       _cookies.containsKey('access_token') ||
       _cookies.containsKey('jwt_token');
+
+  Future<void> restoreSession() {
+    return _restoreFuture ??= _restoreStoredSession();
+  }
+
+  Future<void> _restoreStoredSession() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      _accessToken ??= preferences.getString(_accessTokenStorageKey);
+    } catch (_) {
+      // A missing local session is handled by the API's 401 response.
+    }
+  }
+
+  Future<void> _persistAccessToken() async {
+    final token = _accessToken;
+    if (token == null || token.isEmpty) return;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_accessTokenStorageKey, token);
+  }
 
   Uri get _baseUri {
     if (_configuredBaseUrl.isNotEmpty) {
@@ -71,6 +93,7 @@ class AuthApi {
     String path, {
     Map<String, dynamic>? body,
   }) async {
+    await restoreSession();
     final headers = _headers;
     if (body != null) headers['Content-Type'] = 'application/json';
     final request = http.Request(method, _uri(path))..headers.addAll(headers);
@@ -134,7 +157,10 @@ class AuthApi {
           (nested is Map
               ? nested['access'] ?? nested['access_token'] ?? nested['token']
               : null);
-      if (token is String && token.isNotEmpty) _accessToken = token;
+      if (token is String && token.isNotEmpty) {
+        _accessToken = token;
+        unawaited(_persistAccessToken());
+      }
     }
     if (_accessToken == null) {
       final cookieToken = _cookies['client_access_token'] ??
@@ -142,6 +168,7 @@ class AuthApi {
           _cookies['jwt_token'];
       if (cookieToken != null && cookieToken.isNotEmpty) {
         _accessToken = cookieToken;
+        unawaited(_persistAccessToken());
       }
     }
   }
@@ -161,6 +188,27 @@ class AuthApi {
       if (value is List && value.isNotEmpty) return value.join(' ');
     }
     return 'The request failed. Please try again.';
+  }
+
+  Future<List<Map<String, dynamic>>> getMobileAccounts({bool refresh = false}) async {
+    final response = await _request(
+      'GET',
+      refresh ? 'mobile/accounts/?fresh=true' : 'mobile/accounts/',
+    );
+    dynamic payload = response;
+    for (var depth = 0; depth < 4 && payload is Map; depth++) {
+      final map = (payload as Map).cast<String, dynamic>();
+      if (map['accounts'] is List) {
+        return (map['accounts'] as List)
+            .whereType<Map>()
+            .map((item) => item.cast<String, dynamic>())
+            .toList(growable: false);
+      }
+      payload = map['data'] ?? map['result'] ?? map['payload'];
+    }
+    throw const AuthApiException(
+      'The account service returned an unexpected response.',
+    );
   }
 
   Future<Map<String, dynamic>> getCaptchaConfig() =>
@@ -368,6 +416,11 @@ class AuthApi {
     } finally {
       _cookies.clear();
       _accessToken = null;
+      try {
+        final preferences = await SharedPreferences.getInstance();
+        await preferences.remove(_accessTokenStorageKey);
+      } catch (_) {}
+      _restoreFuture = null;
     }
   }
 

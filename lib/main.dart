@@ -362,7 +362,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     FocusManager.instance.addListener(_handleFocusChange);
     _currentThemeMode = widget.themeMode;
     _loadFavoriteAccounts();
-    unawaited(_loadTradingAccounts());
   }
 
   Future<void> _loadFavoriteAccounts() async {
@@ -500,6 +499,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   final List<BrokerAccount> _accounts = <BrokerAccount>[];
   bool _accountsLoading = false;
+  bool _accountsHasLoaded = false;
   String? _accountsError;
 
   double _accountNumber(dynamic value) {
@@ -541,6 +541,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _loadTradingAccounts({bool refresh = false}) async {
     if (_accountsLoading) return;
+    _accountsHasLoaded = true;
     setState(() {
       _accountsLoading = true;
       _accountsError = null;
@@ -760,6 +761,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _secondaryPageNavId++;
     _resetScrollFor(page);
     setState(() => _selectedPage = page);
+    if (page == 'Trading Accounts' && !_accountsHasLoaded) {
+      unawaited(_loadTradingAccounts());
+    }
   }
 
   int get _primaryTabIndex => switch (_selectedPage) {
@@ -1070,6 +1074,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                       index: 1,
                                       activeIndex: primaryIndex,
                                       child: BrokerTransactionsPage(
+                                        isActive: primaryIndex == 1,
                                         accounts: _accounts,
                                         externalFundTransactions:
                                             _appFundTransactions,

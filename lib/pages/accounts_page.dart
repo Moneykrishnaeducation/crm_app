@@ -10,6 +10,9 @@ class BrokerAccountsPage extends StatefulWidget {
     required this.favoriteLogins,
     required this.onToggleFavorite,
     this.scrollController,
+    this.isLoading = false,
+    this.loadError,
+    this.onRetry,
   });
   final ValueChanged<String> onSelectPage;
   final List<BrokerAccount> accounts;
@@ -18,6 +21,9 @@ class BrokerAccountsPage extends StatefulWidget {
   final Set<String> favoriteLogins;
   final ValueChanged<String> onToggleFavorite;
   final ScrollController? scrollController;
+  final bool isLoading;
+  final String? loadError;
+  final VoidCallback? onRetry;
   @override
   State<BrokerAccountsPage> createState() => _BrokerAccountsPageState();
 }
@@ -105,7 +111,14 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
             ),
           ),
           const SizedBox(height: 12),
-          if (filtered.isEmpty)
+          if (widget.isLoading && widget.accounts.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 44),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (widget.loadError != null && widget.accounts.isEmpty)
+            _AccountLoadError(message: widget.loadError!, onRetry: widget.onRetry)
+          else if (filtered.isEmpty)
             _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() => _query = ''); })
           else
             ...filtered.map((account) => _ReferenceAccountCard(account: account, isFavorite: widget.favoriteLogins.contains(account.login), onToggleFavorite: () => widget.onToggleFavorite(account.login), onTap: () => widget.onAccountSelected(account))),
@@ -307,6 +320,58 @@ class _ReferenceMetric extends StatelessWidget {
       FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w800))),
     ]),
   );
+}
+
+class _AccountLoadError extends StatelessWidget {
+  const _AccountLoadError({required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        children: [
+          Icon(LucideIcons.wifiOff, color: theme.colorScheme.error, size: 28),
+          const SizedBox(height: 12),
+          Text(
+            'Unable to load accounts',
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 11,
+              height: 1.45,
+            ),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(LucideIcons.refreshCw, size: 15),
+              label: const Text('Try again'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _AccountEmptyState extends StatelessWidget {

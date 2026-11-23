@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:asn1lib/asn1lib.dart';
 import 'package:flutter/foundation.dart';
@@ -26,6 +27,7 @@ class AuthApi {
   String? _accessToken;
   static const _accessTokenStorageKey = 'vtindex_client_access_token';
   Future<void>? _restoreFuture;
+  final Map<String, dynamic> _responseEncryptionPrivateKeys = <String, dynamic>{};
 
   bool get hasToken =>
       (_accessToken != null && _accessToken!.isNotEmpty) ||
@@ -95,6 +97,8 @@ class AuthApi {
   }) async {
     await restoreSession();
     final headers = _headers;
+    final responseKeyPair = _createResponseEncryptionKeyPair();
+    headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
     if (body != null) headers['Content-Type'] = 'application/json';
     final request = http.Request(method, _uri(path))..headers.addAll(headers);
     if (body != null) request.body = jsonEncode(body);
@@ -114,9 +118,16 @@ class AuthApi {
         statusCode: response.statusCode,
       );
     }
-    final data = decoded is Map<String, dynamic>
-        ? decoded
-        : <String, dynamic>{'data': decoded};
+    dynamic responsePayload = decoded;
+    if (decoded is Map && decoded['encrypted'] == true) {
+      responsePayload = _decryptResponseEnvelope(
+        decoded.cast<String, dynamic>(),
+        responseKeyPair.keyId,
+      );
+    }
+    final data = responsePayload is Map<String, dynamic>
+        ? responsePayload
+        : <String, dynamic>{'data': responsePayload};
     final apiCode = data['code'];
     final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
     final hasErrorMessage =
@@ -132,6 +143,61 @@ class AuthApi {
       );
     }
     return data;
+  }
+
+  ({String publicKey, String keyId}) _createResponseEncryptionKeyPair() {
+    final random = Random.secure();
+    final secureRandom = FortunaRandom()
+      ..seed(KeyParameter(Uint8List.fromList(
+        List<int>.generate(32, (_) => random.nextInt(256)),
+      )));
+    final generator = RSAKeyGenerator()
+      ..init(ParametersWithRandom(
+        RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64),
+        secureRandom,
+      ));
+    final pair = generator.generateKeyPair();
+    final publicKey = pair.publicKey as RSAPublicKey;
+    final privateKey = pair.privateKey as RSAPrivateKey;
+    final keyId = base64Url.encode(_randomBytes(12)).replaceAll('=', '');
+    _responseEncryptionPrivateKeys[keyId] = privateKey;
+    // Send the SubjectPublicKeyInfo DER form expected by Django.
+    final rsaPublic = ASN1Sequence()
+      ..add(ASN1Integer(publicKey.modulus!))
+      ..add(ASN1Integer(publicKey.exponent!));
+    final bitString = ASN1BitString(Uint8List.fromList([0, ...rsaPublic.encodedBytes]));
+    final algorithm = ASN1Sequence()
+      ..add(ASN1ObjectIdentifier.fromName('rsaEncryption'))
+      ..add(ASN1Null());
+    final subjectPublicKeyInfo = ASN1Sequence()
+      ..add(algorithm)
+      ..add(bitString);
+    return (
+      publicKey: base64Encode(subjectPublicKeyInfo.encodedBytes),
+      keyId: keyId,
+    );
+  }
+
+  dynamic _decryptResponseEnvelope(Map<String, dynamic> envelope, String keyId) {
+    final privateKey = _responseEncryptionPrivateKeys.remove(keyId);
+    if (privateKey is! RSAPrivateKey) {
+      throw const AuthApiException('The encrypted server response could not be opened.');
+    }
+    final wrappedKey = base64Decode(envelope['wrapped_key'] as String);
+    final nonce = base64Decode(envelope['nonce'] as String);
+    final ciphertext = base64Decode(envelope['ciphertext'] as String);
+    final rsa = OAEPEncoding.withSHA256(RSAEngine(), Uint8List.fromList(utf8.encode('vtindex:user-info:v1')))
+      ..init(false, PrivateKeyParameter<RSAPrivateKey>(privateKey));
+    final aesKey = rsa.process(wrappedKey);
+    final gcm = GCMBlockCipher(AESEngine())
+      ..init(false, AEADParameters(
+        KeyParameter(aesKey),
+        128,
+        nonce,
+        Uint8List.fromList(utf8.encode('vtindex:user-info:v1')),
+      ));
+    final plaintext = gcm.process(ciphertext);
+    return jsonDecode(utf8.decode(plaintext));
   }
 
   void _captureSession(http.Response response) {

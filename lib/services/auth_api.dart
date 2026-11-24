@@ -1006,6 +1006,8 @@ class AuthApi {
         'mam-accounts/create/',
         body: {
           'account_name': accountName.trim(),
+          'account_type': 'mam',
+          'balance': '0.00',
           'leverage': leverage.contains(':') ? leverage.split(':').last : leverage,
           'profit_sharing_percentage': profitSharingPercentage.toStringAsFixed(2),
           'risk_level': riskLevel.toLowerCase() == 'low' ||

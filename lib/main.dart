@@ -887,7 +887,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             onBack: _handleBack,
             onSelectPage: _selectPage,
           ),
-          'Partnership' => const BrokerPartnershipPage(),
+          'Partnership' => BrokerPartnershipPage(
+            onBack: _handleBack,
+            onSelectPage: _selectPage,
+          ),
           'PAMM Account' => PammPage(
             onBack: _handleBack,
             onSelectPage: _selectPage,

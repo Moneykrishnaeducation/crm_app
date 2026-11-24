@@ -1343,6 +1343,86 @@ class AuthApi {
         },
       );
 
+  // ==========================================
+  // Introducing Broker (IB) / Partnership APIs
+  // ==========================================
+
+  /// Check user's IB status (approved, pending, rejected, etc.)
+  Future<Map<String, dynamic>> getIbStatus() =>
+      _request('GET', 'ib/status/');
+
+  /// Submit an application for the current user to become an Introducing Broker
+  Future<Map<String, dynamic>> submitIbApplication() =>
+      _request('POST', 'ib-request/');
+
+  /// Fetch overview metrics, monthly telemetry, and client earnings for IB
+  Future<Map<String, dynamic>> getIbStats() =>
+      _request('GET', 'ib/stats/');
+
+  /// Fetch registered referral links and profiles
+  Future<Map<String, dynamic>> getIbReferralLinks() =>
+      _request('GET', 'ib/referral-link/');
+
+  /// Fetch commission transaction ledger
+  Future<Map<String, dynamic>> getIbCommissionTransactions() =>
+      _request('GET', 'ib/commission-transactions/');
+
+  /// Fetch hierarchical client tree
+  Future<Map<String, dynamic>> getIbClientTree({int page = 1, int perPage = 1000}) =>
+      _request('GET', 'ib/client-tree/?page=$page&per_page=$perPage');
+
+  /// Submit IB nomination request for a downline client
+  Future<Map<String, dynamic>> requestClientIb(dynamic clientId) =>
+      _request(
+        'POST',
+        'ib/request-client-ib/',
+        body: {'client_id': clientId},
+      );
+
+  /// Request commission payout / transfer to a live MT5 account
+  Future<Map<String, dynamic>> requestIbWithdrawal({
+    required double amount,
+    required String accountId,
+    String comment = '',
+  }) =>
+      _request(
+        'POST',
+        'ib/request-withdrawal/',
+        body: {
+          'amount': amount,
+          'account_id': accountId,
+          'comment': comment,
+        },
+      );
+
+  /// Fetch IB withdrawal / transfer history transactions
+  Future<Map<String, dynamic>> getIbWithdrawalTransactions() =>
+      _request('GET', 'ib/transactions/');
+
+  /// Register a direct client under IB
+  Future<Map<String, dynamic>> addIbClient({
+    required String name,
+    required String email,
+    required String phone,
+    String? dob,
+    String? country,
+    String? referralCode,
+  }) {
+    final body = <String, dynamic>{
+      'name': name.trim(),
+      'email': email.trim(),
+      'phone': phone.trim(),
+      'dob': ?dob,
+      'country': ?country,
+      'referral_code': ?referralCode,
+    };
+    return _request(
+      'POST',
+      'ib/add-client/',
+      body: body,
+    );
+  }
+
   /// Withdrawal information for an account
   Future<Map<String, dynamic>> getWithdrawalInfo(String accountId) async {
     try {

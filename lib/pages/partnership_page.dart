@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -7,8 +8,12 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_notifications.dart';
+import '../services/auth_api.dart';
 
-/// Centralized adaptive design tokens aligned with VTIndex Dashboard and Transactions
+// ============================================================================
+// DESIGN TOKENS & STYLING
+// ============================================================================
+
 class _PartnershipColors {
   const _PartnershipColors({
     required this.isDark,
@@ -53,33 +58,30 @@ class _PartnershipColors {
     return _PartnershipColors(
       isDark: isDark,
       canvas: Theme.of(context).scaffoldBackgroundColor,
-      card: isDark ? const Color(0xFF17243A) : Colors.white,
-      subCard: isDark ? const Color(0xFF132238) : const Color(0xFFF3F6FB),
-      border: isDark ? const Color(0xFF2A3A53) : const Color(0xFFCBD5E1),
-      subBorder: isDark ? const Color(0xFF22354E) : const Color(0xFFE2E8F0),
+      card: isDark ? const Color(0xFF0F2148) : Colors.white,
+      subCard: isDark ? const Color(0xFF0A1838) : const Color(0xFFF6F9FF),
+      border: isDark ? const Color(0xFF1E3F8A) : const Color(0xFFDCE5F2),
+      subBorder: isDark ? const Color(0xFF193268) : const Color(0xFFE2E8F0),
       text: isDark ? Colors.white : const Color(0xFF091836),
-      muted: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-      navy: isDark ? const Color(0xFF1E3A5F) : const Color(0xFF10264B),
-      blue: const Color(0xFF174A8B),
-      gold: const Color(0xFFD8A82E),
-      green: const Color(0xFF13C7A1),
+      muted: isDark ? const Color(0xFF90A8CC) : const Color(0xFF576A88),
+      navy: isDark ? const Color(0xFF071A57) : const Color(0xFF10264B),
+      blue: const Color(0xFF2563EB),
+      gold: const Color(0xFFF5C438),
+      green: const Color(0xFF10B981),
       red: const Color(0xFFEF4444),
       cardShadow: isDark ? const Color(0x33000000) : const Color(0x0A0B1D35),
-      inputBg: isDark ? const Color(0xFF132238) : const Color(0xFFF3F6FB),
-      chipBg: isDark ? const Color(0xFF1F2F4A) : const Color(0xFFEAF2FD),
-      appBarBg: isDark ? const Color(0xFF101D31) : Colors.white,
+      inputBg: isDark ? const Color(0xFF0A1838) : const Color(0xFFF3F6FB),
+      chipBg: isDark ? const Color(0xFF102758) : const Color(0xFFEBF2FD),
+      appBarBg: isDark ? const Color(0xFF071426) : Colors.white,
     );
   }
 
-  Color get glassFill => isDark
-      ? const Color(0xCC17263B)
-      : const Color(0xDFFFFFFF);
-  Color get glassBorder => isDark
-      ? const Color(0x663E5A7A)
-      : const Color(0xBFFFFFFF);
-  Color get accentGlow => isDark
-      ? const Color(0xFF173B65)
-      : const Color(0xFFD6E8FF);
+  Color get glassFill =>
+      isDark ? const Color(0xCC071A57) : const Color(0xEBFFFFFF);
+  Color get glassBorder =>
+      isDark ? const Color(0x66214FBF) : const Color(0xBBDCE5F2);
+  Color get accentGlow =>
+      isDark ? const Color(0xFF173B8A) : const Color(0xFFD6E8FF);
 }
 
 class _PartnershipBackdrop extends StatelessWidget {
@@ -98,33 +100,33 @@ class _PartnershipBackdrop extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: colors.isDark
-                      ? const [Color(0xFF0B1424), Color(0xFF101E32)]
-                      : const [Color(0xFFF6F9FF), Color(0xFFEAF1FB)],
+                      ? const [Color(0xFF040D1E), Color(0xFF071630)]
+                      : const [Color(0xFFF7FAFF), Color(0xFFEDF3FD)],
                 ),
               ),
             ),
           ),
           Positioned(
-            top: -170,
-            right: -120,
+            top: -160,
+            right: -100,
             child: _ambientOrb(colors.accentGlow),
           ),
           Positioned(
-            bottom: 40,
-            left: -210,
-            child: _ambientOrb(colors.blue.withValues(alpha: .12)),
+            bottom: 60,
+            left: -180,
+            child: _ambientOrb(colors.blue.withValues(alpha: .14)),
           ),
           child,
         ],
       );
 
   Widget _ambientOrb(Color color) => Container(
-        width: 420,
-        height: 420,
+        width: 380,
+        height: 380,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(
-            colors: [color.withValues(alpha: .52), color.withValues(alpha: 0)],
+            colors: [color.withValues(alpha: .5), color.withValues(alpha: 0)],
           ),
         ),
       );
@@ -136,669 +138,1799 @@ class _PartnershipGlassPanel extends StatelessWidget {
     required this.child,
     this.padding,
     this.radius = 20,
-    this.fillColor,
-    this.borderColor,
+    this.onTap,
   });
 
   final _PartnershipColors colors;
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final double radius;
-  final Color? fillColor;
-  final Color? borderColor;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              color: fillColor ?? colors.glassFill,
-              borderRadius: BorderRadius.circular(radius),
-              border: Border.all(color: borderColor ?? colors.glassBorder),
-              boxShadow: [
-                BoxShadow(
-                  color: colors.cardShadow,
-                  blurRadius: 22,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: child,
+  Widget build(BuildContext context) {
+    Widget content = ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: colors.glassFill,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: colors.glassBorder),
+            boxShadow: [
+              BoxShadow(
+                color: colors.cardShadow,
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
+          child: child,
         ),
+      ),
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(radius),
+        child: content,
+      );
+    }
+    return content;
+  }
+}
+
+// ============================================================================
+// LEVEL THEMING HELPER
+// ============================================================================
+
+class _LevelTheme {
+  const _LevelTheme({
+    required this.level,
+    required this.color,
+    required this.badgeBg,
+    required this.badgeText,
+    required this.avatarBg,
+    required this.avatarBorder,
+    required this.avatarText,
+    required this.roleLabel,
+    required this.roleDescription,
+  });
+
+  final int level;
+  final Color color;
+  final Color badgeBg;
+  final Color badgeText;
+  final Color avatarBg;
+  final Color avatarBorder;
+  final Color avatarText;
+  final String roleLabel;
+  final String roleDescription;
+}
+
+_LevelTheme _getLevelTheme(int level, bool isDark) {
+  final lvl = level <= 0 ? 1 : level;
+  switch (lvl) {
+    case 1:
+      return _LevelTheme(
+        level: 1,
+        color: const Color(0xFF0284C7),
+        badgeBg: const Color(0xFF0284C7),
+        badgeText: Colors.white,
+        avatarBg: isDark ? const Color(0xFF0C2A4A) : const Color(0xFFE0F2FE),
+        avatarBorder: const Color(0xFF0284C7),
+        avatarText: const Color(0xFF0284C7),
+        roleLabel: 'Direct IB',
+        roleDescription: 'Directly referred to your partnership network',
+      );
+    case 2:
+      return _LevelTheme(
+        level: 2,
+        color: const Color(0xFF0D9488),
+        badgeBg: const Color(0xFF0D9488),
+        badgeText: Colors.white,
+        avatarBg: isDark ? const Color(0xFF062E2A) : const Color(0xFFCCFBF1),
+        avatarBorder: const Color(0xFF0D9488),
+        avatarText: const Color(0xFF0D9488),
+        roleLabel: 'Level 2 Sub-IB',
+        roleDescription: 'Referred by one of your direct clients',
+      );
+    case 3:
+      return _LevelTheme(
+        level: 3,
+        color: const Color(0xFFF5C438),
+        badgeBg: const Color(0xFFD49D10),
+        badgeText: Colors.white,
+        avatarBg: isDark ? const Color(0xFF2E2405) : const Color(0xFFFEF9C3),
+        avatarBorder: const Color(0xFFD49D10),
+        avatarText: const Color(0xFFD49D10),
+        roleLabel: 'Level 3 Network',
+        roleDescription: 'Sub-tier affiliate in your multi-level tree',
+      );
+    case 4:
+      return _LevelTheme(
+        level: 4,
+        color: const Color(0xFFC084FC),
+        badgeBg: const Color(0xFF9333EA),
+        badgeText: Colors.white,
+        avatarBg: isDark ? const Color(0xFF28133E) : const Color(0xFFF3E8FF),
+        avatarBorder: const Color(0xFF9333EA),
+        avatarText: const Color(0xFF9333EA),
+        roleLabel: 'Level 4 Network',
+        roleDescription: 'Deep tier affiliate in your multi-level tree',
+      );
+    default:
+      return _LevelTheme(
+        level: lvl,
+        color: const Color(0xFFFB7185),
+        badgeBg: const Color(0xFFE11D48),
+        badgeText: Colors.white,
+        avatarBg: isDark ? const Color(0xFF34101A) : const Color(0xFFFFE4E6),
+        avatarBorder: const Color(0xFFE11D48),
+        avatarText: const Color(0xFFE11D48),
+        roleLabel: 'Level $lvl Network',
+        roleDescription: 'Deep tier affiliate in your multi-level tree',
+      );
+  }
+}
+
+// ============================================================================
+// DATA MODELS
+// ============================================================================
+
+class _IbDashboardData {
+  _IbDashboardData({
+    this.totalClients = 0,
+    this.directClients = 0,
+    this.totalEarnings = 0.0,
+    this.totalWithdrawals = 0.0,
+    this.commissionBalance = 0.0,
+    this.currentMonthEarnings = 0.0,
+    this.currentMonthVolume = 0.0,
+    this.totalVolume = 0.0,
+    this.referralLink = '',
+    this.earningsPerClient = const [],
+    this.earningsPerMonth = const [],
+    this.earningsPerLink = const [],
+    this.monthlyEarningsPerLink = const [],
+  });
+
+  final int totalClients;
+  final int directClients;
+  final double totalEarnings;
+  final double totalWithdrawals;
+  final double commissionBalance;
+  final double currentMonthEarnings;
+  final double currentMonthVolume;
+  final double totalVolume;
+  final String referralLink;
+  final List<Map<String, dynamic>> earningsPerClient;
+  final List<Map<String, dynamic>> earningsPerMonth;
+  final List<Map<String, dynamic>> earningsPerLink;
+  final List<Map<String, dynamic>> monthlyEarningsPerLink;
+
+  factory _IbDashboardData.fromJson(Map<String, dynamic> json) {
+    double parseNum(dynamic value) {
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    int parseInt(dynamic value) {
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    final rawClients = json['earnings_per_client'];
+    final clientList = <Map<String, dynamic>>[];
+    if (rawClients is List) {
+      for (final item in rawClients.whereType<Map>()) {
+        clientList.add(item.cast<String, dynamic>());
+      }
+    }
+    clientList.sort((a, b) =>
+        parseNum(b['total_commission']).compareTo(parseNum(a['total_commission'])));
+
+    // Normalize monthly trajectory for all 12 months JAN..DEC
+    final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    final monthlyMap = <String, double>{};
+    final rawMonths = json['earnings_per_month'];
+    if (rawMonths is List) {
+      for (final item in rawMonths.whereType<Map>()) {
+        final mIdx = parseInt(item['month']);
+        if (mIdx >= 1 && mIdx <= 12) {
+          final mName = months[mIdx - 1];
+          monthlyMap[mName] = (monthlyMap[mName] ?? 0.0) + parseNum(item['total']);
+        }
+      }
+    }
+    final normalizedMonthly = months
+        .map((m) => {'month': m, 'total': monthlyMap[m] ?? 0.0})
+        .toList();
+
+    final linkList = <Map<String, dynamic>>[];
+    final rawLinks = json['earnings_per_link'];
+    if (rawLinks is List) {
+      for (final item in rawLinks.whereType<Map>()) {
+        linkList.add(item.cast<String, dynamic>());
+      }
+    }
+
+    final monthlyLinks = <Map<String, dynamic>>[];
+    final rawMonthlyLinks = json['monthly_earnings_per_link'];
+    if (rawMonthlyLinks is List) {
+      for (final item in rawMonthlyLinks.whereType<Map>()) {
+        monthlyLinks.add(item.cast<String, dynamic>());
+      }
+    }
+
+    return _IbDashboardData(
+      totalClients: parseInt(json['total_clients']),
+      directClients: parseInt(json['direct_clients']),
+      totalEarnings: parseNum(json['total_earnings']),
+      totalWithdrawals: parseNum(json['total_withdrawals']),
+      commissionBalance: parseNum(json['commission_balance']),
+      currentMonthEarnings: parseNum(json['current_month_earnings']),
+      currentMonthVolume: parseNum(json['current_month_volume_traded']),
+      totalVolume: parseNum(json['total_volume_traded']),
+      referralLink: (json['referralLink'] ?? json['referral_link'] ?? '').toString(),
+      earningsPerClient: clientList,
+      earningsPerMonth: normalizedMonthly,
+      earningsPerLink: linkList,
+      monthlyEarningsPerLink: monthlyLinks,
+    );
+  }
+
+  bool get isEmpty =>
+      totalClients == 0 &&
+      directClients == 0 &&
+      totalEarnings == 0.0 &&
+      commissionBalance == 0.0;
+
+  static _IbDashboardData demo() => _IbDashboardData(
+        totalClients: 42,
+        directClients: 28,
+        totalEarnings: 8420.50,
+        totalWithdrawals: 5200.00,
+        commissionBalance: 3220.50,
+        currentMonthEarnings: 1840.25,
+        currentMonthVolume: 320.5,
+        totalVolume: 1420.8,
+        referralLink: 'https://client.vtindex.com/?ref=VT-DEMO',
+        earningsPerClient: [
+          {'name': 'Alexander Wright', 'total_commission': 1850.0, 'total_volume': 142.0, 'level': 1},
+          {'name': 'Sophia Chen', 'total_commission': 1420.0, 'total_volume': 110.5, 'level': 1},
+          {'name': 'Marcus Vance', 'total_commission': 980.5, 'total_volume': 78.0, 'level': 2},
+          {'name': 'Elena Rostova', 'total_commission': 740.0, 'total_volume': 55.0, 'level': 2},
+          {'name': 'David Kim', 'total_commission': 520.0, 'total_volume': 42.0, 'level': 3},
+        ],
+        earningsPerMonth: [
+          {'month': 'Jan', 'total': 450.0},
+          {'month': 'Feb', 'total': 680.0},
+          {'month': 'Mar', 'total': 920.0},
+          {'month': 'Apr', 'total': 1150.0},
+          {'month': 'May', 'total': 1420.0},
+          {'month': 'Jun', 'total': 1840.0},
+        ],
+        earningsPerLink: [
+          {'profile_name': 'VIP Scalpers', 'clients_count': 18, 'earnings': 4200.0},
+          {'profile_name': 'Standard Rebate', 'clients_count': 14, 'earnings': 2800.0},
+          {'profile_name': 'Crypto Influx', 'clients_count': 10, 'earnings': 1420.5},
+        ],
       );
 }
 
-const _partnerProfiles = <_PartnerProfile>[
-  _PartnerProfile(name: 'Gold', code: 'X0RCGYVH7A', clients: 0),
-  _PartnerProfile(name: 'Gold-80', code: 'UENYAZWK4', clients: 0),
-  _PartnerProfile(name: 'Test', code: '4Z7G7TKF4J', clients: 0, primary: true),
-  _PartnerProfile(name: 'test', code: 'IQ57TSDY38', clients: 0),
-  _PartnerProfile(name: 'crm', code: '9BSFFEGGTL', clients: 0),
-  _PartnerProfile(name: 'test3', code: '6F81L1IUK5', clients: 0),
-];
+class _IbReferralLink {
+  _IbReferralLink({
+    required this.profileName,
+    required this.referralLink,
+    required this.referralCode,
+    this.isPrimary = false,
+    this.isLegacy = false,
+    this.clientsCount = 0,
+    this.color = const Color(0xFF3B82F6),
+  });
+
+  final String profileName;
+  final String referralLink;
+  final String referralCode;
+  final bool isPrimary;
+  final bool isLegacy;
+  final int clientsCount;
+  final Color color;
+
+  static List<_IbReferralLink> demoList() => [
+        _IbReferralLink(
+          profileName: 'Standard Rebate (Direct)',
+          referralLink: 'https://client.vtindex.com/?ref=VT-DIRECT',
+          referralCode: 'VT-DIRECT',
+          isPrimary: true,
+          clientsCount: 28,
+          color: const Color(0xFF3B82F6),
+        ),
+        _IbReferralLink(
+          profileName: 'VIP Scalpers Profile',
+          referralLink: 'https://client.vtindex.com/?ref=VT-SCALP',
+          referralCode: 'VT-SCALP',
+          clientsCount: 14,
+          color: const Color(0xFFF59E0B),
+        ),
+      ];
+
+  factory _IbReferralLink.fromJson(Map<String, dynamic> json, {int index = 0}) {
+    const linkColors = [
+      Color(0xFF3B82F6), // Blue
+      Color(0xFFF59E0B), // Amber
+      Color(0xFF10B981), // Emerald
+      Color(0xFFA855F7), // Purple
+      Color(0xFF06B6D4), // Cyan
+      Color(0xFFEC4899), // Pink
+    ];
+
+    return _IbReferralLink(
+      profileName: (json['profile_name'] ?? json['name'] ?? 'Default Profile').toString(),
+      referralLink: (json['referral_link'] ?? json['link'] ?? json['url'] ?? '').toString(),
+      referralCode: (json['referral_code'] ?? json['code'] ?? '').toString(),
+      isPrimary: json['is_primary'] == true,
+      isLegacy: json['is_legacy'] == true,
+      clientsCount: (json['clients_count'] is num) ? (json['clients_count'] as num).toInt() : 0,
+      color: linkColors[index % linkColors.length],
+    );
+  }
+}
+
+class _IbTradingAccount {
+  _IbTradingAccount({
+    required this.accountId,
+    this.accountType = 'MT5 Account',
+    this.groupAlias = 'Standard',
+    this.groupName = '',
+    this.totalLots = 0.0,
+    this.totalDeposits = 0.0,
+    this.totalWithdrawals = 0.0,
+    this.totalCommission = 0.0,
+  });
+
+  final String accountId;
+  final String accountType;
+  final String groupAlias;
+  final String groupName;
+  final double totalLots;
+  final double totalDeposits;
+  final double totalWithdrawals;
+  final double totalCommission;
+
+  factory _IbTradingAccount.fromJson(Map<String, dynamic> json) {
+    double parseNum(dynamic v) {
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? 0.0;
+      return 0.0;
+    }
+
+    return _IbTradingAccount(
+      accountId: (json['account_id'] ?? json['id'] ?? '').toString(),
+      accountType: (json['account_type'] ?? 'MT5 Account').toString(),
+      groupAlias: (json['group_alias'] ?? json['group_name'] ?? 'Standard').toString(),
+      groupName: (json['group_name'] ?? '').toString(),
+      totalLots: parseNum(json['total_lots']),
+      totalDeposits: parseNum(json['total_deposits']),
+      totalWithdrawals: parseNum(json['total_withdrawals']),
+      totalCommission: parseNum(json['total_commission']),
+    );
+  }
+}
+
+class _IbClient {
+  _IbClient({
+    required this.id,
+    required this.name,
+    this.email = '',
+    this.phone = '',
+    this.registeredDate = '',
+    this.referralCode = '',
+    this.commissionProfileName = '',
+    this.level = 1,
+    this.isIb = false,
+    this.ibRequestStatus = '',
+    this.accounts = const [],
+    this.clients = const [],
+  });
+
+  final String id;
+  final String name;
+  final String email;
+  final String phone;
+  final String registeredDate;
+  final String referralCode;
+  final String commissionProfileName;
+  final int level;
+  final bool isIb;
+  final String ibRequestStatus;
+  final List<_IbTradingAccount> accounts;
+  final List<_IbClient> clients;
+
+  String get initials {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return 'CL';
+    if (parts.length == 1) return parts[0].substring(0, math.min(2, parts[0].length)).toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  double get totalLots =>
+      accounts.fold(0.0, (sum, a) => sum + a.totalLots);
+  double get totalCommission =>
+      accounts.fold(0.0, (sum, a) => sum + a.totalCommission);
+  double get totalDeposits =>
+      accounts.fold(0.0, (sum, a) => sum + a.totalDeposits);
+
+  factory _IbClient.fromJson(Map<String, dynamic> json, {int inheritedLevel = 1}) {
+    int lvl = inheritedLevel;
+    if (json['level'] is num) {
+      lvl = (json['level'] as num).toInt();
+    } else if (json['level'] is String) {
+      lvl = int.tryParse(json['level']) ?? inheritedLevel;
+    }
+
+    final rawAccounts = json['accounts'];
+    final accList = <_IbTradingAccount>[];
+    if (rawAccounts is List) {
+      for (final a in rawAccounts.whereType<Map>()) {
+        accList.add(_IbTradingAccount.fromJson(a.cast<String, dynamic>()));
+      }
+    }
+
+    final rawChildren = json['clients'];
+    final childList = <_IbClient>[];
+    if (rawChildren is List) {
+      for (final c in rawChildren.whereType<Map>()) {
+        childList.add(_IbClient.fromJson(c.cast<String, dynamic>(), inheritedLevel: lvl + 1));
+      }
+    }
+
+    final refCode = (json['referral_code'] ??
+            (json['referral_link'] is Map ? json['referral_link']['code'] : ''))
+        .toString();
+    final profName = (json['commission_profile_name'] ??
+            json['profile_name'] ??
+            json['plan_name'] ??
+            json['plan'] ??
+            json['tag'] ??
+            (json['referral_link'] is Map ? json['referral_link']['profile_name'] : ''))
+        .toString();
+    final regDate = (json['registered_date'] ??
+            json['date_joined'] ??
+            json['created_at'] ??
+            json['joined_at'] ??
+            '')
+        .toString();
+
+    return _IbClient(
+      id: (json['id'] ?? json['client_id'] ?? '').toString(),
+      name: (json['name'] ?? 'Client').toString(),
+      email: (json['email'] ?? '').toString(),
+      phone: (json['phone'] ?? '').toString(),
+      registeredDate: regDate,
+      referralCode: refCode,
+      commissionProfileName: profName,
+      level: lvl,
+      isIb: json['is_ib'] == true || json['role'] == 'ib' || json['is_partner'] == true,
+      ibRequestStatus: (json['ib_request_status'] ?? (json['status'] == 'pending' ? 'pending' : '')).toString(),
+      accounts: accList,
+      clients: childList,
+    );
+  }
+
+  static List<_IbClient> demoTree() => [
+        _IbClient(
+          id: 'CL-101',
+          name: 'Alexander Wright',
+          email: 'alex.wright@example.com',
+          level: 1,
+          isIb: true,
+          accounts: [
+            _IbTradingAccount(
+              accountId: '883921',
+              accountType: 'MT5 Pro ECN',
+              groupAlias: 'Raw Zero',
+              totalLots: 142.0,
+              totalDeposits: 25000.0,
+              totalWithdrawals: 8000.0,
+              totalCommission: 1850.0,
+            ),
+          ],
+          clients: [
+            _IbClient(
+              id: 'CL-201',
+              name: 'Marcus Vance',
+              email: 'marcus.v@example.com',
+              level: 2,
+              accounts: [
+                _IbTradingAccount(
+                  accountId: '884102',
+                  totalLots: 78.0,
+                  totalDeposits: 12000.0,
+                  totalCommission: 980.5,
+                ),
+              ],
+            ),
+          ],
+        ),
+        _IbClient(
+          id: 'CL-102',
+          name: 'Sophia Chen',
+          email: 'sophia.c@example.com',
+          level: 1,
+          accounts: [
+            _IbTradingAccount(
+              accountId: '883995',
+              totalLots: 110.5,
+              totalDeposits: 18000.0,
+              totalCommission: 1420.0,
+            ),
+          ],
+        ),
+      ];
+}
+
+class _IbCommissionTxn {
+  _IbCommissionTxn({
+    required this.id,
+    this.clientUser = '',
+    this.clientTradingAccount = '',
+    this.positionSymbol = '',
+    this.dealTicket = '',
+    this.orderTicket = '',
+    this.volumeLots = 0.0,
+    this.profit = 0.0,
+    this.commission = 0.0,
+    this.createdAt = '',
+    this.referralCode = '',
+    this.commissionProfileName = '',
+  });
+
+  final String id;
+  final String clientUser;
+  final String clientTradingAccount;
+  final String positionSymbol;
+  final String dealTicket;
+  final String orderTicket;
+  final double volumeLots;
+  final double profit;
+  final double commission;
+  final String createdAt;
+  final String referralCode;
+  final String commissionProfileName;
+
+  factory _IbCommissionTxn.fromJson(Map<String, dynamic> json) {
+    double parseNum(dynamic v) {
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? 0.0;
+      return 0.0;
+    }
+
+    final amt = parseNum(json['amount'] ?? json['commission_to_ib'] ?? json['total_commission']);
+    return _IbCommissionTxn(
+      id: (json['id'] ?? json['deal_ticket'] ?? '').toString(),
+      clientUser: (json['client_user'] ?? json['client_name'] ?? 'Client').toString(),
+      clientTradingAccount: (json['client_trading_account'] ?? '').toString(),
+      positionSymbol: (json['position_symbol'] ?? json['symbol'] ?? '—').toString(),
+      dealTicket: (json['deal_ticket'] ?? '').toString(),
+      orderTicket: (json['order_ticket'] ?? '').toString(),
+      volumeLots: parseNum(json['volume_lots'] ?? json['lots']),
+      profit: parseNum(json['profit']),
+      commission: amt,
+      createdAt: (json['created_at'] ?? '').toString(),
+      referralCode: (json['referral_code'] ?? '').toString(),
+      commissionProfileName: (json['commission_profile_name'] ?? '').toString(),
+    );
+  }
+}
+
+// ============================================================================
+// CUSTOM VISUAL CHART PAINTERS
+// ============================================================================
+
+class _CommissionTrajectoryPainter extends CustomPainter {
+  _CommissionTrajectoryPainter({
+    required this.monthsData,
+    required this.lineColor,
+    required this.isDark,
+    this.selectedIndex,
+  });
+
+  final List<Map<String, dynamic>> monthsData;
+  final Color lineColor;
+  final bool isDark;
+  final int? selectedIndex;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (monthsData.isEmpty) return;
+
+    final paddingBottom = 24.0;
+    final paddingTop = 14.0;
+    final chartHeight = size.height - paddingBottom - paddingTop;
+    final chartWidth = size.width;
+
+    double maxVal = 0.0;
+    for (final item in monthsData) {
+      final val = (item['total'] as num?)?.toDouble() ?? 0.0;
+      if (val > maxVal) maxVal = val;
+    }
+    if (maxVal <= 0) maxVal = 100.0;
+    maxVal *= 1.15; // Give 15% breathing room at the top
+
+    // Grid lines
+    final gridPaint = Paint()
+      ..color = isDark ? const Color(0x1AFFFFFF) : const Color(0x12000000)
+      ..strokeWidth = 1.0;
+
+    const gridSteps = 4;
+    for (int i = 0; i <= gridSteps; i++) {
+      final y = paddingTop + (chartHeight / gridSteps) * i;
+      canvas.drawLine(Offset(0, y), Offset(chartWidth, y), gridPaint);
+    }
+
+    // Points calculation
+    final stepX = chartWidth / (monthsData.length - 1);
+    final points = <Offset>[];
+    for (int i = 0; i < monthsData.length; i++) {
+      final val = (monthsData[i]['total'] as num?)?.toDouble() ?? 0.0;
+      final x = i * stepX;
+      final y = paddingTop + chartHeight - ((val / maxVal) * chartHeight);
+      points.add(Offset(x, y));
+    }
+
+    // Build smooth cubic bezier curve
+    final path = Path();
+    path.moveTo(points[0].dx, points[0].dy);
+    for (int i = 0; i < points.length - 1; i++) {
+      final p0 = points[i];
+      final p1 = points[i + 1];
+      final controlX = (p0.dx + p1.dx) / 2;
+      path.cubicTo(controlX, p0.dy, controlX, p1.dy, p1.dx, p1.dy);
+    }
+
+    // Fill gradient under curve
+    final fillPath = Path.from(path)
+      ..lineTo(points.last.dx, size.height - paddingBottom)
+      ..lineTo(points.first.dx, size.height - paddingBottom)
+      ..close();
+
+    final fillPaint = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(0, paddingTop),
+        Offset(0, size.height - paddingBottom),
+        [
+          lineColor.withValues(alpha: isDark ? 0.38 : 0.25),
+          lineColor.withValues(alpha: 0.01),
+        ],
+      );
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Draw line
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, linePaint);
+
+    // Draw month label texts and dots
+    final textStyle = TextStyle(
+      color: isDark ? const Color(0xFF88A4C8) : const Color(0xFF64748B),
+      fontSize: 9.5,
+      fontWeight: FontWeight.w700,
+    );
+
+    for (int i = 0; i < points.length; i++) {
+      final p = points[i];
+      final isSelected = selectedIndex == i;
+
+      // Draw dot
+      final dotBgPaint = Paint()
+        ..color = isDark ? const Color(0xFF071426) : Colors.white;
+      final dotPaint = Paint()
+        ..color = isSelected ? const Color(0xFFF5C438) : lineColor
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(p, isSelected ? 6.0 : 3.5, dotPaint);
+      canvas.drawCircle(p, isSelected ? 3.0 : 1.8, dotBgPaint);
+
+      // Draw label (skip alternate months on very small widths if crowded)
+      if (size.width > 340 || i % 2 == 0 || i == points.length - 1) {
+        final monthName = monthsData[i]['month']?.toString() ?? '';
+        final textSpan = TextSpan(text: monthName, style: textStyle);
+        final tp = TextPainter(
+          text: textSpan,
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(canvas, Offset(p.dx - tp.width / 2, size.height - paddingBottom + 6));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CommissionTrajectoryPainter oldDelegate) =>
+      oldDelegate.monthsData != monthsData ||
+      oldDelegate.lineColor != lineColor ||
+      oldDelegate.isDark != isDark ||
+      oldDelegate.selectedIndex != selectedIndex;
+}
+
+// ============================================================================
+// MAIN PARTNERSHIP PAGE: BROKERPARTNERSHIPPAGE
+// ============================================================================
 
 class BrokerPartnershipPage extends StatefulWidget {
-  const BrokerPartnershipPage({super.key});
+  const BrokerPartnershipPage({
+    super.key,
+    this.onBack,
+    this.onSelectPage,
+  });
+
+  final VoidCallback? onBack;
+  final ValueChanged<String>? onSelectPage;
 
   @override
   State<BrokerPartnershipPage> createState() => _BrokerPartnershipPageState();
 }
 
 class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
-  static const _partners = _partnerProfiles;
+  bool _loading = true;
+  bool _isIbApproved = false;
+  String _ibStatus = ''; // 'pending', 'rejected', 'approved', ''
+  bool _demoPreviewMode = false;
 
-  int _selectedPartnerIndex = 2;
-  _PartnerProfile get _selectedPartner => _partners[_selectedPartnerIndex];
+  // Earnings Calculator & FAQ state for partnership application view
+  int _calcTraders = 25;
+  int _calcLotsPerTrader = 10;
+  final Set<int> _openFaqs = {0};
+  bool _submittingApplication = false;
+  bool _agreedToTerms = true;
 
-  void _showReferralQr() {
-    var modalPartnerIndex = _selectedPartnerIndex;
+  _IbDashboardData _dashboardData = _IbDashboardData();
+  List<_IbReferralLink> _referralLinks = [];
+  List<_IbClient> _clientTree = [];
+  List<_IbCommissionTxn> _commissionTxns = [];
+
+  // Interactive Trajectory Chart state
+  String _chartMode = 'Consolidated'; // 'Consolidated' | 'Multi-Link'
+  String _selectedLinkKey = 'all';
+  int? _scrubbedMonthIndex;
+
+  // Leaderboard toggle state: 'Ranked' | 'Links'
+  String _leaderboardView = 'Ranked';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    setState(() => _loading = true);
+    try {
+      // 1. Fetch user's IB status first to avoid unauthorized 403 Forbidden queries
+      Map<String, dynamic> statusRes = {};
+      try {
+        statusRes = await AuthApi.instance.getIbStatus();
+      } catch (_) {}
+
+      final isApproved = statusRes['approved'] == true ||
+          statusRes['has_ib_status'] == true ||
+          (statusRes['status'] != null &&
+              statusRes['status'].toString().toLowerCase() == 'approved');
+      final ibStatus = (statusRes['status'] ?? '').toString().toLowerCase();
+
+      // If status explicitly says the user is not an approved IB, handle cleanly without calling 403 endpoints
+      if (!isApproved && statusRes.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _isIbApproved = false;
+            _ibStatus = ibStatus;
+            _loading = false;
+          });
+        }
+        return;
+      }
+
+      bool hit403 = false;
+      final results = await Future.wait([
+        AuthApi.instance.getIbStats().catchError((e) {
+          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
+          return <String, dynamic>{};
+        }),
+        AuthApi.instance.getIbReferralLinks().catchError((e) {
+          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
+          return <String, dynamic>{};
+        }),
+        AuthApi.instance.getIbCommissionTransactions().catchError((e) {
+          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
+          return <String, dynamic>{};
+        }),
+        AuthApi.instance.getIbClientTree(page: 1, perPage: 1000).catchError((e) {
+          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
+          return <String, dynamic>{};
+        }),
+      ]);
+
+      if (hit403) {
+        if (mounted) {
+          setState(() {
+            _isIbApproved = false;
+            _ibStatus = ibStatus.isNotEmpty ? ibStatus : 'none';
+            _loading = false;
+          });
+        }
+        return;
+      }
+
+      final statsRes = results[0];
+      final linksRes = results[1];
+      final txnsRes = results[2];
+      final treeRes = results[3];
+
+      // Parse Dashboard Data
+      final dbData = _IbDashboardData.fromJson(statsRes);
+
+      // Parse Referral Links
+      final parsedLinks = <_IbReferralLink>[];
+      final rawLinks = linksRes['referral_links'] ??
+          (linksRes['links'] is List ? linksRes['links'] : null);
+      if (rawLinks is List && rawLinks.isNotEmpty) {
+        for (var i = 0; i < rawLinks.length; i++) {
+          if (rawLinks[i] is Map) {
+            parsedLinks.add(_IbReferralLink.fromJson(rawLinks[i].cast<String, dynamic>(), index: i));
+          }
+        }
+      } else {
+        final legacyLink = linksRes['referral_link'] ?? linksRes['link'] ?? statsRes['referralLink'];
+        if (legacyLink != null && legacyLink.toString().isNotEmpty) {
+          parsedLinks.add(_IbReferralLink(
+            profileName: 'Default Profile',
+            referralLink: legacyLink.toString(),
+            referralCode: (linksRes['referral_code'] ?? '').toString(),
+            isPrimary: true,
+          ));
+        }
+      }
+
+      // Parse Commission Transactions
+      final parsedTxns = <_IbCommissionTxn>[];
+      final rawTxns = txnsRes['results'] ?? txnsRes['data'] ?? txnsRes['transactions'];
+      if (rawTxns is List) {
+        for (final item in rawTxns.whereType<Map>()) {
+          parsedTxns.add(_IbCommissionTxn.fromJson(item.cast<String, dynamic>()));
+        }
+      }
+
+      // Parse Client Tree
+      final parsedClients = <_IbClient>[];
+      final rawClients = treeRes['clients'] ?? treeRes['results'] ?? treeRes['data'];
+      if (rawClients is List) {
+        for (final item in rawClients.whereType<Map>()) {
+          parsedClients.add(_IbClient.fromJson(item.cast<String, dynamic>()));
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _isIbApproved = true;
+          _ibStatus = 'approved';
+          _dashboardData = dbData;
+          _referralLinks = parsedLinks;
+          _commissionTxns = parsedTxns;
+          _clientTree = parsedClients;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _submitIbApplication() async {
+    setState(() => _submittingApplication = true);
+    try {
+      await AuthApi.instance.submitIbApplication();
+      if (mounted) {
+        setState(() {
+          _ibStatus = 'pending';
+          _submittingApplication = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            content: Row(
+              children: const [
+                Icon(LucideIcons.checkCircle2, color: Colors.white, size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'IB Application submitted! Compliance review is in progress.',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _submittingApplication = false);
+        final msg = e is AuthApiException ? e.message : 'Failed to submit IB application.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            content: Text(msg, style: const TextStyle(color: Colors.white)),
+          ),
+        );
+      }
+    }
+  }
+
+  // ==========================================================================
+  // MODALS & DIALOGS
+  // ==========================================================================
+
+  void _showClientAccountsModal(_IbClient client) {
     showModalBottomSheet<void>(
       context: context,
-      useRootNavigator: true,
       isScrollControlled: true,
-      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setModalState) {
-          final colors = _PartnershipColors.of(sheetContext);
-          final partner = _partners[modalPartnerIndex];
-          final referralUrl = 'https://client.vtindex.com/?ref=${partner.code}';
-          return SafeArea(
-            top: false,
-            bottom: false,
-            child: Padding(
-              padding: EdgeInsets.zero,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-                decoration: BoxDecoration(
-                  color: colors.card,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-                  border: Border.all(color: colors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors.cardShadow,
-                      blurRadius: 32,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
+      builder: (sheetContext) {
+        final colors = _PartnershipColors.of(sheetContext);
+        final theme = _getLevelTheme(client.level, colors.isDark);
+        return SafeArea(
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.88,
+            ),
+            decoration: BoxDecoration(
+              color: colors.card,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border.all(color: colors.border),
+            ),
+            child: Column(
+              children: [
+                // Top drag bar
+                Container(
+                  margin: const EdgeInsets.only(top: 10, bottom: 6),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: colors.border,
-                          borderRadius: BorderRadius.circular(2),
+                          color: theme.avatarBg,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.avatarBorder),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Referral QR Code',
-                            style: TextStyle(
-                              color: colors.text,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          client.initials,
+                          style: TextStyle(
+                            color: theme.avatarText,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
                           ),
                         ),
-                        IconButton(
-                          tooltip: 'Close',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () => Navigator.of(sheetContext).pop(),
-                          icon: Icon(
-                            LucideIcons.x,
-                            color: colors.muted,
-                            size: 19,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: colors.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colors.border),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: modalPartnerIndex,
-                          isExpanded: true,
-                          dropdownColor: colors.card,
-                          iconEnabledColor: colors.blue,
-                          style: TextStyle(color: colors.text, fontSize: 12),
-                          items: [
-                            for (var i = 0; i < _partners.length; i++)
-                              DropdownMenuItem(
-                                value: i,
-                                child: Text(
-                                  '${_partners[i].name} – ${_partners[i].code}',
-                                  overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: theme.badgeBg,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'LEVEL ${client.level}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
                                 ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  theme.roleLabel.toUpperCase(),
+                                  style: TextStyle(
+                                    color: colors.muted,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              client.name,
+                              style: TextStyle(
+                                color: colors.text,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (client.email.isNotEmpty)
+                              Text(
+                                client.email,
+                                style: TextStyle(color: colors.muted, fontSize: 11.5),
                               ),
                           ],
-                          onChanged: (index) {
-                            if (index != null) {
-                              setModalState(() => modalPartnerIndex = index);
-                              setState(() => _selectedPartnerIndex = index);
-                            }
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        icon: Icon(LucideIcons.x, color: colors.muted, size: 20),
+                      ),
+                    ],
+                  ),
+                ),
+                // Badges row: Client ID, accounts count, IB status
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colors.subCard,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: colors.subBorder),
+                        ),
+                        child: Text(
+                          'ID: ${client.id}',
+                          style: TextStyle(color: colors.muted, fontSize: 10, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (client.isIb)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: colors.green.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: colors.green.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.shieldCheck, color: colors.green, size: 12),
+                              const SizedBox(width: 4),
+                              Text('IB Partner', style: TextStyle(color: colors.green, fontSize: 10, fontWeight: FontWeight.w800)),
+                            ],
+                          ),
+                        )
+                      else if (client.ibRequestStatus == 'pending')
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: colors.gold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: colors.gold.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.clock, color: colors.gold, size: 12),
+                              const SizedBox(width: 4),
+                              Text('IB Pending', style: TextStyle(color: colors.gold, fontSize: 10, fontWeight: FontWeight.w800)),
+                            ],
+                          ),
+                        )
+                      else
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(sheetContext);
+                            _showConfirmIbModal(client);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            side: BorderSide(color: colors.blue),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          icon: Icon(LucideIcons.userPlus, size: 12, color: colors.blue),
+                          label: Text('Request IB', style: TextStyle(fontSize: 10, color: colors.blue, fontWeight: FontWeight.w800)),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // 4-stat Portfolio Row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      _miniKpi(colors, 'Accounts', '${client.accounts.length}', LucideIcons.layers, colors.blue),
+                      const SizedBox(width: 8),
+                      _miniKpi(colors, 'Volume', '${client.totalLots.toStringAsFixed(2)} Lots', LucideIcons.activity, colors.green),
+                      const SizedBox(width: 8),
+                      _miniKpi(colors, 'Commission', '\$${client.totalCommission.toStringAsFixed(2)}', LucideIcons.coins, colors.gold),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Divider(color: colors.border, height: 1),
+                // Accounts list
+                Expanded(
+                  child: client.accounts.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.creditCard, size: 36, color: colors.muted),
+                              const SizedBox(height: 8),
+                              Text('No trading accounts linked', style: TextStyle(color: colors.muted, fontSize: 13, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: client.accounts.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final acc = client.accounts[index];
+                            return Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: colors.subCard,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: colors.subBorder),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(LucideIcons.creditCard, size: 16, color: colors.blue),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            acc.accountId,
+                                            style: TextStyle(
+                                              color: colors.text,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              fontFamily: 'monospace',
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '${acc.accountType} · ${acc.groupAlias}',
+                                            style: TextStyle(color: colors.muted, fontSize: 11),
+                                          ),
+                                        ],
+                                      ),
+                                      FilledButton.tonalIcon(
+                                        onPressed: () => _showAccountDetailModal(acc, clientName: client.name),
+                                        style: FilledButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        icon: const Icon(LucideIcons.arrowUpRight, size: 12),
+                                        label: const Text('Positions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _accountStatPill('Volume', '${acc.totalLots.toStringAsFixed(2)} Lots', colors.muted, colors.text),
+                                      _accountStatPill('Deposits', '\$${acc.totalDeposits.toStringAsFixed(2)}', colors.muted, colors.green),
+                                      _accountStatPill('Commission', '\$${acc.totalCommission.toStringAsFixed(2)}', colors.muted, colors.gold),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
                           },
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: colors.border),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x120B1D35),
-                            blurRadius: 18,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: QrImageView(
-                        data: referralUrl,
-                        version: QrVersions.auto,
-                        size: 200,
-                        backgroundColor: Colors.white,
-                        eyeStyle: const QrEyeStyle(color: Color(0xFF071941)),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          color: Color(0xFF071941),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      partner.name,
-                      style: TextStyle(
-                        color: colors.text,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    SelectableText(
-                      referralUrl,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: colors.muted,
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              await Clipboard.setData(
-                                ClipboardData(text: referralUrl),
-                              );
-                              showAppMessage('Referral link copied');
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: colors.text,
-                              side: BorderSide(color: colors.border),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(LucideIcons.copy, size: 15),
-                            label: const Text('Copy link'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () async {
-                              final uri = Uri.parse(
-                                'https://wa.me/?text=${Uri.encodeComponent('Join my VT Index partner network: $referralUrl')}',
-                              );
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: colors.blue,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(LucideIcons.share2, size: 15),
-                            label: const Text('Share'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
-              ),
+              ],
             ),
-          );
-        },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _miniKpi(_PartnershipColors colors, String label, String value, IconData icon, Color accent) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+        decoration: BoxDecoration(
+          color: colors.subCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.subBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 12, color: accent),
+                const SizedBox(width: 4),
+                Text(label, style: TextStyle(color: colors.muted, fontSize: 10, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w900),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return _PartnershipBackdrop(
-      colors: colors,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 820;
-          final stats = Column(
-            children: [
-              _PartnershipStat(
-                icon: LucideIcons.usersRound,
-                label: 'Network clients',
-                value: '2,458',
-              ),
-              SizedBox(height: wide ? 12 : 0),
-              _PartnershipStat(
-                icon: LucideIcons.coins,
-                label: 'IB earnings',
-                value: r'$4,820.00',
-                gold: true,
-              ),
-            ],
-          );
+  Widget _accountStatPill(String label, String value, Color labelColor, Color valColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: labelColor, fontSize: 9.5)),
+        const SizedBox(height: 2),
+        Text(value, style: TextStyle(color: valColor, fontSize: 11.5, fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
 
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1080),
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  wide ? 28 : 16,
-                  24,
-                  wide ? 28 : 16,
-                  120,
-                ),
+  void _showAccountDetailModal(_IbTradingAccount account, {String? clientName}) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final colors = _PartnershipColors.of(sheetContext);
+        return _AccountDetailSheet(account: account, clientName: clientName, colors: colors);
+      },
+    );
+  }
+
+  void _showConfirmIbModal(_IbClient client) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final colors = _PartnershipColors.of(dialogContext);
+        var submitting = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: colors.card,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: colors.border)),
+              contentPadding: const EdgeInsets.all(22),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        width: 46,
-                        height: 46,
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: colors.blue.withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: colors.glassBorder),
+                          color: colors.blue.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          LucideIcons.network,
-                          color: colors.blue,
-                          size: 22,
-                        ),
+                        child: Icon(LucideIcons.shieldCheck, color: colors.blue, size: 24),
                       ),
-                      const SizedBox(width: 13),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Partnership',
-                              style: TextStyle(
-                                color: colors.text,
-                                fontSize: 23,
-                                fontWeight: FontWeight.w800,
-                                height: 1.1,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Grow your network and track partner earnings.',
-                              style: TextStyle(color: colors.muted, fontSize: 12),
-                            ),
+                            Text('Confirm IB Request', style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 2),
+                            Text('Nominate client for IB status', style: TextStyle(color: colors.muted, fontSize: 12)),
                           ],
                         ),
                       ),
-                      if (wide)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colors.glassFill,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: colors.glassBorder),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                LucideIcons.badgeCheck,
-                                color: colors.green,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 7),
-                              Text(
-                                'IB PARTNER',
-                                style: TextStyle(
-                                  color: colors.text,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: .4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                     ],
                   ),
-                  const SizedBox(height: 22),
-                  if (wide)
-                    Row(
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colors.subCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.subBorder),
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 7, child: _buildHeroCard(context, colors)),
-                        const SizedBox(width: 14),
-                        Expanded(flex: 3, child: stats),
-                      ],
-                    )
-                  else ...[
-                    _buildHeroCard(context, colors),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _PartnershipStat(
-                            icon: LucideIcons.usersRound,
-                            label: 'Network clients',
-                            value: '2,458',
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _PartnershipStat(
-                            icon: LucideIcons.coins,
-                            label: 'IB earnings',
-                            value: r'$4,820.00',
-                            gold: true,
-                          ),
-                        ),
+                        Text('Client: ${client.name}', style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                        if (client.email.isNotEmpty)
+                          Text('Email: ${client.email}', style: TextStyle(color: colors.muted, fontSize: 12)),
+                        if (client.referralCode.isNotEmpty)
+                          Text('Code: ${client.referralCode}', style: TextStyle(color: colors.muted, fontSize: 12)),
                       ],
                     ),
-                  ],
-                  const SizedBox(height: 26),
-                  _PartnershipSectionLabel(
-                    'REFERRAL & INVITATIONS',
-                    subtitle:
-                        'Choose a partner profile, share your referral link, or explore your network.',
-                    colors: colors,
                   ),
-                  const SizedBox(height: 12),
-                  _buildToolsColumn(context, colors),
+                  const SizedBox(height: 14),
+                  Text(
+                    'The request will be sent to the admin team for review. IB status remains pending until approved.',
+                    style: TextStyle(color: colors.muted, fontSize: 11.5, height: 1.4),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: submitting ? null : () => Navigator.pop(dialogContext),
+                        child: Text('Cancel', style: TextStyle(color: colors.muted, fontWeight: FontWeight.w700)),
+                      ),
+                      const SizedBox(width: 10),
+                      FilledButton.icon(
+                        onPressed: submitting
+                            ? null
+                            : () async {
+                                setDialogState(() => submitting = true);
+                                try {
+                                  await AuthApi.instance.requestClientIb(client.id);
+                                  showAppMessage('IB request submitted successfully!');
+                                  if (mounted) {
+                                    setState(() {
+                                      _loadAllData();
+                                    });
+                                  }
+                                  if (dialogContext.mounted) {
+                                    Navigator.pop(dialogContext);
+                                  }
+                                } catch (e) {
+                                  showAppMessage('Failed to submit IB request: $e');
+                                  setDialogState(() => submitting = false);
+                                }
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.blue,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: submitting
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(LucideIcons.send, size: 14),
+                        label: Text(submitting ? 'Submitting...' : 'Confirm', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
                 ],
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showReferralQrModal(_IbReferralLink link) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final colors = _PartnershipColors.of(sheetContext);
+        final url = link.referralLink.isNotEmpty
+            ? link.referralLink
+            : 'https://client.vtindex.com/?ref=${link.referralCode}';
+
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: colors.card,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border.all(color: colors.border),
             ),
-          );
-        },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Referral QR & Link', style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800)),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: Icon(LucideIcons.x, color: colors.muted, size: 20),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 4)),
+                    ],
+                  ),
+                  child: _VtIndexQrView(
+                    data: url,
+                    size: 190,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(link.profileName, style: TextStyle(color: colors.text, fontSize: 15, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                SelectableText(
+                  url,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: colors.muted, fontSize: 11),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: url));
+                          showAppMessage('Referral link copied!');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: colors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(LucideIcons.copy, size: 15),
+                        label: Text('Copy link', style: TextStyle(color: colors.text, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          final shareUri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent('Join my VT Index partner network: $url')}');
+                          await launchUrl(shareUri, mode: LaunchMode.externalApplication);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(LucideIcons.share2, size: 15),
+                        label: const Text('Share', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _enterDemoPreviewMode() {
+    setState(() {
+      _demoPreviewMode = true;
+      if (_dashboardData.isEmpty) _dashboardData = _IbDashboardData.demo();
+      if (_referralLinks.isEmpty) _referralLinks = _IbReferralLink.demoList();
+      if (_clientTree.isEmpty) _clientTree = _IbClient.demoTree();
+    });
+  }
+
+  void _exitDemoPreviewMode() {
+    setState(() {
+      _demoPreviewMode = false;
+    });
+  }
+
+  // ==========================================================================
+  // BUILD METHOD
+  // ==========================================================================
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _PartnershipColors.of(context);
+
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: colors.canvas,
+        body: _PartnershipBackdrop(
+          colors: colors,
+          child: Center(
+            child: CircularProgressIndicator(color: colors.blue),
+          ),
+        ),
+      );
+    }
+
+    if (!_isIbApproved && !_demoPreviewMode) {
+      return _buildIbApplicationScaffold(colors);
+    }
+
+    return Scaffold(
+      backgroundColor: colors.canvas,
+      body: _PartnershipBackdrop(
+        colors: colors,
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _loadAllData,
+            color: colors.blue,
+            backgroundColor: colors.card,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 116),
+              children: [
+                if (_demoPreviewMode) _buildDemoPreviewBanner(colors),
+                _buildTopBar(colors),
+                const SizedBox(height: 14),
+                _buildHeroCommandCenter(colors),
+                const SizedBox(height: 16),
+                _buildKpiMatrices(colors),
+                const SizedBox(height: 16),
+                _buildTrajectoryChartCard(colors),
+                const SizedBox(height: 16),
+                _buildLeaderboardCard(colors),
+                const SizedBox(height: 18),
+                _buildShortcutsSection(colors),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildHeroCard(BuildContext context, _PartnershipColors colors) {
-    final compact = MediaQuery.sizeOf(context).width < 600;
+  // ==========================================================================
+  // PARTNERSHIP APPLICATION & PROGRAM SECTIONS (NON-IB STATE)
+  // ==========================================================================
+
+  Widget _buildDemoPreviewBanner(_PartnershipColors colors) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0B2256),
-            Color(0xFF0F3678),
-            Color(0xFF144EA1),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0A1D45).withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+        color: const Color(0xFFD97706).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD97706).withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.sparkles, color: Color(0xFFF59E0B), size: 16),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Demo Preview Mode • Real-time metrics will activate once your IB is approved.',
+              style: TextStyle(color: Color(0xFFF59E0B), fontSize: 11.5, fontWeight: FontWeight.w700),
+            ),
+          ),
+          InkWell(
+            onTap: _exitDemoPreviewMode,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD97706),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text('Exit Demo', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800)),
+            ),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -50,
-              top: -30,
-              child: Container(
-                width: 220,
-                height: 220,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF2D72E2).withValues(alpha: 0.35),
-                      const Color(0xFF144EA5).withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
+    );
+  }
+
+  Widget _buildIbApplicationScaffold(_PartnershipColors colors) {
+    final isPending = _ibStatus == 'pending';
+
+    return Scaffold(
+      backgroundColor: colors.canvas,
+      body: _PartnershipBackdrop(
+        colors: colors,
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _loadAllData,
+            color: colors.blue,
+            backgroundColor: colors.card,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 116),
+              children: [
+                _buildIbAppTopBar(colors, isPending),
+                const SizedBox(height: 14),
+                _buildIbStatusAlert(colors, isPending),
+                const SizedBox(height: 16),
+                _buildIbHeroDeck(colors),
+                const SizedBox(height: 18),
+                _buildCalculatorSection(colors),
+                const SizedBox(height: 18),
+                _buildTierBreakdownSection(colors),
+                const SizedBox(height: 18),
+                _buildCoreBenefitsSection(colors),
+                const SizedBox(height: 18),
+                _buildIbFaqSection(colors),
+                const SizedBox(height: 22),
+                _buildApplyFooterCta(colors, isPending),
+              ],
             ),
-            Padding(
-              padding: EdgeInsets.all(compact ? 14 : 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 7,
-                                height: 7,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF10B981),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Color(0x6610B981),
-                                      blurRadius: 4,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  'PARTNERSHIP PROGRAM',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: compact ? 10.5 : 12,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: compact ? 12 : 18),
-                  Text(
-                    'Total IB Earnings',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: compact ? 12 : 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    r'$4,820.00 USD',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: compact ? 26 : 30,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  SizedBox(height: compact ? 12 : 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Network Clients',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.90),
-                                fontSize: compact ? 11.5 : 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '2,458 Clients',
-                              style: TextStyle(
-                                color: colors.gold,
-                                fontSize: compact ? 15.5 : 17.5,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Executed Volume',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.90),
-                                fontSize: compact ? 11.5 : 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '142.80 Lots',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: compact ? 15.5 : 17.5,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildToolsColumn(BuildContext context, _PartnershipColors colors) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _PartnershipGlassPanel(
-        colors: colors,
-        padding: const EdgeInsets.all(20),
-        radius: 20,
+  Widget _buildIbAppTopBar(_PartnershipColors colors, bool isPending) {
+    return Row(
+      children: [
+        if (widget.onBack != null || Navigator.canPop(context))
+          IconButton(
+            onPressed: widget.onBack ?? () => Navigator.pop(context),
+            icon: Icon(LucideIcons.arrowLeft, color: colors.text),
+          )
+        else
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [colors.blue, const Color(0xFF1E3A8A)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(LucideIcons.network, color: Colors.white, size: 20),
+          ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Introducing Broker (IB)',
+                style: TextStyle(
+                  color: colors.text,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              Text(
+                'Multi-Tier Partnership Program',
+                style: TextStyle(
+                  color: colors.muted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: isPending
+                ? const Color(0xFFD97706).withValues(alpha: 0.15)
+                : colors.blue.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isPending
+                  ? const Color(0xFFD97706).withValues(alpha: 0.4)
+                  : colors.blue.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isPending ? LucideIcons.clock : LucideIcons.sparkles,
+                size: 11,
+                color: isPending ? const Color(0xFFF59E0B) : colors.blue,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                isPending ? 'Under Review' : 'Enrolling',
+                style: TextStyle(
+                  color: isPending ? const Color(0xFFF59E0B) : colors.blue,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+        IconButton(
+          onPressed: _loadAllData,
+          tooltip: 'Refresh Status',
+          icon: Icon(LucideIcons.refreshCw, color: colors.muted, size: 18),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIbStatusAlert(_PartnershipColors colors, bool isPending) {
+    if (isPending) {
+      return Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            colors: colors.isDark
+                ? const [Color(0xFF382305), Color(0xFF1E1404)]
+                : const [Color(0xFFFEF3C7), Color(0xFFFFFBEB)],
+          ),
+          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [colors.blue, colors.navy],
-                    ),
-                    borderRadius: BorderRadius.circular(13),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.blue.withValues(alpha: .2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    LucideIcons.share2,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                  child: const Icon(LucideIcons.clock, color: Color(0xFFD97706), size: 20),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Your partner code',
+                        'Application Pending Review',
                         style: TextStyle(
-                          color: colors.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                          color: colors.isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
-                        'Share this code to invite and onboard new clients.',
+                        'Compliance review is actively in progress',
                         style: TextStyle(
-                          color: colors.muted,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                          height: 1.35,
+                          color: colors.isDark ? const Color(0xFFD97706) : const Color(0xFFB45309),
+                          fontSize: 11.5,
                         ),
                       ),
                     ],
@@ -806,836 +1938,1199 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
             Text(
-              'SELECT PARTNER PROFILE',
+              'Your Introducing Broker application has been received and is awaiting compliance verification. We typically complete reviews within 2 to 24 business hours. Once approved, your commission wallet and referral links will be unlocked automatically.',
               style: TextStyle(
-                color: colors.muted,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
+                color: colors.isDark ? const Color(0xFFFCD34D).withValues(alpha: 0.85) : const Color(0xFF78350F),
+                fontSize: 12,
+                height: 1.45,
               ),
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-              constraints: const BoxConstraints(minHeight: 48),
-              decoration: BoxDecoration(
-                color: colors.card,
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: colors.border),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  value: _selectedPartnerIndex,
-                  isDense: true,
-                  isExpanded: true,
-                  dropdownColor: colors.card,
-                  iconEnabledColor: colors.blue,
-                  style: TextStyle(
-                    color: colors.text,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _loadAllData,
+                  icon: const Icon(LucideIcons.refreshCw, size: 14),
+                  label: const Text('Check Approval Status'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD97706),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    elevation: 0,
                   ),
-                  items: [
-                    for (var i = 0; i < _partners.length; i++)
-                      DropdownMenuItem(
-                        value: i,
-                        child: Text(
-                          '${_partners[i].name} – ${_partners[i].code}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _enterDemoPreviewMode,
+                  icon: const Icon(LucideIcons.sparkles, size: 14),
+                  label: const Text('Preview Command Center'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                    side: BorderSide(color: const Color(0xFFF59E0B).withValues(alpha: 0.5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: colors.isDark
+              ? const [Color(0xFF0C246E), Color(0xFF071426)]
+              : const [Color(0xFFE8EEF9), Color(0xFFF8FAFC)],
+        ),
+        border: Border.all(color: colors.blue.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.blue.withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colors.blue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(LucideIcons.shieldCheck, color: colors.blue, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Become a Certified VT-Index Partner',
+                      style: TextStyle(
+                        color: colors.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
                       ),
+                    ),
+                    Text(
+                      'Earn up to \$8.00 per standard lot across 3 tiers',
+                      style: TextStyle(
+                        color: colors.muted,
+                        fontSize: 11.5,
+                      ),
+                    ),
                   ],
-                  onChanged: (index) {
-                    if (index != null) {
-                      setState(() => _selectedPartnerIndex = index);
-                    }
-                  },
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Enroll as an Introducing Broker to start generating lifetime automated daily commissions on all trading volume generated by your clients and subordinate Sub-IB networks.',
+            style: TextStyle(
+              color: colors.muted,
+              fontSize: 12,
+              height: 1.45,
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: colors.chipBg,
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: colors.blue.withValues(alpha: .16)),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _showIbTermsModal,
+                icon: const Icon(LucideIcons.send, size: 14),
+                label: const Text('Apply for IB Partnership'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  elevation: 0,
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: colors.blue.withValues(alpha: .1),
-                      borderRadius: BorderRadius.circular(10),
+              OutlinedButton.icon(
+                onPressed: _enterDemoPreviewMode,
+                icon: const Icon(LucideIcons.sparkles, size: 14),
+                label: const Text('Preview Command Center'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.text,
+                  side: BorderSide(color: colors.border),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIbHeroDeck(_PartnershipColors colors) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colors.isDark
+              ? const [Color(0xFF071A57), Color(0xFF0A2675), Color(0xFF0D338E)]
+              : const [Color(0xFF0A255E), Color(0xFF103D88), Color(0xFF1652B0)],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('INSTITUTIONAL TIER', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+              ),
+              const Spacer(),
+              const Icon(LucideIcons.zap, size: 14, color: Color(0xFFF5C438)),
+              const SizedBox(width: 4),
+              const Text('Instant Daily Rebate', style: TextStyle(color: Color(0xFFF5C438), fontSize: 11, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Accelerate Your Trading Revenue',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.3),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Partner with VT-Index to unlock multi-tiered override rebates on FX, Metals, Indices, and Crypto.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, height: 1.4),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              _heroStatCell('Base Rebate Pool', '\$8.00 / lot'),
+              _heroStatCell('Level 1 Direct', '50% (\$4.00)'),
+              _heroStatCell('Sub-IB Tiers', '20% + 10%'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroStatCell(String label, String value) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 9.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 2),
+            Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalculatorSection(_PartnershipColors colors) {
+    final directLots = _calcTraders * _calcLotsPerTrader;
+    final l1Monthly = directLots * 4.0;
+    final l2Lots = (directLots * 0.4).round();
+    final l2Monthly = l2Lots * 1.6;
+    final l3Lots = (directLots * 0.25).round();
+    final l3Monthly = l3Lots * 0.8;
+    final totalMonthly = l1Monthly + l2Monthly + l3Monthly;
+    final totalAnnual = totalMonthly * 12;
+
+    return _PartnershipGlassPanel(
+      colors: colors,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colors.blue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(LucideIcons.calculator, color: colors.blue, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Commission Revenue Calculator',
+                      style: TextStyle(color: colors.text, fontSize: 16, fontWeight: FontWeight.w800),
                     ),
-                    child: Icon(
-                      LucideIcons.link,
-                      color: colors.blue,
-                      size: 17,
+                    Text(
+                      'Simulate potential earnings across 3 tiers',
+                      style: TextStyle(color: colors.muted, fontSize: 11.5),
                     ),
-                  ),
-                  const SizedBox(width: 11),
-                  Expanded(
-                    child: Column(
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Slider 1: Active Traders
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Active Direct Traders', style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: colors.blue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text('$_calcTraders Traders', style: TextStyle(color: colors.blue, fontSize: 12, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: colors.blue,
+              thumbColor: colors.blue,
+              inactiveTrackColor: colors.border,
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: _calcTraders.toDouble(),
+              min: 1,
+              max: 150,
+              divisions: 149,
+              onChanged: (val) => setState(() => _calcTraders = val.round()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Slider 2: Lots per Trader
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Avg Lots / Trader / Month', style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: colors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text('$_calcLotsPerTrader Lots', style: TextStyle(color: colors.gold, fontSize: 12, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: colors.gold,
+              thumbColor: colors.gold,
+              inactiveTrackColor: colors.border,
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: _calcLotsPerTrader.toDouble(),
+              min: 1,
+              max: 50,
+              divisions: 49,
+              onChanged: (val) => setState(() => _calcLotsPerTrader = val.round()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // KPI Results Cards
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: colors.isDark
+                    ? const [Color(0xFF0F275A), const Color(0xFF0A1C40)]
+                    : const [Color(0xFFE8F0FE), const Color(0xFFD6E4FC)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.blue.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Direct Monthly Volume', style: TextStyle(color: colors.muted, fontSize: 12)),
+                    Text('$directLots Lots', style: TextStyle(color: colors.text, fontSize: 14, fontWeight: FontWeight.w800)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Divider(color: colors.border, height: 1),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'INVITATION CODE',
-                          style: TextStyle(
-                            color: colors.muted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: .55,
-                          ),
-                        ),
+                        Text('Projected Monthly Revenue', style: TextStyle(color: colors.muted, fontSize: 11)),
                         const SizedBox(height: 2),
-                        SelectableText(
-                          _selectedPartner.code,
+                        Text(
+                          '\$${totalMonthly.toStringAsFixed(0)}',
                           style: TextStyle(
-                            color: colors.text,
-                            fontSize: 15,
+                            color: colors.blue,
+                            fontSize: 24,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: .8,
+                            letterSpacing: -0.5,
                           ),
                         ),
                       ],
                     ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('Projected Annual', style: TextStyle(color: colors.muted, fontSize: 11)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '\$${totalAnnual.toStringAsFixed(0)} / yr',
+                          style: TextStyle(
+                            color: colors.green,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Tier breakdown chips
+          Row(
+            children: [
+              _calcTierChip(colors, 'L1 Direct (50%)', '\$${l1Monthly.toStringAsFixed(0)}', colors.blue),
+              const SizedBox(width: 8),
+              _calcTierChip(colors, 'L2 Sub-IB (20%)', '\$${l2Monthly.toStringAsFixed(0)}', colors.gold),
+              const SizedBox(width: 8),
+              _calcTierChip(colors, 'L3 Extended (10%)', '\$${l3Monthly.toStringAsFixed(0)}', colors.green),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _calcTierChip(_PartnershipColors colors, String title, String val, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: colors.subCard,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.subBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: TextStyle(color: colors.muted, fontSize: 9.5, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 2),
+            Text(val, style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.w800)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTierBreakdownSection(_PartnershipColors colors) {
+    final tiers = [
+      {
+        'level': 'Level 1',
+        'title': 'Direct Client Network',
+        'rate': '50% Pool Share (\$4.00/lot)',
+        'desc': 'Earn direct commission on every closed position traded by clients you introduce.',
+        'color': colors.blue,
+        'icon': LucideIcons.user,
+      },
+      {
+        'level': 'Level 2',
+        'title': 'Sub-IB Network',
+        'rate': '20% Pool Share (\$1.60/lot)',
+        'desc': 'Receive automated sub-tier overrides on all volume generated by clients introduced by your Sub-IBs.',
+        'color': colors.gold,
+        'icon': LucideIcons.users,
+      },
+      {
+        'level': 'Level 3',
+        'title': 'Extended Ecosystem',
+        'rate': '10% Pool Share (\$0.80/lot)',
+        'desc': 'Compound continuous override revenue from third-generation clients referred across your downline network.',
+        'color': colors.green,
+        'icon': LucideIcons.globe,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '3-TIER REBATE ARCHITECTURE',
+          style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+        ...tiers.map((t) {
+          final color = t['color'] as Color;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _PartnershipGlassPanel(
+              colors: colors,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(t['icon'] as IconData, color: color, size: 20),
                   ),
-                  IconButton(
-                    tooltip: 'Copy referral link',
-                    constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-                    onPressed: () async {
-                      final url = 'https://client.vtindex.com/?ref=${_selectedPartner.code}';
-                      await Clipboard.setData(ClipboardData(text: url));
-                      showAppMessage('Referral link copied');
-                    },
-                    icon: Icon(
-                      LucideIcons.copy,
-                      color: colors.muted,
-                      size: 18,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(t['title'] as String, style: TextStyle(color: colors.text, fontSize: 14, fontWeight: FontWeight.w800)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(t['level'] as String, style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(t['rate'] as String, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(t['desc'] as String, style: TextStyle(color: colors.muted, fontSize: 11.5, height: 1.35)),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _showReferralQr,
-                style: FilledButton.styleFrom(
-                  backgroundColor: colors.blue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildCoreBenefitsSection(_PartnershipColors colors) {
+    final benefits = [
+      {'title': '\$8.00/Lot Pool', 'desc': 'Transparent multi-tier model across the complete rebate structure.', 'icon': LucideIcons.badgePercent},
+      {'title': '3-Tier Sub-IB Tree', 'desc': 'Automated multi-level overrides on direct and subordinate networks.', 'icon': LucideIcons.network},
+      {'title': 'Daily Settlements', 'desc': 'Instant commission credits with zero payout or transfer fees.', 'icon': LucideIcons.wallet},
+      {'title': 'Partner CRM', 'desc': 'Real-time MT5 trading telemetry, conversion stats, and client drilldowns.', 'icon': LucideIcons.barChart3},
+      {'title': 'QR & Link Studio', 'desc': 'Pre-built landing pages, campaign profiles, and dynamic QR generators.', 'icon': LucideIcons.qrCode},
+      {'title': 'Dedicated Manager', 'desc': '1-on-1 strategic growth advice, custom profiles, and priority desk.', 'icon': LucideIcons.headphones},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PARTNER ADVANTAGES',
+          style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 1.25,
+          ),
+          itemCount: benefits.length,
+          itemBuilder: (context, idx) {
+            final b = benefits[idx];
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: colors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(b['icon'] as IconData, size: 20, color: colors.blue),
+                  const SizedBox(height: 8),
+                  Text(
+                    b['title'] as String,
+                    style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                icon: const Icon(LucideIcons.qrCode, size: 18),
-                label: const Text(
-                  'Show referral QR',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  const SizedBox(height: 4),
+                  Text(
+                    b['desc'] as String,
+                    style: TextStyle(color: colors.muted, fontSize: 10.5, height: 1.3),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIbFaqSection(_PartnershipColors colors) {
+    final faqs = [
+      {
+        'q': 'How does the commission split work across the 3 tiers?',
+        'a': 'Commissions are distributed from an \$8.00/lot standard rebate pool across 3 tiers: Level 1 (Direct Referrals) receives 50%, Level 2 (Sub-IBs) receives 20%, and Level 3 (Extended Network) receives 10%. Overrides compound automatically without reducing your partners\' earnings.',
+      },
+      {
+        'q': 'What is the VT-Index Introducing Broker (IB) Program?',
+        'a': 'The VT-Index IB program enables traders, educators, fund managers, and digital marketers to earn lifetime recurring commissions by introducing clients to our institutional multi-asset MT5 platform.',
+      },
+      {
+        'q': 'How and when are my commissions paid?',
+        'a': 'Commissions are calculated automatically upon trade closure and credited on a daily basis directly to your Partner Commission Wallet. You can withdraw funds instantly to crypto, bank wire, or transfer to your trading account with zero fees.',
+      },
+      {
+        'q': 'Are there any setup fees or minimum trading volume requirements?',
+        'a': 'No. Becoming an IB partner at VT-Index is 100% free with no upfront setup costs, no mandatory deposit, and no restrictive quotas. You start earning from the very first lot traded by your referred clients.',
+      },
+      {
+        'q': 'How long does the approval process take?',
+        'a': 'Our compliance and partnership specialists review IB requests promptly—typically within 2 to 24 hours on business days. Once verified, your Partner Portal and unique referral links activate instantly.',
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'FREQUENTLY ASKED QUESTIONS',
+          style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+        ...faqs.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final f = entry.value;
+          final isOpen = _openFaqs.contains(idx);
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isOpen ? colors.blue.withValues(alpha: 0.5) : colors.border),
+              ),
+              child: Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  initiallyExpanded: isOpen,
+                  onExpansionChanged: (expanded) {
+                    setState(() {
+                      if (expanded) {
+                        _openFaqs.add(idx);
+                      } else {
+                        _openFaqs.remove(idx);
+                      }
+                    });
+                  },
+                  title: Text(
+                    f['q']!,
+                    style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w700),
+                  ),
+                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  children: [
+                    Text(
+                      f['a']!,
+                      style: TextStyle(color: colors.muted, fontSize: 11.5, height: 1.45),
+                    ),
+                  ],
                 ),
               ),
             ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildApplyFooterCta(_PartnershipColors colors, bool isPending) {
+    if (isPending) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD97706).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFD97706).withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(LucideIcons.clock, size: 16, color: Color(0xFFF59E0B)),
+            SizedBox(width: 8),
+            Text(
+              'Application Submitted • Awaiting Compliance Approval',
+              style: TextStyle(color: Color(0xFFF59E0B), fontSize: 13, fontWeight: FontWeight.w800),
+            ),
           ],
         ),
-      ),
-      const SizedBox(height: 22),
-      Text(
-        'Quick shortcuts',
-        style: TextStyle(
-          color: colors.text,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      const SizedBox(height: 10),
-      _PartnershipShortcut(
-        icon: LucideIcons.usersRound,
-        label: 'Client list',
-        subtitle: 'View network hierarchy, downline tiers, and accounts',
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const BrokerClientTreePage()),
-        ),
-      ),
-      const SizedBox(height: 8),
-      _PartnershipShortcut(
-        icon: LucideIcons.layers,
-        label: 'Commission ledger',
-        subtitle: 'Detailed trading deal records and commission generated',
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const BrokerCommissionLedgerPage(),
-          ),
-        ),
-      ),
-      const SizedBox(height: 8),
-      _PartnershipShortcut(
-        icon: LucideIcons.qrCode,
-        label: 'Referral & QR studio',
-        subtitle: 'Custom marketing links, materials, and branded cards',
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const BrokerReferralStudioPage(),
-          ),
-        ),
-      ),
-      const SizedBox(height: 8),
-      _PartnershipShortcut(
-        icon: LucideIcons.wallet,
-        label: 'Commission withdrawal',
-        subtitle: 'Instant internal transfer to your live MT5 trading account',
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const BrokerCommissionWithdrawalPage(),
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-class BrokerReferralStudioPage extends StatefulWidget {
-  const BrokerReferralStudioPage({super.key});
-  @override
-  State<BrokerReferralStudioPage> createState() =>
-      _BrokerReferralStudioPageState();
-}
-
-class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
-  static const routes = <_ReferralRoute>[
-    _ReferralRoute('Gold', 'X0RCGYVH7A'),
-    _ReferralRoute('Gold-80', 'UENYAZWK4'),
-    _ReferralRoute('Test', '4Z7G7TKF4J'),
-    _ReferralRoute('test', 'IQ57TSDY38'),
-    _ReferralRoute('crm', '9BSFFEGGTL'),
-    _ReferralRoute('test3', '6F81L1IUK5'),
-    _ReferralRoute('INR IB-LIVE', 'INRIBLIVE01'),
-  ];
-  int selected = 2;
-  _ReferralRoute get route => routes[selected];
-  String get referralUrl => 'https://client.vtindex.com/?ref=${route.code}';
-
-  Future<void> copyText(String value, String label) async {
-    await Clipboard.setData(ClipboardData(text: value));
-    if (mounted) {
-      showAppMessage('$label copied');
+      );
     }
-  }
 
-  Future<void> share(String platform) async {
-    final encoded = Uri.encodeComponent(
-      'Join my VT Index partner network: $referralUrl',
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _submittingApplication ? null : _showIbTermsModal,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colors.blue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 4,
+          shadowColor: colors.blue.withValues(alpha: 0.4),
+        ),
+        child: _submittingApplication
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(LucideIcons.send, size: 18),
+                  SizedBox(width: 10),
+                  Text(
+                    'Join VT-Index Partnership Program',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
+      ),
     );
-    final uri = switch (platform) {
-      'WhatsApp' => Uri.parse('https://wa.me/?text=$encoded'),
-      'Telegram' => Uri.parse(
-        'https://t.me/share/url?url=${Uri.encodeComponent(referralUrl)}',
-      ),
-      'X' => Uri.parse('https://twitter.com/intent/tweet?text=$encoded'),
-      'LinkedIn' => Uri.parse(
-        'https://www.linkedin.com/sharing/share-offsite/?url=${Uri.encodeComponent(referralUrl)}',
-      ),
-      'Email' => Uri(
-        scheme: 'mailto',
-        queryParameters: {
-          'subject': 'My VT Index referral link',
-          'body': referralUrl,
-        },
-      ),
-      _ => Uri.parse(
-        'https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent(referralUrl)}',
-      ),
-    };
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Scaffold(
-      backgroundColor: colors.canvas,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 900;
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(wide ? 20 : 14),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1400),
+  void _showIbTermsModal() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final colors = _PartnershipColors.of(sheetContext);
+        var agreed = _agreedToTerms;
+        var submitting = false;
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.card,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  border: Border.all(color: colors.border),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: colors.muted.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       Row(
                         children: [
-                          IconButton(
-                            onPressed: () => Navigator.maybePop(context),
-                            icon: Icon(
-                              LucideIcons.chevronLeft,
-                              color: colors.blue,
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: colors.blue.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
                             ),
+                            child: Icon(LucideIcons.fileCheck2, color: colors.blue, size: 22),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Dashboard  >  Marketing Tools  >  Referral Studio',
-                                  style: TextStyle(
-                                    color: colors.blue,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Referral & QR Studio',
-                                  style: TextStyle(
-                                    color: colors.text,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
+                                Text('IB Partnership Agreement', style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800)),
                                 const SizedBox(height: 2),
-                                Text(
-                                  'Distribute profiles, share links and generate branded scannable cards.',
-                                  style: TextStyle(
-                                    color: colors.muted,
-                                    fontSize: 11,
-                                  ),
-                                ),
+                                Text('Review guidelines and confirm your application', style: TextStyle(color: colors.muted, fontSize: 12)),
                               ],
                             ),
                           ),
-                          if (wide)
-                            FilledButton.icon(
-                              onPressed: () => showAppMessage('Open Client List to add a client.'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: colors.blue,
-                                foregroundColor: Colors.white,
-                              ),
-                              icon: const Icon(LucideIcons.userPlus, size: 14),
-                              label: const Text('Add Client'),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      GridView.count(
-                        crossAxisCount: wide ? 4 : 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: wide ? 2.25 : 1.75,
-                        children: const [
-                          _ReferralMetric(
-                            icon: LucideIcons.usersRound,
-                            label: 'NETWORK CLIENTS',
-                            value: '1',
-                            note: 'Access all referral trees',
-                            color: Color(0xFF3858EA),
-                          ),
-                          _ReferralMetric(
-                            icon: LucideIcons.wallet,
-                            label: 'TOTAL COMMISSION',
-                            value: r'$0.00',
-                            note: 'Earned lifetime payout',
-                            color: Color(0xFF00B98B),
-                          ),
-                          _ReferralMetric(
-                            icon: LucideIcons.trendingUp,
-                            label: 'TRADED VOLUME',
-                            value: '0.0 L',
-                            note: 'Standard lots executed',
-                            color: Color(0xFF9B4CF0),
-                          ),
-                          _ReferralMetric(
-                            icon: LucideIcons.zap,
-                            label: 'ACTIVE REFERRAL LINKS',
-                            value: '7',
-                            note: 'View commission profiles',
-                            color: Color(0xFFFFA126),
+                          IconButton(
+                            icon: const Icon(LucideIcons.x, size: 20),
+                            onPressed: () => Navigator.pop(sheetContext),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      if (wide)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: colors.subCard,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: colors.subBorder),
+                          ),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Program Terms & Rebate Structure', style: TextStyle(color: colors.text, fontSize: 14, fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '1. The standard commission pool is calculated up to \$8.00 per standard lot traded by eligible clients on MT5.\n\n'
+                                  '2. Multi-tier commissions are allocated at 50% for Level 1 (Direct Clients), 20% for Level 2 (Sub-IBs), and 10% for Level 3 (Extended Network).\n\n'
+                                  '3. Commissions are calculated upon position closure and deposited to your Partner Commission Ledger daily.\n\n'
+                                  '4. Internal transfers to your own live MT5 trading account and external withdrawals carry zero processing fees.\n\n'
+                                  '5. Partner activity is monitored for spam, deceptive advertising, or abusive market manipulation. Violation may result in partner status revocation.',
+                                  style: TextStyle(color: colors.muted, fontSize: 12.5, height: 1.5),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      InkWell(
+                        onTap: () {
+                          setSheetState(() => agreed = !agreed);
+                          setState(() => _agreedToTerms = agreed);
+                        },
+                        child: Row(
                           children: [
-                            Expanded(child: _profileCard(colors)),
-                            const SizedBox(width: 16),
-                            SizedBox(width: 340, child: _qrCard(colors)),
+                            Checkbox(
+                              value: agreed,
+                              activeColor: colors.blue,
+                              onChanged: (val) {
+                                setSheetState(() => agreed = val ?? false);
+                                setState(() => _agreedToTerms = agreed);
+                              },
+                            ),
+                            Expanded(
+                              child: Text(
+                                'I agree to the VT-Index Introducing Broker Terms & Guidelines',
+                                style: TextStyle(color: colors.text, fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ),
                           ],
-                        )
-                      else ...[
-                        _profileCard(colors),
-                        const SizedBox(height: 14),
-                        _qrCard(colors),
-                      ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: (!agreed || submitting)
+                              ? null
+                              : () async {
+                                  setSheetState(() => submitting = true);
+                                  Navigator.pop(sheetContext);
+                                  await _submitIbApplication();
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          child: submitting
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(LucideIcons.send, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Submit IB Application', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                                  ],
+                                ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  // ==========================================================================
+  // UI SECTIONS
+  // ==========================================================================
+
+  Widget _buildTopBar(_PartnershipColors colors) {
+    return Row(
+      children: [
+        if (widget.onBack != null)
+          IconButton(
+            onPressed: widget.onBack,
+            icon: Icon(LucideIcons.arrowLeft, color: colors.text),
+          )
+        else
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [colors.blue, const Color(0xFF1E3A8A)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(LucideIcons.network, color: Colors.white, size: 20),
+          ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Partnership Command Center',
+                style: TextStyle(
+                  color: colors.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              Text(
+                'Manage clients, commissions and withdrawals',
+                style: TextStyle(color: colors.muted, fontSize: 11.5),
+              ),
+            ],
+          ),
         ),
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: _loadAllData,
+          icon: _loading
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: colors.blue),
+                )
+              : Icon(LucideIcons.refreshCw, color: colors.muted, size: 18),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeroCommandCenter(_PartnershipColors colors) {
+    final direct = _dashboardData.directClients;
+    final total = _dashboardData.totalClients;
+    final sub = math.max(0, total - direct);
+    final velocityRatio = total > 0
+        ? math.min(1.0, (_dashboardData.currentMonthVolume / math.max(1.0, _dashboardData.totalVolume)))
+        : 0.5;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colors.isDark
+              ? const [Color(0xFF071A57), Color(0xFF09246F), Color(0xFF0D338E)]
+              : const [Color(0xFF0A255E), Color(0xFF103D88), Color(0xFF1652B0)],
+        ),
+        boxShadow: const [
+          BoxShadow(color: Color(0x2E040F36), blurRadius: 22, offset: Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Flexible(
+                        child: Text(
+                          'PAYOUT READY',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      if (_referralLinks.isNotEmpty) {
+                        _showReferralQrModal(_referralLinks[0]);
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(LucideIcons.qrCode, size: 13),
+                    label: const Text('Instant QR', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(LucideIcons.wallet, size: 13),
+                    label: const Text('Withdraw', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Available Balance display
+          Text(
+            'Liquid Available Balance',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11.5, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '\$${_dashboardData.commissionBalance.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text('USD', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // 3-stat summary strip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: _heroStatCol('Month Earnings', '\$${_dashboardData.currentMonthEarnings.toStringAsFixed(2)}')),
+                Expanded(child: _heroStatCol('Total Payouts', '\$${_dashboardData.totalWithdrawals.toStringAsFixed(2)}')),
+                Expanded(child: _heroStatCol('Network Clients', '${_dashboardData.totalClients} ($direct Direct)')),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Volume Velocity Meter
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.zap, size: 14, color: Color(0xFFF5C438)),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        'Volume Velocity Meter',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 11.5, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${_dashboardData.currentMonthVolume.toStringAsFixed(2)} Lots (30D)',
+                style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: velocityRatio,
+              minHeight: 6,
+              backgroundColor: Colors.white.withValues(alpha: 0.15),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'All-Time: ${_dashboardData.totalVolume.toStringAsFixed(2)} Lots',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 10),
+              ),
+              Text(
+                'Ratio: $direct Direct / $sub Sub-IB',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 10, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _profileCard(_PartnershipColors colors) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(19),
-      border: Border.all(color: colors.border),
-      boxShadow: [
-        BoxShadow(
-          color: colors.cardShadow,
-          blurRadius: 18,
-          offset: const Offset(0, 6),
-        ),
-      ],
-    ),
-    child: Column(
+  Widget _heroStatCol(String label, String value) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(LucideIcons.users, color: colors.blue, size: 17),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Commission Profiles',
-                    style: TextStyle(
-                      color: colors.text,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    'Select any profile to view its dedicated referral link, metrics, and shareable materials.',
-                    style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
-            const _ReferralPremiumPill(),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Divider(height: 1, color: colors.border),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 6,
-          runSpacing: 7,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(
-              'SELECT ROUTE:',
-              style: TextStyle(
-                color: colors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            for (var i = 0; i < routes.length; i++)
-              ChoiceChip(
-                label: Text(routes[i].name),
-                selected: selected == i,
-                onSelected: (_) => setState(() => selected = i),
-                showCheckmark: false,
-                visualDensity: VisualDensity.compact,
-                side: BorderSide(
-                  color: selected == i ? colors.blue : colors.border,
-                ),
-                backgroundColor: colors.subCard,
-                selectedColor: colors.blue,
-                labelStyle: TextStyle(
-                  color: selected == i ? Colors.white : colors.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Divider(height: 1, color: colors.border),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF5578F6), Color(0xFF3152DE)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                LucideIcons.chartNoAxesColumn,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          route.name.toUpperCase(),
-                          style: TextStyle(
-                            color: colors.text,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const _ReferralPremiumPill(),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Tier 024',
-                    style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    'REFERRAL CODE',
-                    style: TextStyle(
-                      color: colors.muted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        route.code,
-                        style: TextStyle(
-                          color: colors.blue,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .7,
-                        ),
-                      ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => copyText(route.code, 'Referral code'),
-                        icon: Icon(
-                          LucideIcons.copy,
-                          color: colors.muted,
-                          size: 15,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (MediaQuery.sizeOf(context).width > 600) ...[
-              const _ReferralMiniStat(
-                label: 'EARNINGS',
-                value: r'$0.00',
-                icon: LucideIcons.trendingUp,
-                color: Color(0xFF00B98B),
-              ),
-              const SizedBox(width: 18),
-              const _ReferralMiniStat(
-                label: 'VOLUME',
-                value: '0.0 L',
-                icon: LucideIcons.activity,
-                color: Color(0xFF4285F4),
-              ),
-              const SizedBox(width: 18),
-              const _ReferralMiniStat(
-                label: 'CLIENTS',
-                value: '0',
-                icon: LucideIcons.usersRound,
-                color: Color(0xFFB54BEF),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: colors.subCard,
-            border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Active Commission Route',
-                      style: TextStyle(
-                        color: colors.text,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  const _ReferralPremiumPill(),
-                ],
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Share this verified link or referral code to automatically route clients into this tier.',
-                style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 11),
-              _ReferralLinkRow(
-                label: 'DIRECT REFERRAL CODE',
-                value: route.code,
-                buttonLabel: 'Copy Code',
-                onPressed: () => copyText(route.code, 'Referral code'),
-              ),
-              const SizedBox(height: 8),
-              _ReferralLinkRow(
-                label: 'DIRECT REGISTRATION URL',
-                value: referralUrl,
-                buttonLabel: 'Copy Link',
-                onPressed: () => copyText(referralUrl, 'Referral link'),
-                trailing: IconButton(
-                  tooltip: 'Open link',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => launchUrl(
-                    Uri.parse(referralUrl),
-                    mode: LaunchMode.externalApplication,
-                  ),
-                  icon: Icon(LucideIcons.externalLink, color: colors.blue, size: 15),
-                ),
-              ),
-            ],
-          ),
-        ),
+        Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 10)),
+        const SizedBox(height: 2),
+        Text(value, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w900)),
       ],
-    ),
-  );
+    );
+  }
 
-  Widget _qrCard(_PartnershipColors colors) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(21),
-      border: Border.all(color: colors.border),
-      boxShadow: [
-        BoxShadow(
-          color: colors.cardShadow,
-          blurRadius: 18,
-          offset: const Offset(0, 7),
-        ),
-      ],
-    ),
-    child: Column(
+  Widget _buildKpiMatrices(_PartnershipColors colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(LucideIcons.orbit, color: colors.gold, size: 27),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'VT INDEX · REFERRAL STUDIO',
-                    style: TextStyle(
-                      color: colors.blue,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  Text(
-                    'Share your partner QR',
-                    style: TextStyle(
-                      color: colors.text,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    'Scan to join directly',
-                    style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 15),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: colors.border),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x140B1D35),
-                blurRadius: 16,
-                offset: Offset(0, 7),
-              ),
-            ],
-          ),
-          child: QrImageView(
-            key: ValueKey(referralUrl),
-            data: referralUrl,
-            version: QrVersions.auto,
-            size: 178,
-            backgroundColor: Colors.white,
-            eyeStyle: const QrEyeStyle(color: Color(0xFF182C83)),
-            dataModuleStyle: const QrDataModuleStyle(color: Color(0xFF182C83)),
-          ),
-        ),
-        const SizedBox(height: 12),
         Text(
-          'REFERRAL CODE',
+          'FINANCIAL & VOLUME TELEMETRY',
           style: TextStyle(
             color: colors.muted,
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: .8,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          route.code,
-          style: TextStyle(
-            color: colors.gold,
-            fontSize: 16,
+            fontSize: 10.5,
             fontWeight: FontWeight.w900,
-            letterSpacing: 1.4,
+            letterSpacing: 0.8,
           ),
         ),
-        const SizedBox(height: 13),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 9,
-          runSpacing: 8,
+        const SizedBox(height: 8),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 2.1,
           children: [
-            _ReferralSocialButton(
-              icon: LucideIcons.messageCircle,
-              color: const Color(0xFF00B98B),
-              tooltip: 'WhatsApp',
-              onTap: () => share('WhatsApp'),
-            ),
-            _ReferralSocialButton(
-              icon: LucideIcons.send,
-              color: const Color(0xFF25A9E8),
-              tooltip: 'Telegram',
-              onTap: () => share('Telegram'),
-            ),
-            _ReferralSocialButton(
-              icon: LucideIcons.atSign,
-              color: Colors.black87,
-              tooltip: 'X',
-              onTap: () => share('X'),
-            ),
-            _ReferralSocialButton(
-              icon: LucideIcons.link,
-              color: const Color(0xFF1769AA),
-              tooltip: 'LinkedIn',
-              onTap: () => share('LinkedIn'),
-            ),
-            _ReferralSocialButton(
-              icon: LucideIcons.mail,
-              color: const Color(0xFF8B28D9),
-              tooltip: 'Email',
-              onTap: () => share('Email'),
-            ),
-            _ReferralSocialButton(
-              icon: LucideIcons.share2,
-              color: colors.blue,
-              tooltip: 'Copy share link',
-              onTap: () => copyText(referralUrl, 'Referral link'),
-            ),
+            _kpiCard(colors, 'Total Earnings', '\$${_dashboardData.totalEarnings.toStringAsFixed(2)}', LucideIcons.coins, colors.gold),
+            _kpiCard(colors, 'Commission Balance', '\$${_dashboardData.commissionBalance.toStringAsFixed(2)}', LucideIcons.wallet, colors.blue),
+            _kpiCard(colors, 'Total Clients', '${_dashboardData.totalClients}', LucideIcons.users, colors.green),
+            _kpiCard(colors, 'Total Traded Volume', '${_dashboardData.totalVolume.toStringAsFixed(2)} Lots', LucideIcons.activity, const Color(0xFF06B6D4)),
           ],
         ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () => showAppMessage('PDF export is ready for distribution.'),
-            icon: const Icon(LucideIcons.download, size: 15),
-            label: const Text(
-              'DOWNLOAD PDF CARD',
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
       ],
-    ),
-  );
-}
+    );
+  }
 
-class _ReferralRoute {
-  const _ReferralRoute(this.name, this.code);
-  final String name, code;
-}
-
-class _ReferralMetric extends StatelessWidget {
-  const _ReferralMetric({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.note,
-    required this.color,
-  });
-  final IconData icon;
-  final String label, value, note;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
+  Widget _kpiCard(_PartnershipColors colors, String label, String value, IconData icon, Color accent) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: colors.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.border),
       ),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: .12),
-              shape: BoxShape.circle,
+              color: accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(icon, color: accent, size: 18),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1645,32 +3140,14 @@ class _ReferralMetric extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TextStyle(color: colors.muted, fontSize: 10, fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   value,
-                  style: TextStyle(
-                    color: colors.text,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  note,
-                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(color: colors.text, fontSize: 13.5, fontWeight: FontWeight.w900),
                 ),
               ],
             ),
@@ -1679,955 +3156,690 @@ class _ReferralMetric extends StatelessWidget {
       ),
     );
   }
-}
 
-class _ReferralMiniStat extends StatelessWidget {
-  const _ReferralMiniStat({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-  final String label, value;
-  final IconData icon;
-  final Color color;
+  Widget _buildTrajectoryChartCard(_PartnershipColors colors) {
+    final months = _dashboardData.earningsPerMonth;
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 15),
-        const SizedBox(height: 4),
-        Text(
+    return _PartnershipGlassPanel(
+      colors: colors,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Commission Trajectory',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: colors.text, fontSize: 14.5, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '12-Month Performance Dynamics',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: colors.muted, fontSize: 10.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Mode switcher
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: colors.subCard,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: colors.subBorder),
+                ),
+                child: Row(
+                  children: [
+                    _togglePill(colors, 'Consolidated', _chartMode == 'Consolidated', () {
+                      setState(() => _chartMode = 'Consolidated');
+                    }),
+                    _togglePill(colors, 'Multi-Link', _chartMode == 'Multi-Link', () {
+                      setState(() => _chartMode = 'Multi-Link');
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Chart Painter Canvas
+          GestureDetector(
+            onPanUpdate: (details) {
+              final box = context.findRenderObject() as RenderBox?;
+              if (box != null && months.isNotEmpty) {
+                final localX = details.localPosition.dx.clamp(0.0, box.size.width);
+                final step = box.size.width / (months.length - 1);
+                final index = (localX / step).round().clamp(0, months.length - 1);
+                setState(() => _scrubbedMonthIndex = index);
+              }
+            },
+            onPanEnd: (_) => setState(() => _scrubbedMonthIndex = null),
+            child: SizedBox(
+              height: 180,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: _CommissionTrajectoryPainter(
+                  monthsData: months,
+                  lineColor: colors.blue,
+                  isDark: colors.isDark,
+                  selectedIndex: _scrubbedMonthIndex,
+                ),
+              ),
+            ),
+          ),
+          if (_scrubbedMonthIndex != null && _scrubbedMonthIndex! < months.length)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colors.blue,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${months[_scrubbedMonthIndex!]['month']}: \$${((months[_scrubbedMonthIndex!]['total'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(2)}',
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ),
+          // Per link badges in Multi-Link mode
+          if (_chartMode == 'Multi-Link' && _referralLinks.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _referralLinks.map((link) {
+                final isSelected = _selectedLinkKey == link.referralCode;
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedLinkKey = isSelected ? 'all' : link.referralCode;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isSelected ? link.color.withValues(alpha: 0.2) : colors.subCard,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: isSelected ? link.color : colors.subBorder),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: link.color, shape: BoxShape.circle)),
+                        const SizedBox(width: 6),
+                        Text(link.profileName, style: TextStyle(color: colors.text, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _togglePill(_PartnershipColors colors, String label, bool active, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: active ? colors.blue : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Text(
           label,
           style: TextStyle(
-            color: colors.muted,
-            fontSize: 11,
+            color: active ? Colors.white : colors.muted,
+            fontSize: 10,
             fontWeight: FontWeight.w800,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLeaderboardCard(_PartnershipColors colors) {
+    final clients = _dashboardData.earningsPerClient;
+
+    return _PartnershipGlassPanel(
+      colors: colors,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  _leaderboardView == 'Ranked' ? 'Top Client Performers' : 'Referral Links Share',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.text, fontSize: 14.5, fontWeight: FontWeight.w800),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: colors.subCard,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: colors.subBorder),
+                ),
+                child: Row(
+                  children: [
+                    _togglePill(colors, 'Ranked', _leaderboardView == 'Ranked', () {
+                      setState(() => _leaderboardView = 'Ranked');
+                    }),
+                    _togglePill(colors, 'Links', _leaderboardView == 'Links', () {
+                      setState(() => _leaderboardView = 'Links');
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_leaderboardView == 'Ranked')
+            clients.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text('No client performance records yet', style: TextStyle(color: colors.muted, fontSize: 12)),
+                    ),
+                  )
+                : Column(
+                    children: clients.take(6).map((item) {
+                      final rank = clients.indexOf(item) + 1;
+                      final name = (item['name'] ?? 'Client').toString();
+                      final comm = ((item['total_commission'] as num?)?.toDouble() ?? 0.0);
+                      final vol = ((item['total_volume'] as num?)?.toDouble() ?? 0.0);
+
+                      return InkWell(
+                        onTap: () {
+                          final cId = (item['client_id'] ?? '').toString();
+                          final matched = _clientTree.where((c) => c.id == cId || c.name.toLowerCase() == name.toLowerCase()).firstOrNull;
+                          _showClientAccountsModal(matched ?? _IbClient(id: cId, name: name));
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: colors.subCard,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.subBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 26,
+                                height: 26,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: rank == 1
+                                      ? colors.gold
+                                      : (rank == 2 ? const Color(0xFF94A3B8) : (rank == 3 ? const Color(0xFFB45309) : colors.border)),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '#$rank',
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(name, style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
+                                    Text('${vol.toStringAsFixed(2)} Lots', style: TextStyle(color: colors.muted, fontSize: 10.5)),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '\$${comm.toStringAsFixed(2)}',
+                                    style: TextStyle(color: colors.green, fontSize: 13, fontWeight: FontWeight.w900),
+                                  ),
+                                  Text('Yield', style: TextStyle(color: colors.muted, fontSize: 9.5)),
+                                ],
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(LucideIcons.chevronRight, size: 14, color: colors.muted),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  )
+          else
+            _referralLinks.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text('No referral links registered', style: TextStyle(color: colors.muted, fontSize: 12)),
+                    ),
+                  )
+                : Column(
+                    children: _referralLinks.map((link) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colors.subCard,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.subBorder),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(width: 10, height: 10, decoration: BoxDecoration(color: link.color, shape: BoxShape.circle)),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(link.profileName, style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
+                                    Text('Code: ${link.referralCode}', style: TextStyle(color: colors.muted, fontSize: 10.5, fontFamily: 'monospace')),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(text: link.referralCode));
+                                showAppMessage('Code ${link.referralCode} copied!');
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                side: BorderSide(color: colors.border),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(LucideIcons.copy, size: 11),
+                              label: Text('Copy', style: TextStyle(fontSize: 10, color: colors.text)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShortcutsSection(_PartnershipColors colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Text(
-          value,
+          'PARTNERSHIP TOOLS & REPORTS',
           style: TextStyle(
-            color: colors.text,
-            fontSize: 13,
+            color: colors.muted,
+            fontSize: 10.5,
             fontWeight: FontWeight.w900,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 10),
+        _shortcutItem(
+          colors: colors,
+          icon: LucideIcons.users,
+          label: 'Client Network Hierarchy',
+          subtitle: 'View multi-level downline tiers, accounts, and client details',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const BrokerClientTreePage()),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _shortcutItem(
+          colors: colors,
+          icon: LucideIcons.creditCard,
+          label: 'Commission Ledger & History',
+          subtitle: '${_commissionTxns.isNotEmpty ? '${_commissionTxns.length} recorded deals' : 'Complete trade deal records'}, volume, and generated commissions',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const BrokerCommissionLedgerPage()),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _shortcutItem(
+          colors: colors,
+          icon: LucideIcons.wallet,
+          label: 'Commission Payout & Withdrawal',
+          subtitle: 'Instant internal transfer of available commission to live MT5 accounts',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _shortcutItem(
+          colors: colors,
+          icon: LucideIcons.qrCode,
+          label: 'Referral Link & QR Studio',
+          subtitle: 'Branded referral profiles, marketing links, and social sharing',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const BrokerReferralStudioPage()),
           ),
         ),
       ],
     );
   }
-}
 
-class _ReferralPremiumPill extends StatelessWidget {
-  const _ReferralPremiumPill();
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFFF8E7),
-      border: Border.all(color: const Color(0xFFFFD76A)),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: const Text(
-      '★ PREMIUM',
-      style: TextStyle(
-        color: Color(0xFFB97800),
-        fontSize: 11,
-        fontWeight: FontWeight.w900,
-      ),
-    ),
-  );
-}
-
-class _ReferralLinkRow extends StatelessWidget {
-  const _ReferralLinkRow({
-    required this.label,
-    required this.value,
-    required this.buttonLabel,
-    required this.onPressed,
-    this.trailing,
-  });
-  final String label, value, buttonLabel;
-  final VoidCallback onPressed;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.card,
-        border: Border.all(color: colors.border),
-        borderRadius: BorderRadius.circular(11),
-      ),
+  Widget _shortcutItem({
+    required _PartnershipColors colors,
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return _PartnershipGlassPanel(
+      colors: colors,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      radius: 14,
       child: Row(
         children: [
-          Icon(LucideIcons.link, color: colors.blue, size: 15),
-          const SizedBox(width: 8),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: colors.blue.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: colors.blue, size: 18),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: colors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                SelectableText(
-                  value,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: colors.text,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                Text(label, style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 1),
+                Text(subtitle, style: TextStyle(color: colors.muted, fontSize: 11)),
               ],
             ),
           ),
-          const SizedBox(width: 6),
-          FilledButton.icon(
-            onPressed: onPressed,
-            icon: const Icon(LucideIcons.copy, size: 12),
-            label: Text(
-              buttonLabel,
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
-              minimumSize: Size.zero,
-            ),
-          ),
-          ?trailing,
+          Icon(LucideIcons.chevronRight, size: 16, color: colors.muted),
         ],
       ),
     );
   }
 }
 
-class _ReferralSocialButton extends StatelessWidget {
-  const _ReferralSocialButton({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
+// ============================================================================
+// ACCOUNT DETAIL SHEET WITH LIVE POSITIONS
+// ============================================================================
+
+class _AccountDetailSheet extends StatefulWidget {
+  const _AccountDetailSheet({
+    required this.account,
+    this.clientName,
+    required this.colors,
   });
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
 
-  @override
-  Widget build(BuildContext context) => Tooltip(
-    message: tooltip,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: Icon(icon, color: Colors.white, size: 15),
-      ),
-    ),
-  );
-}
-
-class BrokerCommissionWithdrawalPage extends StatefulWidget {
-  const BrokerCommissionWithdrawalPage({super.key});
-  @override
-  State<BrokerCommissionWithdrawalPage> createState() =>
-      _BrokerCommissionWithdrawalPageState();
-}
-
-class _BrokerCommissionWithdrawalPageState
-    extends State<BrokerCommissionWithdrawalPage> {
-  static const double _availableBalance = 4820.00;
-  static const String _account =
-      '3327 – standard (KRSNA-USD-B) · Balance: USD 0.00';
-  final TextEditingController _amountController = TextEditingController();
-  double _amount = 0;
-  String _selectedAccount = _account;
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    super.dispose();
-  }
-
-  void _setAmount(double value) {
-    final safeValue = value.clamp(0.0, _availableBalance).toDouble();
-    _amountController.text = safeValue.toStringAsFixed(2);
-    setState(() => _amount = safeValue);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    final remaining = (_availableBalance - _amount).clamp(0.0, double.infinity);
-    final canSubmit = _amount > 0 && _amount <= _availableBalance;
-    final wide = MediaQuery.sizeOf(context).width >= 850;
-    return Scaffold(
-      backgroundColor: colors.canvas,
-      appBar: AppBar(
-        backgroundColor: colors.appBarBg,
-        foregroundColor: colors.text,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.maybePop(context),
-          icon: const Icon(LucideIcons.arrowLeft),
-        ),
-        title: const Text(
-          'Commission Withdrawal',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const BrokerCommissionLedgerPage(),
-              ),
-            ),
-            icon: const Icon(LucideIcons.history, size: 16),
-            label: const Text('Ledger'),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(wide ? 24 : 14),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1280),
-            child: wide
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(width: 380, child: _summaryCard(colors, remaining)),
-                      const SizedBox(width: 22),
-                      Expanded(child: _payoutForm(colors, canSubmit)),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _summaryCard(colors, remaining),
-                      const SizedBox(height: 16),
-                      _payoutForm(colors, canSubmit),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _summaryCard(_PartnershipColors colors, double remaining) => Column(
-    children: [
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF071941), Color(0xFF144EA5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0C2B68).withValues(alpha: 0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 9),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(LucideIcons.wallet, color: Colors.white, size: 20),
-                const SizedBox(width: 9),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'VT-INDEX VAULT',
-                        style: TextStyle(
-                          color: Color(0xFFDCE5FF),
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      Text(
-                        'Commission Balance',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'USD',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'Available to Withdraw',
-              style: TextStyle(color: Color(0xFFDCE5FF), fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              r'$' + _availableBalance.toStringAsFixed(2),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Transfer Settlement',
-                      style: TextStyle(color: Color(0xFFDCE5FF), fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  Text(
-                    'Direct MT5 Account Credit',
-                    style: TextStyle(
-                      color: Color(0xFF00D7A2),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 15),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: colors.card,
-          borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: colors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  LucideIcons.calculator,
-                  color: colors.blue,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'SETTLEMENT BREAKDOWN',
-                    style: TextStyle(
-                      color: colors.text,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Divider(height: 22, color: colors.border),
-            const _PayoutBreakdownRow(
-              label: 'Source Vault',
-              value: 'IB Commission Balance',
-            ),
-            const _PayoutBreakdownRow(
-              label: 'Target Account',
-              value: '3327 · standard',
-            ),
-            _PayoutBreakdownRow(
-              label: 'Requested Payout',
-              value: 'USD ${_amount.toStringAsFixed(2)}',
-            ),
-            const _PayoutBreakdownRow(label: 'Transfer Fee', value: 'USD 0.00'),
-            Divider(height: 18, color: colors.border),
-            _PayoutBreakdownRow(
-              label: 'Net Credited to Trading Account',
-              value: 'USD ${_amount.toStringAsFixed(2)}',
-              strong: true,
-            ),
-            _PayoutBreakdownRow(
-              label: 'Est. Remaining Commission',
-              value: 'USD ${remaining.toStringAsFixed(2)}',
-              strong: true,
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 15),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colors.card,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: colors.border),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(LucideIcons.shieldCheck, color: Color(0xFF00B98B), size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Instant Internal Settlement Protocol',
-                    style: TextStyle(
-                      color: colors.text,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Funds are credited directly to your standard trading account. No external banking delays or transaction fees.',
-                    style: TextStyle(
-                      color: colors.muted,
-                      fontSize: 12,
-                      height: 1.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _payoutForm(_PartnershipColors colors, bool canSubmit) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: colors.border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-          decoration: BoxDecoration(
-            color: colors.gold.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.zap, color: colors.gold, size: 13),
-              const SizedBox(width: 6),
-              Text(
-                'COMMISSION PAYOUT DESK',
-                style: TextStyle(
-                  color: colors.gold,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Transfer to Trading Account',
-          style: TextStyle(
-            color: colors.text,
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Select your live receiving account and specify the withdrawal amount.',
-          style: TextStyle(color: colors.muted, fontSize: 12.5, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 23),
-        Text(
-          'RECEIVING TRADING ACCOUNT *',
-          style: TextStyle(
-            color: colors.text,
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 9),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: colors.inputBg,
-            border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedAccount,
-              isExpanded: true,
-              dropdownColor: colors.card,
-              items: [
-                DropdownMenuItem(
-                  value: _account,
-                  child: Text(
-                    _account,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: colors.text, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-              onChanged: (value) =>
-                  setState(() => _selectedAccount = value ?? _account),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-          decoration: BoxDecoration(
-            color: colors.subCard,
-            border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Target Account Balance:',
-                  style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ),
-              Text(
-                r'$0.00 USD',
-                style: TextStyle(
-                  color: colors.blue,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        Divider(color: colors.border),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'AMOUNT TO WITHDRAW *',
-                style: TextStyle(
-                  color: colors.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-            Text(
-              'Max: USD ${_availableBalance.toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: Color(0xFF00B98B),
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 9),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13),
-          decoration: BoxDecoration(
-            color: colors.inputBg,
-            border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              Text(
-                'USD',
-                style: TextStyle(
-                  color: colors.gold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (value) =>
-                      setState(() => _amount = double.tryParse(value) ?? 0),
-                  style: TextStyle(color: colors.text, fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: '0.00',
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(
-                      color: colors.muted,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => _setAmount(_availableBalance),
-                child: Text(
-                  'MAX',
-                  style: TextStyle(
-                    color: colors.gold,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 7,
-          runSpacing: 7,
-          children: [
-            Text(
-              'QUICK PRESETS:',
-              style: TextStyle(
-                color: colors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            for (final percent in [25, 50, 75, 100])
-              _PayoutPreset(
-                label: '$percent%',
-                onTap: () => _setAmount(_availableBalance * percent / 100),
-              ),
-            for (final amount in [100, 250, 500, 1000])
-              _PayoutPreset(
-                label: 'USD $amount',
-                onTap: () => _setAmount(amount.toDouble()),
-              ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Divider(color: colors.border),
-        const SizedBox(height: 16),
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          runSpacing: 10,
-          children: [
-            OutlinedButton(
-              onPressed: () => Navigator.maybePop(context),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colors.text,
-                side: BorderSide(color: colors.border),
-              ),
-              child: const Text('Cancel & Return'),
-            ),
-            FilledButton.icon(
-              onPressed: canSubmit
-                  ? () {
-                      showAppMessage('Withdrawal request for \$${_amount.toStringAsFixed(2)} submitted.');
-                      Navigator.maybePop(context);
-                    }
-                  : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(LucideIcons.arrowRight, size: 14),
-              label: const Text('Confirm Withdrawal'),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-class _PayoutBreakdownRow extends StatelessWidget {
-  const _PayoutBreakdownRow({
-    required this.label,
-    required this.value,
-    this.strong = false,
-  });
-  final String label;
-  final String value;
-  final bool strong;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: strong ? colors.text : colors.muted,
-                fontSize: strong ? 12 : 11,
-                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: colors.text,
-              fontSize: strong ? 13 : 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PayoutPreset extends StatelessWidget {
-  const _PayoutPreset({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return ActionChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          color: colors.text,
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-      onPressed: onTap,
-      visualDensity: VisualDensity.compact,
-      backgroundColor: colors.subCard,
-      side: BorderSide(color: colors.border),
-      shape: const StadiumBorder(),
-    );
-  }
-}
-
-class _PartnerProfile {
-  const _PartnerProfile({
-    required this.name,
-    required this.code,
-    required this.clients,
-    this.primary = false,
-  });
-  final String name;
-  final String code;
-  final int clients;
-  final bool primary;
-}
-
-
-
-class _PartnershipSectionLabel extends StatelessWidget {
-  const _PartnershipSectionLabel(this.label, {this.subtitle, required this.colors});
-  final String label;
-  final String? subtitle;
+  final _IbTradingAccount account;
+  final String? clientName;
   final _PartnershipColors colors;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 2, bottom: 2),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(
-        color: colors.text,
-        fontSize: 12,
-        fontWeight: FontWeight.w900,
-        letterSpacing: .8,
-      )),
-      if (subtitle != null) ...[
-        const SizedBox(height: 3),
-        Text(subtitle!, style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w500)),
-      ],
-    ]),
-  );
+  State<_AccountDetailSheet> createState() => _AccountDetailSheetState();
 }
 
-class _PartnershipStat extends StatelessWidget {
-  const _PartnershipStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.gold = false,
-  });
+class _AccountDetailSheetState extends State<_AccountDetailSheet> {
+  bool _loading = true;
+  Map<String, dynamic> _details = {};
+  List<Map<String, dynamic>> _positions = [];
 
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool gold;
+  @override
+  void initState() {
+    super.initState();
+    _fetchDetails();
+  }
+
+  Future<void> _fetchDetails() async {
+    setState(() => _loading = true);
+    try {
+      final results = await Future.wait([
+        AuthApi.instance.getAccountDetails(widget.account.accountId).catchError((_) => <String, dynamic>{}),
+        AuthApi.instance.getOpenPositions(widget.account.accountId).catchError((_) => <Map<String, dynamic>>[]),
+      ]);
+      if (mounted) {
+        setState(() {
+          _details = results[0] as Map<String, dynamic>;
+          _positions = results[1] as List<Map<String, dynamic>>;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    final accent = gold ? colors.gold : colors.blue;
-    final compact = MediaQuery.sizeOf(context).width < 600;
-    return _PartnershipGlassPanel(
-      colors: colors,
-      radius: 17,
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-      child: Row(children: [
-          Container(
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: .09),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, color: accent, size: 14),
-          ),
-          const SizedBox(width: 9),
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(
-                color: colors.muted,
-                fontSize: compact ? 11 : 12.5,
-                fontWeight: FontWeight.w700,
-              )),
-              SizedBox(height: compact ? 2 : 4),
-              FittedBox(
-                alignment: Alignment.centerLeft,
-                fit: BoxFit.scaleDown,
-                child: Text(value, style: TextStyle(
-                  color: colors.text,
-                  fontSize: compact ? 16 : 18.5,
-                  fontWeight: FontWeight.w900,
-                )),
+    final colors = widget.colors;
+    final balance = _details['balance']?.toString() ?? '0.00';
+    final equity = _details['equity']?.toString() ?? '0.00';
+    final margin = _details['margin']?.toString() ?? '0.00';
+    final profit = _details['profit']?.toString() ?? '0.00';
+    final profitNum = double.tryParse(profit) ?? 0.0;
+
+    return SafeArea(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+        ),
+        decoration: BoxDecoration(
+          color: colors.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: colors.border),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.border,
+                borderRadius: BorderRadius.circular(2),
               ),
-            ],
-          )),
-        ]),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text('Account ${widget.account.accountId}', style: TextStyle(color: colors.text, fontSize: 16, fontWeight: FontWeight.w900)),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: colors.green.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text('MT5 Connected', style: TextStyle(color: colors.green, fontSize: 9.5, fontWeight: FontWeight.w800)),
+                          ),
+                        ],
+                      ),
+                      if (widget.clientName != null)
+                        Text('Client: ${widget.clientName}', style: TextStyle(color: colors.muted, fontSize: 11.5)),
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: _loading ? null : _fetchDetails,
+                    icon: _loading
+                        ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.blue))
+                        : Icon(LucideIcons.refreshCw, color: colors.muted, size: 18),
+                  ),
+                ],
+              ),
+            ),
+            // Metrics row: Balance, Equity, Margin, Floating P/L
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _metricBox(colors, 'Balance', '\$$balance', colors.text),
+                  const SizedBox(width: 8),
+                  _metricBox(colors, 'Equity', '\$$equity', colors.blue),
+                  const SizedBox(width: 8),
+                  _metricBox(colors, 'Margin', '\$$margin', colors.muted),
+                  const SizedBox(width: 8),
+                  _metricBox(colors, 'Floating P/L', '\$$profit', profitNum >= 0 ? colors.green : colors.red),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Divider(color: colors.border, height: 1),
+            // Open Positions List
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Open Positions (${_positions.length})', style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                  Text('Real-time snapshot', style: TextStyle(color: colors.muted, fontSize: 10.5)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? Center(child: CircularProgressIndicator(color: colors.blue))
+                  : _positions.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.activity, size: 32, color: colors.muted),
+                              const SizedBox(height: 8),
+                              Text('No open positions on this account', style: TextStyle(color: colors.muted, fontSize: 12.5)),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: _positions.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final pos = _positions[index];
+                            final sym = (pos['symbol'] ?? '—').toString();
+                            final type = (pos['type'] ?? 'BUY').toString();
+                            final isBuy = type.toUpperCase().contains('BUY');
+                            final vol = pos['volume']?.toString() ?? '0.01';
+                            final openPrice = pos['open_price']?.toString() ?? '0.00';
+                            final curPrice = pos['current_price']?.toString() ?? '0.00';
+                            final pnl = (pos['profit'] as num?)?.toDouble() ?? 0.0;
+
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: colors.subCard,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: colors.subBorder),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: isBuy ? colors.green.withValues(alpha: 0.15) : colors.red.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          isBuy ? 'BUY' : 'SELL',
+                                          style: TextStyle(
+                                            color: isBuy ? colors.green : colors.red,
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(sym, style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                                          Text('$vol Lots · Open: $openPrice · Current: $curPrice', style: TextStyle(color: colors.muted, fontSize: 10.5)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: pnl >= 0 ? colors.green : colors.red,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
     );
   }
-}
 
-class _PartnershipShortcut extends StatelessWidget {
-  const _PartnershipShortcut({
-    required this.icon,
-    required this.label,
-    this.subtitle,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return _PartnershipGlassPanel(
-      colors: colors,
-      radius: 17,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(17),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(children: [
-            Container(
-              width: 35,
-              height: 35,
-              decoration: BoxDecoration(
-                color: colors.blue.withValues(alpha: .09),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(icon, color: colors.blue, size: 16),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: TextStyle(
-                  color: colors.text,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w800,
-                )),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 3),
-                  Text(subtitle!, style: TextStyle(
-                    color: colors.muted,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                    height: 1.25,
-                  )),
-                ],
-              ],
-            )),
-            Icon(LucideIcons.chevronRight, color: colors.muted, size: 17),
-            ]),
-          ),
+  Widget _metricBox(_PartnershipColors colors, String label, String value, Color valColor) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        decoration: BoxDecoration(
+          color: colors.subCard,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.subBorder),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: TextStyle(color: colors.muted, fontSize: 9)),
+            const SizedBox(height: 2),
+            Text(value, overflow: TextOverflow.ellipsis, style: TextStyle(color: valColor, fontSize: 11.5, fontWeight: FontWeight.w900)),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Client hierarchy shown from the partnership quick shortcuts.
+// ============================================================================
+// SUB-PAGE: BROKERCLIENTTREEPAGE (CLIENT LIST & HIERARCHY)
+// ============================================================================
+
 class BrokerClientTreePage extends StatefulWidget {
   const BrokerClientTreePage({super.key});
 
@@ -2636,1954 +3848,1706 @@ class BrokerClientTreePage extends StatefulWidget {
 }
 
 class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
-  static const _ib = _ClientTreeMember(
-    initials: 'IB',
-    name: 'INR-DEVOP B',
-    email: 'iyyanar@vtindex.com',
-    phone: '7894561235',
-    joined: '2026-01-20',
-    referralCode: 'X0RCGYVH7A',
-    level: 1,
-    accountCount: 9,
-    isPartner: true,
-    children: [
-      _ClientTreeMember(
-        initials: 'SK',
-        name: 'SHRAVAN KUMAR MADDKUNTA',
-        email: 'elegantgrouplands@gmail.com',
-        joined: '2026-10-23',
-        level: 2,
-        accountCount: 1,
-      ),
-      _ClientTreeMember(
-        initials: 'TC',
-        name: 'TEST CRN',
-        email: 'crmsupportpro@gmail.com',
-        phone: '7417417410',
-        joined: '2026-07-25',
-        referralCode: '8SEBSRFT',
-        level: 2,
-        accountCount: 4,
-      ),
-    ],
-  );
-
-  final _searchController = TextEditingController();
-  String _query = '';
-  bool _expanded = true;
-  final bool _showAllReferralLinks = true;
-
-  int get _networkCount => _ib.children.length + 1;
-  int get _directCount =>
-      _ib.children.where((member) => member.level == 2).length;
-  int get _downstreamCount =>
-      _ib.children.where((member) => member.level > 1).length;
-  int get _depth => _ib.children.fold<int>(
-    1,
-    (max, member) => member.level > max ? member.level : max,
-  );
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _showAddClientDialog() async {
-    final created = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: const Color(0x660B1730),
-      isScrollControlled: true,
-      useSafeArea: true,
-      isDismissible: true,
-      enableDrag: true,
-      useRootNavigator: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          heightFactor: 1,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 980,
-              maxHeight: MediaQuery.sizeOf(sheetContext).height * .76,
-            ),
-            child: const _ClientRegistrationDialog(),
-          ),
-        ),
-      ),
-    );
-    if (created == true && mounted) {
-      showAppMessage('Client profile created successfully.');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    final query = _query.trim().toLowerCase();
-    final visibleChildren = _ib.children.where((member) {
-      if (query.isEmpty) return true;
-      return <String>[
-        member.name,
-        member.email,
-        member.phone ?? '',
-        member.referralCode ?? '',
-      ].any((value) => value.toLowerCase().contains(query));
-    }).toList();
-    final rootMatches =
-        query.isEmpty ||
-        <String>[
-          _ib.name,
-          _ib.email,
-          _ib.phone ?? '',
-          _ib.referralCode ?? '',
-        ].any((value) => value.toLowerCase().contains(query));
-
-    return Scaffold(
-      backgroundColor: colors.canvas,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: colors.text,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Client network',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          if (MediaQuery.sizeOf(context).width < 440)
-            IconButton(
-              tooltip: 'Add client',
-              onPressed: _showAddClientDialog,
-              icon: const Icon(LucideIcons.userRoundPlus),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: FilledButton.icon(
-                onPressed: _showAddClientDialog,
-                style: FilledButton.styleFrom(
-                  backgroundColor: colors.blue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(0, 44),
-                ),
-                icon: const Icon(LucideIcons.userRoundPlus, size: 16),
-                label: const Text('Add client'),
-              ),
-            ),
-        ],
-        leading: IconButton(
-          tooltip: 'Back',
-          onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(LucideIcons.arrowLeft),
-        ),
-      ),
-      body: _PartnershipBackdrop(
-        colors: colors,
-        child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
-          final horizontal = wide ? 28.0 : 14.0;
-          return ListView(
-            padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 30),
-            children: [
-              _treeHeader(colors),
-              const SizedBox(height: 14),
-              _treeSearch(colors),
-              const SizedBox(height: 12),
-              GridView.count(
-                crossAxisCount: wide ? 4 : 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 9,
-                mainAxisSpacing: 9,
-                childAspectRatio: wide ? 2.25 : 2.05,
-                children: [
-                  _TreeStat(
-                    label: 'TOTAL NETWORK',
-                    value: '$_networkCount',
-                    subtitle: 'All downline clients',
-                    icon: LucideIcons.users,
-                    accent: colors.gold,
-                    dark: colors.isDark,
-                  ),
-                  _TreeStat(
-                    label: 'DIRECT (L1)',
-                    value: '$_directCount',
-                    subtitle: 'Direct referrals',
-                    icon: LucideIcons.userRound,
-                    accent: colors.gold,
-                    dark: colors.isDark,
-                  ),
-                  _TreeStat(
-                    label: 'SUB-TIER (L2+)',
-                    value: '$_downstreamCount',
-                    subtitle: 'Downstream clients',
-                    icon: LucideIcons.network,
-                    accent: const Color(0xFF20A8E8),
-                    dark: colors.isDark,
-                  ),
-                  _TreeStat(
-                    label: 'NETWORK DEPTH',
-                    value: 'L$_depth',
-                    subtitle: 'Maximum depth',
-                    icon: LucideIcons.gitBranch,
-                    accent: const Color(0xFF13B981),
-                    dark: colors.isDark,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Divider(
-                color: colors.border,
-                height: 1,
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    'CLIENT HIERARCHY',
-                    style: TextStyle(
-                      color: colors.text,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: .45,
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () => setState(() => _expanded = true),
-                        icon: const Icon(LucideIcons.maximize2, size: 13),
-                        label: const Text('Expand all'),
-                        style: _treeSmallButton(colors),
-                      ),
-                      const SizedBox(width: 6),
-                      OutlinedButton.icon(
-                        onPressed: () => setState(() => _expanded = false),
-                        icon: const Icon(LucideIcons.minimize2, size: 13),
-                        label: const Text('Collapse all'),
-                        style: _treeSmallButton(colors),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (rootMatches)
-                _TreeMemberCard(
-                  member: _ib,
-                  dark: colors.isDark,
-                  root: true,
-                  expanded: _expanded,
-                  onToggle: () => setState(() => _expanded = !_expanded),
-                  showReferralLink: _showAllReferralLinks,
-                ),
-              if (_expanded && visibleChildren.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 22),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: colors.border,
-                          width: 1.2,
-                        ),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        for (final member in visibleChildren)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 16, bottom: 8),
-                            child: _TreeMemberCard(
-                              member: member,
-                              dark: colors.isDark,
-                              root: false,
-                              showReferralLink: _showAllReferralLinks,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              if (!rootMatches && visibleChildren.isEmpty) _treeEmpty(colors),
-              if (rootMatches && visibleChildren.isEmpty && query.isNotEmpty)
-                _treeEmpty(colors),
-              const SizedBox(height: 12),
-              Divider(
-                color: colors.border,
-                height: 1,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text(
-                    'CLIENTS PER PAGE',
-                    style: TextStyle(
-                      color: colors.muted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Showing ${visibleChildren.length + (rootMatches ? 1 : 0)} of $_networkCount',
-                    style: TextStyle(
-                      color: colors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
-        ),
-      ),
-    );
-  }
-
-  Widget _treeHeader(_PartnershipColors colors) => _PartnershipGlassPanel(
-    colors: colors,
-    padding: const EdgeInsets.all(20),
-    radius: 20,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'PARTNER NETWORK',
-          style: TextStyle(
-            color: colors.blue,
-            fontSize: 11.5,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Your client network',
-          style: TextStyle(
-            color: colors.text,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            height: 1.1,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          'Follow referrals, account activity, and each connection in your network.',
-          style: TextStyle(
-            color: colors.muted,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _treeSearch(_PartnershipColors colors) => _PartnershipGlassPanel(
-    colors: colors,
-    radius: 16,
-    child: TextField(
-      controller: _searchController,
-      onChanged: (value) => setState(() => _query = value),
-      style: TextStyle(color: colors.text, fontSize: 13),
-      decoration: InputDecoration(
-        hintText: 'Search name, email, referral code, profile or account...',
-        hintStyle: TextStyle(
-          color: colors.muted,
-          fontSize: 12.5,
-          fontWeight: FontWeight.w500,
-        ),
-        prefixIcon: Icon(LucideIcons.search, color: colors.blue, size: 17),
-        suffixIcon: _query.isEmpty
-            ? null
-            : IconButton(
-                tooltip: 'Clear search',
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _query = '');
-                },
-                icon: Icon(LucideIcons.x, color: colors.muted, size: 16),
-              ),
-        border: InputBorder.none,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
-      ),
-    ),
-  );
-
-  Widget _treeEmpty(_PartnershipColors colors) => _PartnershipGlassPanel(
-    colors: colors,
-    padding: const EdgeInsets.all(24),
-    radius: 18,
-    child: Column(
-      children: [
-        Icon(
-          LucideIcons.users,
-          color: colors.muted,
-          size: 24,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'No matching clients',
-          style: TextStyle(
-            color: colors.text,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Try a different name, email or referral code.',
-          style: TextStyle(
-            color: colors.muted,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  ButtonStyle _treeSmallButton(_PartnershipColors colors) => OutlinedButton.styleFrom(
-    foregroundColor: colors.text,
-    side: BorderSide(color: colors.border),
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    visualDensity: VisualDensity.compact,
-  );
-}
-
-class _ClientRegistrationDialog extends StatefulWidget {
-  const _ClientRegistrationDialog();
-
-  @override
-  State<_ClientRegistrationDialog> createState() =>
-      _ClientRegistrationDialogState();
-}
-
-class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _email = TextEditingController();
-  final _phone = TextEditingController();
-  final _birthDate = TextEditingController();
-  String? _country;
-  late int _partnerIndex;
-  bool _primary = true;
-
-  static const _countries = [
-    'Bahrain',
-    'Bangladesh',
-    'Barbados',
-    'Belarus',
-    'Belgium',
-    'Canada',
-    'India',
-    'Malaysia',
-    'Singapore',
-    'United Arab Emirates',
-    'United Kingdom',
-    'United States',
-  ];
+  bool _loading = true;
+  List<_IbClient> _clients = [];
+  final Set<String> _expandedIds = {};
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _partnerIndex = _partnerProfiles.indexWhere((partner) => partner.primary);
-    if (_partnerIndex < 0) _partnerIndex = 0;
+    _fetchTree();
   }
 
-  @override
-  void dispose() {
-    _name.dispose();
-    _email.dispose();
-    _phone.dispose();
-    _birthDate.dispose();
-    super.dispose();
-  }
-
-  void _reset() {
-    _formKey.currentState?.reset();
-    _name.clear();
-    _email.clear();
-    _phone.clear();
-    _birthDate.clear();
-    setState(() {
-      _country = null;
-      _partnerIndex = _partnerProfiles.indexWhere((partner) => partner.primary);
-      if (_partnerIndex < 0) _partnerIndex = 0;
-      _primary = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-        border: Border(top: BorderSide(color: colors.border)),
-        boxShadow: [
-          BoxShadow(
-            color: colors.cardShadow,
-            blurRadius: 24,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colors.border,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 7, 12, 8),
-            child: Row(
-              children: [
-                _iconBadge(LucideIcons.userRound, colors),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'PARTNER NETWORK ONBOARDING',
-                        style: TextStyle(
-                          color: colors.blue,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: .4,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'Client Registration Information',
-                        style: TextStyle(
-                          color: colors.text,
-                          fontSize: 16.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: _reset,
-                  icon: Icon(LucideIcons.rotateCcw, size: 13, color: colors.muted),
-                  label: Text('Reset', style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: colors.border),
-          Form(
-            key: _formKey,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                    _responsive([
-                      _textField(
-                        _name,
-                        'FULL NAME',
-                        'e.g. Johnathan Miller',
-                        LucideIcons.userRound,
-                        colors,
-                        required: true,
-                      ),
-                      _birthDateField(colors),
-                    ]),
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _textField(
-                            _email,
-                            'EMAIL ADDRESS',
-                            'client@company.com',
-                            LucideIcons.mail,
-                            colors,
-                            required: true,
-                            email: true,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _textField(
-                            _phone,
-                            'PHONE NUMBER',
-                            '+1 (555) 234-5678',
-                            LucideIcons.phone,
-                            colors,
-                            required: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 7),
-                    _countryField(colors),
-                    const SizedBox(height: 8),
-                    _partnerField(colors),
-                    Material(
-                      color: colors.card,
-                      child: SizedBox(
-                        height: 34,
-                        child: CheckboxListTile(
-                          value: _primary,
-                          onChanged: (value) => setState(() {
-                            _primary = value ?? false;
-                            if (_primary) {
-                              final primaryIndex = _partnerProfiles.indexWhere(
-                                (partner) => partner.primary,
-                              );
-                              if (primaryIndex >= 0) {
-                                _partnerIndex = primaryIndex;
-                              }
-                            }
-                          }),
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          visualDensity: VisualDensity.compact,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: Text(
-                            'Use primary referral profile',
-                            style: TextStyle(color: colors.blue, fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          Divider(height: 1, color: colors.border),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: () {
-                  if (_formKey.currentState?.validate() ?? false) {
-                    Navigator.of(context).pop(true);
-                  }
-                },
-                icon: const Icon(LucideIcons.userRoundPlus, size: 15),
-                label: const Text('Create Client Profile'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _responsive(List<Widget> fields) => LayoutBuilder(
-    builder: (context, constraints) {
-      const gap = 10.0;
-      final halfWidth = (constraints.maxWidth - gap) / 2;
-      return Wrap(
-        spacing: gap,
-        runSpacing: 7,
-        children: [
-          for (var i = 0; i < fields.length; i++)
-            SizedBox(
-              width: fields.length.isOdd && i == fields.length - 1
-                  ? constraints.maxWidth
-                  : halfWidth,
-              child: fields[i],
-            ),
-        ],
-      );
-    },
-  );
-
-  Widget _textField(
-    TextEditingController controller,
-    String label,
-    String hint,
-    IconData icon,
-    _PartnershipColors colors, {
-    bool required = false,
-    bool email = false,
-  }) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _fieldLabel(label, colors, required: required),
-      const SizedBox(height: 5),
-      TextFormField(
-        controller: controller,
-        keyboardType: email ? TextInputType.emailAddress : TextInputType.text,
-        validator: required
-            ? (value) => (value == null || value.trim().isEmpty)
-                  ? 'Required'
-                  : (email && !value.contains('@')
-                        ? 'Enter a valid email'
-                        : null)
-            : null,
-        style: TextStyle(color: colors.text, fontSize: 11),
-        decoration: _decoration(hint, icon, colors),
-      ),
-    ],
-  );
-
-  Widget _birthDateField(_PartnershipColors colors) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _fieldLabel('DATE OF BIRTH', colors, suffix: '(optional)'),
-      const SizedBox(height: 5),
-      TextFormField(
-        controller: _birthDate,
-        readOnly: true,
-        onTap: () async {
-          final selected = await showDatePicker(
-            context: context,
-            initialDate: DateTime(1995),
-            firstDate: DateTime(1900),
-            lastDate: DateTime.now(),
-          );
-          if (selected != null) {
-            _birthDate.text =
-                '${selected.day.toString().padLeft(2, '0')}-${selected.month.toString().padLeft(2, '0')}-${selected.year}';
-          }
-        },
-        style: TextStyle(color: colors.text, fontSize: 11),
-        decoration: _decoration('dd-mm-yyyy', LucideIcons.calendarDays, colors),
-      ),
-    ],
-  );
-
-  Widget _countryField(_PartnershipColors colors) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _fieldLabel('COUNTRY / REGION', colors, required: true),
-      const SizedBox(height: 5),
-      DropdownButtonFormField<String>(
-        initialValue: _country,
-        isExpanded: true,
-        dropdownColor: colors.card,
-        style: TextStyle(color: colors.text, fontSize: 11),
-        validator: (value) => value == null ? 'Select a country' : null,
-        decoration: _decoration('Search and select country', LucideIcons.globe, colors),
-        items: [
-          for (final country in _countries)
-            DropdownMenuItem(
-              value: country,
-              child: Text(country, overflow: TextOverflow.ellipsis),
-            ),
-        ],
-        onChanged: (value) => setState(() => _country = value),
-      ),
-    ],
-  );
-
-  Widget _partnerField(_PartnershipColors colors) {
-    final partner = _partnerProfiles[_partnerIndex];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: colors.inputBg,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: colors.border),
-      ),
-      child: Row(
-        children: [
-          _iconBadge(LucideIcons.userRound, colors),
-          const SizedBox(width: 9),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: _partnerIndex,
-                isExpanded: true,
-                dropdownColor: colors.card,
-                items: [
-                  for (var i = 0; i < _partnerProfiles.length; i++)
-                    DropdownMenuItem(
-                      value: i,
-                      child: Text(
-                        '${_partnerProfiles[i].name}  ${_partnerProfiles[i].primary ? 'PRIMARY  ' : ''}${_partnerProfiles[i].code}  ·  ${_partnerProfiles[i].clients} clients',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: colors.text,
-                        ),
-                      ),
-                    ),
-                ],
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _partnerIndex = value;
-                    _primary = _partnerProfiles[value].primary;
-                  });
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            partner.primary ? '✓ Assigned' : 'Assigned',
-            style: const TextStyle(
-              color: Color(0xFF0BAE7A),
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _iconBadge(IconData icon, _PartnershipColors colors) => Container(
-    width: 30,
-    height: 30,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: colors.blue.withValues(alpha: 0.12),
-      shape: BoxShape.circle,
-    ),
-    child: Icon(icon, color: colors.blue, size: 15),
-  );
-
-  Widget _fieldLabel(String label, _PartnershipColors colors, {bool required = false, String? suffix}) =>
-      Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: colors.text,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          if (required)
-            const Text(
-              '*',
-              style: TextStyle(
-                color: Color(0xFFFF5366),
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          if (suffix != null)
-            Text(
-              suffix,
-              style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w600),
-            ),
-        ],
-      );
-
-  InputDecoration _decoration(String hint, IconData icon, _PartnershipColors colors) => InputDecoration(
-    hintText: hint,
-    hintStyle: TextStyle(color: colors.muted, fontSize: 12.5, fontWeight: FontWeight.w500),
-    prefixIcon: Icon(icon, color: colors.muted, size: 14),
-    isDense: true,
-    filled: true,
-    fillColor: colors.inputBg,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: colors.border),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: colors.blue),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: Color(0xFFDA5969)),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: Color(0xFFDA5969)),
-    ),
-  );
-}
-
-class _ClientTreeMember {
-  const _ClientTreeMember({
-    required this.initials,
-    required this.name,
-    required this.email,
-    required this.level,
-    required this.accountCount,
-    this.phone,
-    this.joined,
-    this.referralCode,
-    this.isPartner = false,
-    this.children = const [],
-  });
-
-  final String initials;
-  final String name;
-  final String email;
-  final String? phone;
-  final String? joined;
-  final String? referralCode;
-  final int level;
-  final int accountCount;
-  final bool isPartner;
-  final List<_ClientTreeMember> children;
-}
-
-class _TreeStat extends StatelessWidget {
-  const _TreeStat({
-    required this.label,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.accent,
-    required this.dark,
-  });
-  final String label, value, subtitle;
-  final IconData icon;
-  final Color accent;
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return _PartnershipGlassPanel(
-      colors: colors,
-      radius: 17,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .35,
-                  ),
-                ),
-              ),
-              Icon(icon, color: accent, size: 14),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              color: colors.text,
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TreeMemberCard extends StatelessWidget {
-  const _TreeMemberCard({
-    required this.member,
-    required this.dark,
-    required this.root,
-    required this.showReferralLink,
-    this.expanded = false,
-    this.onToggle,
-  });
-  final _ClientTreeMember member;
-  final bool dark;
-  final bool root;
-  final bool showReferralLink;
-  final bool expanded;
-  final VoidCallback? onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    final accent = root ? colors.blue : const Color(0xFF00BFA5);
-    return _PartnershipGlassPanel(
-      colors: colors,
-      radius: 17,
-      padding: const EdgeInsets.all(15),
-      borderColor: root ? colors.blue.withValues(alpha: .55) : null,
-      fillColor: root
-          ? (colors.isDark ? const Color(0xDD183254) : const Color(0xDFFFFFFF))
-          : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: .10),
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: accent.withValues(alpha: .28)),
-                ),
-                child: Text(
-                  member.initials,
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 5,
-                      runSpacing: 3,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          member.name,
-                          style: TextStyle(
-                            color: colors.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        _TreePill(
-                          label: 'L${member.level}',
-                          color: root
-                              ? const Color(0xFF3B82F6)
-                              : const Color(0xFF00A991),
-                          dark: dark,
-                        ),
-                        if (member.isPartner)
-                          _TreePill(
-                            label: 'Gold',
-                            color: colors.gold,
-                            dark: dark,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      member.email,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
-                    ),
-                    Wrap(
-                      spacing: 9,
-                      runSpacing: 3,
-                      children: [
-                        if (member.phone != null)
-                          Text(
-                            member.phone!,
-                            style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
-                          ),
-                        if (member.joined != null)
-                          Text(
-                            'Joined ${member.joined}',
-                            style: TextStyle(color: colors.muted, fontSize: 11.5, fontWeight: FontWeight.w500),
-                          ),
-                        if (showReferralLink && member.referralCode != null)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                LucideIcons.link,
-                                color: colors.blue,
-                                size: 12,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                member.referralCode!,
-                                style: TextStyle(
-                                  color: colors.blue,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (root)
-                IconButton(
-                  tooltip: expanded ? 'Hide team' : 'Show team',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onToggle,
-                  icon: Icon(
-                    expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
-                    size: 16,
-                    color: colors.muted,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          Row(
-            children: [
-              if (member.isPartner)
-                _TreePill(
-                  label: '${member.children.length} referrals',
-                  color: colors.blue,
-                  dark: dark,
-                ),
-              const Spacer(),
-              if (member.isPartner)
-                _TreePill(
-                  label: 'IB Partner',
-                  color: const Color(0xFF00A870),
-                  dark: dark,
-                ),
-              const SizedBox(width: 6),
-              _TreePill(
-                label: '${member.accountCount} Accounts',
-                color: colors.muted,
-                dark: dark,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TreePill extends StatelessWidget {
-  const _TreePill({
-    required this.label,
-    required this.color,
-    required this.dark,
-  });
-  final String label;
-  final Color color;
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: .28)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: dark ? const Color(0xFFCFD8E7) : color,
-          fontSize: 10.5,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-/// Dedicated page for closed trading commission ledger records.
-class BrokerCommissionLedgerPage extends StatefulWidget {
-  const BrokerCommissionLedgerPage({super.key});
-
-  @override
-  State<BrokerCommissionLedgerPage> createState() =>
-      _BrokerCommissionLedgerPageState();
-}
-
-class _BrokerCommissionLedgerPageState
-    extends State<BrokerCommissionLedgerPage> {
-  int _ledgerRows = 15;
-  String _ledgerSearch = '';
-  String _symbolFilter = 'All Symbols (7)';
-  String _sort = 'Close Time (Newest First)';
-
-  static const _ledger = <_CommissionLedgerEntry>[
-    _CommissionLedgerEntry(
-      name: 'TEST CRN',
-      email: 'crmsupportpro@gmail.com',
-      initials: 'TC',
-      deal: '20922385',
-      order: '678898116',
-      account: '3384',
-      symbol: 'XAUUSD',
-      lots: '0.01',
-      pnl: -96.87,
-      commission: 0.06,
-      close: '5 Nov 2026, 07:08 am',
-    ),
-    _CommissionLedgerEntry(
-      name: 'TEST CRN',
-      email: 'crmsupportpro@gmail.com',
-      initials: 'TC',
-      deal: '20776912',
-      order: '678886341',
-      account: '3384',
-      symbol: 'EURUSD',
-      lots: '0.01',
-      pnl: -0.35,
-      commission: 0.06,
-      close: '27 Oct 2026, 06:54 pm',
-    ),
-    _CommissionLedgerEntry(
-      name: 'Lakshminarayanan A',
-      email: 'nanianandane@gmail.com',
-      initials: 'LA',
-      deal: '18338543',
-      order: '227958624',
-      account: '2141717622',
-      symbol: 'XAUUSD.r',
-      lots: '0.01',
-      pnl: 1.65,
-      commission: 0.03,
-      close: '2 Jun 2026, 08:06 pm',
-    ),
-    _CommissionLedgerEntry(
-      name: 'Lakshminarayanan A',
-      email: 'nanianandane@gmail.com',
-      initials: 'LA',
-      deal: '18338199',
-      order: '226590488',
-      account: '2141717622',
-      symbol: 'XAUUSD.r',
-      lots: '0.01',
-      pnl: 20.88,
-      commission: 0.03,
-      close: '2 Jun 2026, 07:52 pm',
-    ),
-    _CommissionLedgerEntry(
-      name: 'Lakshminarayanan A',
-      email: 'nanianandane@gmail.com',
-      initials: 'LA',
-      deal: '18338200',
-      order: '227142739',
-      account: '2141717622',
-      symbol: 'XAUUSD.r',
-      lots: '0.01',
-      pnl: 37.90,
-      commission: 0.03,
-      close: '2 Jun 2026, 07:52 pm',
-    ),
-    _CommissionLedgerEntry(
-      name: 'Lakshminarayanan A',
-      email: 'nanianandane@gmail.com',
-      initials: 'LA',
-      deal: '18331796',
-      order: '227088303',
-      account: '2141717622',
-      symbol: 'XAUUSD.r',
-      lots: '0.01',
-      pnl: 2.30,
-      commission: 0.03,
-      close: '2 Jun 2026, 02:16 pm',
-    ),
-    _CommissionLedgerEntry(
-      name: 'Lakshminarayanan A',
-      email: 'nanianandane@gmail.com',
-      initials: 'LA',
-      deal: '18331476',
-      order: '226962801',
-      account: '2141717622',
-      symbol: 'XAUUSD.r',
-      lots: '0.01',
-      pnl: 15.20,
-      commission: 0.03,
-      close: '2 Jun 2026, 01:54 pm',
-    ),
-    _CommissionLedgerEntry(
-      name: 'Lakshminarayanan A',
-      email: 'nanianandane@gmail.com',
-      initials: 'LA',
-      deal: '18330920',
-      order: '226811234',
-      account: '2141717622',
-      symbol: 'GBPUSD',
-      lots: '0.02',
-      pnl: 4.80,
-      commission: 0.04,
-      close: '2 Jun 2026, 11:20 am',
-    ),
-  ];
-
-  List<_CommissionLedgerEntry> get _filteredLedger {
-    var list = _ledger.toList();
-    if (_symbolFilter != 'All Symbols (7)') {
-      list = list.where((e) => e.symbol == _symbolFilter).toList();
+  Future<void> _fetchTree() async {
+    setState(() => _loading = true);
+    try {
+      final res = await AuthApi.instance.getIbClientTree(page: 1, perPage: 1000);
+      final rawList = res['clients'] ?? res['results'] ?? res['data'];
+      final parsed = <_IbClient>[];
+      if (rawList is List) {
+        for (final item in rawList.whereType<Map>()) {
+          parsed.add(_IbClient.fromJson(item.cast<String, dynamic>()));
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _clients = parsed;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
     }
-    if (_ledgerSearch.trim().isNotEmpty) {
-      final q = _ledgerSearch.trim().toLowerCase();
-      list = list
-          .where(
-            (e) =>
-                e.name.toLowerCase().contains(q) ||
-                e.email.toLowerCase().contains(q) ||
-                e.account.toLowerCase().contains(q) ||
-                e.deal.toLowerCase().contains(q) ||
-                e.order.toLowerCase().contains(q) ||
-                e.symbol.toLowerCase().contains(q),
-          )
-          .toList();
+  }
+
+  int _countAll(List<_IbClient> list) {
+    int total = 0;
+    for (final c in list) {
+      total += 1 + _countAll(c.clients);
     }
-    return list;
+    return total;
+  }
+
+  int _maxDepth(List<_IbClient> list, int current) {
+    int m = current;
+    for (final c in list) {
+      if (c.clients.isNotEmpty) {
+        m = math.max(m, _maxDepth(c.clients, current + 1));
+      }
+    }
+    return m;
+  }
+
+  List<_IbClient> _filterClients(List<_IbClient> list, String q) {
+    if (q.isEmpty) return list;
+    final res = <_IbClient>[];
+    for (final c in list) {
+      final matches = c.name.toLowerCase().contains(q) ||
+          c.email.toLowerCase().contains(q) ||
+          c.phone.contains(q) ||
+          c.referralCode.toLowerCase().contains(q) ||
+          c.accounts.any((a) => a.accountId.contains(q));
+      final subMatches = _filterClients(c.clients, q);
+      if (matches || subMatches.isNotEmpty) {
+        res.add(_IbClient(
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          registeredDate: c.registeredDate,
+          referralCode: c.referralCode,
+          commissionProfileName: c.commissionProfileName,
+          level: c.level,
+          isIb: c.isIb,
+          ibRequestStatus: c.ibRequestStatus,
+          accounts: c.accounts,
+          clients: subMatches,
+        ));
+      }
+    }
+    return res;
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
+    final totalNetwork = _countAll(_clients);
+    final direct = _clients.length;
+    final subTier = math.max(0, totalNetwork - direct);
+    final depth = _maxDepth(_clients, 1);
+    final filtered = _filterClients(_clients, _searchQuery.trim().toLowerCase());
+
     return Scaffold(
       backgroundColor: colors.canvas,
       appBar: AppBar(
         backgroundColor: colors.appBarBg,
         foregroundColor: colors.text,
-        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Commission Ledger'),
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(LucideIcons.arrowLeft),
-        ),
+        title: const Text('Client Network Hierarchy', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        actions: [
+          IconButton(
+            onPressed: () => _showAddClientModal(colors),
+            icon: const Icon(LucideIcons.userPlus),
+            tooltip: 'Add Client',
+          ),
+          IconButton(
+            onPressed: _fetchTree,
+            icon: const Icon(LucideIcons.refreshCw, size: 18),
+            tooltip: 'Refresh',
+          ),
+        ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-              wide ? 24 : 14,
-              14,
-              wide ? 24 : 14,
-              28,
+      body: _PartnershipBackdrop(
+        colors: colors,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
+          children: [
+            // Search Input
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: colors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.search, size: 16, color: colors.muted),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      style: TextStyle(color: colors.text, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Search client by name, email, code or account...',
+                        hintStyle: TextStyle(color: colors.muted, fontSize: 12),
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                    ),
+                  ),
+                  if (_searchQuery.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(LucideIcons.x, size: 14),
+                      onPressed: () => setState(() => _searchQuery = ''),
+                    ),
+                ],
+              ),
             ),
-            children: [
-              _commissionHeader(colors),
-              const SizedBox(height: 12),
-              _ledgerContent(colors, wide),
-            ],
-          );
-        },
+            const SizedBox(height: 14),
+            // Network stat badges
+            Row(
+              children: [
+                _treeStatChip(colors, 'TOTAL NETWORK', '$totalNetwork', LucideIcons.users, colors.gold),
+                const SizedBox(width: 8),
+                _treeStatChip(colors, 'DIRECT (L1)', '$direct', LucideIcons.user, colors.blue),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _treeStatChip(colors, 'SUB-TIER (L2+)', '$subTier', LucideIcons.network, colors.green),
+                const SizedBox(width: 8),
+                _treeStatChip(colors, 'MAX DEPTH', 'L$depth', LucideIcons.gitBranch, const Color(0xFFA855F7)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_loading)
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Center(child: CircularProgressIndicator(color: colors.blue)),
+              )
+            else if (filtered.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(LucideIcons.users, size: 40, color: colors.muted),
+                      const SizedBox(height: 10),
+                      Text('No clients found in this network', style: TextStyle(color: colors.muted, fontSize: 13, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ...filtered.map((client) => _buildClientNode(client, colors, 0)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _commissionHeader(_PartnershipColors colors) => Container(
-    padding: const EdgeInsets.all(19),
-    decoration: BoxDecoration(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(17),
-      border: Border.all(color: colors.border),
-      boxShadow: [
-        BoxShadow(
-          color: colors.cardShadow,
-          blurRadius: 14,
-          offset: const Offset(0, 4),
+  Widget _treeStatChip(_PartnershipColors colors, String label, String value, IconData icon, Color accent) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+        decoration: BoxDecoration(
+          color: colors.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.border),
         ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'IB PAYOUTS',
-          style: TextStyle(
-            color: colors.gold,
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Commission Ledger',
-          style: TextStyle(
-            color: colors.text,
-            fontSize: 21,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          'Review closed trading deals and the commission generated by your network.',
-          style: TextStyle(color: colors.muted, fontSize: 11),
-        ),
-      ],
-    ),
-  );
-
-  Widget _ledgerContent(_PartnershipColors colors, bool wide) {
-    final entries = _filteredLedger;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GridView.count(
-          crossAxisCount: wide ? 4 : 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 9,
-          mainAxisSpacing: 9,
-          childAspectRatio: wide ? 2.05 : 1.45,
-          children: const [
-            _CommissionMetric(
-              label: 'TOTAL EARNINGS',
-              value: r'$197.39',
-              subtitle: 'Calculated IB commission payouts',
-              icon: LucideIcons.trendingUp,
-              accent: Color(0xFF16B98B),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 14, color: accent),
             ),
-            _CommissionMetric(
-              label: 'VOLUME TRADED',
-              value: '0.02 L',
-              subtitle: 'Executed standard lots',
-              icon: LucideIcons.activity,
-              accent: Color(0xFF5C9EEB),
-            ),
-            _CommissionMetric(
-              label: 'LEDGER RECORDS',
-              value: '47',
-              subtitle: 'Closed commission deals',
-              icon: LucideIcons.layers,
-              accent: Color(0xFFB56CE2),
-            ),
-            _CommissionMetric(
-              label: 'FILTERED SUM',
-              value: r'$1.95',
-              subtitle: '47 matching transactions',
-              icon: LucideIcons.award,
-              accent: Color(0xFFE8AD22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: colors.muted, fontSize: 8.5, fontWeight: FontWeight.w800, letterSpacing: 0.3),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: colors.text, fontSize: 14, fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+      ),
+    );
+  }
+
+  Widget _buildClientNode(_IbClient client, _PartnershipColors colors, int depth) {
+    final theme = _getLevelTheme(client.level, colors.isDark);
+    final hasChildren = client.clients.isNotEmpty;
+    final isExpanded = _expandedIds.contains(client.id);
+
+    final avatarWidget = Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: theme.avatarBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.avatarBorder),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        client.initials,
+        style: TextStyle(color: theme.avatarText, fontWeight: FontWeight.w900, fontSize: 13),
+      ),
+    );
+
+    final clientInfoColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Line 1: Name + Level + Plan/Tag Badge
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            Text(
+              client.name,
+              style: TextStyle(color: colors.text, fontSize: 13.5, fontWeight: FontWeight.w800),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: theme.badgeBg.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: theme.badgeBg.withValues(alpha: 0.5)),
+              ),
+              child: Text(
+                'L${client.level}',
+                style: TextStyle(color: theme.badgeBg, fontSize: 9.5, fontWeight: FontWeight.w900),
+              ),
+            ),
+            if (client.commissionProfileName.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colors.gold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: colors.gold.withValues(alpha: 0.5)),
+                ),
+                child: Text(
+                  client.commissionProfileName,
+                  style: TextStyle(color: colors.gold, fontSize: 9.5, fontWeight: FontWeight.w800),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        // Line 2: email · phone · Joined YYYY-MM-DD · 🔗 Code 📋
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 3,
+          children: [
+            if (client.email.isNotEmpty)
+              Text(
+                client.email,
+                style: TextStyle(color: colors.muted, fontSize: 11),
+              ),
+            if (client.phone.isNotEmpty)
+              Text(
+                client.phone,
+                style: TextStyle(color: colors.muted, fontSize: 11),
+              ),
+            if (client.registeredDate.isNotEmpty)
+              Text(
+                'Joined ${client.registeredDate.split("T").first}',
+                style: TextStyle(color: colors.muted, fontSize: 11),
+              ),
+            if (client.referralCode.isNotEmpty)
+              InkWell(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: client.referralCode));
+                  showAppMessage('Referral code copied: ${client.referralCode}');
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.link2, size: 11.5, color: colors.blue),
+                      const SizedBox(width: 3),
+                      Text(
+                        client.referralCode,
+                        style: TextStyle(color: colors.blue, fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(width: 3),
+                      Icon(LucideIcons.copy, size: 11, color: colors.muted),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+
+    final actionItems = <Widget>[
+      if (client.isIb) ...[
+        // Referrals badge
         Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
           decoration: BoxDecoration(
-            color: colors.card,
-            borderRadius: BorderRadius.circular(16),
+            color: colors.isDark ? colors.subCard : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: colors.border),
           ),
-          child: Column(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(13),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    SizedBox(
-                      width: wide ? 390 : double.infinity,
-                      child: TextField(
-                        onChanged: (v) => setState(() => _ledgerSearch = v),
-                        style: TextStyle(
-                          color: colors.text,
-                          fontSize: 13,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Search clients, emails, accounts, deal tickets, or symbols...',
-                          hintStyle: TextStyle(
-                            color: colors.muted,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          prefixIcon: Icon(
-                            LucideIcons.search,
-                            color: colors.blue,
-                            size: 17,
-                          ),
-                          filled: true,
-                          fillColor: colors.inputBg,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 11,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(11),
-                            borderSide: BorderSide(
-                              color: colors.border,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(11),
-                            borderSide: BorderSide(
-                              color: colors.border,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(11),
-                            borderSide: BorderSide(
-                              color: colors.blue,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    _CommissionDropdown(
-                      value: _symbolFilter,
-                      values: const [
-                        'All Symbols (7)',
-                        'XAUUSD',
-                        'EURUSD',
-                        'XAUUSD.r',
-                      ],
-                      onChanged: (v) => setState(() => _symbolFilter = v),
-                    ),
-                    _CommissionDropdown(
-                      value: _sort,
-                      values: const [
-                        'Close Time (Newest First)',
-                        'Close Time (Oldest First)',
-                      ],
-                      onChanged: (v) => setState(() => _sort = v),
-                    ),
-                    _CommissionDropdown(
-                      value: 'Show: $_ledgerRows rows',
-                      values: const [
-                        'Show: 15 rows',
-                        'Show: 25 rows',
-                        'Show: 50 rows',
-                      ],
-                      onChanged: (v) => setState(
-                        () => _ledgerRows = int.parse(v.split(' ')[1]),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: colors.border),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(
-                    colors.subCard,
-                  ),
-                  headingRowHeight: 40,
-                  dataRowMinHeight: 55,
-                  dataRowMaxHeight: 60,
-                  horizontalMargin: 14,
-                  columnSpacing: 23,
-                  columns: const [
-                    DataColumn(
-                      label: _CommissionTableHeading('CLIENT PROFILE'),
-                    ),
-                    DataColumn(label: _CommissionTableHeading('DEAL TICKET')),
-                    DataColumn(label: _CommissionTableHeading('ORDER TICKET')),
-                    DataColumn(
-                      label: _CommissionTableHeading('TRADING ACCOUNT'),
-                    ),
-                    DataColumn(label: _CommissionTableHeading('SYMBOL')),
-                    DataColumn(label: _CommissionTableHeading('VOLUME (LOTS)')),
-                    DataColumn(label: _CommissionTableHeading('CLIENT P/L')),
-                    DataColumn(label: _CommissionTableHeading('IB COMMISSION')),
-                    DataColumn(label: _CommissionTableHeading('CLOSE TIME')),
-                  ],
-                  rows: [
-                    for (final e in entries.take(_ledgerRows))
-                      DataRow(
-                        cells: [
-                          DataCell(
-                            SizedBox(
-                              width: 175,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 31,
-                                    height: 31,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: colors.blue.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      e.initials,
-                                      style: TextStyle(
-                                        color: colors.blue,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          e.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: colors.text,
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                        Text(
-                                          e.email,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: colors.muted,
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          DataCell(_CommissionCell(e.deal, bold: true)),
-                          DataCell(
-                            _CommissionCell(
-                              e.order,
-                              color: colors.muted,
-                            ),
-                          ),
-                          DataCell(
-                            _CommissionPill(
-                              e.account,
-                              color: const Color(0xFF5596DF),
-                              background: const Color(0xFF5596DF).withValues(alpha: 0.12),
-                            ),
-                          ),
-                          DataCell(
-                            _CommissionPill(
-                              e.symbol,
-                              color: colors.text,
-                              background: colors.card,
-                              outlined: true,
-                            ),
-                          ),
-                          DataCell(
-                            _CommissionCell('${e.lots} Lots', bold: true),
-                          ),
-                          DataCell(
-                            _CommissionCell(
-                              '${e.pnl < 0 ? '↓' : '↑'} ${e.pnl < 0 ? '-' : ''}\$${e.pnl.abs().toStringAsFixed(2)}',
-                              color: e.pnl < 0
-                                  ? colors.red
-                                  : colors.green,
-                              bold: true,
-                            ),
-                          ),
-                          DataCell(
-                            _CommissionCell(
-                              '+\$${e.commission.toStringAsFixed(2)}',
-                              color: colors.green,
-                              bold: true,
-                            ),
-                          ),
-                          DataCell(_CommissionCell(e.close)),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: colors.border),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 11,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'Showing 1–${entries.length} of 47',
-                      style: TextStyle(
-                        color: colors.muted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'PAGE 1 OF 4',
-                      style: TextStyle(
-                        color: colors.text,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      LucideIcons.chevronLeft,
-                      color: colors.muted,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      LucideIcons.chevronRight,
-                      color: colors.gold,
-                      size: 18,
-                    ),
-                  ],
-                ),
+              Icon(LucideIcons.users, size: 12, color: colors.muted),
+              const SizedBox(width: 4),
+              Text(
+                '${client.clients.length} ${client.clients.length == 1 ? 'referral' : 'referrals'}',
+                style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w700),
               ),
             ],
           ),
         ),
+        // Lots badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+          decoration: BoxDecoration(
+            color: colors.green.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colors.green.withValues(alpha: 0.4)),
+          ),
+          child: Text(
+            '${client.totalLots.toStringAsFixed(2)} lots',
+            style: TextStyle(color: colors.green, fontSize: 10.5, fontWeight: FontWeight.w800),
+          ),
+        ),
+        // Earned badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+          decoration: BoxDecoration(
+            color: colors.green.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colors.green.withValues(alpha: 0.4)),
+          ),
+          child: Text(
+            '\$${client.totalCommission.toStringAsFixed(2)} earned',
+            style: TextStyle(color: colors.green, fontSize: 10.5, fontWeight: FontWeight.w800),
+          ),
+        ),
+        // IB Partner badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+          decoration: BoxDecoration(
+            color: colors.green.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colors.green.withValues(alpha: 0.45)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.shieldCheck, size: 12, color: colors.green),
+              const SizedBox(width: 4),
+              Text(
+                'IB Partner',
+                style: TextStyle(color: colors.green, fontSize: 10.5, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+        ),
+      ] else ...[
+        if (client.ibRequestStatus == 'pending')
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(
+              color: colors.gold.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: colors.gold.withValues(alpha: 0.45)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.clock, size: 12, color: colors.gold),
+                const SizedBox(width: 4),
+                Text('IB Pending', style: TextStyle(color: colors.gold, fontSize: 10.5, fontWeight: FontWeight.w800)),
+              ],
+            ),
+          )
+        else
+          // Request IB Button!
+          OutlinedButton.icon(
+            onPressed: () => _showConfirmIbModal(client),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              side: BorderSide(color: colors.blue, width: 1.2),
+              backgroundColor: colors.blue.withValues(alpha: 0.08),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            icon: Icon(LucideIcons.userPlus, size: 12.5, color: colors.blue),
+            label: Text(
+              'Request IB',
+              style: TextStyle(fontSize: 11, color: colors.blue, fontWeight: FontWeight.w800),
+            ),
+          ),
       ],
-    );
-  }
-}
-
-class _CommissionLedgerEntry {
-  const _CommissionLedgerEntry({
-    required this.name,
-    required this.email,
-    required this.initials,
-    required this.deal,
-    required this.order,
-    required this.account,
-    required this.symbol,
-    required this.lots,
-    required this.pnl,
-    required this.commission,
-    required this.close,
-  });
-  final String name, email, initials, deal, order, account, symbol, lots, close;
-  final double pnl, commission;
-}
-
-class _CommissionTableHeading extends StatelessWidget {
-  const _CommissionTableHeading(this.label);
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Text(
-      label,
-      style: TextStyle(
-        color: colors.muted,
-        fontSize: 11.5,
-        fontWeight: FontWeight.w900,
-        letterSpacing: .2,
+      // Accounts button
+      OutlinedButton.icon(
+        onPressed: () {
+          final parentState = context.findAncestorStateOfType<_BrokerPartnershipPageState>();
+          parentState?._showClientAccountsModal(client);
+        },
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          side: BorderSide(color: colors.border),
+          backgroundColor: colors.isDark ? colors.subCard : Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        icon: Icon(LucideIcons.creditCard, size: 12, color: colors.text),
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Accounts', style: TextStyle(fontSize: 11, color: colors.text, fontWeight: FontWeight.w700)),
+            const SizedBox(width: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: colors.muted.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '${client.accounts.length}',
+                style: TextStyle(fontSize: 10, color: colors.text, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-}
+      if (hasChildren)
+        OutlinedButton.icon(
+          onPressed: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedIds.remove(client.id);
+              } else {
+                _expandedIds.add(client.id);
+              }
+            });
+          },
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            side: BorderSide(color: colors.border),
+            backgroundColor: colors.isDark ? colors.subCard : Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          icon: Icon(isExpanded ? LucideIcons.chevronUp : LucideIcons.chevronDown, size: 13, color: colors.text),
+          label: Text(
+            isExpanded ? 'Hide team' : 'View team',
+            style: TextStyle(fontSize: 11, color: colors.text, fontWeight: FontWeight.w700),
+          ),
+        ),
+    ];
 
-class _CommissionCell extends StatelessWidget {
-  const _CommissionCell(
-    this.value, {
-    this.bold = false,
-    this.color,
-  });
-  final String value;
-  final bool bold;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Text(
-      value,
-      style: TextStyle(
-        color: color ?? colors.text,
-        fontSize: 12.5,
-        fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _CommissionPill extends StatelessWidget {
-  const _CommissionPill(
-    this.label, {
-    required this.color,
-    this.background,
-    this.outlined = false,
-  });
-  final String label;
-  final Color color;
-  final Color? background;
-  final bool outlined;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: background ?? color.withValues(alpha: .09),
-        borderRadius: BorderRadius.circular(8),
-        border: outlined ? Border.all(color: colors.border) : null,
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w800),
-      ),
-    );
-  }
-}
-
-class _CommissionMetric extends StatelessWidget {
-  const _CommissionMetric({
-    required this.label,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.accent,
-  });
-  final String label, value, subtitle;
-  final IconData icon;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _PartnershipColors.of(context);
-    return Container(
-      padding: const EdgeInsets.all(13),
+    final cardWidget = Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: colors.card,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              Icon(icon, color: accent, size: 16),
-            ],
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            child: Container(color: theme.color),
           ),
-          const SizedBox(height: 4),
-          FittedBox(
-            alignment: Alignment.centerLeft,
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: TextStyle(
-                color: accent,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 720;
+                if (isWide) {
+                  return Row(
+                    children: [
+                      avatarWidget,
+                      const SizedBox(width: 12),
+                      Expanded(child: clientInfoColumn),
+                      const SizedBox(width: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (int i = 0; i < actionItems.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 6),
+                            actionItems[i],
+                          ],
+                        ],
+                      ),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          avatarWidget,
+                          const SizedBox(width: 10),
+                          Expanded(child: clientInfoColumn),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: actionItems,
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w600),
+        ],
+      ),
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(left: (depth * 20.0).clamp(0.0, 60.0), bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (depth > 0)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 16,
+                  height: 1.5,
+                  color: colors.border,
+                  margin: const EdgeInsets.only(right: 6),
+                ),
+                Expanded(child: cardWidget),
+              ],
+            )
+          else
+            cardWidget,
+          if (hasChildren && isExpanded) ...[
+            const SizedBox(height: 10),
+            ...client.clients.map((child) => _buildClientNode(child, colors, depth + 1)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showConfirmIbModal(_IbClient client) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final colors = _PartnershipColors.of(dialogContext);
+        var submitting = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: colors.card,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: colors.border)),
+              contentPadding: const EdgeInsets.all(22),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: colors.blue.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(LucideIcons.shieldCheck, color: colors.blue, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Confirm IB Request', style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 2),
+                            Text('Nominate client for IB status', style: TextStyle(color: colors.muted, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colors.subCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.subBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Client: ${client.name}', style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                        if (client.email.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text('Email: ${client.email}', style: TextStyle(color: colors.muted, fontSize: 12)),
+                          ),
+                        if (client.referralCode.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text('Code: ${client.referralCode}', style: TextStyle(color: colors.muted, fontSize: 12)),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'The request will be sent to the admin team for review. IB status remains pending until approved.',
+                    style: TextStyle(color: colors.muted, fontSize: 11.5, height: 1.4),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: submitting ? null : () => Navigator.pop(dialogContext),
+                        child: Text('Cancel', style: TextStyle(color: colors.muted, fontWeight: FontWeight.w700)),
+                      ),
+                      const SizedBox(width: 10),
+                      FilledButton.icon(
+                        onPressed: submitting
+                            ? null
+                            : () async {
+                                setDialogState(() => submitting = true);
+                                try {
+                                  await AuthApi.instance.requestClientIb(client.id);
+                                  showAppMessage('IB request submitted successfully!');
+                                  if (dialogContext.mounted) {
+                                    Navigator.pop(dialogContext);
+                                  }
+                                  if (mounted) {
+                                    _fetchTree();
+                                  }
+                                } catch (e) {
+                                  showAppMessage('Failed to submit IB request: $e');
+                                  setDialogState(() => submitting = false);
+                                }
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.blue,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: submitting
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(LucideIcons.send, size: 14),
+                        label: Text(submitting ? 'Submitting...' : 'Confirm', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddClientModal(_PartnershipColors colors) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => const _ClientRegistrationDialog(),
+    ).then((_) => _fetchTree());
+  }
+}
+
+// ============================================================================
+// SUB-PAGE: BROKERCOMMISSIONLEDGERPAGE (COMMISSION LEDGER)
+// ============================================================================
+
+class BrokerCommissionLedgerPage extends StatefulWidget {
+  const BrokerCommissionLedgerPage({super.key});
+
+  @override
+  State<BrokerCommissionLedgerPage> createState() => _BrokerCommissionLedgerPageState();
+}
+
+class _BrokerCommissionLedgerPageState extends State<BrokerCommissionLedgerPage> {
+  bool _loading = true;
+  List<_IbCommissionTxn> _txns = [];
+  String _searchQuery = '';
+  String _symbolFilter = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLedger();
+  }
+
+  Future<void> _fetchLedger() async {
+    setState(() => _loading = true);
+    try {
+      final res = await AuthApi.instance.getIbCommissionTransactions();
+      final rawList = res['results'] ?? res['data'] ?? res['transactions'];
+      final parsed = <_IbCommissionTxn>[];
+      if (rawList is List) {
+        for (final item in rawList.whereType<Map>()) {
+          parsed.add(_IbCommissionTxn.fromJson(item.cast<String, dynamic>()));
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _txns = parsed;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _PartnershipColors.of(context);
+    final symbols = {'All', ..._txns.map((t) => t.positionSymbol).where((s) => s.isNotEmpty && s != '—')}.toList();
+
+    final filtered = _txns.where((t) {
+      if (_symbolFilter != 'All' && t.positionSymbol != _symbolFilter) return false;
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        return t.dealTicket.contains(q) ||
+            t.clientTradingAccount.contains(q) ||
+            t.clientUser.toLowerCase().contains(q) ||
+            t.positionSymbol.toLowerCase().contains(q);
+      }
+      return true;
+    }).toList();
+
+    final totalComm = filtered.fold(0.0, (sum, t) => sum + t.commission);
+    final totalLots = filtered.fold(0.0, (sum, t) => sum + t.volumeLots);
+
+    return Scaffold(
+      backgroundColor: colors.canvas,
+      appBar: AppBar(
+        backgroundColor: colors.appBarBg,
+        foregroundColor: colors.text,
+        elevation: 0,
+        title: const Text('Commission Ledger', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        actions: [
+          IconButton(
+            onPressed: _fetchLedger,
+            icon: const Icon(LucideIcons.refreshCw, size: 18),
+            tooltip: 'Refresh',
           ),
         ],
+      ),
+      body: _PartnershipBackdrop(
+        colors: colors,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
+          children: [
+            // Search box
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: colors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.search, size: 16, color: colors.muted),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      style: TextStyle(color: colors.text, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Search by deal ticket, account, client or symbol...',
+                        hintStyle: TextStyle(color: colors.muted, fontSize: 12),
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Symbols row
+            SizedBox(
+              height: 32,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: symbols.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
+                itemBuilder: (context, i) {
+                  final s = symbols[i];
+                  final isSelected = _symbolFilter == s;
+                  return InkWell(
+                    onTap: () => setState(() => _symbolFilter = s),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? colors.blue : colors.card,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: isSelected ? colors.blue : colors.border),
+                      ),
+                      child: Text(
+                        s,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : colors.text,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 14),
+            // Summary banner
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.subCard,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.subBorder),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('${filtered.length} Deals', style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                  Text('Volume: ${totalLots.toStringAsFixed(2)} Lots', style: TextStyle(color: colors.text, fontSize: 12, fontWeight: FontWeight.w800)),
+                  Text('Total: \$${totalComm.toStringAsFixed(2)}', style: TextStyle(color: colors.green, fontSize: 13, fontWeight: FontWeight.w900)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (_loading)
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Center(child: CircularProgressIndicator(color: colors.blue)),
+              )
+            else if (filtered.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Center(
+                  child: Text('No commission transactions matching filter', style: TextStyle(color: colors.muted, fontSize: 12.5)),
+                ),
+              )
+            else
+              ...filtered.map((txn) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colors.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: colors.blue.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(LucideIcons.receipt, color: colors.blue, size: 18),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('${txn.positionSymbol} · Deal #${txn.dealTicket}', style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 2),
+                              Text('Acc: ${txn.clientTradingAccount} · ${txn.clientUser}', style: TextStyle(color: colors.muted, fontSize: 10.5)),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('+\$${txn.commission.toStringAsFixed(2)}', style: TextStyle(color: colors.green, fontSize: 13, fontWeight: FontWeight.w900)),
+                          const SizedBox(height: 2),
+                          Text('${txn.volumeLots.toStringAsFixed(2)} Lots', style: TextStyle(color: colors.muted, fontSize: 10)),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _CommissionDropdown extends StatelessWidget {
-  const _CommissionDropdown({
-    required this.value,
-    required this.values,
-    required this.onChanged,
-  });
-  final String value;
-  final List<String> values;
-  final ValueChanged<String> onChanged;
+// ============================================================================
+// SUB-PAGE: BROKERCOMMISSIONWITHDRAWALPAGE (COMMISSION WITHDRAWAL)
+// ============================================================================
+
+class BrokerCommissionWithdrawalPage extends StatefulWidget {
+  const BrokerCommissionWithdrawalPage({super.key});
+
+  @override
+  State<BrokerCommissionWithdrawalPage> createState() => _BrokerCommissionWithdrawalPageState();
+}
+
+class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdrawalPage> {
+  bool _loading = true;
+  double _availableBalance = 0.0;
+  List<Map<String, dynamic>> _tradingAccounts = [];
+  String? _selectedAccountId;
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _loading = true);
+    try {
+      final results = await Future.wait([
+        AuthApi.instance.getIbStats().catchError((_) => <String, dynamic>{}),
+        AuthApi.instance.getUserTradingAccounts().catchError((_) => <String, dynamic>{}),
+      ]);
+
+      final stats = results[0];
+      final accRes = results[1];
+
+      final rawAccounts = accRes['accounts'] ?? (accRes['data'] is List ? accRes['data'] : []);
+      final accList = <Map<String, dynamic>>[];
+      if (rawAccounts is List) {
+        for (final item in rawAccounts.whereType<Map>()) {
+          accList.add(item.cast<String, dynamic>());
+        }
+      }
+
+      double bal = 0.0;
+      if (stats['commission_balance'] is num) {
+        bal = (stats['commission_balance'] as num).toDouble();
+      } else if (stats['commission_balance'] is String) {
+        bal = double.tryParse(stats['commission_balance']) ?? 0.0;
+      }
+
+      if (mounted) {
+        setState(() {
+          _availableBalance = bal;
+          _tradingAccounts = accList;
+          if (accList.isNotEmpty) {
+            _selectedAccountId = (accList[0]['account_id'] ?? '').toString();
+          }
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _setPercent(double percent) {
+    final amt = (_availableBalance * percent).clamp(0.0, _availableBalance);
+    _amountController.text = amt.toStringAsFixed(2);
+    setState(() {});
+  }
+
+  Future<void> _submitWithdrawal() async {
+    final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
+    if (_selectedAccountId == null || _selectedAccountId!.isEmpty) {
+      showAppMessage('Please select a destination MT5 trading account.');
+      return;
+    }
+    if (amt <= 0 || amt > _availableBalance) {
+      showAppMessage('Please enter a valid withdrawal amount up to \$${_availableBalance.toStringAsFixed(2)}');
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      await AuthApi.instance.requestIbWithdrawal(
+        amount: amt,
+        accountId: _selectedAccountId!,
+        comment: _commentController.text.trim(),
+      );
+      showAppMessage('Withdrawal request submitted successfully!');
+      _amountController.clear();
+      _commentController.clear();
+      await _loadData();
+    } catch (e) {
+      showAppMessage('Withdrawal failed: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = _PartnershipColors.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: colors.inputBg,
-        border: Border.all(color: colors.border),
-        borderRadius: BorderRadius.circular(10),
+    final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
+    final remaining = math.max(0.0, _availableBalance - amt);
+
+    return Scaffold(
+      backgroundColor: colors.canvas,
+      appBar: AppBar(
+        backgroundColor: colors.appBarBg,
+        foregroundColor: colors.text,
+        elevation: 0,
+        title: const Text('Commission Withdrawal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isDense: true,
-          dropdownColor: colors.card,
-          icon: Icon(
-            LucideIcons.chevronDown,
-            size: 14,
-            color: colors.muted,
-          ),
-          style: TextStyle(
-            color: colors.text,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-          items: [
-            for (final item in values)
-              DropdownMenuItem(
-                value: item,
-                child: Text(item, overflow: TextOverflow.ellipsis),
+      body: _PartnershipBackdrop(
+        colors: colors,
+        child: _loading
+            ? Center(child: CircularProgressIndicator(color: colors.blue))
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
+                children: [
+                  // Balance Banner
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [colors.blue, const Color(0xFF1E3A8A)]),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Available for Withdrawal', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Text('\$${_availableBalance.toStringAsFixed(2)} USD', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 8),
+                        Text('Remaining after transfer: \$${remaining.toStringAsFixed(2)}', style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  // Destination Account Selector
+                  Text('SELECT MT5 DESTINATION ACCOUNT', style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _tradingAccounts.any((a) => (a['account_id'] ?? '').toString() == _selectedAccountId)
+                            ? _selectedAccountId
+                            : null,
+                        isExpanded: true,
+                        dropdownColor: colors.card,
+                        iconEnabledColor: colors.blue,
+                        hint: Text(
+                          _tradingAccounts.isEmpty ? 'No MT5 accounts found' : 'Select Destination Account',
+                          style: TextStyle(color: colors.muted, fontSize: 13),
+                        ),
+                        style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w700),
+                        items: _tradingAccounts.map((a) {
+                          final id = (a['account_id'] ?? '').toString();
+                          final type = (a['account_type'] ?? 'Standard').toString();
+                          final bal = (a['balance'] ?? '0.00').toString();
+                          return DropdownMenuItem(
+                            value: id,
+                            child: Text('$id ($type) · Bal: \$$bal', overflow: TextOverflow.ellipsis),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedAccountId = val);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  // Amount Input
+                  Text('WITHDRAWAL AMOUNT (USD)', style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: TextField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: TextStyle(color: colors.text, fontSize: 15, fontWeight: FontWeight.w800),
+                      decoration: InputDecoration(
+                        hintText: '0.00',
+                        hintStyle: TextStyle(color: colors.muted),
+                        border: InputBorder.none,
+                        prefixText: '\$ ',
+                        prefixStyle: TextStyle(color: colors.blue, fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Percentage Presets
+                  Row(
+                    children: [
+                      _percentBtn(colors, '25%', () => _setPercent(0.25)),
+                      const SizedBox(width: 8),
+                      _percentBtn(colors, '50%', () => _setPercent(0.50)),
+                      const SizedBox(width: 8),
+                      _percentBtn(colors, '75%', () => _setPercent(0.75)),
+                      const SizedBox(width: 8),
+                      _percentBtn(colors, '100% (Max)', () => _setPercent(1.0)),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  // Comment
+                  Text('TRANSFER COMMENT (OPTIONAL)', style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: TextField(
+                      controller: _commentController,
+                      style: TextStyle(color: colors.text, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Weekly commission withdrawal',
+                        hintStyle: TextStyle(color: colors.muted, fontSize: 12),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Submit Button
+                  FilledButton.icon(
+                    onPressed: _submitting ? null : _submitWithdrawal,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colors.blue,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: _submitting
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(LucideIcons.arrowUpRight, size: 18),
+                    label: Text(
+                      _submitting ? 'Transferring...' : 'Transfer to MT5 Account',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ],
               ),
+      ),
+    );
+  }
+
+  Widget _percentBtn(_PartnershipColors colors, String label, VoidCallback onTap) {
+    return Expanded(
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: colors.border),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(label, style: TextStyle(color: colors.text, fontSize: 11, fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// SUB-PAGE: BROKERREFERRALSTUDIOPAGE (REFERRAL & QR STUDIO)
+// ============================================================================
+
+class BrokerReferralStudioPage extends StatefulWidget {
+  const BrokerReferralStudioPage({super.key});
+
+  @override
+  State<BrokerReferralStudioPage> createState() => _BrokerReferralStudioPageState();
+}
+
+class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
+  bool _loading = true;
+  List<_IbReferralLink> _links = [];
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLinks();
+  }
+
+  Future<void> _loadLinks() async {
+    setState(() => _loading = true);
+    try {
+      final res = await AuthApi.instance.getIbReferralLinks();
+      final rawList = res['referral_links'] ?? (res['links'] is List ? res['links'] : null);
+      final parsed = <_IbReferralLink>[];
+      if (rawList is List && rawList.isNotEmpty) {
+        for (var i = 0; i < rawList.length; i++) {
+          if (rawList[i] is Map) {
+            parsed.add(_IbReferralLink.fromJson(rawList[i].cast<String, dynamic>(), index: i));
+          }
+        }
+      } else {
+        final legacy = res['referral_link'] ?? res['link'] ?? res['url'];
+        if (legacy != null) {
+          parsed.add(_IbReferralLink(
+            profileName: 'Default Referral',
+            referralLink: legacy.toString(),
+            referralCode: (res['referral_code'] ?? '').toString(),
+            isPrimary: true,
+          ));
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _links = parsed;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _PartnershipColors.of(context);
+
+    if (!_loading && _links.isEmpty) {
+      return Scaffold(
+        backgroundColor: colors.canvas,
+        appBar: AppBar(
+          backgroundColor: colors.appBarBg,
+          foregroundColor: colors.text,
+          elevation: 0,
+          title: const Text('Referral & QR Studio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        ),
+        body: _PartnershipBackdrop(
+          colors: colors,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(LucideIcons.shieldAlert, size: 48, color: colors.gold),
+                  const SizedBox(height: 16),
+                  Text(
+                    'IB Approval Required',
+                    style: TextStyle(color: colors.text, fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Multi-profile referral links and custom tracking QR codes are available once your Introducing Broker account is approved.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: colors.muted, fontSize: 13, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final link = _links.isNotEmpty && _selectedIndex < _links.length
+        ? _links[_selectedIndex]
+        : _IbReferralLink(profileName: 'Standard', referralLink: 'https://client.vtindex.com/', referralCode: '');
+    final url = link.referralLink.isNotEmpty
+        ? link.referralLink
+        : 'https://client.vtindex.com/?ref=${link.referralCode}';
+
+    return Scaffold(
+      backgroundColor: colors.canvas,
+      appBar: AppBar(
+        backgroundColor: colors.appBarBg,
+        foregroundColor: colors.text,
+        elevation: 0,
+        title: const Text('Referral & QR Studio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+      ),
+      body: _PartnershipBackdrop(
+        colors: colors,
+        child: _loading
+            ? Center(child: CircularProgressIndicator(color: colors.blue))
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
+                children: [
+                  // Profile selector
+                  Text('SELECT PARTNER PROFILE', style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _selectedIndex,
+                        isExpanded: true,
+                        dropdownColor: colors.card,
+                        iconEnabledColor: colors.blue,
+                        style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800),
+                        items: List.generate(_links.length, (i) {
+                          return DropdownMenuItem(
+                            value: i,
+                            child: Text('${_links[i].profileName} (${_links[i].referralCode})'),
+                          );
+                        }),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedIndex = val);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  // QR Card
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x18000000), blurRadius: 24, offset: Offset(0, 8)),
+                        ],
+                      ),
+                      child: _VtIndexQrView(
+                        data: url,
+                        size: 210,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(link.profileName, style: TextStyle(color: colors.text, fontSize: 16, fontWeight: FontWeight.w900)),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: SelectableText(url, style: TextStyle(color: colors.muted, fontSize: 11)),
+                  ),
+                  const SizedBox(height: 18),
+                  // Copy buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: url));
+                            showAppMessage('Referral link copied!');
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: colors.border),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(LucideIcons.copy, size: 14),
+                          label: Text('Copy Link', style: TextStyle(color: colors.text, fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: link.referralCode));
+                            showAppMessage('Referral code copied!');
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: colors.border),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(LucideIcons.code, size: 14),
+                          label: Text('Copy Code', style: TextStyle(color: colors.text, fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Social Share
+                  Text('SHARE VIA MESSENGER', style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _socialBtn('WhatsApp', LucideIcons.messageCircle, const Color(0xFF25D366), () async {
+                        final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent('Join my VT Index partner network: $url')}');
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }),
+                      _socialBtn('Telegram', LucideIcons.send, const Color(0xFF229ED9), () async {
+                        final uri = Uri.parse('https://t.me/share/url?url=${Uri.encodeComponent(url)}');
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }),
+                      _socialBtn('Email', LucideIcons.mail, colors.blue, () async {
+                        final uri = Uri(scheme: 'mailto', queryParameters: {'subject': 'Join VT Index', 'body': url});
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }),
+                    ],
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _socialBtn(String label, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 6),
+            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
           ],
-          onChanged: (v) {
-            if (v != null) onChanged(v);
-          },
         ),
       ),
+    );
+  }
+}
+
+// ============================================================================
+// CLIENT REGISTRATION MODAL
+// ============================================================================
+
+class _ClientRegistrationDialog extends StatefulWidget {
+  const _ClientRegistrationDialog();
+
+  @override
+  State<_ClientRegistrationDialog> createState() => _ClientRegistrationDialogState();
+}
+
+class _ClientRegistrationDialogState extends State<_ClientRegistrationDialog> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _dobController = TextEditingController();
+  final _countryController = TextEditingController(text: 'India');
+  final _codeController = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _dobController.dispose();
+    _countryController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty) {
+      showAppMessage('Please fill all required fields.');
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      await AuthApi.instance.addIbClient(
+        name: name,
+        email: email,
+        phone: phone,
+        dob: _dobController.text.trim().isNotEmpty ? _dobController.text.trim() : null,
+        country: _countryController.text.trim().isNotEmpty ? _countryController.text.trim() : null,
+        referralCode: _codeController.text.trim().isNotEmpty ? _codeController.text.trim() : null,
+      );
+      showAppMessage('Client registered successfully!');
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      showAppMessage('Failed to register client: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _PartnershipColors.of(context);
+
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colors.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: colors.border),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Register Direct Client', style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800)),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.x, size: 20)),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _field('Full Name *', _nameController, 'e.g. John Doe', colors),
+              const SizedBox(height: 10),
+              _field('Email Address *', _emailController, 'e.g. john@example.com', colors),
+              const SizedBox(height: 10),
+              _field('Phone Number *', _phoneController, 'e.g. +91 9876543210', colors),
+              const SizedBox(height: 10),
+              _field('Country', _countryController, 'e.g. India', colors),
+              const SizedBox(height: 10),
+              _field('Referral Code', _codeController, 'Optional referral code', colors),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: _loading ? null : _submit,
+                style: FilledButton.styleFrom(
+                  backgroundColor: colors.blue,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(_loading ? 'Registering...' : 'Register Client', style: const TextStyle(fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl, String hint, _PartnershipColors colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: colors.subCard,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: colors.subBorder),
+          ),
+          child: TextField(
+            controller: ctrl,
+            style: TextStyle(color: colors.text, fontSize: 13),
+            decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: colors.muted, fontSize: 12), border: InputBorder.none),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// BRANDED QR CODE WIDGET WITH VTINDEX LOGO IN CENTER
+// ============================================================================
+
+class _VtIndexQrView extends StatelessWidget {
+  const _VtIndexQrView({
+    required this.data,
+    required this.size,
+  });
+
+  final String data;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final logoSize = (size * 0.22).clamp(38.0, 52.0);
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        QrImageView(
+          data: data,
+          version: QrVersions.auto,
+          size: size,
+          backgroundColor: Colors.white,
+          errorCorrectionLevel: QrErrorCorrectLevel.H,
+        ),
+        Container(
+          width: logoSize,
+          height: logoSize,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.8),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x22000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.all(logoSize * 0.12),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/vtindex_logo_img.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

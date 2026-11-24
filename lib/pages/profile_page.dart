@@ -1560,13 +1560,24 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  String get _maskedBankAccountNumber => _bankAccountNumber.length <= 4
-      ? _bankAccountNumber
-      : 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ ${_bankAccountNumber.substring(_bankAccountNumber.length - 4)}';
+  String get _maskedBankAccountNumber {
+    final account = _bankAccountNumber.replaceAll(RegExp(r'\\s+'), '');
+    if (account.isEmpty || account == '—') return account;
+    if (account.length <= 4) return '**** $account';
+
+    final lastFour = account.substring(account.length - 4);
+    final maskedLength = account.length - 4;
+    final firstMaskGroup = '*' * (maskedLength > 4 ? 4 : maskedLength);
+    final remainingMaskLength = maskedLength - firstMaskGroup.length;
+    final remainingMask = remainingMaskLength > 0
+        ? ' ${'*' * remainingMaskLength}'
+        : '';
+    return '$firstMaskGroup$remainingMask $lastFour';
+  }
 
   String get _shortWalletAddress => _cryptoWalletAddress.length <= 18
       ? _cryptoWalletAddress
-      : '${_cryptoWalletAddress.substring(0, 8)}Ã¢â‚¬Â¦${_cryptoWalletAddress.substring(_cryptoWalletAddress.length - 6)}';
+      : '${_cryptoWalletAddress.substring(0, 8)}...${_cryptoWalletAddress.substring(_cryptoWalletAddress.length - 6)}';
 
   void _showBankDetailsSheet() {
     _showPaymentDestinationDetailsSheet(
@@ -1579,7 +1590,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       status: _bankStatus,
       details: [
         _PaymentDetailItem(label: 'Bank Name', value: _bankName),
-        _PaymentDetailItem(label: 'Account Number', value: _maskedBankAccountNumber, copyable: true),
+        _PaymentDetailItem(label: 'Account Number', value: _bankAccountNumber, copyable: true),
         _PaymentDetailItem(label: 'IFSC Code', value: _bankIfscCode, copyable: true),
         _PaymentDetailItem(label: 'Branch Name', value: _bankBranch),
       ],

@@ -160,7 +160,7 @@ class TradeLiveUpdateService : Service() {
                 append("DEMO ACCOUNTS · $demoCount positions · P/L ${money(demoPnl)}")
                 if (demoDetails.isEmpty()) append("\n  No open demo positions")
                 else demoDetails.forEach { append("\n  ").append(it) }
-                append("\n\\nLIVE ACCOUNTS · $liveCount positions · P/L ${money(livePnl)}")
+                append("\n\nLIVE ACCOUNTS · $liveCount positions · P/L ${money(livePnl)}")
                 if (liveDetails.isEmpty()) append("\n  No open live positions")
                 else liveDetails.forEach { append("\n  ").append(it) }
             }

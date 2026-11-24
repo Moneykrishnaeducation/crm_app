@@ -99,6 +99,9 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   bool _email2faEnabled = true;
   bool _biometricEnabled = false;
   bool _isDeviceRevoked = false;
+  List<Map<String, dynamic>> _trustedDevices = [];
+  bool _devicesLoading = false;
+  String? _devicesError;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   Color get _textColor =>
@@ -143,6 +146,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       'captcha_enabled',
       'two_factor_enabled',
       'require_otp',
+      'require_captcha_at_login',
+      'require_email_otp_at_login',
     ]) {
       final value =
           response[key] ??
@@ -736,25 +741,185 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
-  void _openSecuritySubPage(String page) {
-    final legacyDeviceContent = page == 'Device Management'
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildTrustedDevicesHeader(),
-              const SizedBox(height: 12),
-              _buildActiveTrustedDeviceCard(),
-              const SizedBox(height: 20),
-              _buildSecurityFooterActions(),
-            ],
-          )
-        : null;
+  Future<void> _openSecuritySubPage(String page) async {
+    if (page == 'Device Management') {
+      await _loadTrustedDevices();
+    }
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => _SecurityReferenceSubPage(
           title: page,
-          content: legacyDeviceContent,
+          content: page == 'Device Management'
+              ? _buildLiveTrustedDevicesContent()
+              : null,
         ),
+      ),
+    );
+  }
+
+  Future<void> _loadTrustedDevices() async {
+    if (mounted) {
+      setState(() {
+        _devicesLoading = true;
+        _devicesError = null;
+      });
+    }
+    try {
+      final response = await AuthApi.instance.getTrustedDevices();
+      final raw = response['devices'] ??
+          (response['data'] is Map
+              ? (response['data'] as Map)['devices']
+              : null);
+      final devices = raw is List
+          ? raw.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList()
+          : <Map<String, dynamic>>[];
+      if (!mounted) return;
+      setState(() {
+        _trustedDevices = devices;
+        _isDeviceRevoked = devices.every((item) => item['status'] != 'trusted');
+        _devicesLoading = false;
+      });
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _devicesError = error.message;
+        _devicesLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _devicesError = 'Could not load trusted devices.';
+        _devicesLoading = false;
+      });
+    }
+  }
+
+  Widget _buildLiveTrustedDevicesContent() {
+    final activeDevices = _trustedDevices
+        .where((device) => device['status'] == 'trusted')
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Trusted devices',
+                      style: TextStyle(color: _textColor, fontSize: 17, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 3),
+                  Text('${activeDevices.length} active device(s)',
+                      style: TextStyle(color: _mutedColor, fontSize: 12)),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Refresh devices',
+              onPressed: _devicesLoading ? null : _loadTrustedDevices,
+              icon: const Icon(LucideIcons.refreshCw),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_devicesLoading)
+          const Padding(
+            padding: EdgeInsets.all(28),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_devicesError != null)
+          _deviceMessageCard(_devicesError!, action: TextButton(
+            onPressed: _loadTrustedDevices,
+            child: const Text('Try again'),
+          ))
+        else if (_trustedDevices.isEmpty)
+          _deviceMessageCard('No trusted devices are currently registered.')
+        else
+          ..._trustedDevices.map(_buildLiveDeviceCard),
+        if (activeDevices.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _buildSecurityFooterActions(),
+        ],
+      ],
+    );
+  }
+
+  Widget _deviceMessageCard(String message, {Widget? action}) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: _insetCardDecoration(),
+    child: Column(
+      children: [
+        Text(message, textAlign: TextAlign.center,
+            style: TextStyle(color: _mutedColor, fontSize: 13)),
+        if (action != null) action,
+      ],
+    ),
+  );
+
+  Widget _buildLiveDeviceCard(Map<String, dynamic> device) {
+    final id = int.tryParse('${device['id'] ?? ''}');
+    final name = (device['device_name'] ?? 'Unknown device').toString();
+    final type = (device['device_type'] ?? 'Device').toString();
+    final status = (device['status'] ?? 'unknown').toString();
+    final current = device['current'] == true;
+    final ip = (device['ip_address'] ?? '').toString();
+    final lastSeen = (device['last_seen_at'] ?? '').toString();
+    final userAgent = (device['user_agent'] ?? '').toString();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: _insetCardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _securityLeadingIcon(type.toLowerCase().contains('mobile')
+                  ? LucideIcons.smartphone
+                  : LucideIcons.monitor),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: TextStyle(color: _textColor, fontSize: 14, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 3),
+                    Text(type, style: TextStyle(color: _mutedColor, fontSize: 11)),
+                  ],
+                ),
+              ),
+              _deviceStatusBadge(
+                icon: status == 'trusted' ? LucideIcons.shieldCheck : LucideIcons.clock,
+                label: status.toUpperCase(),
+                background: status == 'trusted' ? _greenLight : _goldLight,
+                foreground: status == 'trusted' ? _greenAccent : _goldAccent,
+                border: status == 'trusted' ? _greenBorder : _goldBorder,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (current) _buildDeviceDetailRow(icon: LucideIcons.checkCircle2, label: 'Session:', value: 'Current device'),
+          if (ip.isNotEmpty) _buildDeviceDetailRow(icon: LucideIcons.mapPin, label: 'IP address:', value: ip),
+          if (lastSeen.isNotEmpty) _buildDeviceDetailRow(icon: LucideIcons.clock, label: 'Last active:', value: lastSeen),
+          if (userAgent.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(userAgent, maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: _mutedColor, fontSize: 10, height: 1.35)),
+          ],
+          if (status == 'trusted' && id != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _confirmRemoveDevice(deviceId: id),
+                icon: const Icon(LucideIcons.shieldOff, size: 15),
+                label: const Text('Revoke this device'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1732,7 +1897,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
-  Future<void> _confirmRemoveDevice() async {
+  Future<void> _confirmRemoveDevice({required int deviceId}) async {
     HapticFeedback.lightImpact();
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -1838,10 +2003,10 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
     if (confirmed == true && mounted) {
       try {
-        await AuthApi.instance.revokeTrustedDevice();
+        await AuthApi.instance.revokeTrustedDevice(deviceId: deviceId);
         if (!mounted) return;
-        setState(() => _isDeviceRevoked = true);
         _showSnack('Trusted device revoked');
+        await _loadTrustedDevices();
       } on AuthApiException catch (error) {
         _showSnack(error.message);
       } catch (_) {
@@ -2020,7 +2185,10 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       try {
         await AuthApi.instance.revokeTrustedDevice();
         if (!mounted) return;
-        setState(() => _isDeviceRevoked = true);
+        setState(() {
+          _trustedDevices = [];
+          _isDeviceRevoked = true;
+        });
         _showSnack('All trusted devices have been revoked');
       } on AuthApiException catch (error) {
         _showSnack(error.message);

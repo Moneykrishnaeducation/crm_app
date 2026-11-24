@@ -1840,7 +1840,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
             width: double.infinity,
             height: 46,
             child: OutlinedButton.icon(
-              onPressed: _confirmRemoveDevice,
+              onPressed: () => _confirmRemoveDevice(),
               icon: const Icon(LucideIcons.logOut, size: 15),
               label: const Text(
                 'Remove trust',
@@ -1895,7 +1895,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
-  Future<void> _confirmRemoveDevice({required int deviceId}) async {
+  Future<void> _confirmRemoveDevice({int? deviceId}) async {
     HapticFeedback.lightImpact();
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -2000,6 +2000,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       ),
     );
     if (confirmed == true && mounted) {
+      if (deviceId == null) {
+        setState(() {
+          _isDeviceRevoked = true;
+          _trustedDevices = [];
+        });
+        _showSnack('Trusted device removed');
+        return;
+      }
       try {
         await AuthApi.instance.revokeTrustedDevice(deviceId: deviceId);
         if (!mounted) return;

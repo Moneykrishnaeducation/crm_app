@@ -931,23 +931,32 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
   late String _currentLeverage = widget.account.leverage;
   late String _selectedLeverage = widget.account.leverage;
   bool _leverageUpdated = false;
+  bool _isSubmitting = false;
 
   static const List<String> _leverageOptions = [
+    '1:1',
+    '1:2',
+    '1:5',
+    '1:10',
+    '1:20',
     '1:50',
     '1:100',
     '1:200',
-    '1:300',
-    '1:400',
     '1:500',
+    '1:1000',
   ];
 
   static const Map<String, String> _leverageMargins = {
-    '1:50': '2.00% Margin',
-    '1:100': '1.00% Margin',
-    '1:200': '0.50% Margin',
-    '1:300': '0.33% Margin',
-    '1:400': '0.25% Margin',
-    '1:500': '0.20% Margin',
+    '1:1': '100% Margin',
+    '1:2': '50% Margin',
+    '1:5': '20% Margin',
+    '1:10': '10% Margin',
+    '1:20': '5% Margin',
+    '1:50': '2% Margin',
+    '1:100': '1% Margin',
+    '1:200': '0.5% Margin',
+    '1:500': '0.2% Margin',
+    '1:1000': '0.1% Margin',
   };
 
   @override
@@ -992,45 +1001,72 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
     });
   }
 
-  void _onConfirm() {
-    setState(() {
-      _step = _PasswordStep.done;
-      _error = null;
-    });
-
-    unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Investor Password Preview (#${widget.account.login})',
-      body: 'A new investor password was prepared locally for account #${widget.account.login}. No MT5 password change was submitted.',
-      category: 'Security',
-      icon: LucideIcons.keyRound,
-      isGold: true,
-      sendToMobilePanel: true,
-    ));
-    showAppMessage('Password preview prepared. No MT5 password change was submitted.');
+  Future<void> _onConfirm() async {
+    if (_isSubmitting || _savedPassword == null) return;
+    setState(() { _isSubmitting = true; _error = null; });
+    try {
+      final result = await AuthApi.instance.updateTradingAccountPassword(
+        accountId: widget.account.login,
+        newPassword: _savedPassword!,
+      );
+      if (result['success'] == false) {
+        throw AuthApiException((result['message'] ?? result['error'] ?? 'Password update failed.').toString());
+      }
+      if (!mounted) return;
+      setState(() { _step = _PasswordStep.done; _error = null; });
+      unawaited(AppNotificationCenter.instance.sendNotification(
+        title: 'Investor Password Updated (#${widget.account.login})',
+        body: 'The investor password for account #${widget.account.login} was changed successfully.',
+        category: 'Security',
+        icon: LucideIcons.keyRound,
+        isGold: true,
+        sendToMobilePanel: true,
+      ));
+      showAppMessage((result['message'] ?? 'Investor password updated successfully.').toString());
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error is AuthApiException ? error.message : 'Unable to update the investor password. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
-  void _onApplyLeverage() {
+  Future<void> _onApplyLeverage() async {
+    if (_isSubmitting) return;
+    final leverageValue = _selectedLeverage.split(':').last;
     if (_selectedLeverage == _currentLeverage) {
       showAppMessage('Selected leverage is already active.');
       return;
     }
-
-    setState(() {
-      _currentLeverage = _selectedLeverage;
-      _leverageUpdated = true;
-    });
-
-    widget.onLeverageUpdated?.call(_selectedLeverage);
-
-    unawaited(AppNotificationCenter.instance.sendNotification(
-      title: 'Leverage Updated (#${widget.account.login})',
-      body: 'Account #${widget.account.login} leverage changed to $_selectedLeverage.',
-      category: 'Trading',
-      icon: LucideIcons.scale,
-      isGold: true,
-      sendToMobilePanel: true,
-    ));
-    showAppMessage('Leverage updated to $_selectedLeverage successfully.');
+    setState(() => _isSubmitting = true);
+    try {
+      final result = await AuthApi.instance.updateTradingAccountLeverage(
+        accountId: widget.account.login,
+        leverage: leverageValue,
+      );
+      if (result['success'] == false) {
+        throw AuthApiException((result['message'] ?? result['error'] ?? 'Leverage update failed.').toString());
+      }
+      if (!mounted) return;
+      setState(() {
+        _currentLeverage = _selectedLeverage;
+        _leverageUpdated = true;
+      });
+      widget.onLeverageUpdated?.call(_selectedLeverage);
+      unawaited(AppNotificationCenter.instance.sendNotification(
+        title: 'Leverage Updated (#${widget.account.login})',
+        body: 'Account #${widget.account.login} leverage changed to $_selectedLeverage.',
+        category: 'Trading',
+        icon: LucideIcons.scale,
+        isGold: true,
+        sendToMobilePanel: true,
+      ));
+      showAppMessage((result['message'] ?? 'Leverage updated successfully.').toString());
+    } catch (error) {
+      if (mounted) showAppMessage(error is AuthApiException ? error.message : 'Unable to update leverage. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -1732,7 +1768,7 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
                   child: SizedBox(
                     height: 48,
                     child: FilledButton.icon(
-                      onPressed: _onConfirm,
+                      onPressed: _isSubmitting ? null : _onConfirm,
                       style: FilledButton.styleFrom(
                         backgroundColor: _brokerGold,
                         foregroundColor: const Color(0xFF142238),
@@ -1740,9 +1776,9 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: const Icon(LucideIcons.check, size: 18),
-                      label: const Text(
-                        'CONFIRM',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
+                      label: Text(
+                        _isSubmitting ? 'UPDATING...' : 'CONFIRM',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35),
                       ),
                     ),
                   ),
@@ -1810,7 +1846,7 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
               child: SizedBox(
                 height: 48,
                 child: FilledButton.icon(
-                  onPressed: _onApplyLeverage,
+                  onPressed: _isSubmitting ? null : _onApplyLeverage,
                   style: FilledButton.styleFrom(
                     backgroundColor: _brokerGold,
                     foregroundColor: const Color(0xFF142238),
@@ -1818,7 +1854,7 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(LucideIcons.check, size: 18),
-                  label: const Text('CONFIRM LEVERAGE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
+                  label: Text(_isSubmitting ? 'UPDATING...' : 'CONFIRM LEVERAGE', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .35)),
                 ),
               ),
             ),

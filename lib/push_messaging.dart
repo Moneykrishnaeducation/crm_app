@@ -93,8 +93,8 @@ class PushMessagingService {
 
   void _handlePushOpen(RemoteMessage message) {
     unawaited(AppNotificationCenter.instance.refreshFromBackend());
-    // The existing notification center remains the source of truth for
-    // action routing; the next refresh loads the persisted action_url.
+    final action = message.data['action_url']?.toString();
+    if (action != null && action.isNotEmpty) pendingActionUrl.value = action;
   }
 
   String _category(String? type) {

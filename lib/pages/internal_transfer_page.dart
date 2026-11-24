@@ -41,38 +41,7 @@ class BrokerInternalTransferPage extends StatefulWidget {
 }
 
 class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage> {
-  static const List<BrokerAccount> _defaultAccounts = [
-    BrokerAccount(
-      'Standard Account',
-      '52132132',
-      '1:500',
-      r'$0.00',
-      r'$0.00',
-      'Live MT5',
-      server: 'VTIndex-Live',
-      currency: 'USD',
-    ),
-    BrokerAccount(
-      'ECN Zero',
-      '3315',
-      '1:500',
-      r'$10,000.00',
-      r'$10,250.00',
-      'Live MT5',
-      server: 'VTIndex-Live',
-      currency: 'USD',
-    ),
-    BrokerAccount(
-      'Pro Trading',
-      '8820412',
-      '1:200',
-      r'$2,450.00',
-      r'$2,450.00',
-      'Live MT5',
-      server: 'VTIndex-Live',
-      currency: 'USD',
-    ),
-  ];
+
 
   late final List<BrokerAccount> _accountList;
   final Map<String, double> _balances = {};
@@ -107,36 +76,39 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   @override
   void initState() {
     super.initState();
-    final rawAccounts = (widget.accounts != null && widget.accounts!.isNotEmpty)
-        ? widget.accounts!
-        : _defaultAccounts;
+    final rawAccounts = widget.accounts ?? const <BrokerAccount>[];
     _accountList = List.from(rawAccounts);
 
     for (final acc in _accountList) {
       _balances[acc.login] = _parseBalance(acc.balance);
     }
 
-    if (widget.initialSourceLogin != null &&
-        _accountList.any((a) => a.login == widget.initialSourceLogin)) {
-      _source = widget.initialSourceLogin!;
+    if (_accountList.isEmpty) {
+      _source = '';
+      _destination = '';
     } else {
-      final firstWithFunds = _accountList.firstWhere(
-        (a) => (_balances[a.login] ?? 0) > 0,
-        orElse: () => _accountList.first,
-      );
-      _source = firstWithFunds.login;
-    }
+      if (widget.initialSourceLogin != null &&
+          _accountList.any((a) => a.login == widget.initialSourceLogin)) {
+        _source = widget.initialSourceLogin!;
+      } else {
+        final firstWithFunds = _accountList.firstWhere(
+          (a) => (_balances[a.login] ?? 0) > 0,
+          orElse: () => _accountList.first,
+        );
+        _source = firstWithFunds.login;
+      }
 
-    if (widget.initialDestinationLogin != null &&
-        _accountList.any((a) => a.login == widget.initialDestinationLogin) &&
-        widget.initialDestinationLogin != _source) {
-      _destination = widget.initialDestinationLogin!;
-    } else {
-      final other = _accountList.firstWhere(
-        (a) => a.login != _source,
-        orElse: () => _accountList.first,
-      );
-      _destination = other.login;
+      if (widget.initialDestinationLogin != null &&
+          _accountList.any((a) => a.login == widget.initialDestinationLogin) &&
+          widget.initialDestinationLogin != _source) {
+        _destination = widget.initialDestinationLogin!;
+      } else {
+        final other = _accountList.firstWhere(
+          (a) => a.login != _source,
+          orElse: () => _accountList.first,
+        );
+        _destination = other.login;
+      }
     }
 
     _loadLiveAccounts();
@@ -335,6 +307,25 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                         ],
                       ),
                     ),
+
+                    if (_accountList.isEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: colors.error.withValues(alpha: .08),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: colors.error.withValues(alpha: .25)),
+                        ),
+                        child: Text(
+                          'No eligible live trading accounts are available. Refresh the page or contact support if you believe this is incorrect.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
 
                     // Main Transfer Route Card
                     Container(
@@ -1175,12 +1166,12 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
           children: [
             _buildGuidelineItem(
               'Transfer Fees',
-              'Fees are not verified in this local preview. Check the server-side transfer rules before making a real transfer.',
+              'Any applicable fees are calculated by the trading platform before the transfer is confirmed.',
             ),
             const SizedBox(height: 12),
             _buildGuidelineItem(
               'Instant Settlement',
-              'This screen updates local preview balances only. A server-side transfer is not submitted.',
+              'Transfers are submitted to the trading platform and confirmed only after the server accepts the request.',
             ),
             const SizedBox(height: 12),
             _buildGuidelineItem(

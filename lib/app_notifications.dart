@@ -422,7 +422,9 @@ class AppNotificationCenter {
         'LIVE · $liveAccountCount accounts · ${live.length} positions · P/L ${money(livePnl)}',
         if (live.isEmpty) 'No open live positions' else ...live.map(detail),
       ].join('\n');
-      final short = 'D${demoPnl >= 0 ? '+' : '-}${demoPnl.abs().toStringAsFixed(0)} L${livePnl >= 0 ? '+' : '-}${livePnl.abs().toStringAsFixed(0)}';
+      final demoSign = demoPnl >= 0 ? '+' : '-';
+      final liveSign = livePnl >= 0 ? '+' : '-';
+      final short = 'D$demoSign${demoPnl.abs().toStringAsFixed(0)} L$liveSign${livePnl.abs().toStringAsFixed(0)}';
       await updateLiveUpdate(
         id: 7777,
         title: 'VT Index · Portfolio Live',

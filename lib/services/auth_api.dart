@@ -1023,21 +1023,17 @@ class AuthApi {
 
   /// Fetch the authenticated user's MAM master accounts.
   Future<List<Map<String, dynamic>>> getUserMamAccounts() async {
-    final response = await _request('GET', 'user-mam-accounts/');
+    final dynamic response = await _request('GET', 'user-mam-accounts/');
     dynamic data = response;
-    if (data is List) return data
-        .whereType<Map>()
-        .map((item) => item.cast<String, dynamic>())
-        .toList();
     if (data is Map && data['results'] is List) data = data['results'];
     if (data is Map && data['data'] is List) data = data['data'];
-    if (data is! List) {
-      throw const AuthApiException('Unexpected MAM accounts response format.');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => item.cast<String, dynamic>())
+          .toList();
     }
-    return data
-        .whereType<Map>()
-        .map((item) => item.cast<String, dynamic>())
-        .toList();
+    throw const AuthApiException('Unexpected MAM accounts response format.');
   }
 
   /// Live USD to INR exchange rate

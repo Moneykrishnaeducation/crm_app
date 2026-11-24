@@ -43,6 +43,7 @@ class TradeLiveUpdateService : Service() {
         intent?.let { incoming ->
             prefs.edit()
                 .putString("url", incoming.getStringExtra("url"))
+                .putString("host", incoming.getStringExtra("host"))
                 .putString("positionId", incoming.getStringExtra("positionId"))
                 .putString("accountId", incoming.getStringExtra("accountId"))
                 .putString("symbol", incoming.getStringExtra("symbol"))
@@ -108,6 +109,7 @@ class TradeLiveUpdateService : Service() {
                 readTimeout = 10000
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("Authorization", "Bearer $accessToken")
+                prefs.getString("host", null)?.takeIf { it.isNotBlank() }?.let { setRequestProperty("Host", it) }
             }
             val code = connection.responseCode
             if (code !in 200..299) {

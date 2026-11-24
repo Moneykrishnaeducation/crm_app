@@ -854,6 +854,38 @@ class AuthApi {
     'profile/security/two-factor/',
     body: {'require_email_otp_at_login': enabled},
   );
+  Future<Map<String, dynamic>> changeClientLoginPassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) => _request(
+    'POST',
+    'profile/security/change-password/',
+    body: {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+      'confirm_password': confirmPassword,
+    },
+    encryptProfileBody: true,
+  );
+
+  Future<Map<String, dynamic>> getAccountClosureRequest() =>
+      _request('GET', 'profile/security/account-closure/');
+
+  Future<Map<String, dynamic>> submitAccountClosureRequest({
+    required String password,
+    required String reason,
+  }) => _request(
+    'POST',
+    'profile/security/account-closure/',
+    body: {
+      'password': password,
+      'reason': reason,
+      'confirm_closure': true,
+    },
+    encryptProfileBody: true,
+  );
+
   Future<Map<String, dynamic>> requestProfileEncryptionKey() => _request(
     'POST',
     'profile/security/request-encryption-key/',

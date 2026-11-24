@@ -359,6 +359,25 @@ class AuthApi {
     return _request('GET', 'notifications/?$query');
   }
 
+  Future<Map<String, dynamic>> registerPushDeviceToken({
+    required String token,
+    required String platform,
+  }) {
+    return _request(
+      'POST',
+      'notifications/push/register/',
+      body: <String, dynamic>{'token': token, 'platform': platform},
+    );
+  }
+
+  Future<Map<String, dynamic>> unregisterPushDeviceToken(String token) {
+    return _request(
+      'POST',
+      'notifications/push/unregister/',
+      body: <String, dynamic>{'token': token},
+    );
+  }
+
   Future<Map<String, dynamic>> markNotificationRead(String notificationId) {
     final id = Uri.encodeComponent(notificationId);
     return _request('POST', 'notifications/$id/mark-read/');

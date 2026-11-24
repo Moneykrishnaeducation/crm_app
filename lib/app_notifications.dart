@@ -403,11 +403,21 @@ class AppNotificationCenter {
       final demoPnl = sum(demo);
       final livePnl = sum(live);
       final totalPnl = demoPnl + livePnl;
-      String money(double value) => '${value >= 0 ? '+' : '-}$${value.abs().toStringAsFixed(2)}';
+      String money(double value) =>
+          '\${value >= 0 ? '+' : '-'}\$ \${value.abs().toStringAsFixed(2)}';
+      String detail(Map<String, dynamic> row) {
+        final ticket = (row['ticket'] ?? row['position_ticket'] ?? row['position_id'] ?? row['id'] ?? '').toString();
+        final symbol = (row['symbol'] ?? 'Trade').toString();
+        final side = (row['type'] ?? row['side'] ?? '').toString().toUpperCase();
+        final volume = _number(row['volume'] ?? row['lots']).toStringAsFixed(2);
+        return '#$ticket · $symbol $side $volume · \${money(_number(row['profit']))} · #\${row['_accountId']}';
+      }
       final body = <String>[
-        'DEMO ACCOUNTS · ${demo.length} positions · P/L ${money(demoPnl)}',
-        'LIVE ACCOUNTS · ${live.length} positions · P/L ${money(livePnl)}',
-      ].join('\n');
+        'DEMO ACCOUNTS · \${demo.length} positions · P/L \${money(demoPnl)}',
+        if (demo.isEmpty) 'No open demo positions' else ...demo.map(detail),
+        'LIVE ACCOUNTS · \${live.length} positions · P/L \${money(livePnl)}',
+        if (live.isEmpty) 'No open live positions' else ...live.map(detail),
+      ].join('\\n');
       final short = 'D${demoPnl >= 0 ? '+' : '-}${demoPnl.abs().toStringAsFixed(0)} L${livePnl >= 0 ? '+' : '-}${livePnl.abs().toStringAsFixed(0)}';
       await updateLiveUpdate(
         id: 7777,

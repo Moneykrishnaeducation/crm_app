@@ -282,13 +282,12 @@ class AppNotificationCenter {
       await stopPositionMonitoring();
       return false;
     }
-    final nativeServiceStarted = await _startNativePositionService();
-    if (!nativeServiceStarted) {
-      _positionMonitorTimer = Timer.periodic(
-        const Duration(seconds: 15),
-        (_) => _refreshTrackedPosition(revision: revision),
-      );
-    }
+    // While Flutter is foregrounded, keep the UI synchronized with Dart polling.
+    // The native foreground service takes over when the app becomes inactive.
+    _positionMonitorTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _refreshTrackedPosition(revision: revision),
+    );
     return true;
   }
 
@@ -346,23 +345,22 @@ class AppNotificationCenter {
   Future<void> pausePositionMonitoring() async {
     _positionMonitorTimer?.cancel();
     _positionMonitorTimer = null;
+    if (defaultTargetPlatform == TargetPlatform.android &&
+        trackedPositionNotifier.value != null) {
+      await _startNativePositionService();
+    }
   }
 
   Future<void> resumePositionMonitoring() async {
     if (trackedPositionNotifier.value == null || _positionMonitorTimer != null) return;
     final revision = _positionMonitorRevision;
-    await _refreshTrackedPosition(revision: revision);
     if (defaultTargetPlatform == TargetPlatform.android) {
-      // Re-attach/restart the foreground service after Flutter process recreation.
-      final started = await _startNativePositionService();
-      if (!started && trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
-        _positionMonitorTimer = Timer.periodic(
-          const Duration(seconds: 15),
-          (_) => _refreshTrackedPosition(revision: revision),
-        );
-      }
-      return;
+      // The Flutter UI has resumed, so hand tracking back from the service.
+      try {
+        await _nativeChannel.invokeMethod('stopPositionService');
+      } catch (_) {}
     }
+    await _refreshTrackedPosition(revision: revision);
     if (trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
       _positionMonitorTimer = Timer.periodic(
         const Duration(seconds: 15),

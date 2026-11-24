@@ -4,7 +4,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Apply Firebase native configuration only when the project owner adds the\n// private/local google-services.json file. The repository intentionally omits it.\nif (file("google-services.json").exists()) {\n    apply(plugin = "com.google.gms.google-services")\n}\n\nandroid {
+// Apply Firebase native configuration only when the project owner adds the
+// private/local google-services.json file. The repository intentionally omits it.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
+android {
     namespace = "com.vtindex.crm"
     compileSdk = 37
     ndkVersion = flutter.ndkVersion

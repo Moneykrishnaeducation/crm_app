@@ -3478,39 +3478,7 @@ class _SecurityReferenceSubPage extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF16845B).withValues(alpha: .22),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFF6EE7B7)
-                                .withValues(alpha: .65),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.checkCircle2,
-                              color: Color(0xFF6EE7B7),
-                              size: 13,
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              'Active',
-                              style: TextStyle(
-                                color: Color(0xFFB7F7D8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const _AccountStatusBadge(),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -3969,5 +3937,76 @@ class _SecurityReferenceSubPage extends StatelessWidget {
 
   static void _message(BuildContext context, String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+}
+
+
+class _AccountStatusBadge extends StatefulWidget {
+  const _AccountStatusBadge();
+
+  @override
+  State<_AccountStatusBadge> createState() => _AccountStatusBadgeState();
+}
+
+class _AccountStatusBadgeState extends State<_AccountStatusBadge> {
+  late Future<Map<String, dynamic>> _statusFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statusFuture = AuthApi.instance.getAccountClosureRequest();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _statusFuture,
+      builder: (context, snapshot) {
+        final request = snapshot.data?['request'];
+        final status = request is Map ? request['status']?.toString() : null;
+        final label = snapshot.hasError
+            ? 'Status unavailable'
+            : status == 'pending'
+                ? 'Pending review'
+                : status == 'approved'
+                    ? 'Approved'
+                    : status == 'rejected'
+                        ? 'Rejected'
+                        : 'Active';
+        final active = status == null || status == 'rejected' || status == 'cancelled';
+        final color = active ? const Color(0xFF6EE7B7) : const Color(0xFFF4C84A);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .16),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: .65)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                status == 'pending'
+                    ? LucideIcons.clock3
+                    : active
+                        ? LucideIcons.checkCircle2
+                        : LucideIcons.alertCircle,
+                color: color,
+                size: 13,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

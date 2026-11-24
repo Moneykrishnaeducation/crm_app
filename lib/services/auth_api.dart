@@ -848,6 +848,7 @@ class AuthApi {
         'PATCH',
         'profile/security/captcha/',
         body: {'require_captcha_at_login': enabled},
+        encryptProfileBody: true,
       );
 
   Future<Map<String, dynamic>> setTwoFactorSettings(bool enabled) => _request(
@@ -890,11 +891,8 @@ class AuthApi {
     encryptProfileBody: true,
   );
 
-  Future<Map<String, dynamic>> requestProfileEncryptionKey() => _request(
-    'GET',
-    'profile/security/request-encryption-key/',
-    body: const {},
-  );
+  Future<Map<String, dynamic>> requestProfileEncryptionKey() =>
+      _request('GET', 'profile/security/request-encryption-key/');
   Future<Map<String, dynamic>> verifyProfilePassword(String password) =>
       _request(
         'POST',

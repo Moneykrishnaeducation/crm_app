@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'app_notifications.dart';
+import 'push_messaging.dart';
 export 'app_notifications.dart';
 import 'biometric_sign_in.dart';
 
@@ -363,6 +364,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     FocusManager.instance.addListener(_handleFocusChange);
     _currentThemeMode = widget.themeMode;
+    unawaited(PushMessagingService.instance.initializeAndRegister());
     _loadFavoriteAccounts();
     unawaited(_loadTradingAccounts());
     unawaited(AppNotificationCenter.instance.refreshFromBackend());

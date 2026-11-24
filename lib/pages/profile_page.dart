@@ -4,6 +4,7 @@ import '../app_notifications.dart';
 import '../services/auth_api.dart';
 import 'dart:math' as math;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -150,6 +151,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _cryptoCurrency = '—';
   String _cryptoNetwork = 'Not provided by API';
   String _cryptoStatus = 'Not submitted';
+  String _identityDocumentStatus = 'Not submitted';
+  String _residenceDocumentStatus = 'Not submitted';
+  String _identityDocumentReason = '';
+  String _residenceDocumentReason = '';
+  bool _hasIdentityDocument = false;
+  bool _hasResidenceDocument = false;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   _ProfileColors get _c => _ProfileColors.of(context);
@@ -193,6 +200,62 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     if (parsed == null) return raw;
     return '${parsed.day.toString().padLeft(2, '0')}-'
         '${parsed.month.toString().padLeft(2, '0')}-${parsed.year}';
+  }
+
+  Future<void> _loadProfileDocuments() async {
+    final response = await AuthApi.instance.getProfileDocuments();
+    dynamic rows = response['data'] ?? response['documents'] ?? response['results'];
+    if (rows is Map) {
+      rows = rows['documents'] ?? rows['results'] ?? rows['data'];
+    }
+    final documents = rows is List
+        ? rows.whereType<Map>().map((item) => item.cast<String, dynamic>()).toList()
+        : <Map<String, dynamic>>[];
+    Map<String, dynamic> findDocument(String type) {
+      for (final document in documents) {
+        if (_stringValue(document['document_type']) == type) return document;
+      }
+      return <String, dynamic>{};
+    }
+
+    final identity = findDocument('identity');
+    final residence = findDocument('residence');
+    if (!mounted) return;
+    setState(() {
+      _identityDocumentStatus = _statusLabel(identity['status'] ?? identity['verification_status']);
+      _residenceDocumentStatus = _statusLabel(residence['status'] ?? residence['verification_status']);
+      _identityDocumentReason = _stringValue(identity['verification_reason'] ?? identity['human_readable_reason']);
+      _residenceDocumentReason = _stringValue(residence['verification_reason'] ?? residence['human_readable_reason']);
+      _hasIdentityDocument = _stringValue(identity['document']).isNotEmpty;
+      _hasResidenceDocument = _stringValue(residence['document']).isNotEmpty;
+    });
+  }
+
+  Future<void> _pickAndUploadDocument({required String documentType}) async {
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+        allowMultiple: false,
+      );
+      if (picked == null || picked.files.isEmpty) return;
+      final path = picked.files.single.path;
+      if (path == null || path.isEmpty) {
+        _showSnack('Unable to read the selected document.');
+        return;
+      }
+      await AuthApi.instance.uploadVerificationDocument(
+        documentType: documentType,
+        filePath: path,
+      );
+      await _loadProfileDocuments();
+      if (!mounted) return;
+      _showSnack('Document uploaded. Current status: ${documentType == 'identity' ? _identityDocumentStatus : _residenceDocumentStatus}.');
+    } catch (error) {
+      if (!mounted) return;
+      _showSnack(error is AuthApiException ? error.message : 'Unable to upload the verification document.');
+      debugPrint('Verification document upload failed: $error');
+    }
   }
 
   String _statusLabel(dynamic value) {
@@ -285,10 +348,15 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         if (remoteAvatarPath != null) _profileImagePath = remoteAvatarPath;
         if (remoteBannerPath != null) _bannerImagePath = remoteBannerPath;
       });
+      try {
+        await _loadProfileDocuments();
+      } catch (documentError) {
+        debugPrint('Profile document status load failed: $documentError');
+      }
     } catch (error) {
       debugPrint('Profile API load failed: $error');
       if (mounted) {
-        _showSnack('Unable to load your latest profile details. Pull to retry.');
+        _showSnack('Unable to load your latest profile details. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isLoadingProfile = false);
@@ -872,6 +940,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _buildMobileProfileHeader(),
+                      if (_isLoadingProfile) ...[
+                        const SizedBox(height: 10),
+                        const LinearProgressIndicator(minHeight: 2),
+                      ],
                       const SizedBox(height: 18),
                       _buildProfilePageTitle(),
                       const SizedBox(height: 18),
@@ -1892,7 +1964,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   // ==========================================
   Widget _buildVerificationTab() {
     return _VerificationTabView(
+      identityStatus: _identityDocumentStatus,
+      residenceStatus: _residenceDocumentStatus,
+      identityReason: _identityDocumentReason,
+      residenceReason: _residenceDocumentReason,
+      hasIdentityDocument: _hasIdentityDocument,
+      hasResidenceDocument: _hasResidenceDocument,
       onViewDocument: (docType) => _showDocumentViewerSheet(context, docType),
+      onUploadDocument: (docType) => _pickAndUploadDocument(documentType: docType),
     );
   }
 
@@ -1933,7 +2012,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           _PaymentDetailItem(label: 'Account Number', value: _bankAccountNumber, copyable: true),
           _PaymentDetailItem(label: 'IFSC / Routing Code', value: _bankIfscCode, copyable: true),
           _PaymentDetailItem(label: 'Branch Name', value: _bankBranch),
-          const _PaymentDetailItem(label: 'Routing Channel', value: 'NEFT / RTGS / IMPS'),
         ],
         onEdit: () {
           Navigator.pop(context);
@@ -2062,10 +2140,24 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 // ==========================================
 class _VerificationTabView extends StatelessWidget {
   const _VerificationTabView({
+    required this.identityStatus,
+    required this.residenceStatus,
+    required this.identityReason,
+    required this.residenceReason,
+    required this.hasIdentityDocument,
+    required this.hasResidenceDocument,
     required this.onViewDocument,
+    required this.onUploadDocument,
   });
 
+  final String identityStatus;
+  final String residenceStatus;
+  final String identityReason;
+  final String residenceReason;
+  final bool hasIdentityDocument;
+  final bool hasResidenceDocument;
   final ValueChanged<String> onViewDocument;
+  final ValueChanged<String> onUploadDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -2089,15 +2181,13 @@ class _VerificationTabView extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Review your submitted identity and address documents.',
+                'Upload and track the status of your identity and residence documents.',
                 style: TextStyle(color: c.muted, fontSize: 12, height: 1.35),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-
-        // Verification documents are stacked vertically for a clear, full-width layout.
         Column(
           children: [
             _VerificationDocCard(
@@ -2108,8 +2198,11 @@ class _VerificationTabView extends StatelessWidget {
               iconBgColor: c.blueLight,
               iconColor: const Color(0xFF4988E8),
               badgeTagColor: c.isDark ? c.accentBlue : const Color(0xFF4988E8),
-              isIdentity: true,
-              onViewDocument: () => onViewDocument('Identity Verification'),
+              status: identityStatus,
+              reason: identityReason,
+              hasDocument: hasIdentityDocument,
+              onViewDocument: () => onViewDocument('identity'),
+              onUploadDocument: () => onUploadDocument('identity'),
             ),
             const SizedBox(height: 12),
             _VerificationDocCard(
@@ -2120,14 +2213,15 @@ class _VerificationTabView extends StatelessWidget {
               iconBgColor: c.goldLight,
               iconColor: c.accentBlue,
               badgeTagColor: c.isDark ? c.accentBlue : _profileBlueDark,
-              isIdentity: false,
-              onViewDocument: () => onViewDocument('Address Verification'),
+              status: residenceStatus,
+              reason: residenceReason,
+              hasDocument: hasResidenceDocument,
+              onViewDocument: () => onViewDocument('residence'),
+              onUploadDocument: () => onUploadDocument('residence'),
             ),
           ],
         ),
         const SizedBox(height: 16),
-
-        // 4. Security / Privacy Footer Card
         _buildSecurityPrivacyFooter(context),
       ],
     );
@@ -2144,85 +2238,35 @@ class _VerificationTabView extends StatelessWidget {
         border: Border.all(color: c.border, width: 1.2),
         boxShadow: _profileShadow,
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isCompact = constraints.maxWidth < 450;
-          final badge = Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: c.blueLight,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: c.blueBorder),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(
-              'Secure document access',
-              style: TextStyle(
-                color: c.isDark ? c.accentBlue : _profileBlueDark,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          );
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: c.blueLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      LucideIcons.lock,
-                      color: c.accentBlue,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Your documents stay protected.',
-                          style: TextStyle(
-                            color: c.text,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'You must verify your CRM password before viewing a document.',
-                          style: TextStyle(
-                            color: c.muted,
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isCompact) ...[
-                    const SizedBox(width: 12),
-                    badge,
-                  ],
-                ],
-              ),
-              if (isCompact) ...[
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: badge,
+            child: Icon(LucideIcons.lock, color: c.accentBlue, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your documents stay protected.',
+                  style: TextStyle(color: c.text, fontSize: 12.5, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Viewing a document requires your current CRM password.',
+                  style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
                 ),
               ],
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2240,8 +2284,11 @@ class _VerificationDocCard extends StatelessWidget {
     required this.iconBgColor,
     required this.iconColor,
     required this.badgeTagColor,
-    required this.isIdentity,
+    required this.status,
+    required this.reason,
+    required this.hasDocument,
     required this.onViewDocument,
+    required this.onUploadDocument,
   });
 
   final String title;
@@ -2251,12 +2298,20 @@ class _VerificationDocCard extends StatelessWidget {
   final Color iconBgColor;
   final Color iconColor;
   final Color badgeTagColor;
-  final bool isIdentity;
+  final String status;
+  final String reason;
+  final bool hasDocument;
   final VoidCallback onViewDocument;
+  final VoidCallback onUploadDocument;
 
   @override
   Widget build(BuildContext context) {
     final c = _ProfileColors.of(context);
+    final approved = status.toLowerCase() == 'approved' || status.toLowerCase() == 'verified';
+    final rejected = status.toLowerCase() == 'rejected';
+    final statusColor = approved ? _profileGreen : (rejected ? Colors.redAccent : c.accentBlue);
+    final statusBackground = approved ? c.greenLight : c.blueLight;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -2274,10 +2329,7 @@ class _VerificationDocCard extends StatelessWidget {
               Container(
                 width: 34,
                 height: 34,
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(10)),
                 child: Icon(icon, color: iconColor, size: 18),
               ),
               const SizedBox(width: 10),
@@ -2286,29 +2338,20 @@ class _VerificationDocCard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: c.text,
-                    fontSize: 14,
-                    height: 1.2,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TextStyle(color: c.text, fontSize: 14, height: 1.2, fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
-                  color: c.greenLight,
+                  color: statusBackground,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: c.greenBorder),
+                  border: Border.all(color: approved ? c.greenBorder : c.blueBorder),
                 ),
-                child: const Text(
-                  'Approved',
-                  style: TextStyle(
-                    color: _profileGreen,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Text(
+                  status,
+                  style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -2318,23 +2361,14 @@ class _VerificationDocCard extends StatelessWidget {
             badgeLabel,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: badgeTagColor,
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-            ),
+            style: TextStyle(color: badgeTagColor, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.4),
           ),
           const SizedBox(height: 9),
           Text(
             subtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: c.muted,
-              fontSize: 11,
-              height: 1.35,
-            ),
+            style: TextStyle(color: c.muted, fontSize: 11, height: 1.35),
           ),
           const SizedBox(height: 10),
           Container(
@@ -2354,27 +2388,19 @@ class _VerificationDocCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Document file',
-                        style: TextStyle(
-                          color: c.muted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        hasDocument ? 'Document uploaded' : 'No document uploaded',
+                        style: TextStyle(color: c.text, fontSize: 10, fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        'PDF / IMAGE',
-                        style: TextStyle(
-                          color: c.isDark ? c.accentBlue : _profileBlueDark,
-                          fontSize: 8,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        hasDocument ? 'Stored securely on your account' : 'PDF / JPG / PNG / WEBP',
+                        style: TextStyle(color: c.muted, fontSize: 9, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
-                  LucideIcons.shieldCheck,
-                  color: _profileGreen,
+                Icon(
+                  hasDocument ? LucideIcons.fileCheck : LucideIcons.filePlus,
+                  color: hasDocument ? statusColor : c.muted,
                   size: 17,
                 ),
               ],
@@ -2382,49 +2408,65 @@ class _VerificationDocCard extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                LucideIcons.shieldCheck,
-                color: _profileGreen,
+              Icon(
+                approved ? LucideIcons.shieldCheck : LucideIcons.info,
+                color: statusColor,
                 size: 14,
               ),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
-                  'Verification complete',
-                  maxLines: 1,
+                  reason.isNotEmpty ? reason : 'Verification status: $status',
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: c.text,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(color: c.text, fontSize: 10, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 9),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onViewDocument,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
-                side: BorderSide(color: c.blueBorder),
-                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
-                minimumSize: const Size(0, 38),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(9),
+          Row(
+            children: [
+              if (hasDocument) ...[
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onViewDocument,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
+                      side: BorderSide(color: c.blueBorder),
+                      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+                      minimumSize: const Size(0, 38),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                    ),
+                    child: const Text('View securely', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onUploadDocument,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _profileBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+                    minimumSize: const Size(0, 38),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                  ),
+                  child: Text(
+                    hasDocument ? 'Replace document' : 'Upload document',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-              child: const Text(
-                'View document',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -2442,9 +2484,15 @@ class _DocumentViewerModal extends StatefulWidget {
 }
 
 class _DocumentViewerModalState extends State<_DocumentViewerModal> {
-  bool _passwordVerified = true;
-  final TextEditingController _passwordController = TextEditingController(text: 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢');
+  final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _loading = false;
+  String? _error;
+  Uint8List? _documentBytes;
+  String _contentType = '';
+  String _fileName = '';
+
+  bool get _isIdentity => widget.documentType == 'identity';
 
   @override
   void dispose() {
@@ -2452,21 +2500,46 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
     super.dispose();
   }
 
+  Future<void> _verifyAndLoadDocument() async {
+    final password = _passwordController.text;
+    if (password.isEmpty) {
+      setState(() => _error = 'Enter your CRM password to continue.');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final document = await AuthApi.instance.getSecureProfileDocument(
+        documentType: widget.documentType,
+        password: password,
+      );
+      if (!mounted) return;
+      setState(() {
+        _documentBytes = document.bytes;
+        _contentType = document.contentType;
+        _fileName = document.fileName;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error is AuthApiException
+            ? error.message
+            : 'Unable to retrieve this document securely.';
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isIdentity = widget.documentType.contains('Identity');
-    final docTitle = isIdentity ? 'Identity Verification' : 'Address Verification';
-    final docBadge = isIdentity ? 'IDENTITY PROOF' : 'ADDRESS PROOF';
-    final docTypeDetail = isIdentity
-        ? 'National ID Card (Aadhaar / Passport)'
-        : 'Official Bank Statement / Utility Bill';
-    final docRef = isIdentity ? 'IND-****7842' : 'REF-ADDR-2024-819';
-    final docScore = isIdentity ? '96% (Auto-Approved >80%)' : '92% (Auto-Approved >80%)';
-    final docComparison = isIdentity
-        ? 'Name & Date of Birth matched with profile'
-        : 'Name & Complete Profile Address matched';
-
     final c = _ProfileColors.of(context);
+    final title = _isIdentity ? 'Identity Verification' : 'Address Verification';
+    final badge = _isIdentity ? 'IDENTITY PROOF' : 'ADDRESS PROOF';
+    final bytes = _documentBytes;
+
     return Container(
       padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: BoxDecoration(
@@ -2479,424 +2552,123 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Drag handle
             Center(
               child: Container(
                 width: 38,
                 height: 4,
-                decoration: BoxDecoration(
-                  color: c.muted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                decoration: BoxDecoration(color: c.muted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 16),
-
-            // Header Row
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isIdentity ? c.blueLight : c.goldLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isIdentity ? LucideIcons.idCard : LucideIcons.house,
-                    color: c.accentBlue,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
+                Icon(_isIdentity ? LucideIcons.idCard : LucideIcons.house, color: c.accentBlue, size: 20),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        docTitle,
-                        style: TextStyle(
-                          color: c.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        docBadge,
-                        style: TextStyle(
-                          color: c.isDark ? c.accentBlue : _profileBlueDark,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(title, style: TextStyle(color: c.text, fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(badge, style: TextStyle(color: c.muted, fontSize: 10, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: c.greenLight,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: c.greenBorder),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: _profileGreen,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      const Text(
-                        'Approved',
-                        style: TextStyle(
-                          color: _profileGreen,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-
-            // Password Prompt Simulation Card
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: c.card,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _passwordVerified ? c.greenBorder : c.border,
+            if (bytes == null) ...[
+              Text(
+                'Confirm your CRM password to retrieve this document from the secure backend.',
+                style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                enabled: !_loading,
+                decoration: InputDecoration(
+                  labelText: 'CRM password',
+                  prefixIcon: const Icon(LucideIcons.lock),
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(_obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff),
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: _passwordVerified ? c.greenLight : c.blueLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          _passwordVerified ? LucideIcons.shieldCheck : LucideIcons.lock,
-                          size: 16,
-                          color: _passwordVerified ? _profileGreen : c.accentBlue,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'CRM Password Authentication',
-                          style: TextStyle(
-                            color: const Color(0xFF10264A),
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _passwordVerified ? c.greenLight : c.blueLight,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          _passwordVerified ? 'Verified' : 'Required',
-                          style: TextStyle(
-                            color: _passwordVerified ? _profileGreen : c.muted,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _verifyAndLoadDocument,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _profileBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _passwordVerified
-                        ? 'Your CRM identity password was successfully verified. Full document decrypt key active for this session.'
-                        : 'Confirm your CRM password to decrypt and view confidential document files.',
-                    style: TextStyle(
-                      color: c.muted,
-                      fontSize: 11.5,
-                      height: 1.35,
-                    ),
-                  ),
-                  if (!_passwordVerified) ...[
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            style: TextStyle(color: c.text, fontSize: 13),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: c.subCard,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              hintText: 'Enter CRM password',
-                              hintStyle: TextStyle(color: c.muted, fontSize: 12),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: c.border),
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
-                                  size: 16,
-                                  color: c.muted,
-                                ),
-                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => setState(() => _passwordVerified = true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: c.accentBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: const Text('Verify', style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
+                  child: _loading
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Verify password and view', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // Document Details & Metadata
-            Text(
-              'Document Details & Metadata',
-              style: TextStyle(
-                color: c.text,
-                fontSize: 13.5,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: c.card,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: c.border),
-              ),
-              child: Column(
-                children: [
-                  _metaRow('Document Type', docTypeDetail),
-                  Divider(color: c.border, height: 16),
-                  _metaRow('Document Number', docRef),
-                  Divider(color: c.border, height: 16),
-                  _metaRow('AI Matching Score', docScore),
-                  Divider(color: c.border, height: 16),
-                  _metaRow('Comparison Result', docComparison),
-                  Divider(color: c.border, height: 16),
-                  _metaRow('Storage Vault', 'AES-256 Protected & Tamper Sealed'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Visual document preview box
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: c.subCard,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: c.border),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            isIdentity ? LucideIcons.idCard : LucideIcons.fileSpreadsheet,
-                            color: c.accentBlue,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isIdentity ? 'identity_document_verified.pdf' : 'address_statement_verified.pdf',
-                            style: TextStyle(
-                              color: c.text,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '1.8 MB',
-                        style: TextStyle(color: c.muted, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    height: 90,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: c.card,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: c.border),
-                    ),
-                    child: Center(
+            ] else ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: c.card,
+                  border: Border.all(color: c.border),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.fileCheck, color: c.accentBlue, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(LucideIcons.shieldCheck, color: _profileGreen, size: 26),
-                          const SizedBox(height: 6),
-                          Text(
-                            'CONFIDENTIAL Ã¢â‚¬Â¢ VERIFIED BY CRM SYSTEM',
-                            style: TextStyle(
-                              color: c.isDark ? c.accentBlue : _profileBlueDark,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1,
-                            ),
-                          ),
+                          Text(_fileName, style: TextStyle(color: c.text, fontSize: 12, fontWeight: FontWeight.w700)),
+                          Text(_contentType, style: TextStyle(color: c.muted, fontSize: 10)),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-
-            // Close button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: c.blueLight,
-                  foregroundColor: c.text,
-                  side: BorderSide(color: c.border),
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 1,
+                    Icon(LucideIcons.shieldCheck, color: c.accentBlue, size: 18),
+                  ],
                 ),
-                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _metaRow(String label, String value) {
-    final c = _ProfileColors.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: c.muted, fontSize: 11.5),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: c.text,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BannerOptionTile extends StatelessWidget {
-  const _BannerOptionTile({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = _ProfileColors.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: selected ? c.navy : c.subCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? _profileGold : c.border,
-            width: selected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: selected ? c.accentBlue : c.muted, size: 18),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: c.text,
-                      fontSize: 12.5,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.w600,
-                    ),
+              const SizedBox(height: 12),
+              if (_contentType.startsWith('image/'))
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(bytes, fit: BoxFit.contain),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: c.border),
                   ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: c.muted, fontSize: 10.5),
+                  child: Text(
+                    _contentType == 'application/pdf'
+                        ? 'The PDF was retrieved securely. This app build does not currently include an embedded PDF preview.'
+                        : 'The file was retrieved securely, but this file type cannot be previewed in the app.',
+                    style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
                   ),
-                ],
-              ),
-            ),
-            if (selected)
-              Icon(LucideIcons.circleCheck, color: c.accentBlue, size: 18),
+                ),
+            ],
           ],
         ),
       ),
@@ -2904,197 +2676,6 @@ class _BannerOptionTile extends StatelessWidget {
   }
 }
 
-
-class CelestialBannerPainter extends CustomPainter {
-  const CelestialBannerPainter({required this.theme});
-
-  final String theme;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-
-    // Theme-dependent Sky Gradient
-    final Gradient skyGradient;
-    if (theme == 'Deep Ocean Aurora') {
-      skyGradient = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF0369A1),
-          Color(0xFF0284C7),
-          Color(0xFF0EA5E9),
-          Color(0xFF1E3A8A),
-        ],
-      );
-    } else if (theme == 'Astral Cyber Gold') {
-      skyGradient = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF92400E),
-          Color(0xFFD97706),
-          Color(0xFFF59E0B),
-          Color(0xFF1E3A8A),
-        ],
-      );
-    } else {
-      // Cosmic Landscape (Default) - Royal Blue & Sapphire
-      skyGradient = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF172554),
-          Color(0xFF1E3A8A),
-          Color(0xFF1D4ED8),
-          Color(0xFF2563EB),
-        ],
-      );
-    }
-
-    final skyPaint = Paint()..shader = skyGradient.createShader(rect);
-    canvas.drawRect(rect, skyPaint);
-
-    // Stars & constellations
-    final starPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.75)
-      ..style = PaintingStyle.fill;
-
-    final starPositions = [
-      const Offset(0.08, 0.15),
-      const Offset(0.14, 0.28),
-      const Offset(0.22, 0.12),
-      const Offset(0.28, 0.35),
-      const Offset(0.35, 0.18),
-      const Offset(0.42, 0.08),
-      const Offset(0.48, 0.22),
-      const Offset(0.55, 0.14),
-      const Offset(0.62, 0.30),
-      const Offset(0.68, 0.10),
-      const Offset(0.72, 0.42),
-      const Offset(0.85, 0.12),
-      const Offset(0.90, 0.25),
-      const Offset(0.94, 0.38),
-      const Offset(0.18, 0.45),
-      const Offset(0.32, 0.52),
-      const Offset(0.52, 0.48),
-      const Offset(0.65, 0.55),
-    ];
-
-    for (int i = 0; i < starPositions.length; i++) {
-      final pos = starPositions[i];
-      final starOffset = Offset(pos.dx * size.width, pos.dy * size.height);
-      final radius = (i % 3 == 0) ? 2.2 : (i % 2 == 0 ? 1.5 : 1.0);
-      final alpha = (i % 3 == 0) ? 0.90 : 0.65;
-
-      starPaint.color = const Color(0xFF10264A).withValues(alpha: alpha);
-      canvas.drawCircle(starOffset, radius, starPaint);
-
-      // Star sparkle cross on prominent stars
-      if (i % 4 == 0) {
-        final crossPaint = Paint()
-          ..color = const Color(0xFF10264A).withValues(alpha: 0.6)
-          ..strokeWidth = 0.8;
-        canvas.drawLine(
-          Offset(starOffset.dx - 4, starOffset.dy),
-          Offset(starOffset.dx + 4, starOffset.dy),
-          crossPaint,
-        );
-        canvas.drawLine(
-          Offset(starOffset.dx, starOffset.dy - 4),
-          Offset(starOffset.dx, starOffset.dy + 4),
-          crossPaint,
-        );
-      }
-    }
-
-    // Mountain silhouettes in background
-    final mountainPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          const Color(0xFF1E3A8A).withValues(alpha: 0.85),
-          const Color(0xFF0F172A),
-        ],
-      ).createShader(rect);
-
-    final path = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(0, size.height * 0.75)
-      ..lineTo(size.width * 0.20, size.height * 0.55)
-      ..lineTo(size.width * 0.45, size.height * 0.70)
-      ..lineTo(size.width * 0.70, size.height * 0.48)
-      ..lineTo(size.width * 0.88, size.height * 0.65)
-      ..lineTo(size.width, size.height * 0.52)
-      ..lineTo(size.width, size.height)
-      ..close();
-
-    canvas.drawPath(path, mountainPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CelestialBannerPainter oldDelegate) =>
-      oldDelegate.theme != theme;
-}
-
-class PromoOrbitPainter extends CustomPainter {
-  const PromoOrbitPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final bgPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF1E3A8A),
-          Color(0xFF1D4ED8),
-          Color(0xFF2563EB),
-        ],
-      ).createShader(rect);
-    canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(20)), bgPaint);
-
-    // Glowing orbital arcs
-    final arcCenter = Offset(size.width * 0.88, size.height * 0.35);
-    final arcPaint = Paint()
-      ..color = const Color(0xFF93C5FD).withValues(alpha: 0.35)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawArc(
-      Rect.fromCircle(center: arcCenter, radius: size.width * 0.40),
-      math.pi * 0.6,
-      math.pi * 0.9,
-      false,
-      arcPaint,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: arcCenter, radius: size.width * 0.25),
-      math.pi * 0.4,
-      math.pi * 0.8,
-      false,
-      arcPaint..color = const Color(0xFFFDE68A).withValues(alpha: 0.4),
-    );
-
-    // Light radial glow
-    final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF60A5FA).withValues(alpha: 0.3),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: arcCenter, radius: 80));
-    canvas.drawCircle(arcCenter, 80, glowPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// ==========================================
-// PAYMENT METHODS TAB VIEW COMPONENT
-// ==========================================
 class _PaymentMethodsTabView extends StatelessWidget {
   const _PaymentMethodsTabView({
     required this.bankName,
@@ -3208,7 +2789,6 @@ class _PaymentMethodsTabView extends StatelessWidget {
       details: [
         _paymentGridDetail(context, 'Wallet', cryptoWalletAddress),
         _paymentGridDetail(context, 'Currency', cryptoCurrency),
-        _paymentGridDetail(context, 'Network', cryptoNetwork),
       ],
       onView: onViewCryptoDetails,
       onEdit: onEditCryptoDetails,

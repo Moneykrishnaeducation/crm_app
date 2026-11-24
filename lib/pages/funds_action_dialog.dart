@@ -850,7 +850,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
+                        Text(
                           '${_proofBytes == null ? '0 KB' : (_proofBytes!.length / 1024).toStringAsFixed(1) + ' KB'} · Ready for review',
                           style: TextStyle(
                             color: Color(0xFF16D994),

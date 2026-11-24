@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import 'services/auth_api.dart';
+
 final GlobalKey<ScaffoldMessengerState> appScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
@@ -34,6 +36,7 @@ class AppNotificationItem {
     required this.icon,
     this.isUnread = true,
     this.isGold = false,
+    this.actionUrl,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -45,18 +48,19 @@ class AppNotificationItem {
   final IconData icon;
   bool isUnread;
   final bool isGold;
+  final String? actionUrl;
   final DateTime createdAt;
 }
 
 class AppNotificationCenter {
-  AppNotificationCenter._() {
-    _seedDefaultNotifications();
-  }
+  AppNotificationCenter._();
   static final AppNotificationCenter instance = AppNotificationCenter._();
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   bool _isPluginInitialized = false;
+  bool isLoading = false;
+  String? lastLoadError;
   int _nextNotificationId = 1000;
 
   final ValueNotifier<List<AppNotificationItem>> notificationsNotifier =
@@ -69,8 +73,6 @@ class AppNotificationCenter {
 
   /// Initialize local notification plugin and register Android notification channels
   Future<void> initialize() async {
-    _seedDefaultNotifications();
-
     if (kIsWeb) return;
 
     try {
@@ -139,62 +141,100 @@ class AppNotificationCenter {
     }
   }
 
-  void _seedDefaultNotifications() {
-    if (notificationsNotifier.value.isNotEmpty) return;
-    final defaults = [
-      AppNotificationItem(
-        id: '1',
-        title: 'Deposit of \$2,500.00 Credited',
-        body: 'Your USDT deposit has been successfully credited to Standard account #3315.',
-        timestamp: '10 mins ago',
-        category: 'Funds',
-        icon: LucideIcons.wallet,
-        isUnread: true,
-        isGold: false,
-      ),
-      AppNotificationItem(
-        id: '2',
-        title: 'TP Executed: XAUUSD +\$180.50',
-        body: 'Take profit executed for 0.10 lots XAUUSD at 2,351.80. Net profit: \$180.50.',
-        timestamp: '1 hour ago',
-        category: 'Trading',
-        icon: LucideIcons.trendingUp,
-        isUnread: true,
-        isGold: true,
-      ),
-      AppNotificationItem(
-        id: '3',
-        title: 'Internal Transfer Completed (\$500.00)',
-        body: 'Transferred \$500.00 from Main Trading #3315 to ECN #3311 instantly.',
-        timestamp: '4 hours ago',
-        category: 'Funds',
-        icon: LucideIcons.arrowLeftRight,
-        isUnread: true,
-        isGold: false,
-      ),
-      AppNotificationItem(
-        id: '4',
-        title: 'New Authorized Login Detected',
-        body: 'Authorized login from Chrome on Windows. Review Security Center if unrecognized.',
-        timestamp: 'Yesterday, 18:24',
-        category: 'Security',
-        icon: LucideIcons.shieldCheck,
-        isUnread: false,
-        isGold: true,
-      ),
-      AppNotificationItem(
-        id: '5',
-        title: 'US CPI Release Market Alert',
-        body: 'High volatility anticipated ahead of the Federal Reserve interest rate statement.',
-        timestamp: '2 days ago',
-        category: 'Trading',
-        icon: LucideIcons.newspaper,
-        isUnread: false,
-        isGold: false,
-      ),
-    ];
-    notificationsNotifier.value = defaults;
-    _updateUnreadCount();
+  String _categoryForType(String type) {
+    switch (type.toUpperCase()) {
+      case 'BANK':
+      case 'CRYPTO':
+        return 'Funds';
+      case 'ACCOUNT':
+        return 'Trading';
+      case 'PROFILE':
+      case 'DOCUMENT':
+      case 'IB':
+        return 'Security';
+      default:
+        return 'General';
+    }
+  }
+
+  IconData _iconForNotification(String type, String title) {
+    final text = title.toLowerCase();
+    if (text.contains('withdraw')) return LucideIcons.arrowUpRight;
+    if (text.contains('deposit')) return LucideIcons.wallet;
+    if (text.contains('transfer')) return LucideIcons.arrowLeftRight;
+    if (text.contains('document') || type == 'DOCUMENT') {
+      return LucideIcons.fileCheck;
+    }
+    if (type == 'ACCOUNT') return LucideIcons.chartNoAxesCombined;
+    if (type == 'IB') return LucideIcons.users;
+    if (type == 'PROFILE') return LucideIcons.userRound;
+    if (type == 'CRYPTO') return LucideIcons.coins;
+    if (type == 'BANK') return LucideIcons.landmark;
+    return LucideIcons.bell;
+  }
+
+  String _relativeTimestamp(DateTime createdAt) {
+    final difference = DateTime.now().difference(createdAt);
+    if (difference.inSeconds < 60) return 'Just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
+    if (difference.inHours < 24) return '${difference.inHours} hr ago';
+    if (difference.inDays == 1) return 'Yesterday';
+    if (difference.inDays < 7) return '${difference.inDays} days ago';
+    return '${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}';
+  }
+
+  AppNotificationItem _fromApi(Map<String, dynamic> data) {
+    final type = (data['notification_type'] ?? 'GENERAL').toString().toUpperCase();
+    final title = (data['title'] ?? 'Notification').toString();
+    final body = (data['message'] ?? '').toString();
+    final createdAt = DateTime.tryParse((data['created_at'] ?? '').toString())?.toLocal() ?? DateTime.now();
+    final status = (data['status'] ?? '').toString().toLowerCase();
+    return AppNotificationItem(
+      id: (data['id'] ?? '').toString(),
+      title: title,
+      body: body,
+      timestamp: _relativeTimestamp(createdAt),
+      category: _categoryForType(type),
+      icon: _iconForNotification(type, title),
+      isUnread: data['is_read'] != true,
+      isGold: status == 'approved' || status == 'completed',
+      actionUrl: data['action_url']?.toString(),
+      createdAt: createdAt,
+    );
+  }
+
+  Future<void> refreshFromBackend({int limit = 50}) async {
+    if (isLoading) return;
+    isLoading = true;
+    lastLoadError = null;
+    try {
+      final response = await AuthApi.instance.getNotifications(limit: limit);
+      dynamic payload = response;
+      for (var depth = 0; depth < 4 && payload is Map; depth++) {
+        final map = payload.cast<String, dynamic>();
+        final items = map['notifications'] ?? map['results'];
+        if (items is List) {
+          final parsed = items
+              .whereType<Map>()
+              .map((item) => _fromApi(item.cast<String, dynamic>()))
+              .where((item) => item.id.isNotEmpty)
+              .toList(growable: false);
+          notificationsNotifier.value = parsed;
+          final count = map['unread_count'];
+          unreadCountNotifier.value = count is num
+              ? count.toInt()
+              : parsed.where((item) => item.isUnread).length;
+          return;
+        }
+        payload = map['data'] ?? map['result'] ?? map['payload'];
+      }
+      throw const FormatException('Unexpected notifications response.');
+    } catch (error) {
+      lastLoadError = error.toString();
+      debugPrint('AppNotificationCenter: backend refresh failed: $error');
+    } finally {
+      isLoading = false;
+    }
   }
 
   void _updateUnreadCount() {
@@ -590,37 +630,36 @@ class AppNotificationCenter {
     }
   }
 
-  void markAllAsRead() {
-    final updated = notificationsNotifier.value.map((n) {
-      n.isUnread = false;
-      return n;
+  Future<void> markAllAsRead() async {
+    await AuthApi.instance.markAllNotificationsRead();
+    final updated = notificationsNotifier.value.map((item) {
+      item.isUnread = false;
+      return item;
     }).toList();
     notificationsNotifier.value = updated;
+    unreadCountNotifier.value = 0;
+  }
+
+  Future<void> markAsRead(String id) async {
+    final item = notificationsNotifier.value.where((n) => n.id == id).firstOrNull;
+    if (item == null || !item.isUnread) return;
+    await AuthApi.instance.markNotificationRead(id);
+    item.isUnread = false;
+    notificationsNotifier.value = List<AppNotificationItem>.from(notificationsNotifier.value);
     _updateUnreadCount();
   }
 
-  void markAsRead(String id) {
-    var changed = false;
-    final updated = notificationsNotifier.value.map((n) {
-      if (n.id == id && n.isUnread) {
-        n.isUnread = false;
-        changed = true;
-      }
-      return n;
-    }).toList();
-    if (changed) {
-      notificationsNotifier.value = updated;
-      _updateUnreadCount();
+  Future<void> clearAll() async {
+    final ids = notificationsNotifier.value.map((item) => item.id).toList(growable: false);
+    for (final id in ids) {
+      await AuthApi.instance.deleteNotification(id);
     }
-  }
-
-  void clearAll() {
     notificationsNotifier.value = [];
-    _updateUnreadCount();
+    unreadCountNotifier.value = 0;
   }
 
   void resetToDefault() {
     notificationsNotifier.value = [];
-    _seedDefaultNotifications();
+    unreadCountNotifier.value = 0;
   }
 }

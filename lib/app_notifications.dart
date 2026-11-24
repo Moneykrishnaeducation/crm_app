@@ -144,6 +144,7 @@ class AppNotificationCenter {
       }
 
       _isPluginInitialized = true;
+      await _restoreNativePositionState();
 
       // A tracked trade is now owned by the Android foreground service.
       // Do not clear notification 7777 during Flutter process startup: the
@@ -281,29 +282,7 @@ class AppNotificationCenter {
       await stopPositionMonitoring();
       return false;
     }
-    var nativeServiceStarted = false;
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      try {
-        final config = await AuthApi.instance.getNativePositionMonitorConfig(accountId);
-        if (config != null) {
-          nativeServiceStarted = await _nativeChannel.invokeMethod<bool>(
-                'startPositionService',
-                <String, dynamic>{
-                  ...config,
-                  'accountId': accountId,
-                  'positionId': positionId,
-                  'symbol': symbol,
-                  'side': isBuy ? 'BUY' : 'SELL',
-                  'lots': lots.toStringAsFixed(2),
-                  'startedAt': _trackedPositionStartedAt.millisecondsSinceEpoch,
-                },
-              ) ??
-              false;
-        }
-      } catch (error) {
-        debugPrint('AppNotificationCenter: native position service unavailable: $error');
-      }
-    }
+    final nativeServiceStarted = await _startNativePositionService();
     if (!nativeServiceStarted) {
       _positionMonitorTimer = Timer.periodic(
         const Duration(seconds: 15),
@@ -311,6 +290,57 @@ class AppNotificationCenter {
       );
     }
     return true;
+  }
+
+  Future<void> _restoreNativePositionState() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      final state = await _nativeChannel.invokeMapMethod<String, dynamic>(
+        'getPositionServiceState',
+      );
+      if (state == null) return;
+      final positionId = state['positionId']?.toString();
+      final accountId = state['accountId']?.toString();
+      if (positionId == null || positionId.isEmpty || accountId == null || accountId.isEmpty) return;
+      _trackedAccountId = accountId;
+      _trackedPositionSymbol = state['symbol']?.toString() ?? 'Trade';
+      _trackedPositionSide = state['side']?.toString() ?? 'BUY';
+      _trackedPositionLots = _number(state['lots']);
+      final startedAt = state['startedAt'];
+      if (startedAt is num) {
+        _trackedPositionStartedAt = DateTime.fromMillisecondsSinceEpoch(startedAt.toInt());
+      }
+      trackedPositionNotifier.value = positionId;
+    } catch (error) {
+      debugPrint('AppNotificationCenter: could not restore native tracking state: $error');
+    }
+  }
+
+  Future<bool> _startNativePositionService() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
+    final accountId = _trackedAccountId;
+    final positionId = trackedPositionNotifier.value;
+    if (accountId == null || positionId == null) return false;
+    try {
+      final config = await AuthApi.instance.getNativePositionMonitorConfig(accountId);
+      if (config == null) return false;
+      return await _nativeChannel.invokeMethod<bool>(
+            'startPositionService',
+            <String, dynamic>{
+              ...config,
+              'accountId': accountId,
+              'positionId': positionId,
+              'symbol': _trackedPositionSymbol ?? 'Trade',
+              'side': _trackedPositionSide ?? 'BUY',
+              'lots': _trackedPositionLots.toStringAsFixed(2),
+              'startedAt': _trackedPositionStartedAt.millisecondsSinceEpoch,
+            },
+          ) ??
+          false;
+    } catch (error) {
+      debugPrint('AppNotificationCenter: native position service unavailable: $error');
+      return false;
+    }
   }
 
   Future<void> pausePositionMonitoring() async {
@@ -323,7 +353,14 @@ class AppNotificationCenter {
     final revision = _positionMonitorRevision;
     await _refreshTrackedPosition(revision: revision);
     if (defaultTargetPlatform == TargetPlatform.android) {
-      // Android's foreground service continues polling while the activity is inactive.
+      // Re-attach/restart the foreground service after Flutter process recreation.
+      final started = await _startNativePositionService();
+      if (!started && trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
+        _positionMonitorTimer = Timer.periodic(
+          const Duration(seconds: 15),
+          (_) => _refreshTrackedPosition(revision: revision),
+        );
+      }
       return;
     }
     if (trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {

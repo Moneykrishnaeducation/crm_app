@@ -972,212 +972,261 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   // Minimal identity panel: no client-role labels or account-type badges.
   // Restored profile hero header without client-role labels.
+  // Profile banner only: cover artwork, identity and contact details.
+  // The rest of the profile page remains unchanged.
   Widget _buildMobileProfileHeader() {
     final compact = MediaQuery.sizeOf(context).width < 380;
-    final avatarSize = compact ? 68.0 : 82.0;
+    final avatarSize = compact ? 68.0 : 76.0;
+    final coverHeight = compact ? 96.0 : 108.0;
+
     return Container(
+      height: compact ? 224 : 236,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0B1D38), Color(0xFF153D70), Color(0xFF1B548A)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2410264A),
-            blurRadius: 22,
-            offset: Offset(0, 9),
-          ),
-        ],
+        color: _c.card,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _c.border),
+        boxShadow: _profileShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Keep the cover visible while retaining enough contrast for profile text.
-          if (_bannerImagePath != null)
-            Positioned.fill(
-              child: Image.file(
-                File(_bannerImagePath!),
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                gaplessPlayback: true,
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('Profile cover image render error: $error');
-                  return const DecoratedBox(
+          // Cover area
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: coverHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF091A33),
+                        Color(0xFF123C70),
+                        Color(0xFF17618D),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_bannerImagePath != null)
+                  Image.file(
+                    File(_bannerImagePath!),
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    gaplessPlayback: true,
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('Profile cover image render error: $error');
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x2607182F),
+                        Color(0x9907182F),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -34,
+                  top: -70,
+                  child: Container(
+                    width: 176,
+                    height: 176,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF0B1D38),
-                          Color(0xFF153D70),
-                          Color(0xFF1B548A),
-                        ],
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .10),
+                        width: 22,
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                Positioned(
+                  left: 18,
+                  bottom: 12,
+                  child: Container(
+                    width: 58,
+                    height: 2,
+                    decoration: BoxDecoration(
+                      color: _profileGold,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          if (_bannerImagePath != null)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Color(0x330B1D38),
-              ),
-            ),
+          ),
+
+          // Cover action
           Positioned(
-            right: -36,
-            top: -54,
-            child: Container(
-              width: 170,
-              height: 170,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: .07),
-                  width: 24,
+            top: 10,
+            right: 10,
+            child: Material(
+              color: Colors.black.withValues(alpha: .28),
+              borderRadius: BorderRadius.circular(18),
+              child: InkWell(
+                onTap: _showChangeBannerSheet,
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white.withValues(alpha: .32)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.image, color: Colors.white, size: 13),
+                      SizedBox(width: 6),
+                      Text(
+                        'Edit cover',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+
+          // Profile avatar overlaps the cover and identity surface.
           Positioned(
-            right: 24,
-            bottom: -78,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFF4C84A).withValues(alpha: .12),
-                  width: 1.5,
+            left: 16,
+            top: coverHeight - 30,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: avatarSize,
+                  height: avatarSize,
+                  decoration: BoxDecoration(
+                    color: _avatarBg,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _c.card, width: 3.5),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x2607182F),
+                        blurRadius: 10,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: _profileImagePath != null
+                      ? Image.file(
+                          File(_profileImagePath!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => _profileInitial(),
+                        )
+                      : _profileInitial(),
                 ),
-              ),
+                Positioned(
+                  right: -1,
+                  bottom: 0,
+                  child: Material(
+                    color: _profileGold,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _showChangePhotoSheet,
+                      child: const SizedBox(
+                        width: 27,
+                        height: 27,
+                        child: Icon(
+                          LucideIcons.camera,
+                          size: 13,
+                          color: Color(0xFF10264A),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(compact ? 14 : 18, 16, compact ? 14 : 18, 16),
+
+          // Name and email
+          Positioned(
+            left: avatarSize + 30,
+            right: 14,
+            top: coverHeight + 10,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Spacer(),
-                    _profileHeaderAction(
-                      icon: LucideIcons.image,
-                      label: 'Cover',
-                      onTap: _showChangeBannerSheet,
-                    ),
-                  ],
+                Text(
+                  _name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _c.text,
+                    fontSize: compact ? 15 : 17,
+                    height: 1.15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.25,
+                  ),
                 ),
-                SizedBox(height: compact ? 14 : 20),
+                const SizedBox(height: 5),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: avatarSize,
-                          height: avatarSize,
-                          decoration: BoxDecoration(
-                            color: _avatarBg,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: _profileImagePath != null
-                              ? Image.file(
-                                  File(_profileImagePath!),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => _profileInitial(),
-                                )
-                              : _profileInitial(),
-                        ),
-                        Positioned(
-                          right: -2,
-                          bottom: -2,
-                          child: Material(
-                            color: _profileGold,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: _showChangePhotoSheet,
-                              child: const SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: Icon(
-                                  LucideIcons.camera,
-                                  size: 14,
-                                  color: Color(0xFF10264A),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: compact ? 11 : 15),
+                    Icon(LucideIcons.mail, size: 11, color: _c.muted),
+                    const SizedBox(width: 5),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: compact ? 16 : 18,
-                              height: 1.1,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _email,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: .76),
-                              fontSize: compact ? 10 : 11.5,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        _email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _c.muted,
+                          fontSize: compact ? 9.5 : 10.5,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+              ],
+            ),
+          ),
+
+          // Contact details remain part of the banner, in a compact footer.
+          Positioned(
+            left: 14,
+            right: 14,
+            bottom: 11,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _profileHeroMetric(
+                    LucideIcons.phone,
+                    'PHONE',
+                    _phone,
+                  ),
+                ),
                 Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: .13),
+                  width: 1,
+                  height: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  color: _c.border,
                 ),
-                const SizedBox(height: 13),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _profileHeroMetric(
-                        LucideIcons.phone,
-                        'PHONE',
-                        _phone,
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 30,
-                      color: Colors.white.withValues(alpha: .15),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _profileHeroMetric(
-                        LucideIcons.mapPin,
-                        'LOCATION',
-                        _location,
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: _profileHeroMetric(
+                    LucideIcons.mapPin,
+                    'LOCATION',
+                    _location,
+                  ),
                 ),
               ],
             ),

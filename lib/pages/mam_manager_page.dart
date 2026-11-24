@@ -232,6 +232,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
       ),
     ];
 
+    _loadMamAccounts();
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text.trim());
     });

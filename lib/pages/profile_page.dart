@@ -122,11 +122,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _phone = '';
   String _location = '';
   String _dob = '';
-  String _gender = '';
-  String _nationality = '';
-  String _taxResidency = '';
   String _address = '';
-  String _occupation = '';
   String _city = '';
   String _state = '';
   String _country = '';
@@ -1643,47 +1639,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  Widget _infoRow(String label, String value, {bool copyable = false, Color? accentColor}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(color: _c.muted, fontSize: 12),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  color: accentColor ?? _c.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (copyable) ...[
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: value));
-                    _showSnack('$label copied to clipboard');
-                  },
-                  child: const Icon(LucideIcons.copy, size: 13, color: _profileBlue),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   // ==========================================
   // TAB 2: PERSONAL DETAILS TAB
   // ==========================================
@@ -1861,7 +1816,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   Widget _buildPaymentMethodsTab() {
     return _PaymentMethodsTabView(
       bankName: _bankName,
-      bankAccountNumber: _bankAccountNumber,
+      bankAccountNumber: _maskedBankAccountNumber,
       bankIfscCode: _bankIfscCode,
       bankBranch: _bankBranch,
       bankStatus: _bankStatus,
@@ -1888,9 +1843,27 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         },
       ),
       onEditBankDetails: _showEditBankDestinationSheet,
-      onBankMenuAction: (action) {
-        if (action == 'primary') {
-          _showSnack('Bank Account set as primary payout destination');
+      onBankMenuAction: (action) async {
+        if (action == 'refresh') {
+          try {
+            final bank = _profileMap(await AuthApi.instance.getBankDetails());
+            if (!mounted) return;
+            setState(() {
+              _bankName = _stringValue(bank['bank_name'], fallback: '—');
+              _bankAccountNumber = _stringValue(bank['account_number'], fallback: '—');
+              _bankIfscCode = _stringValue(bank['ifsc_code'], fallback: '—');
+              _bankBranch = _stringValue(bank['branch_name'], fallback: '—');
+              _bankStatus = _statusLabel(bank['status']);
+            });
+            _showSnack('Bank details refreshed.');
+          } catch (error) {
+            if (mounted) _showSnack(error is AuthApiException ? error.message : 'Unable to refresh bank details.');
+          }
+        } else if (action == 'copy') {
+          await Clipboard.setData(ClipboardData(
+            text: 'Bank: $_bankName\\nAccount: $_bankAccountNumber\\nIFSC: $_bankIfscCode\\nBranch: $_bankBranch',
+          ));
+          _showSnack('Bank details copied to clipboard.');
         }
       },
       onViewCryptoDetails: () => _showPaymentDestinationDetailsSheet(
@@ -1911,9 +1884,25 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         },
       ),
       onEditCryptoDetails: _showEditCryptoDestinationSheet,
-      onCryptoMenuAction: (action) {
-        if (action == 'primary') {
-          _showSnack('Crypto Wallet set as primary payout destination');
+      onCryptoMenuAction: (action) async {
+        if (action == 'refresh') {
+          try {
+            final crypto = _profileMap(await AuthApi.instance.getCryptoDetails());
+            if (!mounted) return;
+            setState(() {
+              _cryptoWalletAddress = _stringValue(crypto['wallet_address'], fallback: '—');
+              _cryptoCurrency = _stringValue(crypto['currency'], fallback: '—');
+              _cryptoStatus = _statusLabel(crypto['status']);
+            });
+            _showSnack('Crypto wallet details refreshed.');
+          } catch (error) {
+            if (mounted) _showSnack(error is AuthApiException ? error.message : 'Unable to refresh crypto details.');
+          }
+        } else if (action == 'copy') {
+          await Clipboard.setData(ClipboardData(
+            text: 'Wallet: $_cryptoWalletAddress\\nCurrency: $_cryptoCurrency',
+          ));
+          _showSnack('Crypto wallet details copied to clipboard.');
         }
       },
     );
@@ -2926,19 +2915,6 @@ class _PaymentMethodsTabView extends StatelessWidget {
       ),
       onSelected: onAction,
       itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          value: 'primary',
-          child: Row(
-            children: [
-              const Icon(LucideIcons.star, size: 16, color: Color(0xFFF4C84A)),
-              const SizedBox(width: 10),
-              Text(
-                'Set as primary',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
         PopupMenuItem(
           value: 'refresh',
           child: Row(

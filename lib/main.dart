@@ -363,6 +363,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     FocusManager.instance.addListener(_handleFocusChange);
     _currentThemeMode = widget.themeMode;
     _loadFavoriteAccounts();
+    unawaited(_loadTradingAccounts());
   }
 
   Future<void> _loadFavoriteAccounts() async {
@@ -499,6 +500,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   final List<BrokerAccount> _accounts = <BrokerAccount>[];
+  Future<void>? _accountsLoadFuture;
   bool _accountsLoading = false;
   String? _accountsError;
 
@@ -541,8 +543,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _loadTradingAccounts({bool refresh = false}) async {
-    if (_accountsLoading) return;
+  Future<void> _loadTradingAccounts({bool refresh = false}) {
+    final ongoing = _accountsLoadFuture;
+    if (ongoing != null) return ongoing;
+    final request = _performLoadTradingAccounts(refresh: refresh);
+    _accountsLoadFuture = request;
+    return request.whenComplete(() {
+      if (identical(_accountsLoadFuture, request)) {
+        _accountsLoadFuture = null;
+      }
+    });
+  }
+
+  Future<void> _performLoadTradingAccounts({bool refresh = false}) async {
     setState(() {
       _accountsLoading = true;
       _accountsError = null;
@@ -655,6 +668,39 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _selectedPage = 'Dashboard';
       });
     }
+  }
+
+  Future<void> _openDashboardTradeReport() async {
+    if (_accounts.isEmpty) {
+      await _loadTradingAccounts(refresh: true);
+    }
+    if (!mounted) return;
+
+    final accounts = List<BrokerAccount>.unmodifiable(_accounts);
+    final selectedLogin = accounts.any(
+      (account) => account.login == _selectedAccount?.login,
+    )
+        ? _selectedAccount!.login
+        : (accounts.isNotEmpty ? accounts.first.login : null);
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TradeReportPage(
+          accounts: accounts,
+          selectedAccountLogin: selectedLogin,
+          onAccountChanged: (login) {
+            final index = _accounts.indexWhere(
+              (account) => account.login == login,
+            );
+            if (index < 0 || !mounted) return;
+            setState(() {
+              _selectedAccount = _accounts[index];
+            });
+          },
+          onBack: () => Navigator.of(context).maybePop(),
+        ),
+      ),
+    );
   }
 
   void _openAccount(BrokerAccount account) {
@@ -1060,21 +1106,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                               !_balanceVisible,
                                         ),
                                         onSelectPage: _selectPage,
-                                        accounts: _accounts,
-                                        selectedAccountLogin:
-                                            _selectedAccount?.login ??
-                                            (_accounts.isNotEmpty
-                                                ? _accounts.first.login
-                                                : null),
-                                        onAccountChanged: (login) {
-                                          final matches = _accounts.where(
-                                            (account) => account.login == login,
-                                          );
-                                          if (matches.isEmpty) return;
-                                          setState(() {
-                                            _selectedAccount = matches.first;
-                                          });
-                                        },
+                                        onOpenReport: _openDashboardTradeReport,
                                         scrollController:
                                             _dashboardScrollController,
                                       ),

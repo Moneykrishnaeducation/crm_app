@@ -336,6 +336,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   ThemeMode get _effectiveThemeMode => _currentThemeMode ?? widget.themeMode;
   String _selectedPage = 'Dashboard';
   int _activityRefreshToken = 0;
+  Timer? _notificationRefreshTimer;
   final List<String> _navigationHistory = <String>[];
   final GlobalKey<MamPageState> _mamKey = GlobalKey<MamPageState>();
   BrokerAccount? _selectedAccount;
@@ -365,6 +366,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _loadFavoriteAccounts();
     unawaited(_loadTradingAccounts());
     unawaited(AppNotificationCenter.instance.refreshFromBackend());
+    _notificationRefreshTimer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => unawaited(AppNotificationCenter.instance.refreshFromBackend()),
+    );
   }
 
   Future<void> _loadFavoriteAccounts() async {
@@ -426,6 +431,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _notificationRefreshTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     FocusManager.instance.removeListener(_handleFocusChange);
     _dashboardScrollController.dispose();

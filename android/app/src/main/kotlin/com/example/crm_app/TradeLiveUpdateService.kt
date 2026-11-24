@@ -160,12 +160,15 @@ class TradeLiveUpdateService : Service() {
 
             val totalPnl = demoPnl + livePnl
             val body = buildString {
-                append("DEMO · $demoAccountCount accounts · $demoCount positions · P/L ${money(demoPnl)}")
-                if (demoDetails.isEmpty()) append("\n  No open demo positions")
-                else demoDetails.forEach { append("\n  ").append(it) }
-                append("\n\nLIVE · $liveAccountCount accounts · $liveCount positions · P/L ${money(livePnl)}")
-                if (liveDetails.isEmpty()) append("\n  No open live positions")
-                else liveDetails.forEach { append("\n  ").append(it) }
+                if (demoCount > 0) {
+                    append("DEMO · $demoAccountCount accounts · $demoCount positions · P/L ${money(demoPnl)}")
+                    demoDetails.forEach { append("\n  ").append(it) }
+                }
+                if (liveCount > 0) {
+                    if (isNotEmpty()) append("\n\n")
+                    append("LIVE · $liveAccountCount accounts · $liveCount positions · P/L ${money(livePnl)}")
+                    liveDetails.forEach { append("\n  ").append(it) }
+                }
             }
             val short = "D${if (demoPnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(demoPnl))} L${if (livePnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(livePnl))}"
             val notification = buildNotification(
@@ -301,7 +304,7 @@ class TradeLiveUpdateService : Service() {
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setSubText("DEMO + LIVE PORTFOLIO")
+            .setSubText("OPEN POSITIONS")
             .setColor(color)
             .setOngoing(true)
             .setAutoCancel(false)

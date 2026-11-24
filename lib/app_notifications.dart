@@ -419,7 +419,7 @@ class AppNotificationCenter {
         if (demo.isEmpty) 'No open demo positions' else ...demo.map(detail),
         'LIVE ACCOUNTS · ${live.length} positions · P/L ${money(livePnl)}',
         if (live.isEmpty) 'No open live positions' else ...live.map(detail),
-      ].join('\\n');
+      ].join('\n');
       final short = 'D${demoPnl >= 0 ? '+' : '-}${demoPnl.abs().toStringAsFixed(0)} L${livePnl >= 0 ? '+' : '-}${livePnl.abs().toStringAsFixed(0)}';
       await updateLiveUpdate(
         id: 7777,

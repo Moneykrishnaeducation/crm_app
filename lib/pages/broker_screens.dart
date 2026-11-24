@@ -4152,34 +4152,66 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                       fontSize: 10.5,
                     ),
                   ),
-                  TextButton(
-                    onPressed: isClosing ? null : () => _closePosition(pos),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFFDC2626),
-                      backgroundColor:
-                          const Color(0xFFEF4444).withValues(alpha: 0.1),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ValueListenableBuilder<String?>(
+                        valueListenable: AppNotificationCenter.instance.trackedPositionNotifier,
+                        builder: (context, trackedId, _) {
+                          final isTracked = trackedId == pos.id;
+                          return TextButton.icon(
+                            onPressed: () async {
+                              if (isTracked) {
+                                await AppNotificationCenter.instance.stopPositionMonitoring();
+                                if (mounted) showAppMessage('Trade live update stopped.');
+                              } else {
+                                await AppNotificationCenter.instance.startPositionMonitoring(
+                                  accountId: _selectedLogin,
+                                  positionId: pos.id,
+                                  symbol: pos.symbol,
+                                  isBuy: pos.isBuy,
+                                  lots: pos.lots,
+                                  openTime: pos.openTime,
+                                );
+                                if (mounted) showAppMessage('Live trade update started.');
+                              }
+                            },
+                            icon: Icon(
+                              isTracked ? LucideIcons.radioTower : LucideIcons.radio,
+                              size: 13,
+                            ),
+                            label: Text(isTracked ? 'Tracking' : 'Track'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: isTracked ? const Color(0xFF0B9E68) : const Color(0xFF1658C9),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              minimumSize: const Size(0, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          );
+                        },
                       ),
-                      minimumSize: const Size(0, 32),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(
-                          color: const Color(0xFFEF4444).withValues(
-                            alpha: 0.3,
+                      TextButton(
+                        onPressed: isClosing ? null : () => _closePosition(pos),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFDC2626),
+                          backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                            ),
                           ),
                         ),
+                        child: Text(
+                          isClosing ? 'Closing…' : 'Close',
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      isClosing ? 'Closing…' : 'Close',
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    ],
                   ),
                 ],
               ),

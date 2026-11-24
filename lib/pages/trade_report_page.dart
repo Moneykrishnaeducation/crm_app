@@ -46,7 +46,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
   @override
   void initState() {
     super.initState();
-    _selectedLogin = widget.selectedAccountLogin ?? '52132132';
+    _selectedLogin = widget.selectedAccountLogin ??
+        (widget.accounts != null && widget.accounts!.isNotEmpty
+            ? widget.accounts!.first.login
+            : '');
     final today = DateTime.now();
     _endDate = DateTime(today.year, today.month, today.day);
     _startDate = _endDate.subtract(const Duration(days: 6));
@@ -57,12 +60,19 @@ class _TradeReportPageState extends State<TradeReportPage> {
   @override
   void didUpdateWidget(covariant TradeReportPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selectedAccountLogin != null &&
-        widget.selectedAccountLogin != oldWidget.selectedAccountLogin) {
+    final accountChanged =
+        widget.selectedAccountLogin != oldWidget.selectedAccountLogin;
+    final accountsChanged = widget.accounts != oldWidget.accounts;
+    if (accountChanged && widget.selectedAccountLogin != null) {
       _selectedLogin = widget.selectedAccountLogin!;
+    } else if (accountsChanged &&
+        !_allAccounts.any((account) => account.login == _selectedLogin) &&
+        _allAccounts.isNotEmpty) {
+      _selectedLogin = _allAccounts.first.login;
+    }
+    if (accountChanged || accountsChanged) {
       _loadedTrades = <BrokerTradeRecord>[];
-      _loadTrades();
-    } else if (widget.accounts != oldWidget.accounts) {
+      _requestGeneration++;
       _loadTrades();
     }
   }
@@ -73,7 +83,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
     for (final account in _allAccounts) {
       if (account.login == _selectedLogin) return account;
     }
-    return _allAccounts.isEmpty ? null : _allAccounts.first;
+    return null;
   }
 
   BrokerAccount get _currentAccount => _currentAccountOrNull ??
@@ -89,7 +99,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
 
   Future<void> _loadTrades() async {
     final account = _currentAccountOrNull;
-    if (account == null || account.login.isEmpty) {
+    final requestedLogin = _selectedLogin.trim();
+    if (account == null || requestedLogin.isEmpty ||
+        account.login != requestedLogin) {
+      _requestGeneration++;
       if (mounted) setState(() {
         _loadedTrades = <BrokerTradeRecord>[];
         _loadingTrades = false;
@@ -98,7 +111,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
       return;
     }
     final generation = ++_requestGeneration;
-    if (mounted) setState(() { _loadingTrades = true; _tradeLoadError = null; });
+    if (mounted) {
+      setState(() {
+        // Never keep the previous account's trades visible during a switch.
+        _loadedTrades = <BrokerTradeRecord>[];
+        _loadingTrades = true;
+        _tradeLoadError = null;
+      });
+    }
     try {
       final rawTrades = await AuthApi.instance.getClosedPositions(
         account.login,
@@ -462,10 +482,17 @@ class _TradeReportPageState extends State<TradeReportPage> {
                             : null,
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          setState(() {
-                            _selectedLogin = acc.login;
-                          });
-                          widget.onAccountChanged?.call(acc.login);
+                          if (acc.login != _selectedLogin) {
+                            setState(() {
+                              _selectedLogin = acc.login;
+                              _loadedTrades = <BrokerTradeRecord>[];
+                              _tradeLoadError = null;
+                            });
+                            widget.onAccountChanged?.call(acc.login);
+                            // This report is pushed as a separate route, so
+                            // explicitly reload after changing its local account.
+                            _loadTrades();
+                          }
                           Navigator.pop(ctx);
                         },
                       );

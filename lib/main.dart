@@ -1060,6 +1060,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                               !_balanceVisible,
                                         ),
                                         onSelectPage: _selectPage,
+                                        accounts: _accounts,
+                                        selectedAccountLogin:
+                                            _selectedAccount?.login ??
+                                            (_accounts.isNotEmpty
+                                                ? _accounts.first.login
+                                                : null),
+                                        onAccountChanged: (login) {
+                                          final matches = _accounts.where(
+                                            (account) => account.login == login,
+                                          );
+                                          if (matches.isEmpty) return;
+                                          setState(() {
+                                            _selectedAccount = matches.first;
+                                          });
+                                        },
                                         scrollController:
                                             _dashboardScrollController,
                                       ),

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:crm_app/app_notifications.dart';
+import 'package:crm_app/services/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -22,7 +25,8 @@ class PammPage extends StatefulWidget {
 }
 
 class _PammPool {
-  _PammPool(this.name, this.login, this.leverage, this.equity, this.share, {this.managerBalance = 0, this.pnl = 0, this.server = 'VTIndex-Live', this.status = 'Open', this.manager = 'PAMM Manager'});
+  _PammPool(this.name, this.login, this.leverage, this.equity, this.share, {this.id = '', this.managerBalance = 0, this.pnl = 0, this.server = 'VTIndex-Live', this.status = 'Open', this.manager = 'PAMM Manager'});
+  final String id;
   final String name;
   final String login;
   final String leverage;
@@ -36,9 +40,11 @@ class _PammPool {
 }
 
 class _PammInvestment {
-  _PammInvestment(this.login, this.name, this.manager, this.value, this.pnl, this.deposit, this.share, {this.joinedOn = '11/17/2026'});
+  _PammInvestment(this.login, this.name, this.manager, this.value, this.pnl, this.deposit, this.share, {this.id = '', this.pammId = '', this.managerProfitShare = 0, this.joinedOn = ''});
   final String login, name, manager;
+  final String id, pammId;
   final double value, pnl, deposit, share;
+  final double managerProfitShare;
   final String joinedOn;
 }
 
@@ -49,11 +55,18 @@ class _PammPageState extends State<PammPage> {
   _PammPool? _selectedManagedPool;
   _PammPool? _selectedAvailablePool;
   _PammPool? _connectedInvestorPool;
+  List<_PammInvestment> _connectedInvestors = [];
+  bool _loadingConnectedInvestors = false;
+  String? _connectedInvestorsError;
   final _search = TextEditingController();
-
-  final List<_PammPool> _managed = [_PammPool('MohanTest', '3503', '1:500', 0, 20, managerBalance: 0, pnl: 0, server: 'VTindex-Live', status: 'Open')];
-  final List<_PammPool> _available = [_PammPool('Naveen Test', '3420', '1:500', 0, 10, manager: 'Process Process'), _PammPool('Nani', '2141718258', '1:500', 0, 50, manager: 'Nani Manager'), _PammPool('Testpam1', '2141717469', '1:500', 0.01, 50, manager: 'Test Manager')];
-  final List<_PammInvestment> _investments = [_PammInvestment('3420', 'Naveen Test', 'Process Process', 0, 0, 0, 0)];
+  final List<_PammPool> _managed = [];
+  final List<_PammPool> _available = [];
+  final List<_PammInvestment> _investments = [];
+  bool _loadingPammLists = true;
+  String? _pammListError;
+  String? _joiningPammId;
+  String? _togglingPammId;
+  String? _syncingPammId;
 
   static const _blue = Color(0xFF2563EB);
   static const _deepBlue = Color(0xFF1D4ED8);
@@ -67,6 +80,162 @@ class _PammPageState extends State<PammPage> {
   Color get _border => _dark ? const Color(0xFF223C70) : const Color(0xFFCBD5E1);
   Color get _text => _dark ? Colors.white : const Color(0xFF0A1629);
   Color get _muted => _dark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPammLists(lists: const [0]);
+  }
+
+  Future<void> _loadPammLists({List<int>? lists}) async {
+    final requestedLists = (lists ?? [_tab]).toSet().toList();
+    if (mounted) {
+      setState(() {
+        _loadingPammLists = true;
+        _pammListError = null;
+      });
+    }
+    final errors = <Object>[];
+    Future<Map<String, dynamic>?> load(
+      Future<Map<String, dynamic>> request,
+    ) async {
+      try {
+        return await request;
+      } catch (error) {
+        errors.add(error);
+        return null;
+      }
+    }
+
+    final requests = <int, Future<Map<String, dynamic>> Function()>{
+      0: AuthApi.instance.getPammManaged,
+      1: AuthApi.instance.getPammAvailable,
+      2: AuthApi.instance.getPammInvestments,
+    };
+    final responses = await Future.wait<Map<String, dynamic>?>(
+      requestedLists.map((index) => load(requests[index]!())),
+    );
+    if (!mounted) return;
+    setState(() {
+      for (var i = 0; i < requestedLists.length; i++) {
+        final index = requestedLists[i];
+        final response = responses[i];
+        if (response == null) continue;
+        final rows = _extractRows(response);
+        switch (index) {
+          case 0:
+            _managed
+              ..clear()
+              ..addAll(rows.map(_poolFromMap));
+            break;
+          case 1:
+            _available
+              ..clear()
+              ..addAll(rows.map(_poolFromMap));
+            break;
+          case 2:
+            _investments
+              ..clear()
+              ..addAll(rows.map(_investmentFromMap));
+            break;
+        }
+      }
+      _loadingPammLists = false;
+      if (errors.isNotEmpty) {
+        _pammListError = responses.every((response) => response == null)
+            ? 'PAMM accounts could not be loaded.'
+            : 'Some PAMM account data could not be refreshed.';
+      }
+    });
+  }
+
+  List<Map<String, dynamic>> _extractRows(Map<String, dynamic> response) {
+    dynamic value = response;
+    for (var depth = 0; depth < 5; depth++) {
+      if (value is List) {
+        return value
+            .whereType<Map>()
+            .map((row) => row.cast<String, dynamic>())
+            .toList(growable: false);
+      }
+      if (value is! Map) return const [];
+      final map = value.cast<String, dynamic>();
+      final rows = map['results'] ??
+          map['accounts'] ??
+          map['documents'] ??
+          map['pamm'] ??
+          map['data'];
+      if (rows == null) return const [];
+      value = rows;
+    }
+    return const [];
+  }
+
+  dynamic _firstValue(Map<String, dynamic> row, List<String> keys) {
+    for (final key in keys) {
+      final value = row[key];
+      if (value != null && value.toString().trim().isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  String _stringValue(Map<String, dynamic> row, List<String> keys, {String fallback = ''}) =>
+      _firstValue(row, keys)?.toString() ?? fallback;
+
+  double _numberValue(Map<String, dynamic> row, List<String> keys) {
+    final value = _firstValue(row, keys);
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString().replaceAll(',', '') ?? '') ?? 0;
+  }
+
+  _PammPool _poolFromMap(Map<String, dynamic> row) {
+    final id = _stringValue(row, const ['id', 'pamm_id', 'pamm_internal_id']);
+    final login = _stringValue(
+      row,
+      const ['mt5_account_id', 'pamm_mt5_account_id', 'login'],
+      fallback: id,
+    );
+    final leverageValue = _stringValue(row, const ['leverage'], fallback: '500');
+    final leverage = leverageValue.startsWith('1:')
+        ? leverageValue
+        : '1:$leverageValue';
+    final acceptsInvestors = row['is_accepting_investors'];
+    final statusValue = _stringValue(row, const ['status']);
+    final status = acceptsInvestors is bool
+        ? (acceptsInvestors ? 'Open' : 'Closed')
+        : (statusValue.toLowerCase().contains('clos') ? 'Closed' : 'Open');
+    return _PammPool(
+      _stringValue(row, const ['name', 'pam_account_name'], fallback: 'PAMM Pool'),
+      login,
+      leverage,
+      _numberValue(row, const ['total_equity', 'equity', 'manager_balance']),
+      _numberValue(row, const ['profit_share', 'pamm_profit_share']),
+      id: id,
+      managerBalance: _numberValue(row, const ['manager_balance']),
+      pnl: _numberValue(row, const ['total_profit', 'profit_loss', 'pnl']),
+      server: _stringValue(row, const ['server', 'mt5_server'], fallback: 'VTIndex-Live'),
+      status: status,
+      manager: _stringValue(row, const ['manager_name', 'manager'], fallback: 'PAMM Manager'),
+    );
+  }
+
+  _PammInvestment _investmentFromMap(Map<String, dynamic> row) {
+    final totalDeposited = _numberValue(row, const ['total_deposited', 'amount']);
+    final totalWithdrawn = _numberValue(row, const ['total_withdrawn']);
+    return _PammInvestment(
+      _stringValue(row, const ['pamm_mt5_account_id', 'mt5_account_id', 'login', 'account_id']),
+      _stringValue(row, const ['user_name', 'investor_name', 'pam_account_name', 'name', 'user_email'], fallback: 'PAMM Investment'),
+      _stringValue(row, const ['manager_name', 'manager'], fallback: 'PAMM Manager'),
+      _numberValue(row, const ['net_current_amount', 'current_amount', 'current_balance', 'balance', 'amount']),
+      _numberValue(row, const ['profit_loss', 'net_profit', 'pnl']),
+      (totalDeposited - totalWithdrawn).clamp(0, double.infinity).toDouble(),
+      _numberValue(row, const ['share_percentage', 'allocation_percentage']),
+      id: _stringValue(row, const ['id']),
+      pammId: _stringValue(row, const ['pamm_id', 'id']),
+      managerProfitShare: _numberValue(row, const ['manager_profit_share_accrued', 'pamm_profit_share']),
+      joinedOn: _stringValue(row, const ['joined_on', 'created_at', 'date_joined']),
+    );
+  }
 
   @override
   void dispose() {
@@ -120,7 +289,11 @@ class _PammPageState extends State<PammPage> {
   Widget _topBar() {
     final labels = ['Managed', 'Available', 'Investments'];
     final counts = [_managed.length, _available.length, _investments.length];
-    final icons = [LucideIcons.briefcaseBusiness, LucideIcons.layers, LucideIcons.usersRound];
+    final icons = [
+      LucideIcons.briefcaseBusiness,
+      LucideIcons.layers,
+      LucideIcons.usersRound,
+    ];
 
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 6, 14, 4),
@@ -144,30 +317,34 @@ class _PammPageState extends State<PammPage> {
               _brandIcon(),
               const SizedBox(width: 12),
               Expanded(child: _brandTitle()),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: _blue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _blue.withValues(alpha: 0.22)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.layers, color: _blue, size: 12),
-                    const SizedBox(width: 5),
-                    Text(
-                      'PAMM CENTER',
-                      style: GoogleFonts.poppins(
-                        color: _blue,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
+              if (MediaQuery.sizeOf(context).width >= 420)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _blue.withValues(alpha: 0.22)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.layers, color: _blue, size: 12),
+                      const SizedBox(width: 5),
+                      Text(
+                        'PAMM CENTER',
+                        style: GoogleFonts.poppins(
+                          color: _blue,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -178,91 +355,193 @@ class _PammPageState extends State<PammPage> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: _border),
             ),
-            child: Row(
-              children: [
-                for (var i = 0; i < labels.length; i++)
-                  Expanded(
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => setState(() {
-                          _tab = i;
-                          _query = '';
-                          _search.clear();
-                        }),
-                        borderRadius: BorderRadius.circular(11),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeInOutCubic,
-                          constraints: const BoxConstraints(minHeight: 44),
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                          decoration: BoxDecoration(
-                            gradient: _tab == i
-                                ? const LinearGradient(
-                                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  )
-                                : null,
-                            borderRadius: BorderRadius.circular(11),
-                            boxShadow: _tab == i
-                                ? [
-                                    BoxShadow(
-                                      color: _blue.withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                icons[i],
-                                size: 14,
-                                color: _tab == i ? Colors.white : _muted,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  labels[i],
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.poppins(
-                                    color: _tab == i ? Colors.white : _text,
-                                    fontSize: 12.5,
-                                    fontWeight: _tab == i ? FontWeight.w900 : FontWeight.w700,
-                                  ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 420;
+                return Row(
+                  children: [
+                    for (var i = 0; i < labels.length; i++)
+                      Expanded(
+                        child: Semantics(
+                          button: true,
+                          selected: _tab == i,
+                          label:
+                              '${labels[i]}, ${counts[i]} ${counts[i] == 1 ? 'item' : 'items'}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _tab = i;
+                                  _query = '';
+                                  _search.clear();
+                                });
+                                _loadPammLists(lists: [i]);
+                              },
+                              borderRadius: BorderRadius.circular(11),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInOutCubic,
+                                constraints: BoxConstraints(
+                                  minHeight: compact ? 68 : 48,
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: compact ? 2 : 8,
+                                  vertical: compact ? 7 : 8,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: _tab == i
-                                      ? Colors.white.withValues(alpha: 0.22)
-                                      : _border.withValues(alpha: 0.6),
-                                  borderRadius: BorderRadius.circular(8),
+                                  gradient: _tab == i
+                                      ? const LinearGradient(
+                                          colors: [
+                                            Color(0xFF2563EB),
+                                            Color(0xFF1D4ED8),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        )
+                                      : null,
+                                  borderRadius: BorderRadius.circular(11),
+                                  boxShadow: _tab == i
+                                      ? [
+                                          BoxShadow(
+                                            color: _blue.withValues(alpha: 0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
                                 ),
-                                child: Text(
-                                  '${counts[i]}',
-                                  style: GoogleFonts.poppins(
-                                    color: _tab == i ? Colors.white : _muted,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
+                                child: compact
+                                    ? Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            icons[i],
+                                            size: 16,
+                                            color: _tab == i
+                                                ? Colors.white
+                                                : _muted,
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            labels[i],
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.poppins(
+                                              color: _tab == i
+                                                  ? Colors.white
+                                                  : _text,
+                                              fontSize: 11.5,
+                                              fontWeight: _tab == i
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w600,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${counts[i]} ${counts[i] == 1 ? 'item' : 'items'}',
+                                            style: GoogleFonts.poppins(
+                                              color: _tab == i
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.82,
+                                                    )
+                                                  : _muted,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            icons[i],
+                                            size: 14,
+                                            color: _tab == i
+                                                ? Colors.white
+                                                : _muted,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              labels[i],
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.poppins(
+                                                color: _tab == i
+                                                    ? Colors.white
+                                                    : _text,
+                                                fontSize: 12.5,
+                                                fontWeight: _tab == i
+                                                    ? FontWeight.w900
+                                                    : FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _tab == i
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.22,
+                                                    )
+                                                  : _border.withValues(
+                                                      alpha: 0.6,
+                                                    ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              '${counts[i]}',
+                                              style: GoogleFonts.poppins(
+                                                color: _tab == i
+                                                    ? Colors.white
+                                                    : _muted,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
+          if (_loadingPammLists) ...[
+            const SizedBox(height: 10),
+            const LinearProgressIndicator(minHeight: 2),
+          ],
+          if (_pammListError != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _pammListError!,
+                    style: TextStyle(color: _muted, fontSize: 11.5),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _loadingPammLists ? null : _loadPammLists,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -464,7 +743,7 @@ class _PammPageState extends State<PammPage> {
                   actionLabel,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 style: FilledButton.styleFrom(
@@ -508,7 +787,7 @@ class _PammPageState extends State<PammPage> {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     color: _muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
                   ),
@@ -532,7 +811,7 @@ class _PammPageState extends State<PammPage> {
               value,
               style: GoogleFonts.poppins(
                 color: _text,
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -544,7 +823,7 @@ class _PammPageState extends State<PammPage> {
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
               color: _muted,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -615,7 +894,7 @@ class _PammPageState extends State<PammPage> {
                       style: GoogleFonts.poppins(
                         color: isSelected ? Colors.white : _muted,
                         fontSize: 10.5,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w600,
                       ),
                     ),
                   ),
@@ -654,7 +933,7 @@ class _PammPageState extends State<PammPage> {
             style: GoogleFonts.poppins(
               color: _text,
               fontSize: 13,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -670,7 +949,7 @@ class _PammPageState extends State<PammPage> {
             style: GoogleFonts.poppins(
               color: _muted,
               fontSize: 11.5,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -761,12 +1040,42 @@ class _PammPageState extends State<PammPage> {
     },
   );
 
+  Future<void> _loadConnectedInvestors(_PammPool pool) async {
+    final pammId = int.tryParse(pool.id);
+    setState(() {
+      _connectedInvestorPool = pool;
+      _connectedInvestors = [];
+      _connectedInvestorsError = null;
+      _loadingConnectedInvestors = pammId != null;
+    });
+    if (pammId == null) {
+      setState(() => _connectedInvestorsError = 'This pool is missing its account identifier. Refresh and try again.');
+      return;
+    }
+    try {
+      final response = await AuthApi.instance.getPammInvestors(pammId);
+      if (!mounted) return;
+      setState(() {
+        _connectedInvestors = _extractRows(response).map(_investmentFromMap).toList();
+        _loadingConnectedInvestors = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadingConnectedInvestors = false;
+        _connectedInvestorsError = error is AuthApiException
+            ? error.message
+            : 'Unable to load connected investors. Please try again.';
+      });
+    }
+  }
+
   Widget _buildConnectedInvestorPortfolio(_PammPool pool) {
-    final investors = _investments.where((investment) => investment.login == pool.login).toList();
+    final investors = _connectedInvestors;
     final capital = investors.fold<double>(0, (sum, investment) => sum + investment.deposit);
     final value = investors.fold<double>(0, (sum, investment) => sum + investment.value);
     final pnl = investors.fold<double>(0, (sum, investment) => sum + investment.pnl);
-    final fees = investors.fold<double>(0, (sum, investment) => sum + (investment.pnl > 0 ? investment.pnl * pool.share / 100 : 0));
+    final fees = investors.fold<double>(0, (sum, investment) => sum + investment.managerProfitShare);
 
     return Column(
       children: [
@@ -777,7 +1086,7 @@ class _PammPageState extends State<PammPage> {
             children: [
               Container(width: 4, height: 20, decoration: BoxDecoration(color: _blue, borderRadius: BorderRadius.circular(4))),
               const SizedBox(width: 10),
-              Expanded(child: Text('Connected investor portfolio', style: TextStyle(color: _text, fontSize: 15.5, fontWeight: FontWeight.w800))),
+              Expanded(child: Text('Connected investor portfolio', style: TextStyle(color: _text, fontSize: 15.5, fontWeight: FontWeight.w600))),
               IconButton(
                 tooltip: 'Close portfolio',
                 onPressed: () => setState(() => _connectedInvestorPool = null),
@@ -797,14 +1106,10 @@ class _PammPageState extends State<PammPage> {
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(color: _border),
                 ),
-                child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  runSpacing: 12,
-                  spacing: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 42,
@@ -813,18 +1118,21 @@ class _PammPageState extends State<PammPage> {
                           child: const Icon(Icons.people_outline, color: _blue, size: 22),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('PAMM MANAGER', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .8)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                            Text('PAMM MANAGER', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: .8)),
                             const SizedBox(height: 4),
-                            Text(pool.name, style: TextStyle(color: _text, fontSize: 16.5, fontWeight: FontWeight.w800)),
+                            Text(pool.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _text, fontSize: 16.5, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 3),
-                            Text('Account ID: ${pool.login} · Investor allocation overview', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
-                          ],
+                            Text('Account ID: ${pool.login} · Investor allocation overview', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w400)),
+                            ],
+                          ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 7,
                       runSpacing: 6,
@@ -861,7 +1169,7 @@ class _PammPageState extends State<PammPage> {
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w600)),
                               const SizedBox(height: 6),
-                              Text(item.$2, style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w800)),
+                              Text(item.$2, style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w600)),
                             ])),
                             Icon(item.$3, size: 16, color: _blue),
                           ],
@@ -876,15 +1184,36 @@ class _PammPageState extends State<PammPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Investor accounts', style: TextStyle(color: _text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+                    Text('Investor accounts', style: TextStyle(color: _text, fontSize: 13.5, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 3),
-                    Text('Individual balances, allocation, performance and fee breakdown', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500)),
+                    Text('Individual balances, allocation, performance and fee breakdown', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w400)),
                   ])),
                   Text('Total units: ${investors.length}', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w600)),
                 ],
               ),
               const SizedBox(height: 8),
-              if (investors.isEmpty)
+              if (_loadingConnectedInvestors)
+                const Padding(
+                  padding: EdgeInsets.all(28),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_connectedInvestorsError != null)
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
+                  child: Column(
+                    children: [
+                      Text(_connectedInvestorsError!, textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _loadConnectedInvestors(pool),
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (investors.isEmpty)
                 Container(
                   constraints: const BoxConstraints(minHeight: 155),
                   alignment: Alignment.center,
@@ -893,13 +1222,13 @@ class _PammPageState extends State<PammPage> {
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Container(width: 42, height: 42, decoration: BoxDecoration(color: _blue.withValues(alpha: .06), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.people_outline, color: _blue, size: 21)),
                     const SizedBox(height: 10),
-                    Text('No connected investors yet', style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w800)),
+                    Text('No connected investors yet', style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Text('Investor accounts and their portfolio details will appear here once they join this pool.', textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 11.5, height: 1.35)),
                   ]),
                 )
               else
-                ...investors.map((investment) => _connectedInvestorCard(investment, pool.share)),
+                ...investors.map(_connectedInvestorCard),
             ],
           ),
         ),
@@ -908,7 +1237,7 @@ class _PammPageState extends State<PammPage> {
           decoration: BoxDecoration(border: Border(top: BorderSide(color: _border))),
           child: Row(
             children: [
-              Expanded(child: Text('Values reflect saved PAMM investment records in this preview.', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500))),
+              Expanded(child: Text('Values are loaded from the connected investor accounts.', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w400))),
               OutlinedButton(onPressed: () => setState(() => _connectedInvestorPool = null), child: const Text('Close portfolio')),
             ],
           ),
@@ -920,10 +1249,10 @@ class _PammPageState extends State<PammPage> {
   Widget _portfolioBadge(String label, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(color: color.withValues(alpha: .06), borderRadius: BorderRadius.circular(18), border: Border.all(color: color.withValues(alpha: .35))),
-    child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800)),
+    child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
   );
 
-  Widget _connectedInvestorCard(_PammInvestment investment, double managerShare) => Container(
+  Widget _connectedInvestorCard(_PammInvestment investment) => Container(
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
@@ -933,15 +1262,15 @@ class _PammPageState extends State<PammPage> {
       runSpacing: 10,
       children: [
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(investment.name, style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w800)),
+          Text(investment.name, style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 3),
-          Text('Investor account · MT5 ${investment.login}', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
+          Text('Investor account · MT5 ${investment.login}', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w400)),
         ]),
         Wrap(spacing: 22, runSpacing: 8, children: [
           _joinPoolValue('Capital invested', _money(investment.deposit)),
           _joinPoolValue('Current value', _money(investment.value)),
           _joinPoolValue('Investor P/L', _money(investment.pnl)),
-          _joinPoolValue('Manager fee', _money(investment.pnl > 0 ? investment.pnl * managerShare / 100 : 0)),
+          _joinPoolValue('Manager fee', _money(investment.managerProfitShare)),
         ]),
       ],
     ),
@@ -998,9 +1327,9 @@ class _PammPageState extends State<PammPage> {
                     children: [
                       Text(
                         'PAMM overview',
-                        style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w800),
+                        style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w600),
                       ),
-                      Text('Review account details, equity and allocations.', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w500)),
+                      Text('Review account details, equity and allocations.', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w400)),
                     ],
                   ),
                 ),
@@ -1114,7 +1443,7 @@ class _PammPageState extends State<PammPage> {
               decoration: BoxDecoration(color: _blue.withValues(alpha: .1), borderRadius: BorderRadius.circular(8)),
               child: Text(
                 investment == null ? 'Available PAMM pool' : 'My investment',
-                style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w800),
+                style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(width: 8),
@@ -1137,12 +1466,12 @@ class _PammPageState extends State<PammPage> {
                 children: [
                   Text(
                     investment?.name ?? pool.name,
-                    style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w800),
+                    style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   Text('Manager: ${pool.manager}', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 3),
-                  Text('Review your allocation, current value and investment performance.', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text('Review your allocation, current value and investment performance.', style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w400)),
                 ],
               ),
             ),
@@ -1153,7 +1482,7 @@ class _PammPageState extends State<PammPage> {
                 Text('Net current value', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
                 Text(
                   _money(investment?.value ?? pool.equity),
-                  style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w600),
                 ),
                 Text('USD', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
               ],
@@ -1178,7 +1507,15 @@ class _PammPageState extends State<PammPage> {
               )
             else ...[
               FilledButton.icon(
-                onPressed: status == 'Closed' ? null : () => _depositDialog(investment.name),
+                onPressed: status == 'Closed'
+                    ? null
+                    : () => _depositDialog(
+                        accountName: investment.name,
+                        pammId: investment.pammId.isNotEmpty
+                            ? investment.pammId
+                            : investment.id,
+                        isManager: false,
+                      ),
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('Deposit funds'),
                 style: FilledButton.styleFrom(
@@ -1188,7 +1525,14 @@ class _PammPageState extends State<PammPage> {
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: () => _showPammMessage('Withdrawal requests are not connected in this preview.'),
+                onPressed: () => _withdrawDialog(
+                  accountName: investment.name,
+                  pammId: investment.pammId.isNotEmpty
+                      ? investment.pammId
+                      : investment.id,
+                  isManager: false,
+                  availableBalance: investment.value,
+                ),
                 icon: const Icon(Icons.remove, size: 16),
                 label: const Text('Withdraw funds'),
                 style: OutlinedButton.styleFrom(
@@ -1198,16 +1542,6 @@ class _PammPageState extends State<PammPage> {
                 ),
               ),
             ],
-            OutlinedButton.icon(
-              onPressed: () => _showPammMessage('Performance details will appear here.'),
-              icon: const Icon(Icons.bar_chart, size: 16),
-              label: const Text('Performance'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _text,
-                side: BorderSide(color: _border),
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-              ),
-            ),
           ],
         ),
       ],
@@ -1226,7 +1560,7 @@ class _PammPageState extends State<PammPage> {
       ),
       child: Text(
         status,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800),
+        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -1256,7 +1590,7 @@ class _PammPageState extends State<PammPage> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: () => setState(() => _connectedInvestorPool = pool),
+            onPressed: () => _loadConnectedInvestors(pool),
             icon: const Icon(Icons.people_outline, size: 17),
             label: const Text('Connected investor list'),
             style: FilledButton.styleFrom(backgroundColor: _blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 13)),
@@ -1266,9 +1600,23 @@ class _PammPageState extends State<PammPage> {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: pool.status == 'Open' ? () => _closeManagedPool(pool) : null,
-            icon: const Icon(Icons.show_chart, size: 17),
-            label: Text(pool.status == 'Open' ? 'Close investment pool' : 'Pool closed'),
+            onPressed: _togglingPammId == pool.id
+                ? null
+                : () => _toggleManagedPool(pool),
+            icon: _togglingPammId == pool.id
+                ? const SizedBox(
+                    width: 17,
+                    height: 17,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.show_chart, size: 17),
+            label: Text(
+              _togglingPammId == pool.id
+                  ? 'Updating pool…'
+                  : pool.status == 'Open'
+                      ? 'Close investment pool'
+                      : 'Open investment pool',
+            ),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFFDC3152),
               side: const BorderSide(color: Color(0xFFFFC5CF)),
@@ -1349,7 +1697,7 @@ class _PammPageState extends State<PammPage> {
               decoration: BoxDecoration(color: _blue.withValues(alpha: .1), borderRadius: BorderRadius.circular(8)),
               child: Text(
                 'PAMM manager',
-                style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w800),
+                style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(width: 8),
@@ -1372,10 +1720,10 @@ class _PammPageState extends State<PammPage> {
                 children: [
                   Text(
                     pool.name,
-                    style: TextStyle(color: _text, fontSize: 21, fontWeight: FontWeight.w800),
+                    style: TextStyle(color: _text, fontSize: 21, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
-                  Text('Manage your pool, review equity and monitor investor activity.', style: TextStyle(color: _muted, fontSize: 12.5, fontWeight: FontWeight.w500, height: 1.35)),
+                  Text('Manage your pool, review equity and monitor investor activity.', style: TextStyle(color: _muted, fontSize: 12.5, fontWeight: FontWeight.w400, height: 1.35)),
                 ],
               ),
             ),
@@ -1386,7 +1734,7 @@ class _PammPageState extends State<PammPage> {
                 Text('Manager balance', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w600)),
                 Text(
                   _money(pool.managerBalance),
-                  style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _text, fontSize: 20, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -1398,7 +1746,13 @@ class _PammPageState extends State<PammPage> {
           runSpacing: 7,
           children: [
             FilledButton.icon(
-              onPressed: pool.status == 'Open' ? () => _depositDialog(pool.name) : null,
+              onPressed: pool.status == 'Open'
+                  ? () => _depositDialog(
+                      accountName: pool.name,
+                      pammId: pool.id,
+                      isManager: true,
+                    )
+                  : null,
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Deposit funds'),
               style: FilledButton.styleFrom(
@@ -1408,7 +1762,12 @@ class _PammPageState extends State<PammPage> {
               ),
             ),
             OutlinedButton.icon(
-              onPressed: () => _showPammMessage('Withdrawal requests are not connected in this preview.'),
+              onPressed: () => _withdrawDialog(
+                accountName: pool.name,
+                pammId: pool.id,
+                isManager: true,
+                availableBalance: pool.managerBalance,
+              ),
               icon: const Icon(Icons.remove, size: 16),
               label: const Text('Withdraw funds'),
               style: OutlinedButton.styleFrom(
@@ -1418,19 +1777,11 @@ class _PammPageState extends State<PammPage> {
               ),
             ),
             OutlinedButton.icon(
-              onPressed: () => _showPammMessage('Performance details will appear here.'),
-              icon: const Icon(Icons.bar_chart, size: 16),
-              label: const Text('Performance'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _text,
-                side: BorderSide(color: _border),
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-              ),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => _showPammMessage('MT5 sync is not connected in this preview.'),
-              icon: const Icon(Icons.sync, size: 16),
-              label: const Text('Sync MT5'),
+              onPressed: _syncingPammId == pool.id ? null : () => _syncPammEquity(pool),
+              icon: _syncingPammId == pool.id
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.sync, size: 16),
+              label: Text(_syncingPammId == pool.id ? 'Syncing…' : 'Sync MT5'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: _text,
                 side: BorderSide(color: _border),
@@ -1459,7 +1810,7 @@ class _PammPageState extends State<PammPage> {
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: _text, fontSize: 15.5, fontWeight: FontWeight.w800),
+          style: TextStyle(color: _text, fontSize: 15.5, fontWeight: FontWeight.w600),
         ),
       ],
     ),
@@ -1490,10 +1841,10 @@ class _PammPageState extends State<PammPage> {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(color: _text, fontSize: 14.5, fontWeight: FontWeight.w800),
+                    style: TextStyle(color: _text, fontSize: 14.5, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w400)),
                 ],
               ),
             ),
@@ -1560,7 +1911,7 @@ class _PammPageState extends State<PammPage> {
                     style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
-                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
+                  Text(subtitle, style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w400)),
                 ],
               ),
             ),
@@ -1580,21 +1931,417 @@ class _PammPageState extends State<PammPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _closeManagedPool(_PammPool pool) async {
-    final confirm = await showDialog<bool>(
+  Future<void> _showCreatedPammCredentials({
+    required String title,
+    required String accountName,
+    required String login,
+    required String investorPassword,
+    String? masterPassword,
+  }) async {
+    if (!mounted) return;
+    await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Close investment pool?'),
-        content: Text('Investors will no longer be able to join ${pool.name}.'),
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(accountName, style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            _credentialLine('MT5 login', login),
+            if (masterPassword != null)
+              _credentialLine('Master password', masterPassword),
+            _credentialLine('Investor password', investorPassword),
+            const SizedBox(height: 8),
+            Text(
+              'Save these credentials securely. You may not be able to view them again.',
+              style: TextStyle(color: _muted, fontSize: 12),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Close pool')),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Done'),
+          ),
         ],
       ),
     );
-    if (confirm == true && mounted) {
-      setState(() => pool.status = 'Closed');
-      _showPammMessage('${pool.name} is closed.');
+  }
+
+  Widget _credentialLine(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: TextStyle(color: _muted, fontSize: 11)),
+                  SelectableText(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Copy $label',
+              onPressed: () => _copyPammValue(value),
+              icon: const Icon(Icons.copy_outlined, size: 17),
+            ),
+          ],
+        ),
+      );
+
+  Map<String, dynamic> _unwrapApiMap(Map<String, dynamic> response) {
+    dynamic value = response;
+    for (var depth = 0; depth < 5 && value is Map; depth++) {
+      final map = value.cast<String, dynamic>();
+      final nested = map['data'] ?? map['profile'] ?? map['result'];
+      if (nested is Map) {
+        value = nested;
+      } else {
+        return map;
+      }
+    }
+    return value is Map ? value.cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  Future<({bool approved, bool hasBank, bool hasCrypto, String bankName, String bankAccount, String wallet, String currency})> _pammWithdrawalEligibility() async {
+    Map<String, dynamic> profile = {};
+    List<Map<String, dynamic>> documents = const [];
+    Map<String, dynamic> bank = {};
+    Map<String, dynamic> crypto = {};
+    try {
+      profile = _unwrapApiMap(await AuthApi.instance.getProfile());
+    } catch (_) {}
+    try {
+      documents = _extractRows(await AuthApi.instance.getProfileDocuments());
+    } catch (_) {}
+    try {
+      bank = _unwrapApiMap(await AuthApi.instance.getBankDetails());
+    } catch (_) {}
+    try {
+      crypto = _unwrapApiMap(await AuthApi.instance.getCryptoDetails());
+    } catch (_) {}
+
+    bool approvedDocument(String type) => documents.any((document) {
+      final docType = _stringValue(document, const ['document_type']).toLowerCase();
+      final status = _stringValue(document, const ['status', 'verification_status']).toLowerCase();
+      return docType == type && (status == 'approved' || status == 'verified');
+    });
+    final identityVerified =
+        approvedDocument('identity') ||
+        _stringValue(profile, const ['id_status']).toLowerCase() == 'approved';
+    final residenceVerified =
+        approvedDocument('residence') ||
+        _stringValue(profile, const ['address_status']).toLowerCase() == 'approved';
+    final phone = _stringValue(profile, const ['phone', 'phone_number']).trim();
+    final dob = _stringValue(profile, const ['dob', 'date_of_birth']).trim();
+    final hasLocation =
+        _stringValue(profile, const ['address']).trim().isNotEmpty ||
+        _stringValue(profile, const ['city']).trim().isNotEmpty ||
+        _stringValue(profile, const ['country']).trim().isNotEmpty;
+    final personallyComplete = phone.isNotEmpty && dob.isNotEmpty && hasLocation;
+    final verifiedFlag = profile['user_verified'] == true ||
+        (identityVerified && residenceVerified && personallyComplete);
+    final bankAccount = _stringValue(bank, const ['account_number']).trim();
+    final wallet = _stringValue(crypto, const ['wallet_address', 'wallet_id', 'wallet']).trim();
+    return (
+      approved: verifiedFlag,
+      hasBank: bankAccount.isNotEmpty,
+      hasCrypto: wallet.isNotEmpty,
+      bankName: _stringValue(bank, const ['bank_name'], fallback: 'Bank account'),
+      bankAccount: bankAccount,
+      wallet: wallet,
+      currency: _stringValue(crypto, const ['currency'], fallback: 'USDT'),
+    );
+  }
+
+  Future<void> _withdrawDialog({
+    required String accountName,
+    required String pammId,
+    required bool isManager,
+    required double availableBalance,
+  }) async {
+    if (pammId.trim().isEmpty) {
+      _showPammMessage('The PAMM identifier is missing. Refresh the account list and try again.');
+      return;
+    }
+    final parsedPammId = int.tryParse(pammId);
+    if (parsedPammId == null) {
+      _showPammMessage('The PAMM identifier is invalid. Refresh the account list and try again.');
+      return;
+    }
+    final eligibility = await _pammWithdrawalEligibility();
+    if (!mounted) return;
+    if (!eligibility.approved) {
+      _showPammMessage('Withdrawals are available after identity and address verification are approved.');
+      return;
+    }
+    if (!eligibility.hasBank && !eligibility.hasCrypto) {
+      _showPammMessage('Add a bank account or crypto wallet in Profile payment methods before withdrawing.');
+      return;
+    }
+
+    final amount = TextEditingController();
+    var method = eligibility.hasCrypto ? 'usdt' : 'bank';
+    var submitting = false;
+    String? errorMessage;
+    ModalRoute<dynamic>? sheetRoute;
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        sheetRoute ??= ModalRoute.of(sheetContext);
+        return StatefulBuilder(
+        builder: (sheetContext, setModalState) {
+          final keyboardBottom = MediaQuery.viewInsetsOf(sheetContext).bottom;
+          final currency = eligibility.currency;
+          final destination = method == 'usdt'
+              ? '$currency wallet ending ${eligibility.wallet.length > 4 ? eligibility.wallet.substring(eligibility.wallet.length - 4) : eligibility.wallet}'
+              : '${eligibility.bankName} ending ${eligibility.bankAccount.length > 4 ? eligibility.bankAccount.substring(eligibility.bankAccount.length - 4) : eligibility.bankAccount}';
+          return Padding(
+            padding: EdgeInsets.only(bottom: keyboardBottom),
+            child: Container(
+              constraints: BoxConstraints(maxWidth: 620, maxHeight: MediaQuery.sizeOf(sheetContext).height * .9),
+              decoration: BoxDecoration(
+                color: _card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(color: _border),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 12, 14),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Withdraw funds', style: TextStyle(color: _text, fontSize: 19, fontWeight: FontWeight.w800)),
+                                const SizedBox(height: 4),
+                                Text(accountName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _muted, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          IconButton(onPressed: () => Navigator.pop(sheetContext), tooltip: 'Close', icon: Icon(Icons.close, color: _muted)),
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [Color(0xFF1B328D), Color(0xFF315FEA)]),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('AVAILABLE TO WITHDRAW', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .4)),
+                                  const SizedBox(height: 5),
+                                  Text(_money(availableBalance), style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w900)),
+                                  const SizedBox(height: 4),
+                                  Text(destination, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text('PAYOUT METHOD', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .4)),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: [
+                                if (eligibility.hasCrypto)
+                                  ChoiceChip(label: Text('$currency wallet'), selected: method == 'usdt', onSelected: (_) => setModalState(() => method = 'usdt')),
+                                if (eligibility.hasBank)
+                                  ChoiceChip(label: const Text('Bank transfer'), selected: method == 'bank', onSelected: (_) => setModalState(() => method = 'bank')),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Text('AMOUNT (USD)', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .4)),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: amount,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700),
+                              decoration: InputDecoration(
+                                hintText: '0.00',
+                                prefixText: r'$ ',
+                                filled: true,
+                                fillColor: _surface,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _border)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _border)),
+                              ),
+                            ),
+                            if (errorMessage != null) ...[
+                              const SizedBox(height: 10),
+                              Text(errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                            ],
+                            const SizedBox(height: 18),
+                            SizedBox(
+                              height: 48,
+                              child: FilledButton.icon(
+                                onPressed: submitting
+                                    ? null
+                                    : () async {
+                                        final value = double.tryParse(amount.text.trim().replaceAll(',', ''));
+                                        if (value == null || !value.isFinite || value <= 0) {
+                                          setModalState(() => errorMessage = 'Enter a valid amount greater than zero.');
+                                          return;
+                                        }
+                                        if (value > availableBalance) {
+                                          setModalState(() => errorMessage = 'Amount exceeds your available balance.');
+                                          return;
+                                        }
+                                        setModalState(() {
+                                          submitting = true;
+                                          errorMessage = null;
+                                        });
+                                        try {
+                                          await AuthApi.instance.requestPammWithdrawal(
+                                            pammId: parsedPammId,
+                                            amount: value,
+                                            method: method == 'bank' ? 'manual' : method,
+                                            isManager: isManager,
+                                          );
+                                          if (sheetContext.mounted) Navigator.pop(sheetContext, true);
+                                        } catch (error) {
+                                          if (!sheetContext.mounted) return;
+                                          setModalState(() {
+                                            submitting = false;
+                                            errorMessage = error is AuthApiException ? error.message : 'Withdrawal request could not be submitted.';
+                                          });
+                                        }
+                                      },
+                                icon: submitting
+                                    ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    : const Icon(Icons.arrow_upward, size: 17),
+                                label: Text(submitting ? 'Submitting…' : 'Submit withdrawal'),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text('The server will verify your KYC, payout details, and available balance.', textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+        );
+      },
+    );
+    final route = sheetRoute;
+    if (route != null) await route.completed;
+    amount.dispose();
+    if (submitted == true && mounted) {
+      await _loadPammLists(lists: [isManager ? 0 : 2]);
+      if (mounted) _showPammMessage('Withdrawal request submitted successfully.');
+    }
+  }
+
+  Future<void> _syncPammEquity(_PammPool pool) async {
+    final pammId = int.tryParse(pool.id);
+    if (pammId == null) {
+      _showPammMessage('This pool is missing its account identifier. Refresh the list and try again.');
+      return;
+    }
+    setState(() => _syncingPammId = pool.id);
+    try {
+      await AuthApi.instance.syncPammEquity(pammId);
+      await _loadPammLists(lists: const [0]);
+      if (!mounted) return;
+      _PammPool? refreshedPool;
+      for (final item in _managed) {
+        if (item.id == pool.id) {
+          refreshedPool = item;
+          break;
+        }
+      }
+      if (refreshedPool != null) {
+        setState(() => _selectedManagedPool = refreshedPool);
+      }
+      _showPammMessage('PAMM balance synchronized from MT5.');
+    } catch (error) {
+      if (mounted) {
+        _showPammMessage(
+          error is AuthApiException
+              ? error.message
+              : 'MT5 synchronization failed. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _syncingPammId = null);
+    }
+  }
+
+  Future<void> _toggleManagedPool(_PammPool pool) async {
+    final nextEnabled = pool.status != 'Open';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(nextEnabled ? 'Open investment pool?' : 'Close investment pool?'),
+        content: Text(
+          nextEnabled
+              ? 'Open ${pool.name} to allow new investors to join?'
+              : 'Investors will no longer be able to join ${pool.name}.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(nextEnabled ? 'Open pool' : 'Close pool'),
+          ),
+        ],
+      ),
+    );
+    final pammId = int.tryParse(pool.id);
+    if (confirm != true || !mounted) return;
+    if (pammId == null) {
+      _showPammMessage('This pool is missing its account identifier. Refresh the list and try again.');
+      return;
+    }
+    setState(() => _togglingPammId = pool.id);
+    try {
+      await AuthApi.instance.setPammPoolEnabled(
+        pammId: pammId,
+        enabled: nextEnabled,
+      );
+      if (!mounted) return;
+      setState(() => pool.status = nextEnabled ? 'Open' : 'Closed');
+      await _loadPammLists(lists: const [0]);
+      if (mounted) {
+        _showPammMessage(
+          nextEnabled
+              ? '${pool.name} is open for investors.'
+              : '${pool.name} is closed.',
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        _showPammMessage(
+          error is AuthApiException
+              ? error.message
+              : 'Unable to update pool status. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _togglingPammId = null);
     }
   }
 
@@ -1683,7 +2430,7 @@ class _PammPageState extends State<PammPage> {
                       style: GoogleFonts.poppins(
                         color: _text,
                         fontSize: 15.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1810,7 +2557,11 @@ class _PammPageState extends State<PammPage> {
                 ),
                 const SizedBox(width: 7),
                 FilledButton(
-                  onPressed: () => _depositDialog(pool.name),
+                  onPressed: () => _depositDialog(
+                    accountName: pool.name,
+                    pammId: pool.id,
+                    isManager: true,
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: _blue,
                     foregroundColor: Colors.white,
@@ -1822,7 +2573,7 @@ class _PammPageState extends State<PammPage> {
                   ),
                   child: const Text(
                     'Deposit',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ] else
@@ -1843,7 +2594,7 @@ class _PammPageState extends State<PammPage> {
                       ),
                       label: const Text(
                         'Invest Now',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
+                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -1865,7 +2616,7 @@ class _PammPageState extends State<PammPage> {
         style: GoogleFonts.poppins(
           color: _muted,
           fontSize: 10.5,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
           letterSpacing: 0.4,
         ),
       ),
@@ -1877,7 +2628,7 @@ class _PammPageState extends State<PammPage> {
         style: GoogleFonts.poppins(
           color: color ?? _text,
           fontSize: 13.5,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
         ),
       ),
     ],
@@ -1933,7 +2684,7 @@ class _PammPageState extends State<PammPage> {
                       style: GoogleFonts.poppins(
                         color: _text,
                         fontSize: 15.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1992,7 +2743,11 @@ class _PammPageState extends State<PammPage> {
               ),
               const SizedBox(width: 7),
               FilledButton(
-                onPressed: () => _depositDialog(item.name),
+                onPressed: () => _depositDialog(
+                  accountName: item.name,
+                  pammId: item.pammId.isNotEmpty ? item.pammId : item.id,
+                  isManager: false,
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor: _blue,
                   foregroundColor: Colors.white,
@@ -2002,7 +2757,7 @@ class _PammPageState extends State<PammPage> {
                   minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                child: const Text('Deposit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                child: const Text('Deposit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -2045,7 +2800,7 @@ class _PammPageState extends State<PammPage> {
     ),
     child: Text(
       '${value.toStringAsFixed(2)}%',
-      style: const TextStyle(color: Color(0xFF99620A), fontSize: 11, fontWeight: FontWeight.w800),
+      style: const TextStyle(color: Color(0xFF99620A), fontSize: 11, fontWeight: FontWeight.w600),
     ),
   );
 
@@ -2060,6 +2815,8 @@ class _PammPageState extends State<PammPage> {
     var leverage = '1:500';
     var showMasterPassword = false;
     var showInvestorPassword = false;
+    var isCreating = false;
+    Map<String, String>? createdCredentials;
 
     ModalRoute<dynamic>? sheetRoute;
     await showModalBottomSheet<bool>(
@@ -2084,13 +2841,13 @@ class _PammPageState extends State<PammPage> {
                 decoration: BoxDecoration(color: _blue.withValues(alpha: .08), borderRadius: BorderRadius.circular(5)),
                 child: Text(
                   number,
-                  style: TextStyle(color: _blue, fontSize: 11, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _blue, fontSize: 11, fontWeight: FontWeight.w600),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 title.toUpperCase(),
-                style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .25),
+                style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: .25),
               ),
               const Spacer(),
               if (hint != null)
@@ -2098,7 +2855,7 @@ class _PammPageState extends State<PammPage> {
                   child: Text(
                     hint,
                     textAlign: TextAlign.right,
-                    style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w400),
                   ),
                 ),
             ],
@@ -2127,7 +2884,7 @@ class _PammPageState extends State<PammPage> {
               if (suffix != null)
                 Text(
                   suffix,
-                  style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _blue, fontSize: 11.5, fontWeight: FontWeight.w600),
                 ),
             ],
           ),
@@ -2213,7 +2970,7 @@ class _PammPageState extends State<PammPage> {
                   Expanded(
                     child: Text(
                       title,
-                      style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w800),
+                      style: TextStyle(color: _text, fontSize: 10, fontWeight: FontWeight.w600),
                     ),
                   ),
                   Text(access, style: TextStyle(color: _muted, fontSize: 9)),
@@ -2309,7 +3066,7 @@ class _PammPageState extends State<PammPage> {
                                     children: [
                                       Text(
                                         'Create PAMM account',
-                                        style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w800),
+                                        style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w600),
                                       ),
                                       const SizedBox(height: 2),
                                       Text('Configure pool, trading preferences and credentials', style: TextStyle(color: _muted, fontSize: 10)),
@@ -2512,10 +3269,34 @@ class _PammPageState extends State<PammPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 FilledButton.icon(
-                                  onPressed: () {
+                                  onPressed: isCreating ? null : () async {
                                     if (!(formKey.currentState?.validate() ?? false)) return;
-                                    setState(() => _managed.add(_PammPool(name.text.trim(), 'Pending', leverage, 0, double.tryParse(share.text) ?? 20)));
-                                    Navigator.pop(sheetContext, true);
+                                    setSheetState(() => isCreating = true);
+                                    try {
+                                      final response = await AuthApi.instance.createPammAccount(
+                                        name: name.text.trim(),
+                                        profitShare: double.tryParse(share.text) ?? 20,
+                                        leverage: int.tryParse(leverage.split(':').last) ?? 500,
+                                        masterPassword: masterPassword.text,
+                                        investorPassword: investorPassword.text,
+                                      );
+                                      final createdPamm = response['pamm'] is Map
+                                          ? (response['pamm'] as Map).cast<String, dynamic>()
+                                          : <String, dynamic>{};
+                                      createdCredentials = {
+                                        'name': _stringValue(createdPamm, const ['name'], fallback: name.text.trim()),
+                                        'login': _stringValue(createdPamm, const ['mt5_account_id'], fallback: 'Pending'),
+                                        'masterPassword': masterPassword.text,
+                                        'investorPassword': _stringValue(response, const ['invest_password'], fallback: investorPassword.text),
+                                      };
+                                      await _loadPammLists(lists: const [0]);
+                                      if (sheetContext.mounted) Navigator.pop(sheetContext, true);
+                                    } catch (error) {
+                                      if (!sheetContext.mounted) return;
+                                      setSheetState(() => isCreating = false);
+                                      final message = error is AuthApiException ? error.message : 'Could not create the PAMM account.';
+                                      ScaffoldMessenger.of(sheetContext).showSnackBar(SnackBar(content: Text(message)));
+                                    }
                                   },
                                   style: FilledButton.styleFrom(
                                     backgroundColor: _blue,
@@ -2525,7 +3306,7 @@ class _PammPageState extends State<PammPage> {
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
                                   ),
                                   icon: const Icon(LucideIcons.arrowRight, size: 13),
-                                  label: const Text('Create account', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+                                  label: Text(isCreating ? 'Creating…' : 'Create account', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
                                 ),
                               ],
                             ),
@@ -2547,14 +3328,38 @@ class _PammPageState extends State<PammPage> {
     share.dispose();
     masterPassword.dispose();
     investorPassword.dispose();
+    final credentials = createdCredentials;
+    if (credentials != null && mounted) {
+      await _showCreatedPammCredentials(
+        title: 'PAMM manager account created',
+        accountName: credentials['name']!,
+        login: credentials['login']!,
+        masterPassword: credentials['masterPassword'],
+        investorPassword: credentials['investorPassword']!,
+      );
+    }
   }
 
-  Future<void> _depositDialog(String accountName) async {
+  Future<void> _depositDialog({
+    required String accountName,
+    required String pammId,
+    required bool isManager,
+  }) async {
+    if (pammId.trim().isEmpty) {
+      _showPammMessage('The PAMM identifier is missing. Refresh the account list and try again.');
+      return;
+    }
     final amount = TextEditingController();
     final picker = ImagePicker();
     var method = 0;
+    var manualCurrency = 'INR';
+    var usdInrRate = 0.0;
+    Map<String, dynamic>? bankDetails;
+    Map<String, dynamic>? cryptoDetails;
     XFile? proof;
     var submitting = false;
+    var initialCryptoLookupStarted = false;
+    var initialRateLookupStarted = false;
     ModalRoute<dynamic>? sheetRoute;
 
     final submitted = await showModalBottomSheet<bool>(
@@ -2577,6 +3382,25 @@ class _PammPageState extends State<PammPage> {
             final modalMuted = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
             final modalCard = _card;
             final modalBorder = _border;
+            final walletAddress = cryptoDetails?['wallet_address']?.toString() ?? '';
+            final bankAccount = bankDetails?['account_number']?.toString() ?? '';
+            final bankName = bankDetails?['bank_name']?.toString() ?? 'saved bank account';
+            if (!initialCryptoLookupStarted) {
+              initialCryptoLookupStarted = true;
+              unawaited(AuthApi.instance.getCryptoDetails().then((response) {
+                if (sheetContext.mounted) {
+                  setModalState(() => cryptoDetails = _unwrapApiMap(response));
+                }
+              }).catchError((_) {}));
+            }
+            if (!initialRateLookupStarted) {
+              initialRateLookupStarted = true;
+              unawaited(AuthApi.instance.getUsdInrRate().then((rate) {
+                if (rate > 0 && sheetContext.mounted) {
+                  setModalState(() => usdInrRate = rate);
+                }
+              }).catchError((_) {}));
+            }
 
             InputDecoration amountDecoration() => InputDecoration(
               hintText: '0.00',
@@ -2603,7 +3427,7 @@ class _PammPageState extends State<PammPage> {
               padding: const EdgeInsets.only(bottom: 9),
               child: Text(
                 text.toUpperCase(),
-                style: TextStyle(color: modalText, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: .25),
+                style: TextStyle(color: modalText, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: .25),
               ),
             );
 
@@ -2611,7 +3435,31 @@ class _PammPageState extends State<PammPage> {
               final selected = method == index;
               return Expanded(
                 child: InkWell(
-                  onTap: () => setModalState(() => method = index),
+                  onTap: () async {
+                    setModalState(() => method = index);
+                    try {
+                      final response = index == 0
+                          ? await AuthApi.instance.getCryptoDetails()
+                          : await AuthApi.instance.getBankDetails();
+                      if (!sheetContext.mounted) return;
+                      setModalState(() {
+                        if (index == 0) {
+                          cryptoDetails = _unwrapApiMap(response);
+                        } else {
+                          bankDetails = _unwrapApiMap(response);
+                        }
+                      });
+                    } catch (_) {
+                      if (!sheetContext.mounted) return;
+                      setModalState(() {
+                        if (index == 0) {
+                          cryptoDetails = null;
+                        } else {
+                          bankDetails = null;
+                        }
+                      });
+                    }
+                  },
                   borderRadius: BorderRadius.circular(13),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 170),
@@ -2632,7 +3480,7 @@ class _PammPageState extends State<PammPage> {
                             const SizedBox(width: 7),
                             Text(
                               title,
-                              style: TextStyle(color: selected ? Colors.white : modalText, fontSize: 12.5, fontWeight: FontWeight.w800),
+                              style: TextStyle(color: selected ? Colors.white : modalText, fontSize: 12.5, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -2793,24 +3641,56 @@ class _PammPageState extends State<PammPage> {
                                                 style: TextStyle(color: modalText, fontSize: 11.5, fontWeight: FontWeight.w900),
                                               ),
                                               const SizedBox(height: 5),
-                                              Text(method == 0 ? 'Send USDT using the TRC20 network and upload your transaction screenshot for verification.' : 'Contact Live Support for official bank details before transferring, then upload your payment proof.', style: TextStyle(color: modalMuted, fontSize: 11.5, height: 1.4)),
+                                              Text(
+                                                method == 0
+                                                    ? 'Send USDT using the TRC20 network${walletAddress.isEmpty ? '' : ' to $walletAddress'} and upload your transaction screenshot.'
+                                                    : 'Contact Live Support for official bank details${bankAccount.isEmpty ? '' : ' for $bankName, account $bankAccount'} before transferring, then upload your payment proof.',
+                                                style: TextStyle(color: modalMuted, fontSize: 11.5, height: 1.4),
+                                              ),
                                             ],
                                           ),
                                         ),
+                                        if ((method == 0 && walletAddress.isNotEmpty) ||
+                                            (method == 1 && bankAccount.isNotEmpty))
+                                          IconButton(
+                                            tooltip: 'Copy payment details',
+                                            onPressed: () => _copyPammValue(
+                                              method == 0 ? walletAddress : bankAccount,
+                                            ),
+                                            icon: Icon(Icons.copy_outlined, color: _blue, size: 17),
+                                          ),
                                       ],
                                     ),
                                   ),
                                   const SizedBox(height: 17),
-                                  sectionLabel('Deposit amount (USD)'),
+                                  sectionLabel('Deposit amount (${method == 0 ? 'USD' : manualCurrency})'),
+                                  if (method == 1) ...[
+                                    Wrap(
+                                      spacing: 8,
+                                      children: [
+                                        for (final currency in const ['INR', 'USD'])
+                                          ChoiceChip(
+                                            label: Text(currency),
+                                            selected: manualCurrency == currency,
+                                            onSelected: (_) => setModalState(() => manualCurrency = currency),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
                                   TextField(
                                     controller: amount,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    style: TextStyle(color: modalText, fontSize: 15, fontWeight: FontWeight.w800),
+                                    style: TextStyle(color: modalText, fontSize: 15, fontWeight: FontWeight.w600),
                                     decoration: amountDecoration(),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    r'Minimum deposit: $10.00',
+                                    method == 0
+                                        ? r'Minimum deposit: $10.00 USD'
+                                        : usdInrRate > 0
+                                            ? 'Minimum deposit: 10.00 $manualCurrency (exchange rate ${usdInrRate.toStringAsFixed(2)} INR per USD)'
+                                            : 'Exchange rate unavailable. Please try again shortly.',
                                     style: TextStyle(color: modalMuted, fontSize: 11, fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 17),
@@ -2853,7 +3733,7 @@ class _PammPageState extends State<PammPage> {
                                                   proof?.name ?? 'Choose transaction proof',
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(color: modalText, fontSize: 12.5, fontWeight: FontWeight.w800),
+                                                  style: TextStyle(color: modalText, fontSize: 12.5, fontWeight: FontWeight.w600),
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(proof == null ? 'JPG or PNG · Tap to browse' : 'Selected · Tap to change file', style: TextStyle(color: modalMuted, fontSize: 11)),
@@ -2872,11 +3752,11 @@ class _PammPageState extends State<PammPage> {
                                   SizedBox(
                                     height: 45,
                                     child: FilledButton.icon(
-                                      onPressed: submitting
-                                          ? null
-                                          : () {
+                                          onPressed: submitting
+                                              ? null
+                                              : () async {
                                               final value = double.tryParse(amount.text.trim());
-                                              if (value == null || value < 10) {
+                                              if (value == null || !value.isFinite || value < 10) {
                                                 ScaffoldMessenger.of(sheetContext).showSnackBar(const SnackBar(content: Text(r'Enter a valid deposit amount of at least $10.00.')));
                                                 return;
                                               }
@@ -2884,8 +3764,35 @@ class _PammPageState extends State<PammPage> {
                                                 ScaffoldMessenger.of(sheetContext).showSnackBar(const SnackBar(content: Text('Please upload your payment proof.')));
                                                 return;
                                               }
-                                              setModalState(() => submitting = true);
-                                              Navigator.pop(sheetContext, true);
+                                              if (method == 1 && manualCurrency == 'INR' && usdInrRate <= 0) {
+                                                ScaffoldMessenger.of(sheetContext).showSnackBar(const SnackBar(content: Text('The USD to INR exchange rate is unavailable. Please try again shortly.')));
+                                                return;
+                                              }
+                                                  setModalState(() => submitting = true);
+                                                  try {
+                                                    final selectedProof = proof!;
+                                                    final usdAmount = method == 1 && manualCurrency == 'INR'
+                                                        ? value / usdInrRate
+                                                        : value;
+                                                    await AuthApi.instance.submitPammDeposit(
+                                                      pammId: pammId,
+                                                      amountUsd: usdAmount,
+                                                      method: method == 0 ? 'usdt' : 'manual',
+                                                      proofBytes: await selectedProof.readAsBytes(),
+                                                      proofFileName: selectedProof.name,
+                                                      isManager: isManager,
+                                                    );
+                                                    if (sheetContext.mounted) {
+                                                      Navigator.pop(sheetContext, true);
+                                                    }
+                                                  } catch (error) {
+                                                    if (!sheetContext.mounted) return;
+                                                    setModalState(() => submitting = false);
+                                                    final message = error is AuthApiException
+                                                        ? error.message
+                                                        : 'Deposit request could not be submitted. Please try again.';
+                                                    ScaffoldMessenger.of(sheetContext).showSnackBar(SnackBar(content: Text(message)));
+                                                  }
                                             },
                                       style: FilledButton.styleFrom(
                                         backgroundColor: _blue,
@@ -2924,7 +3831,8 @@ class _PammPageState extends State<PammPage> {
     if (route != null) await route.completed;
     amount.dispose();
     if (submitted == true && mounted) {
-      showAppMessage('Deposit UI preview only. Connect the payment API to submit this request.');
+      await _loadPammLists(lists: [isManager ? 0 : 2]);
+      if (mounted) showAppMessage('Deposit request submitted successfully.');
     }
   }
 
@@ -2975,9 +3883,9 @@ class _PammPageState extends State<PammPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Join PAMM Investment Pool', style: TextStyle(color: _text, fontSize: 15, fontWeight: FontWeight.w800)),
+                          Text('Join PAMM Investment Pool', style: TextStyle(color: _text, fontSize: 15, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 2),
-                          Text('Review pool terms and create your investment account', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w500)),
+                          Text('Review pool terms and create your investment account', style: TextStyle(color: _muted, fontSize: 11.5, fontWeight: FontWeight.w400)),
                         ],
                       ),
                     ),
@@ -3039,9 +3947,9 @@ class _PammPageState extends State<PammPage> {
                                       children: [
                                         Text(
                                           'Pool details',
-                                          style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w800),
+                                          style: TextStyle(color: _text, fontSize: 13, fontWeight: FontWeight.w600),
                                         ),
-                                        Text('Review the manager settings before joining', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500)),
+                                        Text('Review the manager settings before joining', style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w400)),
                                       ],
                                     ),
                                   ],
@@ -3056,7 +3964,7 @@ class _PammPageState extends State<PammPage> {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         'ACCOUNT DETAILS',
-                                        style: TextStyle(color: _muted, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .4),
+                                        style: TextStyle(color: _muted, fontSize: 10.5, fontWeight: FontWeight.w600, letterSpacing: .4),
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -3082,7 +3990,7 @@ class _PammPageState extends State<PammPage> {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         'INVESTMENT TERMS',
-                                        style: TextStyle(color: _muted, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .4),
+                                        style: TextStyle(color: _muted, fontSize: 10.5, fontWeight: FontWeight.w600, letterSpacing: .4),
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -3138,26 +4046,50 @@ class _PammPageState extends State<PammPage> {
                     Expanded(
                       flex: 2,
                       child: FilledButton(
-                        onPressed: pool.status != 'Open'
+                        onPressed: pool.status != 'Open' || _joiningPammId == pool.id
                             ? null
-                            : () {
+                            : () async {
                                 if (!(formKey.currentState?.validate() ?? false)) {
                                   return;
                                 }
-                                final now = DateTime.now();
-                                final joinedOn = '${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')}/${now.year}';
-                                setState(() {
-                                  _investments.insert(0, _PammInvestment(pool.login, alias.text.trim(), pool.manager, 0, 0, 0, 0, joinedOn: joinedOn));
-                                  _selectedAvailablePool = null;
-                                  _tab = 2;
-                                  _query = '';
-                                  _search.clear();
-                                });
-                                Navigator.pop(dialogContext);
-                                showAppMessage('Investment added to your portfolio preview.');
+                                final pammId = int.tryParse(pool.id);
+                                if (pammId == null) {
+                                  _showPammMessage('This pool is missing its account identifier. Refresh the list and try again.');
+                                  return;
+                                }
+                                setState(() => _joiningPammId = pool.id);
+                                try {
+                                  final response = await AuthApi.instance.investInPamm(
+                                    pammId: pammId,
+                                    investorName: alias.text.trim(),
+                                  );
+                                  await _loadPammLists(lists: const [2]);
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _selectedAvailablePool = null;
+                                    _tab = 2;
+                                    _query = '';
+                                    _search.clear();
+                                  });
+                                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                                  if (mounted) {
+                                    await _showCreatedPammCredentials(
+                                      title: 'PAMM investment account created',
+                                      accountName: _stringValue(response, const ['pamm_name'], fallback: pool.name),
+                                      login: _stringValue(response, const ['mt5_account_id'], fallback: 'Pending'),
+                                      investorPassword: _stringValue(response, const ['invest_password'], fallback: 'Not returned'),
+                                    );
+                                  }
+                                } catch (error) {
+                                  if (mounted) {
+                                    _showPammMessage(error is AuthApiException ? error.message : 'Unable to join this PAMM pool.');
+                                  }
+                                } finally {
+                                  if (mounted) setState(() => _joiningPammId = null);
+                                }
                               },
                         style: FilledButton.styleFrom(backgroundColor: _gold, foregroundColor: const Color(0xFF17233D), elevation: 0, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                        child: const Text('Confirm Investment', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
+                        child: Text(_joiningPammId == pool.id ? 'Joining…' : 'Confirm Investment', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
@@ -3174,7 +4106,7 @@ class _PammPageState extends State<PammPage> {
     padding: const EdgeInsets.only(bottom: 6),
     child: Text(
       label,
-      style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .35),
+      style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: .35),
     ),
   );
 
@@ -3201,11 +4133,11 @@ class _PammPageState extends State<PammPage> {
   Widget _joinPoolValue(String label, String value, {Color? valueColor}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w500)),
+      Text(label, style: TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w400)),
       const SizedBox(height: 4),
       Text(
         value,
-        style: TextStyle(color: valueColor ?? _text, fontSize: 12.5, fontWeight: FontWeight.w800),
+        style: TextStyle(color: valueColor ?? _text, fontSize: 12.5, fontWeight: FontWeight.w600),
       ),
     ],
   );

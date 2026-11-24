@@ -100,11 +100,17 @@ class AuthApi {
     return _baseUri.resolve(cleanPath);
   }
 
+  Uri _rootApiUri(String path) {
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return _baseUri.replace(path: '/api/').resolve(cleanPath);
+  }
+
   Future<Map<String, dynamic>> _request(
     String method,
     String path, {
     Map<String, dynamic>? body,
     bool encryptProfileBody = false,
+    bool useRootApi = false,
   }) async {
     await restoreSession();
     final headers = _headers;
@@ -153,7 +159,10 @@ class AuthApi {
       headers['Content-Type'] = 'application/json';
     }
 
-    final request = http.Request(method, _uri(path))..headers.addAll(headers);
+    final request = http.Request(
+      method,
+      useRootApi ? _rootApiUri(path) : _uri(path),
+    )..headers.addAll(headers);
     if (wireBody != null) request.body = jsonEncode(wireBody);
     final streamed = await _client
         .send(request)
@@ -1165,8 +1174,164 @@ class AuthApi {
         if (rate is num && rate > 0) return rate.toDouble();
       } catch (_) {}
     }
-    return 83.5;
+    return 0.0;
   }
+
+  /// Fetch PAMM account lists from the root /api/pamm routes used by the web client.
+  Future<Map<String, dynamic>> getPammManaged() =>
+      _request('GET', 'pamm/managed/', useRootApi: true);
+
+  Future<Map<String, dynamic>> getPammAvailable() =>
+      _request('GET', 'pamm/available/', useRootApi: true);
+
+  Future<Map<String, dynamic>> getPammInvestments() =>
+      _request('GET', 'pamm/investments/', useRootApi: true);
+
+  Future<Map<String, dynamic>> getPammInvestors(int pammId) =>
+      _request(
+        'GET',
+        'pamm/$pammId/investors/',
+        useRootApi: true,
+      );
+
+  Future<Map<String, dynamic>> syncPammEquity(int pammId) =>
+      _request(
+        'POST',
+        'pamm/$pammId/sync-equity/',
+        useRootApi: true,
+      );
+
+  Future<Map<String, dynamic>> setPammPoolEnabled({
+    required int pammId,
+    required bool enabled,
+  }) =>
+      _request(
+        'POST',
+        'pamm/disable/',
+        body: {'pamm_id': pammId, 'enabled': enabled},
+        useRootApi: true,
+      );
+
+  Future<Map<String, dynamic>> createPammAccount({
+    required String name,
+    required double profitShare,
+    required int leverage,
+    required String masterPassword,
+    required String investorPassword,
+  }) =>
+      _request(
+        'POST',
+        'pamm/create/',
+        useRootApi: true,
+        body: {
+          'name': name.trim(),
+          'profit_share': profitShare,
+          'leverage': leverage,
+          'master_password': masterPassword,
+          'invest_password': investorPassword,
+        },
+      );
+
+  Future<Map<String, dynamic>> investInPamm({
+    required int pammId,
+    required String investorName,
+  }) =>
+      _request(
+        'POST',
+        'pamm/invest/',
+        useRootApi: true,
+        body: {'pamm_id': pammId, 'investor_name': investorName.trim()},
+      );
+
+  Future<Map<String, dynamic>> submitPammDeposit({
+    required String pammId,
+    required double amountUsd,
+    required String method,
+    required List<int> proofBytes,
+    required String proofFileName,
+    required bool isManager,
+  }) async {
+    if (method != 'manual' && method != 'usdt') {
+      throw ArgumentError.value(method, 'method');
+    }
+    if (amountUsd <= 0 || proofBytes.isEmpty) {
+      throw ArgumentError('A positive amount and payment proof are required.');
+    }
+
+    await restoreSession();
+    final headers = _headers;
+    final responseKeyPair = _createResponseEncryptionKeyPair();
+    headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
+
+    final request = http.MultipartRequest(
+      'POST',
+      _rootApiUri(isManager ? 'pamm/manager-deposit/' : 'pamm/deposit/'),
+    )..headers.addAll(headers);
+    request.fields['pamm_id'] = pammId;
+    request.fields['amount'] = amountUsd.toStringAsFixed(2);
+    request.fields['method'] = method;
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'proof',
+        proofBytes,
+        filename: proofFileName,
+      ),
+    );
+
+    final streamed = await _client.send(request).timeout(
+      const Duration(seconds: 75),
+    );
+    final response = await http.Response.fromStream(streamed);
+    _captureSession(response);
+    dynamic decoded;
+    try {
+      decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+    } on FormatException {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      throw AuthApiException(
+        'The server returned an invalid PAMM deposit response.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    dynamic payload = decoded;
+    if (decoded is Map && decoded['encrypted'] == true) {
+      payload = _decryptResponseEnvelope(
+        decoded.cast<String, dynamic>(),
+        responseKeyPair.keyId,
+      );
+    } else {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+    }
+    final data = payload is Map<String, dynamic>
+        ? payload
+        : <String, dynamic>{'data': payload};
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AuthApiException(
+        _messageFrom(data),
+        statusCode: response.statusCode,
+        data: data,
+      );
+    }
+    return data;
+  }
+
+  Future<Map<String, dynamic>> requestPammWithdrawal({
+    required int pammId,
+    required double amount,
+    required String method,
+    required bool isManager,
+  }) =>
+      _request(
+        'POST',
+        isManager ? 'pamm/manager-withdraw/' : 'pamm/withdraw/',
+        useRootApi: true,
+        body: {
+          'pamm_id': pammId,
+          'amount': amount,
+          'method': method,
+        },
+      );
 
   /// Withdrawal information for an account
   Future<Map<String, dynamic>> getWithdrawalInfo(String accountId) async {
@@ -1342,13 +1507,13 @@ class AuthApi {
     String? zipCode,
   }) {
     final body = <String, dynamic>{
-      if (phoneNumber != null) 'phone_number': phoneNumber,
-      if (dateOfBirth != null) 'dob': dateOfBirth,
-      if (address != null) 'address': address,
-      if (city != null) 'city': city,
-      if (state != null) 'state': state,
-      if (country != null) 'country': country,
-      if (zipCode != null) 'zip_code': zipCode,
+      'phone_number': ?phoneNumber,
+      'dob': ?dateOfBirth,
+      'address': ?address,
+      'city': ?city,
+      'state': ?state,
+      'country': ?country,
+      'zip_code': ?zipCode,
     };
     return _request(
       'POST',
@@ -1375,8 +1540,8 @@ class AuthApi {
         body: {
           'bank_name': bankName,
           'account_number': accountNumber,
-          if (branchName != null) 'branch_name': branchName,
-          if (ifscCode != null) 'ifsc_code': ifscCode,
+          'branch_name': ?branchName,
+          'ifsc_code': ?ifscCode,
         },
         encryptProfileBody: true,
       );

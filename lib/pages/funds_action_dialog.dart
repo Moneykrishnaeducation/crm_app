@@ -47,7 +47,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
   String? _uploadedProofName;
   List<int>? _proofBytes;
   int _selectedAccountIndex = 0;
-  double _usdInrRate = 94.29;
+  double _usdInrRate = 0;
   Map<String, dynamic>? _withdrawalInfo;
   Map<String, dynamic>? _bankDetails;
   Map<String, dynamic>? _cryptoDetails;
@@ -631,7 +631,9 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '1 USD = 94.29 INR',
+            _usdInrRate > 0
+                ? '1 USD = ${_usdInrRate.toStringAsFixed(2)} INR'
+                : 'Exchange rate unavailable',
             style: TextStyle(
               color: textPrimary,
               fontSize: 14.5,
@@ -2116,8 +2118,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     if (_amount.text.isEmpty) return '0.00';
     if (_currency == 0 && _method != 1) return _amount.text;
     final val = double.tryParse(_amount.text.replaceAll(',', '')) ?? 0.0;
-    final rate = _usdInrRate > 0 ? _usdInrRate : 94.29;
-    return (val / rate).toStringAsFixed(2);
+    if (_usdInrRate <= 0) return '--';
+    return (val / _usdInrRate).toStringAsFixed(2);
   }
 
   void _submit(bool withdrawal) async {
@@ -2131,6 +2133,11 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     }
     if (withdrawal && parsedAmount < 10) {
       showAppMessage('Enter a withdrawal amount of at least \$10.');
+      return;
+    }
+
+    if (!withdrawal && _method != 2 && _usdInrRate <= 0) {
+      showAppMessage('The USD to INR exchange rate is unavailable. Please try again shortly.');
       return;
     }
 
@@ -2173,9 +2180,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
 
     try {
       if (_method == 0) {
-        final rate = _usdInrRate > 0 ? _usdInrRate : 83.5;
-        final amountUsd = _currency == 1 ? parsedAmount / rate : parsedAmount;
-        final amountInr = _currency == 0 ? parsedAmount * rate : parsedAmount;
+        final amountUsd = _currency == 1 ? parsedAmount / _usdInrRate : parsedAmount;
+        final amountInr = _currency == 0 ? parsedAmount * _usdInrRate : parsedAmount;
         final res = await AuthApi.instance.initiateCheesePay(
           accountId: accId,
           amountUsd: amountUsd,
@@ -2188,8 +2194,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           refId = 'VTX-DEP-${res['transaction_id']}';
         }
       } else if (_method == 1) {
-        final rate = _usdInrRate > 0 ? _usdInrRate : 83.5;
-        final amountUsd = parsedAmount / rate; // Manual deposit amount is entered in INR.
+        final amountUsd = parsedAmount / _usdInrRate; // Manual deposit amount is entered in INR.
         final res = await AuthApi.instance.submitManualDeposit(
           accountId: accId,
           amountUsd: amountUsd,

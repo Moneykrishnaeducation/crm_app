@@ -2058,7 +2058,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
 
   Widget _fundButton(
     String label, {
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     bool isLoading = false,
   }) =>
       SizedBox(

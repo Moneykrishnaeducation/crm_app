@@ -433,6 +433,23 @@ class AuthApi {
     return const [];
   }
 
+  /// Fetch cash-flow totals and persisted MT5 equity snapshots for a report.
+  Future<Map<String, dynamic>> getTradingAccountReportData(
+    String accountId, {
+    required String fromDate,
+    required String toDate,
+  }) {
+    final id = Uri.encodeComponent(accountId);
+    final query = Uri(queryParameters: {
+      'from_date': fromDate,
+      'to_date': toDate,
+    }).query;
+    return _request(
+      'GET',
+      'trading-account/$id/report-data/?$query',
+    );
+  }
+
   Future<Map<String, dynamic>> closePosition({
     required String accountId,
     required String ticket,

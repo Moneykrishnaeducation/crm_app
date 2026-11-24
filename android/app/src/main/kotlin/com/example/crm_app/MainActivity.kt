@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.os.Build
 import android.view.Display
 import android.view.WindowManager
+import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.vtindex.crm.R
@@ -85,6 +86,28 @@ class MainActivity : FlutterFragmentActivity() {
                 "stopLiveUpdate" -> {
                     val id = call.argument<Int>("id") ?: 7777
                     cancelLiveNotification(id)
+                    result.success(true)
+                }
+                "startPositionService" -> {
+                    try {
+                        val serviceIntent = Intent(this, TradeLiveUpdateService::class.java).apply {
+                            putExtra("url", call.argument<String>("url"))
+                            putExtra("accountId", call.argument<String>("accountId"))
+                            putExtra("positionId", call.argument<String>("positionId"))
+                            putExtra("symbol", call.argument<String>("symbol"))
+                            putExtra("side", call.argument<String>("side"))
+                            putExtra("lots", call.argument<String>("lots"))
+                            putExtra("startedAt", call.argument<Long>("startedAt") ?: System.currentTimeMillis())
+                        }
+                        ContextCompat.startForegroundService(this, serviceIntent)
+                        result.success(true)
+                    } catch (error: Exception) {
+                        result.error("POSITION_SERVICE_START_FAILED", error.message, null)
+                    }
+                }
+                "stopPositionService" -> {
+                    stopService(Intent(this, TradeLiveUpdateService::class.java))
+                    cancelLiveNotification(7777)
                     result.success(true)
                 }
                 else -> result.notImplemented()

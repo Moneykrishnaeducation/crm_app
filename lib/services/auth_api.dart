@@ -1025,6 +1025,10 @@ class AuthApi {
   Future<List<Map<String, dynamic>>> getUserMamAccounts() async {
     final response = await _request('GET', 'user-mam-accounts/');
     dynamic data = response;
+    if (data is List) return data
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
     if (data is Map && data['results'] is List) data = data['results'];
     if (data is Map && data['data'] is List) data = data['data'];
     if (data is! List) {

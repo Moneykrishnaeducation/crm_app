@@ -1675,7 +1675,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           _detailCardRow(LucideIcons.calendar, 'Date of Birth', _dob),
           _detailCardRow(LucideIcons.mail, 'Email Address', _email),
           _detailCardRow(LucideIcons.phone, 'Phone Number', _phone),
-          _detailCardRow(LucideIcons.calendar, 'Date of Birth', _dob),
           _detailCardRow(LucideIcons.home, 'Residential Address', _address),
           _detailCardRow(LucideIcons.mapPin, 'City', _city),
           _detailCardRow(LucideIcons.map, 'State', _state),
@@ -1686,7 +1685,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     );
   }
 
-  Widget _detailCardRow(IconData icon, String label, String value, {bool verified = false}) {
+  Widget _detailCardRow(IconData icon, String label, String value) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -1711,10 +1710,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(color: _c.muted, fontSize: 11),
-                ),
+                Text(label, style: TextStyle(color: _c.muted, fontSize: 11)),
                 const SizedBox(height: 2),
                 Text(
                   value,
@@ -1727,29 +1723,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ],
             ),
           ),
-          if (verified)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: _c.greenLight,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.check, color: _profileGreen, size: 11),
-                  SizedBox(width: 3),
-                  Text(
-                    'Verified',
-                    style: TextStyle(
-                      color: _profileGreen,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

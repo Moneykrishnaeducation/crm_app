@@ -7,7 +7,6 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -158,7 +157,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   @override
   void initState() {
     super.initState();
-    _loadSavedProfileImages();
     _loadProfileFromApi();
   }
 
@@ -263,11 +261,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         .join(' ');
   }
 
-  Future<String?> _cacheRemoteImage(
-    Uint8List bytes,
-    String fileName,
-    String preferenceKey,
-  ) async {
+  Future<String?> _cacheRemoteImage(Uint8List bytes, String fileName) async {
     if (bytes.isEmpty) return null;
     final directory = await getApplicationDocumentsDirectory();
     final imageDirectory = Directory('${directory.path}/profile_images');
@@ -276,8 +270,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     }
     final file = File('${imageDirectory.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(preferenceKey, file.path);
     return file.path;
   }
 
@@ -299,7 +291,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         try {
           final bytes = await AuthApi.instance.getProfileImageBytes();
           remoteAvatarPath = await _cacheRemoteImage(
-            bytes, 'profile_avatar_remote.webp', 'profile_avatar_path',
+            bytes, 'profile_avatar_remote.webp',
           );
         } catch (error) {
           debugPrint('Profile image fetch skipped: $error');
@@ -308,7 +300,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       try {
         final bytes = await AuthApi.instance.getProfileBannerBytes();
         remoteBannerPath = await _cacheRemoteImage(
-          bytes, 'profile_banner_remote.webp', 'profile_banner_path',
+          bytes, 'profile_banner_remote.webp',
         );
       } catch (error) {
         // A missing banner is normal for a new profile.
@@ -355,19 +347,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     }
   }
 
-  Future<void> _loadSavedProfileImages() async {
-    final preferences = await SharedPreferences.getInstance();
-    final avatarPath = preferences.getString('profile_avatar_path');
-    final bannerPath = preferences.getString('profile_banner_path');
-    final avatarExists = avatarPath != null && await File(avatarPath).exists();
-    final bannerExists = bannerPath != null && await File(bannerPath).exists();
-    if (!mounted) return;
-    setState(() {
-      _profileImagePath ??= avatarExists ? avatarPath : null;
-      _bannerImagePath ??= bannerExists ? bannerPath : null;
-    });
-  }
-
   Future<void> _pickAndSaveImage({
     required ImageSource source,
     required bool isBanner,
@@ -401,15 +380,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       final savedFile = await File(pickedImage.path).copy(
         '${imageFolder.path}/${imageName}_${DateTime.now().millisecondsSinceEpoch}.$extension',
       );
-
-      final preferences = await SharedPreferences.getInstance();
-      final preferenceKey = isBanner ? 'profile_banner_path' : 'profile_avatar_path';
-      final previousPath = preferences.getString(preferenceKey);
-      await preferences.setString(preferenceKey, savedFile.path);
-      if (previousPath != null && previousPath != savedFile.path) {
-        final previousFile = File(previousPath);
-        if (await previousFile.exists()) await previousFile.delete();
-      }
 
       if (!mounted) return;
       setState(() {

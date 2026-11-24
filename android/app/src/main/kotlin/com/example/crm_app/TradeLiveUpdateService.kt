@@ -131,7 +131,7 @@ class TradeLiveUpdateService : Service() {
             val lots = prefs.getString("lots", "0.00") ?: "0.00"
             val account = prefs.getString("accountId", "") ?: ""
             val sign = if (profit >= 0) "+" else "-"
-            val pnl = "$sign$" + DecimalFormat("0.00").format(kotlin.math.abs(profit))
+            val pnl = sign + 36.toChar() + DecimalFormat("0.00").format(kotlin.math.abs(profit))
             val body = "Account #$account · Ticket #$positionId · P/L $pnl · Price " +
                 DecimalFormat("0.00000").format(currentPrice) +
                 " (open " + DecimalFormat("0.00000").format(openPrice) + ")"
@@ -245,7 +245,7 @@ class TradeLiveUpdateService : Service() {
         }
     }
 
-    override fun onDestroy() {
+    override fun onTimeout(startId: Int, fgsType: Int) {\n        stopSelf(startId)\n    }\n\n    override fun onDestroy() {
         executor?.shutdownNow()
         executor = null
         super.onDestroy()

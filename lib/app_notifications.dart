@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -73,6 +74,12 @@ class AppNotificationCenter {
   bool _nativePositionServiceActive = false;
   int _positionMonitorRevision = 0;
   int _nextNotificationId = 1000;
+  Timer? _portfolioMonitorTimer;
+  bool _portfolioPollInFlight = false;
+  bool _portfolioNativeServiceActive = false;
+  bool _portfolioMonitorEnabled = false;
+  int _portfolioMonitorRevision = 0;
+  List<Map<String, dynamic>> _portfolioAccounts = <Map<String, dynamic>>[];
 
   final ValueNotifier<List<AppNotificationItem>> notificationsNotifier =
       ValueNotifier<List<AppNotificationItem>>([]);
@@ -261,6 +268,8 @@ class AppNotificationCenter {
     return 0;
   }
 
+  /// Starts portfolio-wide monitoring automatically; the legacy position entry
+  /// point delegates here so older callers cannot accidentally track one ticket.
   Future<bool> startPositionMonitoring({
     required String accountId,
     required String positionId,
@@ -268,45 +277,50 @@ class AppNotificationCenter {
     required bool isBuy,
     required double lots,
     required String openTime,
-  }) async {
-    await stopPositionMonitoring();
-    final revision = ++_positionMonitorRevision;
-    _trackedAccountId = accountId;
-    _trackedPositionSymbol = symbol;
-    _trackedPositionSide = isBuy ? 'BUY' : 'SELL';
-    _trackedPositionLots = lots;
-    _trackedPositionStartedAt = DateTime.tryParse(openTime.replaceAll('.', '-')) ?? DateTime.now();
-    trackedPositionNotifier.value = positionId;
-    _lastPositionPollSucceeded = false;
-    await _refreshTrackedPosition(revision: revision);
-    if (!_lastPositionPollSucceeded || trackedPositionNotifier.value == null || revision != _positionMonitorRevision) {
-      await stopPositionMonitoring();
-      return false;
-    }
-    // Start the Android service while the app is still foregrounded. Android
-    // restricts background service launches, so waiting until onPause is too late
-    // on some devices. The service then owns polling in both app states.
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      final nativeStarted = await _startNativePositionService();
-      if (revision != _positionMonitorRevision ||
-          trackedPositionNotifier.value == null) {
+  }) => startPortfolioMonitoring();
+
+  Future<bool> startPortfolioMonitoring() async {
+    if (!AuthApi.instance.hasToken) await AuthApi.instance.restoreSession();
+    if (!AuthApi.instance.hasToken) return false;
+    final revision = ++_portfolioMonitorRevision;
+    try {
+      final config = await AuthApi.instance.getNativePortfolioMonitorConfig();
+      if (config == null || revision != _portfolioMonitorRevision) return false;
+      final decoded = jsonDecode(config['accountsJson'] ?? '[]');
+      _portfolioAccounts = decoded is List
+          ? decoded.whereType<Map>().map((row) => row.cast<String, dynamic>()).toList()
+          : <Map<String, dynamic>>[];
+      if (_portfolioAccounts.isEmpty) {
+        await stopPortfolioMonitoring();
         return false;
       }
-      if (nativeStarted) {
-        _nativePositionServiceActive = true;
-        return true;
-      }
-      debugPrint(
-        'AppNotificationCenter: native service did not start; '
-        'using foreground Dart polling fallback.',
-      );
-    }
+      _portfolioMonitorEnabled = true;
 
-    _positionMonitorTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _refreshTrackedPosition(revision: revision),
-    );
-    return true;
+      // Start while the Activity is visible. Android then owns polling even
+      // after the app is backgrounded or its Flutter engine is reclaimed.
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final started = await _nativeChannel.invokeMethod<bool>(
+          'startPositionService',
+          <String, dynamic>{...config, 'startedAt': DateTime.now().millisecondsSinceEpoch},
+        ) ?? false;
+        if (revision != _portfolioMonitorRevision) return false;
+        _portfolioNativeServiceActive = started;
+      }
+
+      await _refreshPortfolioPositions(revision: revision);
+      if (revision != _portfolioMonitorRevision) return false;
+      if (!_portfolioNativeServiceActive) {
+        _portfolioMonitorTimer?.cancel();
+        _portfolioMonitorTimer = Timer.periodic(
+          const Duration(seconds: 15),
+          (_) => _refreshPortfolioPositions(revision: revision),
+        );
+      }
+      return true;
+    } catch (error) {
+      debugPrint('AppNotificationCenter: portfolio monitor start failed: $error');
+      return false;
+    }
   }
 
   Future<void> _restoreNativePositionState() async {
@@ -315,163 +329,102 @@ class AppNotificationCenter {
       final state = await _nativeChannel.invokeMapMethod<String, dynamic>(
         'getPositionServiceState',
       );
-      if (state == null) return;
-      final positionId = state['positionId']?.toString();
-      final accountId = state['accountId']?.toString();
-      if (positionId == null || positionId.isEmpty || accountId == null || accountId.isEmpty) return;
-      _trackedAccountId = accountId;
-      _trackedPositionSymbol = state['symbol']?.toString() ?? 'Trade';
-      _trackedPositionSide = state['side']?.toString() ?? 'BUY';
-      _trackedPositionLots = _number(state['lots']);
-      final startedAt = state['startedAt'];
-      if (startedAt is num) {
-        _trackedPositionStartedAt = DateTime.fromMillisecondsSinceEpoch(startedAt.toInt());
-      }
-      trackedPositionNotifier.value = positionId;
-      _nativePositionServiceActive = true;
+      final accountsJson = state?['accountsJson']?.toString();
+      if (accountsJson == null || accountsJson.isEmpty) return;
+      final decoded = jsonDecode(accountsJson);
+      if (decoded is! List) return;
+      _portfolioAccounts = decoded.whereType<Map>()
+          .map((row) => row.cast<String, dynamic>()).toList();
+      _portfolioMonitorEnabled = _portfolioAccounts.isNotEmpty;
+      _portfolioNativeServiceActive = _portfolioMonitorEnabled;
     } catch (error) {
-      debugPrint('AppNotificationCenter: could not restore native tracking state: $error');
-    }
-  }
-
-  Future<bool> _startNativePositionService() async {
-    if (defaultTargetPlatform != TargetPlatform.android) return false;
-    final accountId = _trackedAccountId;
-    final positionId = trackedPositionNotifier.value;
-    if (accountId == null || positionId == null) return false;
-    try {
-      final config = await AuthApi.instance.getNativePositionMonitorConfig(accountId);
-      if (config == null) return false;
-      return await _nativeChannel.invokeMethod<bool>(
-            'startPositionService',
-            <String, dynamic>{
-              ...config,
-              'accountId': accountId,
-              'positionId': positionId,
-              'symbol': _trackedPositionSymbol ?? 'Trade',
-              'side': _trackedPositionSide ?? 'BUY',
-              'lots': _trackedPositionLots.toStringAsFixed(2),
-              'startedAt': _trackedPositionStartedAt.millisecondsSinceEpoch,
-            },
-          ) ??
-          false;
-    } catch (error) {
-      debugPrint('AppNotificationCenter: native position service unavailable: $error');
-      return false;
+      debugPrint('AppNotificationCenter: could not restore portfolio tracking state: $error');
     }
   }
 
   Future<void> pausePositionMonitoring() async {
-    if (trackedPositionNotifier.value == null ||
-        defaultTargetPlatform != TargetPlatform.android ||
-        _nativePositionServiceActive) {
-      return;
-    }
-
-    // Do not cancel Dart polling until Android confirms that its foreground
-    // service has started. Previously a failed service start silently stopped
-    // all position refreshes as soon as the app was backgrounded.
-    final started = await _startNativePositionService();
-    if (started) {
-      _nativePositionServiceActive = true;
-      _positionMonitorTimer?.cancel();
-      _positionMonitorTimer = null;
-    } else {
-      debugPrint(
-        'AppNotificationCenter: background service unavailable; '
-        'retaining Dart polling as a best-effort fallback.',
-      );
-    }
+    if (!_portfolioMonitorEnabled || _portfolioNativeServiceActive ||
+        defaultTargetPlatform != TargetPlatform.android) return;
+    await startPortfolioMonitoring();
   }
 
   Future<void> resumePositionMonitoring() async {
-    if (trackedPositionNotifier.value == null) return;
-    if (_positionMonitorTimer != null && !_nativePositionServiceActive) return;
-
-    final revision = _positionMonitorRevision;
-    if (defaultTargetPlatform == TargetPlatform.android &&
-        _nativePositionServiceActive) {
-      // The Flutter UI has resumed, so hand tracking back from the service.
-      try {
-        await _nativeChannel.invokeMethod('stopPositionService');
-      } catch (error) {
-        debugPrint('AppNotificationCenter: could not stop native service: $error');
-      }
-      _nativePositionServiceActive = false;
+    if (!_portfolioMonitorEnabled) {
+      await startPortfolioMonitoring();
+      return;
     }
-    await _refreshTrackedPosition(revision: revision);
-    if (trackedPositionNotifier.value != null &&
-        revision == _positionMonitorRevision &&
-        _positionMonitorTimer == null) {
-      _positionMonitorTimer = Timer.periodic(
-        const Duration(seconds: 15),
-        (_) => _refreshTrackedPosition(revision: revision),
-      );
+    if (_portfolioNativeServiceActive) {
+      await _refreshPortfolioPositions(revision: _portfolioMonitorRevision);
+    } else if (_portfolioMonitorTimer == null) {
+      await startPortfolioMonitoring();
     }
   }
 
-  Future<void> stopPositionMonitoring() async {
-    _positionMonitorRevision++;
-    _positionMonitorTimer?.cancel();
-    _positionMonitorTimer = null;
-    final wasTracking = trackedPositionNotifier.value != null;
-    _nativePositionServiceActive = false;
-    trackedPositionNotifier.value = null;
-    _trackedAccountId = null;
-    _trackedPositionSymbol = null;
-    _trackedPositionSide = null;
-    _trackedPositionLots = 0;
-    if (wasTracking) {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        try {
-          await _nativeChannel.invokeMethod('stopPositionService');
-        } catch (_) {}
-      }
-      await stopLiveUpdate(7777);
+  Future<void> stopPortfolioMonitoring() async {
+    _portfolioMonitorRevision++;
+    _portfolioMonitorTimer?.cancel();
+    _portfolioMonitorTimer = null;
+    _portfolioMonitorEnabled = false;
+    _portfolioNativeServiceActive = false;
+    _portfolioAccounts = <Map<String, dynamic>>[];
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try { await _nativeChannel.invokeMethod('stopPositionService'); } catch (_) {}
     }
+    await stopLiveUpdate(7777);
   }
 
-  Future<void> _refreshTrackedPosition({required int revision}) async {
-    final accountId = _trackedAccountId;
-    final positionId = trackedPositionNotifier.value;
-    if (_positionPollInFlight || accountId == null || positionId == null) return;
-    if (!AuthApi.instance.hasToken) return;
-    _positionPollInFlight = true;
+  Future<void> stopPositionMonitoring() => stopPortfolioMonitoring();
+
+  Future<void> _refreshPortfolioPositions({required int revision}) async {
+    if (_portfolioPollInFlight || revision != _portfolioMonitorRevision ||
+        _portfolioAccounts.isEmpty || !AuthApi.instance.hasToken) return;
+    _portfolioPollInFlight = true;
     try {
-      final positions = await AuthApi.instance.getOpenPositions(accountId);
-      if (revision != _positionMonitorRevision) return;
-      Map<String, dynamic>? position;
-      for (final item in positions) {
-        final id = (item['ticket'] ?? item['position_ticket'] ?? item['position_id'] ?? item['id'] ?? '').toString();
-        if (id == positionId) { position = item; break; }
-      }
-      if (position == null) { await stopPositionMonitoring(); return; }
-      _lastPositionPollSucceeded = true;
-      final profit = _number(position['profit']);
-      final currentPrice = _number(position['current_price'] ?? position['currentPrice']);
-      final openPrice = _number(position['open_price'] ?? position['openPrice']);
-      final sign = profit >= 0 ? '+' : '-';
-      final currencySymbol = String.fromCharCode(36);
-      final pnl = sign + currencySymbol + profit.abs().toStringAsFixed(2);
-      final shortAmount = profit.abs().toStringAsFixed(0);
-      final shortText = sign + (shortAmount.length > 5 ? shortAmount.substring(0, 5) : shortAmount);
-      final title = (_trackedPositionSymbol ?? 'Trade') + ' ' + (_trackedPositionSide ?? '') + ' ' + _trackedPositionLots.toStringAsFixed(2);
-      final body = 'Account #' + accountId + ' | Ticket #' + positionId + ' | P/L ' + pnl + ' | Price ' + currentPrice.toStringAsFixed(5) + ' (open ' + openPrice.toStringAsFixed(5) + ')';
+      final results = await Future.wait(_portfolioAccounts.map((account) async {
+        final accountId = (account['accountId'] ?? '').toString();
+        if (accountId.isEmpty) return <Map<String, dynamic>>[];
+        try {
+          final rows = await AuthApi.instance.getOpenPositions(accountId);
+          return rows.map((position) => <String, dynamic>{
+            ...position,
+            '_accountId': accountId,
+            '_accountName': (account['accountName'] ?? 'Trading account').toString(),
+            '_isDemo': account['isDemo'] == true,
+          }).toList();
+        } catch (error) {
+          debugPrint('Portfolio monitor: account $accountId refresh failed: $error');
+          return <Map<String, dynamic>>[];
+        }
+      }));
+      if (revision != _portfolioMonitorRevision) return;
+      final demo = results.expand((rows) => rows).where((row) => row['_isDemo'] == true).toList();
+      final live = results.expand((rows) => rows).where((row) => row['_isDemo'] != true).toList();
+      double sum(List<Map<String, dynamic>> rows) => rows.fold<double>(
+        0, (total, row) => total + _number(row['profit']),
+      );
+      final demoPnl = sum(demo);
+      final livePnl = sum(live);
+      final totalPnl = demoPnl + livePnl;
+      String money(double value) => '${value >= 0 ? '+' : '-}$${value.abs().toStringAsFixed(2)}';
+      final body = <String>[
+        'DEMO ACCOUNTS · ${demo.length} positions · P/L ${money(demoPnl)}',
+        'LIVE ACCOUNTS · ${live.length} positions · P/L ${money(livePnl)}',
+      ].join('\n');
+      final short = 'D${demoPnl >= 0 ? '+' : '-}${demoPnl.abs().toStringAsFixed(0)} L${livePnl >= 0 ? '+' : '-}${livePnl.abs().toStringAsFixed(0)}';
       await updateLiveUpdate(
         id: 7777,
-        title: title,
+        title: 'VT Index · Portfolio Live',
         body: body,
-        subText: 'LIVE TRADE',
-        shortText: shortText,
-        colorHex: profit >= 0 ? '#10B981' : '#EF4444',
+        subText: 'DEMO + LIVE POSITIONS',
+        shortText: short,
+        colorHex: totalPnl >= 0 ? '#10B981' : '#EF4444',
         iconType: 'trade',
-        usesChronometer: true,
-        startedAtMillis: _trackedPositionStartedAt.millisecondsSinceEpoch,
+        usesChronometer: false,
       );
     } catch (error) {
-      debugPrint('AppNotificationCenter: live position refresh failed: ' + error.toString());
+      debugPrint('AppNotificationCenter: portfolio refresh failed: $error');
     } finally {
-      _positionPollInFlight = false;
+      _portfolioPollInFlight = false;
     }
   }
   static const MethodChannel _nativeChannel = MethodChannel(

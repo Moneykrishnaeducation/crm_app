@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 import '../app_notifications.dart';
+import '../services/auth_api.dart';
 import 'dart:math' as math;
 
 import 'package:image_picker/image_picker.dart';
@@ -113,35 +115,41 @@ class BrokerProfilePage extends StatefulWidget {
 class _BrokerProfilePageState extends State<BrokerProfilePage> {
   int _selectedTabIndex = 0; // Overview, Personal Details, Verification, Payment Methods
 
-  // Mutable user profile details
-  String _name = 'INR-DEVOP B';
-  String _email = 'iyyanar@vtindex.com';
-  String _phone = '7894561235';
-  String _location = 'kattu edaiyar, india';
-  String _dob = '24 Aug 2003';
-  String _gender = 'Male';
-  String _nationality = 'Indian (IN)';
-  String _taxResidency = 'India (PAN: *****8921J)';
-  String _address = 'No 3 south street kattu edaiyar villupuram, kattu edaiyar, tamil nadu, india, 605751';
-  String _occupation = 'Software Engineer';
-  Color _avatarBg = const Color(0xFF0875F5); // VTIndex blue
+  // Values below are populated from the authenticated Django profile endpoint.
+  String _name = '—';
+  String _email = '—';
+  String _phone = '';
+  String _location = '';
+  String _dob = '';
+  String _gender = '';
+  String _nationality = '';
+  String _taxResidency = '';
+  String _address = '';
+  String _occupation = '';
+  String _city = '';
+  String _state = '';
+  String _country = '';
+  String _zipCode = '';
+
+  Color _avatarBg = const Color(0xFF0875F5);
   String _bannerTheme = 'Cosmic Landscape';
   String? _profileImagePath;
   String? _bannerImagePath;
   final ImagePicker _imagePicker = ImagePicker();
+  bool _isLoadingProfile = true;
+  bool _isSavingProfile = false;
 
-  // Mutable Payment Methods details
-  String _bankName = 'NONE BANK';
-  String _bankAccountNumber = '789456123456';
-  String _bankIfscCode = 'IDIB000R101D';
-  String _bankBranch = 'Kallakurichi';
-  String _bankHolder = 'INR-DEVOP B';
-  final String _bankStatus = 'Connected';
+  String _bankName = '—';
+  String _bankAccountNumber = '—';
+  String _bankIfscCode = '—';
+  String _bankBranch = '—';
+  String _bankHolder = '—';
+  String _bankStatus = 'Not submitted';
 
-  String _cryptoWalletAddress = '123456789asdfghjklrgq094i50i3i45kjdfjweir099iwe9f';
-  String _cryptoCurrency = 'UNANG';
-  String _cryptoNetwork = 'TRON (TRC20)';
-  final String _cryptoStatus = 'Connected';
+  String _cryptoWalletAddress = '—';
+  String _cryptoCurrency = '—';
+  String _cryptoNetwork = 'Not provided by API';
+  String _cryptoStatus = 'Not submitted';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   _ProfileColors get _c => _ProfileColors.of(context);
@@ -150,6 +158,141 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   void initState() {
     super.initState();
     _loadSavedProfileImages();
+    _loadProfileFromApi();
+  }
+
+  Map<String, dynamic> _profileMap(Map<String, dynamic> response) {
+    dynamic value = response;
+    for (var depth = 0; depth < 4 && value is Map; depth++) {
+      final map = value.cast<String, dynamic>();
+      if (map['user'] is Map) {
+        return (map['user'] as Map).cast<String, dynamic>();
+      }
+      if (map['profile'] is Map) {
+        return (map['profile'] as Map).cast<String, dynamic>();
+      }
+      if (map['data'] is Map) {
+        value = map['data'];
+        continue;
+      }
+      return map;
+    }
+    return <String, dynamic>{};
+  }
+
+  String _stringValue(dynamic value, {String fallback = ''}) {
+    if (value == null) return fallback;
+    final text = value.toString().trim();
+    return text.isEmpty ? fallback : text;
+  }
+
+  String _formatDateForForm(dynamic value) {
+    final raw = _stringValue(value);
+    if (raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    return '${parsed.day.toString().padLeft(2, '0')}-'
+        '${parsed.month.toString().padLeft(2, '0')}-${parsed.year}';
+  }
+
+  String _statusLabel(dynamic value) {
+    final raw = _stringValue(value, fallback: 'not submitted')
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ');
+    return raw
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  Future<String?> _cacheRemoteImage(
+    Uint8List bytes,
+    String fileName,
+    String preferenceKey,
+  ) async {
+    if (bytes.isEmpty) return null;
+    final directory = await getApplicationDocumentsDirectory();
+    final imageDirectory = Directory('${directory.path}/profile_images');
+    if (!await imageDirectory.exists()) {
+      await imageDirectory.create(recursive: true);
+    }
+    final file = File('${imageDirectory.path}/$fileName');
+    await file.writeAsBytes(bytes, flush: true);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(preferenceKey, file.path);
+    return file.path;
+  }
+
+  Future<void> _loadProfileFromApi() async {
+    try {
+      final responses = await Future.wait<Map<String, dynamic>>([
+        AuthApi.instance.getProfile(),
+        AuthApi.instance.getBankDetails(),
+        AuthApi.instance.getCryptoDetails(),
+      ]);
+
+      final profile = _profileMap(responses[0]);
+      final bank = _profileMap(responses[1]);
+      final crypto = _profileMap(responses[2]);
+
+      String? remoteAvatarPath;
+      String? remoteBannerPath;
+      if (_stringValue(profile['profile_pic']).isNotEmpty) {
+        try {
+          final bytes = await AuthApi.instance.getProfileImageBytes();
+          remoteAvatarPath = await _cacheRemoteImage(
+            bytes, 'profile_avatar_remote.webp', 'profile_avatar_path',
+          );
+        } catch (error) {
+          debugPrint('Profile image fetch skipped: $error');
+        }
+      }
+      try {
+        final bytes = await AuthApi.instance.getProfileBannerBytes();
+        remoteBannerPath = await _cacheRemoteImage(
+          bytes, 'profile_banner_remote.webp', 'profile_banner_path',
+        );
+      } catch (error) {
+        // A missing banner is normal for a new profile.
+        debugPrint('Profile banner not available: $error');
+      }
+
+      final city = _stringValue(profile['city']);
+      final country = _stringValue(profile['country']);
+      if (!mounted) return;
+      setState(() {
+        _name = _stringValue(profile['name'], fallback: '—');
+        _email = _stringValue(profile['email'], fallback: '—');
+        _phone = _stringValue(profile['phone_number'] ?? profile['phone']);
+        _dob = _formatDateForForm(profile['dob']);
+        _address = _stringValue(profile['address']);
+        _city = city;
+        _state = _stringValue(profile['state']);
+        _country = country;
+        _zipCode = _stringValue(profile['zip_code']);
+        _location = [city, country].where((part) => part.isNotEmpty).join(', ');
+        _bankName = _stringValue(bank['bank_name'], fallback: '—');
+        _bankAccountNumber = _stringValue(bank['account_number'], fallback: '—');
+        _bankIfscCode = _stringValue(bank['ifsc_code'], fallback: '—');
+        _bankBranch = _stringValue(bank['branch_name'], fallback: '—');
+        _bankHolder = '—'; // Bank API does not expose an account-holder field.
+        _bankStatus = _statusLabel(bank['status']);
+        _cryptoWalletAddress = _stringValue(crypto['wallet_address'], fallback: '—');
+        _cryptoCurrency = _stringValue(crypto['currency'], fallback: '—');
+        _cryptoNetwork = 'Not provided by API';
+        _cryptoStatus = _statusLabel(crypto['status']);
+        if (remoteAvatarPath != null) _profileImagePath = remoteAvatarPath;
+        if (remoteBannerPath != null) _bannerImagePath = remoteBannerPath;
+      });
+    } catch (error) {
+      debugPrint('Profile API load failed: $error');
+      if (mounted) {
+        _showSnack('Unable to load your latest profile details. Pull to retry.');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingProfile = false);
+    }
   }
 
   Future<void> _loadSavedProfileImages() async {
@@ -160,8 +303,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     final bannerExists = bannerPath != null && await File(bannerPath).exists();
     if (!mounted) return;
     setState(() {
-      _profileImagePath = avatarExists ? avatarPath : null;
-      _bannerImagePath = bannerExists ? bannerPath : null;
+      _profileImagePath ??= avatarExists ? avatarPath : null;
+      _bannerImagePath ??= bannerExists ? bannerPath : null;
     });
   }
 
@@ -178,12 +321,19 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       );
       if (pickedImage == null) return;
 
+      // Upload first. Do not replace the existing preview or show success until
+      // Django has accepted and stored the image.
+      if (isBanner) {
+        await AuthApi.instance.uploadProfileBanner(pickedImage.path);
+      } else {
+        await AuthApi.instance.uploadProfileImage(pickedImage.path);
+      }
+
       final appDirectory = await getApplicationDocumentsDirectory();
       final imageFolder = Directory('${appDirectory.path}/profile_images');
       if (!await imageFolder.exists()) {
         await imageFolder.create(recursive: true);
       }
-
       final extension = pickedImage.path.contains('.')
           ? pickedImage.path.split('.').last.toLowerCase()
           : 'jpg';
@@ -196,12 +346,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       final preferenceKey = isBanner ? 'profile_banner_path' : 'profile_avatar_path';
       final previousPath = preferences.getString(preferenceKey);
       await preferences.setString(preferenceKey, savedFile.path);
-
       if (previousPath != null && previousPath != savedFile.path) {
         final previousFile = File(previousPath);
-        if (await previousFile.exists()) {
-          await previousFile.delete();
-        }
+        if (await previousFile.exists()) await previousFile.delete();
       }
 
       if (!mounted) return;
@@ -212,11 +359,15 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           _profileImagePath = savedFile.path;
         }
       });
-      _showSnack(isBanner ? 'Profile banner updated successfully' : 'Profile photo updated successfully');
+      _showSnack(isBanner
+          ? 'Profile banner uploaded successfully'
+          : 'Profile photo uploaded successfully');
     } catch (error) {
       if (!mounted) return;
-      _showSnack('Unable to update image. Please check app permissions and try again.');
-      debugPrint('Profile image picker error: $error');
+      _showSnack(error is AuthApiException
+          ? error.message
+          : 'Unable to upload image. Please try again.');
+      debugPrint('Profile image upload error: $error');
     }
   }
 
@@ -456,13 +607,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     final nameCtrl = TextEditingController(text: _name);
     final emailCtrl = TextEditingController(text: _email);
     final phoneCtrl = TextEditingController(text: _phone);
-    final locationCtrl = TextEditingController(text: _location);
-    final addressCtrl = TextEditingController(text: _address);
-    final occupationCtrl = TextEditingController(text: _occupation);
     final dobCtrl = TextEditingController(text: _dob);
-    final genderCtrl = TextEditingController(text: _gender);
-    final nationalityCtrl = TextEditingController(text: _nationality);
-    final taxResidencyCtrl = TextEditingController(text: _taxResidency);
+    final cityCtrl = TextEditingController(text: _city);
+    final stateCtrl = TextEditingController(text: _state);
+    final countryCtrl = TextEditingController(text: _country);
+    final addressCtrl = TextEditingController(text: _address);
+    final zipCtrl = TextEditingController(text: _zipCode);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -515,32 +665,51 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Update your personal profile and contact information.',
+                'Update the personal information supported by your verified account.',
                 style: TextStyle(color: _profileTextSecondary, fontSize: 12),
               ),
               const SizedBox(height: 16),
               Expanded(
                 child: ListView(
                   children: [
-                    _inputField(controller: nameCtrl, label: 'Full Legal Name', icon: LucideIcons.user),
+                    _inputField(
+                      controller: nameCtrl,
+                      label: 'Registered Name (read-only)',
+                      icon: LucideIcons.user,
+                      readOnly: true,
+                    ),
                     const SizedBox(height: 12),
-                    _inputField(controller: emailCtrl, label: 'Email Address', icon: LucideIcons.mail, keyboardType: TextInputType.emailAddress),
+                    _inputField(
+                      controller: emailCtrl,
+                      label: 'Registered Email (read-only)',
+                      icon: LucideIcons.mail,
+                      keyboardType: TextInputType.emailAddress,
+                      readOnly: true,
+                    ),
                     const SizedBox(height: 12),
-                    _inputField(controller: phoneCtrl, label: 'Phone Number', icon: LucideIcons.phone, keyboardType: TextInputType.phone),
+                    _inputField(
+                      controller: phoneCtrl,
+                      label: 'Phone Number',
+                      icon: LucideIcons.phone,
+                      keyboardType: TextInputType.phone,
+                    ),
                     const SizedBox(height: 12),
-                    _inputField(controller: dobCtrl, label: 'Date of Birth', icon: LucideIcons.calendar, keyboardType: TextInputType.datetime),
-                    const SizedBox(height: 12),
-                    _inputField(controller: genderCtrl, label: 'Gender', icon: LucideIcons.userRound),
-                    const SizedBox(height: 12),
-                    _inputField(controller: nationalityCtrl, label: 'Nationality', icon: LucideIcons.globe),
-                    const SizedBox(height: 12),
-                    _inputField(controller: locationCtrl, label: 'City & Country', icon: LucideIcons.mapPin),
+                    _inputField(
+                      controller: dobCtrl,
+                      label: 'Date of Birth (DD-MM-YYYY)',
+                      icon: LucideIcons.calendar,
+                      keyboardType: TextInputType.datetime,
+                    ),
                     const SizedBox(height: 12),
                     _inputField(controller: addressCtrl, label: 'Residential Address', icon: LucideIcons.home, maxLines: 2),
                     const SizedBox(height: 12),
-                    _inputField(controller: occupationCtrl, label: 'Occupation', icon: LucideIcons.briefcase),
+                    _inputField(controller: cityCtrl, label: 'City', icon: LucideIcons.mapPin),
                     const SizedBox(height: 12),
-                    _inputField(controller: taxResidencyCtrl, label: 'Tax Residency', icon: LucideIcons.landmark),
+                    _inputField(controller: stateCtrl, label: 'State', icon: LucideIcons.map),
+                    const SizedBox(height: 12),
+                    _inputField(controller: countryCtrl, label: 'Country', icon: LucideIcons.globe),
+                    const SizedBox(height: 12),
+                    _inputField(controller: zipCtrl, label: 'ZIP / Postal Code', icon: LucideIcons.mail),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -554,7 +723,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: () => Navigator.pop(ctx),
+                      onPressed: _isSavingProfile ? null : () => Navigator.pop(ctx),
                       child: const Text('Cancel', style: TextStyle(color: _profileTextSecondary, fontWeight: FontWeight.bold)),
                     ),
                   ),
@@ -569,23 +738,49 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 1,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _name = nameCtrl.text.trim().isEmpty ? _name : nameCtrl.text.trim();
-                          _email = emailCtrl.text.trim().isEmpty ? _email : emailCtrl.text.trim();
-                          _phone = phoneCtrl.text.trim().isEmpty ? _phone : phoneCtrl.text.trim();
-                          _location = locationCtrl.text.trim().isEmpty ? _location : locationCtrl.text.trim();
-                          _address = addressCtrl.text.trim().isEmpty ? _address : addressCtrl.text.trim();
-                          _occupation = occupationCtrl.text.trim().isEmpty ? _occupation : occupationCtrl.text.trim();
-                          _dob = dobCtrl.text.trim().isEmpty ? _dob : dobCtrl.text.trim();
-                          _gender = genderCtrl.text.trim().isEmpty ? _gender : genderCtrl.text.trim();
-                          _nationality = nationalityCtrl.text.trim().isEmpty ? _nationality : nationalityCtrl.text.trim();
-                          _taxResidency = taxResidencyCtrl.text.trim().isEmpty ? _taxResidency : taxResidencyCtrl.text.trim();
-                        });
-                        Navigator.pop(ctx);
-                        _showSnack('Personal details updated successfully');
+                      onPressed: _isSavingProfile ? null : () async {
+                        setState(() => _isSavingProfile = true);
+                        try {
+                          final result = await AuthApi.instance.updatePersonalInfo(
+                            phoneNumber: phoneCtrl.text.trim(),
+                            dateOfBirth: dobCtrl.text.trim(),
+                            address: addressCtrl.text.trim(),
+                            city: cityCtrl.text.trim(),
+                            state: stateCtrl.text.trim(),
+                            country: countryCtrl.text.trim(),
+                            zipCode: zipCtrl.text.trim(),
+                          );
+                          final updated = _profileMap(result);
+                          if (!mounted) return;
+                          setState(() {
+                            _phone = _stringValue(updated['phone'], fallback: phoneCtrl.text.trim());
+                            _dob = _formatDateForForm(updated['dob'] ?? dobCtrl.text.trim());
+                            _address = _stringValue(updated['address'], fallback: addressCtrl.text.trim());
+                            _city = _stringValue(updated['city'], fallback: cityCtrl.text.trim());
+                            _state = _stringValue(updated['state'], fallback: stateCtrl.text.trim());
+                            _country = _stringValue(updated['country'], fallback: countryCtrl.text.trim());
+                            _zipCode = _stringValue(updated['zip_code'], fallback: zipCtrl.text.trim());
+                            _location = [_city, _country].where((part) => part.isNotEmpty).join(', ');
+                          });
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _showSnack(_stringValue(result['message'], fallback: 'Profile information updated successfully'));
+                        } catch (error) {
+                          if (mounted) {
+                            _showSnack(error is AuthApiException
+                                ? error.message
+                                : 'Unable to update profile information.');
+                          }
+                        } finally {
+                          if (mounted) setState(() => _isSavingProfile = false);
+                        }
                       },
-                      child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: _isSavingProfile
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -599,13 +794,12 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     nameCtrl.dispose();
     emailCtrl.dispose();
     phoneCtrl.dispose();
-    locationCtrl.dispose();
-    addressCtrl.dispose();
-    occupationCtrl.dispose();
     dobCtrl.dispose();
-    genderCtrl.dispose();
-    nationalityCtrl.dispose();
-    taxResidencyCtrl.dispose();
+    cityCtrl.dispose();
+    stateCtrl.dispose();
+    countryCtrl.dispose();
+    addressCtrl.dispose();
+    zipCtrl.dispose();
   }
 
   Widget _inputField({
@@ -615,6 +809,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     int maxLines = 1,
     TextInputType? keyboardType,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    bool readOnly = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,6 +821,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          readOnly: readOnly,
           maxLines: maxLines,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
@@ -1735,7 +1931,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         details: [
           _PaymentDetailItem(label: 'Bank Name', value: _bankName),
           _PaymentDetailItem(label: 'Account Number', value: _bankAccountNumber, copyable: true),
-          _PaymentDetailItem(label: 'Beneficiary Name', value: _bankHolder),
           _PaymentDetailItem(label: 'IFSC / Routing Code', value: _bankIfscCode, copyable: true),
           _PaymentDetailItem(label: 'Branch Name', value: _bankBranch),
           const _PaymentDetailItem(label: 'Routing Channel', value: 'NEFT / RTGS / IMPS'),
@@ -1762,9 +1957,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         details: [
           _PaymentDetailItem(label: 'Wallet Address', value: _cryptoWalletAddress, copyable: true),
           _PaymentDetailItem(label: 'Settlement Currency', value: _cryptoCurrency),
-          _PaymentDetailItem(label: 'Network', value: _cryptoNetwork),
-          const _PaymentDetailItem(label: 'Whitelist Status', value: 'Whitelisted & Approved'),
-          const _PaymentDetailItem(label: 'Settlement Speed', value: 'Instant (~2 min)'),
         ],
         onEdit: () {
           Navigator.pop(context);
@@ -1818,16 +2010,22 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         currentAccountNumber: _bankAccountNumber,
         currentIfscCode: _bankIfscCode,
         currentBranchName: _bankBranch,
-        currentAccountHolder: _bankHolder,
-        onSave: (name, accNum, ifsc, branch, holder) {
+        onSave: (name, accNum, ifsc, branch) async {
+          final result = await AuthApi.instance.updateBankDetails(
+            bankName: name,
+            accountNumber: accNum,
+            ifscCode: ifsc,
+            branchName: branch,
+          );
+          if (!mounted) return;
           setState(() {
-            _bankName = name;
-            _bankAccountNumber = accNum;
-            _bankIfscCode = ifsc;
-            _bankBranch = branch;
-            _bankHolder = holder;
+            _bankName = _stringValue(result['bank_name'], fallback: name);
+            _bankAccountNumber = _stringValue(result['account_number'], fallback: accNum);
+            _bankIfscCode = _stringValue(result['ifsc_code'], fallback: ifsc);
+            _bankBranch = _stringValue(result['branch_name'], fallback: branch);
+            _bankStatus = _statusLabel(result['status'] ?? 'pending');
           });
-          _showSnack('Bank details updated successfully');
+          _showSnack('Bank details submitted. Awaiting admin approval.');
         },
       ),
     );
@@ -1841,14 +2039,18 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       builder: (context) => _EditCryptoDestinationModal(
         currentWalletAddress: _cryptoWalletAddress,
         currentCurrency: _cryptoCurrency,
-        currentNetwork: _cryptoNetwork,
-        onSave: (address, currency, network) {
+        onSave: (address, currency) async {
+          final result = await AuthApi.instance.updateCryptoDetails(
+            walletAddress: address,
+            currency: currency,
+          );
+          if (!mounted) return;
           setState(() {
-            _cryptoWalletAddress = address;
-            _cryptoCurrency = currency;
-            _cryptoNetwork = network;
+            _cryptoWalletAddress = _stringValue(result['wallet_address'], fallback: address);
+            _cryptoCurrency = _stringValue(result['currency'], fallback: currency);
+            _cryptoStatus = _statusLabel(result['status'] ?? 'pending');
           });
-          _showSnack('Crypto wallet updated successfully');
+          _showSnack('Crypto wallet submitted. Awaiting admin approval.');
         },
       ),
     );
@@ -3593,7 +3795,6 @@ class _EditBankDestinationModal extends StatefulWidget {
     required this.currentAccountNumber,
     required this.currentIfscCode,
     required this.currentBranchName,
-    required this.currentAccountHolder,
     required this.onSave,
   });
 
@@ -3601,8 +3802,7 @@ class _EditBankDestinationModal extends StatefulWidget {
   final String currentAccountNumber;
   final String currentIfscCode;
   final String currentBranchName;
-  final String currentAccountHolder;
-  final void Function(String name, String accNum, String ifsc, String branch, String holder) onSave;
+  final Future<void> Function(String name, String accountNumber, String ifsc, String branch) onSave;
 
   @override
   State<_EditBankDestinationModal> createState() => _EditBankDestinationModalState();
@@ -3613,16 +3813,15 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
   late final TextEditingController _accountController;
   late final TextEditingController _ifscController;
   late final TextEditingController _branchController;
-  late final TextEditingController _holderController;
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.currentBankName);
-    _accountController = TextEditingController(text: widget.currentAccountNumber);
-    _ifscController = TextEditingController(text: widget.currentIfscCode);
-    _branchController = TextEditingController(text: widget.currentBranchName);
-    _holderController = TextEditingController(text: widget.currentAccountHolder);
+    _nameController = TextEditingController(text: widget.currentBankName == '—' ? '' : widget.currentBankName);
+    _accountController = TextEditingController(text: widget.currentAccountNumber == '—' ? '' : widget.currentAccountNumber);
+    _ifscController = TextEditingController(text: widget.currentIfscCode == '—' ? '' : widget.currentIfscCode);
+    _branchController = TextEditingController(text: widget.currentBranchName == '—' ? '' : widget.currentBranchName);
   }
 
   @override
@@ -3631,7 +3830,6 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
     _accountController.dispose();
     _ifscController.dispose();
     _branchController.dispose();
-    _holderController.dispose();
     super.dispose();
   }
 
@@ -3641,9 +3839,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
         decoration: BoxDecoration(
           color: c.card,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -3655,96 +3851,42 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Dark Navy / Blue Header Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: const BoxDecoration(
-                color: _profileNavy,
-              ),
+              decoration: const BoxDecoration(color: _profileNavy),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Bank Details',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () => Navigator.pop(context),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.45),
-                          width: 1.2,
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          LucideIcons.x,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
+                  const Text('Bank Details', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    icon: const Icon(LucideIcons.x, color: Colors.white, size: 18),
                   ),
                 ],
               ),
             ),
-
-            // Scrollable Modal Body
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Top Banner Card
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           width: 44,
                           height: 44,
-                          decoration: BoxDecoration(
-                            color: c.blueLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            LucideIcons.landmark,
-                            color: c.accentBlue,
-                            size: 22,
-                          ),
+                          decoration: BoxDecoration(color: c.blueLight, borderRadius: BorderRadius.circular(12)),
+                          child: Icon(LucideIcons.landmark, color: c.accentBlue, size: 22),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Bank account information',
-                                style: TextStyle(
-                                  color: c.text,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 3),
-                              Text(
-                                'Enter the account details you want to use for payouts.',
-                                style: TextStyle(
-                                  color: c.muted,
-                                  fontSize: 12,
-                                  height: 1.3,
-                                ),
-                              ),
+                              Text('Bank payout information', style: TextStyle(color: c.text, fontSize: 15, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 3),
+                              Text('Updates are submitted for admin approval.', style: TextStyle(color: c.muted, fontSize: 12)),
                             ],
                           ),
                         ),
@@ -3753,11 +3895,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                     const SizedBox(height: 16),
                     Divider(color: c.border, thickness: 1, height: 1),
                     const SizedBox(height: 16),
-
-                    // 4 Form Input Fields
                     _inputField(label: 'Bank name', controller: _nameController),
-                    const SizedBox(height: 14),
-                    _inputField(label: 'Account holder name', controller: _holderController),
                     const SizedBox(height: 14),
                     _inputField(label: 'Account number', controller: _accountController, keyboardType: TextInputType.number),
                     const SizedBox(height: 14),
@@ -3765,8 +3903,6 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                     const SizedBox(height: 14),
                     _inputField(label: 'Branch name', controller: _branchController),
                     const SizedBox(height: 18),
-
-                    // Info Note Card
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
@@ -3780,20 +3916,14 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Check your bank details carefully before saving.',
-                              style: TextStyle(
-                                color: c.isDark ? c.accentBlue : _profileBlueDark,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              'The backend does not accept an account-holder field. Use the registered account holder details when submitting.',
+                              style: TextStyle(color: c.isDark ? c.accentBlue : _profileBlueDark, fontSize: 12, fontWeight: FontWeight.w500),
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 18),
-
-                    // Action Button: Save bank details Ã¢â€ â€”
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -3801,27 +3931,13 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _profileBlue,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 1,
                         ),
-                        onPressed: _handleSave,
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Save bank details',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(LucideIcons.arrowUpRight, size: 16, color: Colors.white),
-                          ],
-                        ),
+                        onPressed: _saving ? null : _handleSave,
+                        child: _saving
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Text('Submit bank details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -3834,31 +3950,44 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
     );
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     final name = _nameController.text.trim();
-    final acc = _accountController.text.trim();
-    final ifsc = _ifscController.text.trim();
-    final branch = _branchController.text.trim();
-    final holder = _holderController.text.trim();
-    if (name.isNotEmpty && acc.isNotEmpty && ifsc.isNotEmpty && branch.isNotEmpty && holder.isNotEmpty) {
-      widget.onSave(name, acc, ifsc, branch, holder);
-      Navigator.pop(context);
+    final account = _accountController.text.trim();
+    if (name.isEmpty || account.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bank name and account number are required.')));
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(
+        name,
+        account,
+        _ifscController.text.trim(),
+        _branchController.text.trim(),
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error is AuthApiException ? error.message : 'Unable to submit bank details.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
-  Widget _inputField({required String label, required TextEditingController controller, TextInputType? keyboardType, TextCapitalization textCapitalization = TextCapitalization.none}) {
+  Widget _inputField({
+    required String label,
+    required TextEditingController controller,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+  }) {
     final c = _ProfileColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: c.muted,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(label, style: TextStyle(color: c.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -3871,18 +4000,9 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
             filled: true,
             fillColor: c.subCard,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.accentBlue, width: 1.5),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.accentBlue, width: 1.5)),
           ),
         ),
       ],
@@ -3894,14 +4014,12 @@ class _EditCryptoDestinationModal extends StatefulWidget {
   const _EditCryptoDestinationModal({
     required this.currentWalletAddress,
     required this.currentCurrency,
-    required this.currentNetwork,
     required this.onSave,
   });
 
   final String currentWalletAddress;
   final String currentCurrency;
-  final String currentNetwork;
-  final void Function(String address, String currency, String network) onSave;
+  final Future<void> Function(String address, String currency) onSave;
 
   @override
   State<_EditCryptoDestinationModal> createState() => _EditCryptoDestinationModalState();
@@ -3910,21 +4028,19 @@ class _EditCryptoDestinationModal extends StatefulWidget {
 class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal> {
   late final TextEditingController _addressController;
   late final TextEditingController _currencyController;
-  late final TextEditingController _networkController;
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _addressController = TextEditingController(text: widget.currentWalletAddress);
-    _currencyController = TextEditingController(text: widget.currentCurrency);
-    _networkController = TextEditingController(text: widget.currentNetwork);
+    _addressController = TextEditingController(text: widget.currentWalletAddress == '—' ? '' : widget.currentWalletAddress);
+    _currencyController = TextEditingController(text: widget.currentCurrency == '—' ? '' : widget.currentCurrency);
   }
 
   @override
   void dispose() {
     _addressController.dispose();
     _currencyController.dispose();
-    _networkController.dispose();
     super.dispose();
   }
 
@@ -3932,12 +4048,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
   Widget build(BuildContext context) {
     final c = _ProfileColors.of(context);
     return Container(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 28),
       decoration: BoxDecoration(
         color: c.card,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -3952,32 +4063,17 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
               child: Container(
                 width: 44,
                 height: 4,
-                decoration: BoxDecoration(
-                  color: c.muted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                decoration: BoxDecoration(color: c.muted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Edit Crypto Wallet',
-              style: TextStyle(
-                color: c.text,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text('Edit Crypto Wallet', style: TextStyle(color: c.text, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(
-              'Update your cryptocurrency destination address and currency.',
-              style: TextStyle(color: c.muted, fontSize: 12),
-            ),
+            Text('Update the wallet address and currency. Changes require admin approval.', style: TextStyle(color: c.muted, fontSize: 12)),
             const SizedBox(height: 18),
             _inputField(label: 'Wallet Address', controller: _addressController),
             const SizedBox(height: 12),
             _inputField(label: 'Currency', controller: _currencyController, textCapitalization: TextCapitalization.characters),
-            const SizedBox(height: 12),
-            _inputField(label: 'Network', controller: _networkController, textCapitalization: TextCapitalization.characters),
             const SizedBox(height: 22),
             Row(
               children: [
@@ -3988,7 +4084,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _saving ? null : () => Navigator.pop(context),
                     child: Text('Cancel', style: TextStyle(color: c.text, fontWeight: FontWeight.bold)),
                   ),
                 ),
@@ -4002,16 +4098,10 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 1,
                     ),
-                    onPressed: () {
-                      final addr = _addressController.text.trim();
-                      final curr = _currencyController.text.trim();
-                      final network = _networkController.text.trim();
-                      if (addr.isNotEmpty && curr.isNotEmpty && network.isNotEmpty) {
-                        widget.onSave(addr, curr, network);
-                        Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: _saving ? null : _handleSave,
+                    child: _saving
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Submit Changes', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -4022,19 +4112,39 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
     );
   }
 
-  Widget _inputField({required String label, required TextEditingController controller, TextInputType? keyboardType, TextCapitalization textCapitalization = TextCapitalization.none}) {
+  Future<void> _handleSave() async {
+    final address = _addressController.text.trim();
+    final currency = _currencyController.text.trim();
+    if (address.isEmpty || currency.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Wallet address and currency are required.')));
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(address, currency);
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error is AuthApiException ? error.message : 'Unable to submit crypto details.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Widget _inputField({
+    required String label,
+    required TextEditingController controller,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+  }) {
     final c = _ProfileColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: c.muted,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(label, style: TextStyle(color: c.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -4047,18 +4157,9 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
             filled: true,
             fillColor: c.subCard,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.accentBlue, width: 1.5),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: c.accentBlue, width: 1.5)),
           ),
         ),
       ],

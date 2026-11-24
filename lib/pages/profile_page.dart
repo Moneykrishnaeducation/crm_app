@@ -144,12 +144,10 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   String _bankAccountNumber = '—';
   String _bankIfscCode = '—';
   String _bankBranch = '—';
-  String _bankHolder = '—';
   String _bankStatus = 'Not submitted';
 
   String _cryptoWalletAddress = '—';
   String _cryptoCurrency = '—';
-  String _cryptoNetwork = 'Not provided by API';
   String _cryptoStatus = 'Not submitted';
   String _identityDocumentStatus = 'Not submitted';
   String _residenceDocumentStatus = 'Not submitted';
@@ -339,11 +337,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         _bankAccountNumber = _stringValue(bank['account_number'], fallback: '—');
         _bankIfscCode = _stringValue(bank['ifsc_code'], fallback: '—');
         _bankBranch = _stringValue(bank['branch_name'], fallback: '—');
-        _bankHolder = '—'; // Bank API does not expose an account-holder field.
         _bankStatus = _statusLabel(bank['status']);
         _cryptoWalletAddress = _stringValue(crypto['wallet_address'], fallback: '—');
         _cryptoCurrency = _stringValue(crypto['currency'], fallback: '—');
-        _cryptoNetwork = 'Not provided by API';
         _cryptoStatus = _statusLabel(crypto['status']);
         if (remoteAvatarPath != null) _profileImagePath = remoteAvatarPath;
         if (remoteBannerPath != null) _bannerImagePath = remoteBannerPath;
@@ -1394,14 +1390,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               icon: LucideIcons.idCard,
               title: 'Identity verification',
               detail: 'Identity proof',
-              status: 'Approved',
+              status: _identityDocumentStatus,
               onTap: () => setState(() => _selectedTabIndex = 2),
             ),
             _overviewStatusCard(
               icon: LucideIcons.house,
               title: 'Address verification',
               detail: 'Address proof',
-              status: 'Approved',
+              status: _residenceDocumentStatus,
               onTap: () => setState(() => _selectedTabIndex = 2),
             ),
             _overviewStatusCard(
@@ -1414,7 +1410,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             _overviewStatusCard(
               icon: LucideIcons.wallet,
               title: 'Crypto wallet',
-              detail: '$_cryptoCurrency / $_cryptoNetwork',
+              detail: _cryptoCurrency,
               status: _cryptoStatus,
               onTap: () => setState(() => _selectedTabIndex = 3),
             ),
@@ -1606,169 +1602,44 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       : '${_cryptoWalletAddress.substring(0, 8)}Ã¢â‚¬Â¦${_cryptoWalletAddress.substring(_cryptoWalletAddress.length - 6)}';
 
   void _showBankDetailsSheet() {
-    showModalBottomSheet<void>(
+    _showPaymentDestinationDetailsSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: BoxDecoration(
-          color: _c.card,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: _c.muted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Bank Account Details',
-                  style: TextStyle(
-                    color: _c.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _c.greenLight,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _c.greenBorder),
-                  ),
-                  child: const Text(
-                    'Active',
-                    style: TextStyle(color: _profileGreen, fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Linked bank account for fiat deposits and withdrawals.',
-              style: TextStyle(color: _c.muted, fontSize: 12),
-            ),
-            const SizedBox(height: 18),
-            _infoRow('Bank Name', _bankName),
-            _infoRow('Account Number', _maskedBankAccountNumber, copyable: true),
-            _infoRow('Account Holder', _bankHolder),
-            _infoRow('IFSC / Routing Code', _bankIfscCode, copyable: true),
-            _infoRow('Branch Name', _bankBranch),
-            _infoRow('Currency', 'INR (Ã¢â€šÂ¹)'),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _profileBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 1,
-                ),
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: 'Bank Account Details',
+      subtitle: 'Bank payout details returned by your account API',
+      icon: LucideIcons.landmark,
+      iconColor: Colors.white,
+      iconBgColor: _profileNavy,
+      status: _bankStatus,
+      details: [
+        _PaymentDetailItem(label: 'Bank Name', value: _bankName),
+        _PaymentDetailItem(label: 'Account Number', value: _maskedBankAccountNumber, copyable: true),
+        _PaymentDetailItem(label: 'IFSC Code', value: _bankIfscCode, copyable: true),
+        _PaymentDetailItem(label: 'Branch Name', value: _bankBranch),
+      ],
+      onEdit: () {
+        Navigator.pop(context);
+        _showEditBankDestinationSheet();
+      },
     );
   }
 
   void _showCryptoWalletSheet() {
-    showModalBottomSheet<void>(
+    _showPaymentDestinationDetailsSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        decoration: BoxDecoration(
-          color: _c.card,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: _c.border, width: 1.5)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: _c.muted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Crypto Wallet Details',
-                  style: TextStyle(
-                    color: _c.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _c.greenLight,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _c.greenBorder),
-                  ),
-                  child: const Text(
-                    'Active',
-                    style: TextStyle(color: _profileGreen, fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Authorized wallet address for direct USDT / crypto settlements.',
-              style: TextStyle(color: _c.muted, fontSize: 12),
-            ),
-            const SizedBox(height: 18),
-            _infoRow('Network', '$_cryptoNetwork / $_cryptoCurrency'),
-            _infoRow('Wallet Address', _shortWalletAddress, copyable: true),
-            _infoRow('Whitelist Status', 'Whitelisted & Verified', accentColor: _profileGreen),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _profileBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 1,
-                ),
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: 'Crypto Wallet Details',
+      subtitle: 'Wallet details returned by your account API',
+      icon: LucideIcons.wallet,
+      iconColor: Colors.white,
+      iconBgColor: _profileNavy,
+      status: _cryptoStatus,
+      details: [
+        _PaymentDetailItem(label: 'Wallet Address', value: _shortWalletAddress, copyable: true),
+        _PaymentDetailItem(label: 'Currency', value: _cryptoCurrency),
+      ],
+      onEdit: () {
+        Navigator.pop(context);
+        _showEditCryptoDestinationSheet();
+      },
     );
   }
 
@@ -1845,7 +1716,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Identity data verified against official documents',
+                      'Profile information saved in your account',
                       style: TextStyle(color: _c.muted, fontSize: 11),
                     ),
                   ],
@@ -1877,14 +1748,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
           _detailCardRow(LucideIcons.user, 'Full Legal Name', _name),
           _detailCardRow(LucideIcons.calendar, 'Date of Birth', _dob),
-          _detailCardRow(LucideIcons.usersRound, 'Gender', _gender),
-          _detailCardRow(LucideIcons.flag, 'Nationality', _nationality),
-          _detailCardRow(LucideIcons.mail, 'Email Address', _email, verified: true),
-          _detailCardRow(LucideIcons.phone, 'Phone Number', _phone, verified: true),
+          _detailCardRow(LucideIcons.mail, 'Email Address', _email),
+          _detailCardRow(LucideIcons.phone, 'Phone Number', _phone),
+          _detailCardRow(LucideIcons.calendar, 'Date of Birth', _dob),
           _detailCardRow(LucideIcons.home, 'Residential Address', _address),
-          _detailCardRow(LucideIcons.mapPin, 'City & Country', _location),
-          _detailCardRow(LucideIcons.briefcase, 'Occupation', _occupation),
-          _detailCardRow(LucideIcons.landmark, 'Tax Residency', _taxResidency),
+          _detailCardRow(LucideIcons.mapPin, 'City', _city),
+          _detailCardRow(LucideIcons.map, 'State', _state),
+          _detailCardRow(LucideIcons.globe, 'Country', _country),
+          _detailCardRow(LucideIcons.mail, 'ZIP / Postal Code', _zipCode),
         ],
       ),
     );
@@ -1993,11 +1864,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       bankAccountNumber: _bankAccountNumber,
       bankIfscCode: _bankIfscCode,
       bankBranch: _bankBranch,
-      bankHolder: _bankHolder,
       bankStatus: _bankStatus,
       cryptoWalletAddress: _cryptoWalletAddress,
       cryptoCurrency: _cryptoCurrency,
-      cryptoNetwork: _cryptoNetwork,
       cryptoStatus: _cryptoStatus,
       onViewBankDetails: () => _showPaymentDestinationDetailsSheet(
         context: context,
@@ -2009,8 +1878,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         status: _bankStatus,
         details: [
           _PaymentDetailItem(label: 'Bank Name', value: _bankName),
-          _PaymentDetailItem(label: 'Account Number', value: _bankAccountNumber, copyable: true),
-          _PaymentDetailItem(label: 'IFSC / Routing Code', value: _bankIfscCode, copyable: true),
+          _PaymentDetailItem(label: 'Account Number', value: _maskedBankAccountNumber, copyable: true),
+          _PaymentDetailItem(label: 'IFSC Code', value: _bankIfscCode, copyable: true),
           _PaymentDetailItem(label: 'Branch Name', value: _bankBranch),
         ],
         onEdit: () {
@@ -2682,11 +2551,9 @@ class _PaymentMethodsTabView extends StatelessWidget {
     required this.bankAccountNumber,
     required this.bankIfscCode,
     required this.bankBranch,
-    required this.bankHolder,
     required this.bankStatus,
     required this.cryptoWalletAddress,
     required this.cryptoCurrency,
-    required this.cryptoNetwork,
     required this.cryptoStatus,
     required this.onViewBankDetails,
     required this.onEditBankDetails,
@@ -2700,12 +2567,10 @@ class _PaymentMethodsTabView extends StatelessWidget {
   final String bankAccountNumber;
   final String bankIfscCode;
   final String bankBranch;
-  final String bankHolder;
   final String bankStatus;
 
   final String cryptoWalletAddress;
   final String cryptoCurrency;
-  final String cryptoNetwork;
   final String cryptoStatus;
 
   final VoidCallback onViewBankDetails;
@@ -3015,12 +2880,18 @@ class _PaymentMethodsTabView extends StatelessWidget {
 
   Widget _connectedBadge(BuildContext context, String status) {
     final c = _ProfileColors.of(context);
+    final normalized = status.toLowerCase();
+    final approved = normalized == 'approved' || normalized == 'verified' || normalized == 'connected';
+    final rejected = normalized == 'rejected' || normalized == 'failed';
+    final foreground = approved ? _profileGreen : (rejected ? Colors.redAccent : c.accentBlue);
+    final background = approved ? c.greenLight : c.blueLight;
+    final border = approved ? c.greenBorder : c.blueBorder;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
       decoration: BoxDecoration(
-        color: c.greenLight,
+        color: background,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.greenBorder),
+        border: Border.all(color: border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -3028,19 +2899,12 @@ class _PaymentMethodsTabView extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(
-              color: _profileGreen,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: foreground, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
           Text(
             status,
-            style: const TextStyle(
-              color: _profileGreen,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: foreground, fontSize: 11.5, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -3153,6 +3017,12 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = _ProfileColors.of(context);
+    final normalizedStatus = status.toLowerCase();
+    final approved = normalizedStatus == 'approved' || normalizedStatus == 'verified' || normalizedStatus == 'connected';
+    final rejected = normalizedStatus == 'rejected' || normalizedStatus == 'failed';
+    final statusColor = approved ? _profileGreen : (rejected ? Colors.redAccent : c.accentBlue);
+    final statusBackground = approved ? c.greenLight : c.blueLight;
+    final statusBorder = approved ? c.greenBorder : c.blueBorder;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       decoration: BoxDecoration(
@@ -3216,9 +3086,9 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _profileGreenLight,
+                  color: statusBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _profileGreenBorder),
+                  border: Border.all(color: statusBorder),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -3226,16 +3096,16 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
                     Container(
                       width: 5,
                       height: 5,
-                      decoration: const BoxDecoration(
-                        color: _profileGreen,
+                      decoration: BoxDecoration(
+                        color: statusColor,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       status,
-                      style: const TextStyle(
-                        color: _profileGreen,
+                      style: TextStyle(
+                        color: statusColor,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),

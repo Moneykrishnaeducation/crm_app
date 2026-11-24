@@ -359,6 +359,19 @@ class AuthApi {
     return _request('GET', 'notifications/?$query');
   }
 
+  Future<Map<String, String>?> getNativePositionMonitorConfig(String accountId) async {
+    await restoreSession();
+    // The native service reads the same persisted JWT from FlutterSharedPreferences.
+    // Cookie-only sessions remain on the foreground Dart polling fallback.
+    if (_accessToken == null || _accessToken!.isEmpty) return null;
+    final id = Uri.encodeComponent(accountId);
+    final host = _headers['Host'];
+    return <String, String>{
+      'url': _uri('open-positions/$id/').toString(),
+      if (host != null && host.isNotEmpty) 'host': host,
+    };
+  }
+
   Future<Map<String, dynamic>> registerPushDeviceToken({
     required String token,
     required String platform,

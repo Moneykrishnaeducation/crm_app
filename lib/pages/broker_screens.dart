@@ -10,11 +10,17 @@ class BrokerDashboardPage extends StatefulWidget {
     required this.balanceVisible,
     required this.onToggleBalance,
     required this.onSelectPage,
+    required this.accounts,
+    required this.selectedAccountLogin,
+    required this.onAccountChanged,
     this.scrollController,
   });
   final bool balanceVisible;
   final VoidCallback onToggleBalance;
   final ValueChanged<String> onSelectPage;
+  final List<BrokerAccount> accounts;
+  final String? selectedAccountLogin;
+  final ValueChanged<String> onAccountChanged;
   final ScrollController? scrollController;
 
   @override
@@ -75,7 +81,12 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
                   subtitle: 'Manage your trading funds',
                 ),
                 const SizedBox(height: 10),
-                _QuickActionsRow(onSelectPage: widget.onSelectPage),
+                _QuickActionsRow(
+                  onSelectPage: widget.onSelectPage,
+                  accounts: widget.accounts,
+                  selectedAccountLogin: widget.selectedAccountLogin,
+                  onAccountChanged: widget.onAccountChanged,
+                ),
                 const SizedBox(height: 20),
                 _DashboardSectionHeading(
                   title: 'Explore',
@@ -502,8 +513,16 @@ class _DashboardSectionHeading extends StatelessWidget {
 }
 
 class _QuickActionsRow extends StatelessWidget {
-  const _QuickActionsRow({required this.onSelectPage});
+  const _QuickActionsRow({
+    required this.onSelectPage,
+    required this.accounts,
+    required this.selectedAccountLogin,
+    required this.onAccountChanged,
+  });
   final ValueChanged<String> onSelectPage;
+  final List<BrokerAccount> accounts;
+  final String? selectedAccountLogin;
+  final ValueChanged<String> onAccountChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -555,7 +574,12 @@ class _QuickActionsRow extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const TradeReportPage(),
+                    builder: (_) => TradeReportPage(
+                      accounts: accounts,
+                      selectedAccountLogin: selectedAccountLogin ??
+                          (accounts.isNotEmpty ? accounts.first.login : null),
+                      onAccountChanged: onAccountChanged,
+                    ),
                   ),
                 );
               },

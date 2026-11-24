@@ -1114,6 +1114,108 @@ class AuthApi {
         encryptProfileBody: true,
       );
 
+  /// Upload a profile photo. Django expects multipart field "profile_pic".
+  Future<Map<String, dynamic>> uploadProfileImage(String filePath) =>
+      _uploadProfileImage(
+        filePath: filePath,
+        endpoint: 'profile/image/',
+        fieldName: 'profile_pic',
+      );
+
+  /// Upload a profile banner. Django expects multipart field "banner".
+  Future<Map<String, dynamic>> uploadProfileBanner(String filePath) =>
+      _uploadProfileImage(
+        filePath: filePath,
+        endpoint: 'profile/banner/',
+        fieldName: 'banner',
+      );
+
+  Future<Map<String, dynamic>> _uploadProfileImage({
+    required String filePath,
+    required String endpoint,
+    required String fieldName,
+  }) async {
+    await restoreSession();
+    final headers = _headers;
+    final responseKeyPair = _createResponseEncryptionKeyPair();
+    headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
+
+    final request = http.MultipartRequest('POST', _uri(endpoint));
+    request.headers.addAll(headers);
+    request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+
+    final streamed = await _client
+        .send(request)
+        .timeout(const Duration(seconds: 45));
+    final response = await http.Response.fromStream(streamed);
+    _captureSession(response);
+
+    dynamic decoded;
+    try {
+      decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body);
+    } on FormatException {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      throw AuthApiException(
+        'The server returned an invalid upload response.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    dynamic payload = decoded;
+    if (decoded is Map && decoded['encrypted'] == true) {
+      payload = _decryptResponseEnvelope(
+        decoded.cast<String, dynamic>(),
+        responseKeyPair.keyId,
+      );
+    } else {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+    }
+
+    final data = payload is Map<String, dynamic>
+        ? payload
+        : <String, dynamic>{'data': payload};
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        (data['error'] is String && (data['error'] as String).isNotEmpty)) {
+      throw AuthApiException(
+        _messageFrom(data),
+        statusCode: response.statusCode,
+        data: data,
+      );
+    }
+    return data;
+  }
+
+  /// Fetch an authenticated image as bytes; image routes return FileResponse.
+  Future<Uint8List> getProfileImageBytes() =>
+      _getProfileImageBytes('profile/image/');
+
+  Future<Uint8List> getProfileBannerBytes() =>
+      _getProfileImageBytes('profile/banner/view/');
+
+  Future<Uint8List> _getProfileImageBytes(String endpoint) async {
+    await restoreSession();
+    final headers = _headers..['Accept'] = 'image/*';
+    final request = http.Request('GET', _uri(endpoint))
+      ..headers.addAll(headers);
+    final streamed = await _client
+        .send(request)
+        .timeout(const Duration(seconds: 25));
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AuthApiException(
+        'Unable to load profile image.',
+        statusCode: response.statusCode,
+      );
+    }
+    if (response.bodyBytes.isEmpty) {
+      throw const AuthApiException('The profile image is empty.');
+    }
+    return response.bodyBytes;
+  }
+
   Future<String> encryptPasswordForPasswordFlow(String password) async {
     final response = await requestPasswordKey();
     final kid = _findString(response, const ['kid']);

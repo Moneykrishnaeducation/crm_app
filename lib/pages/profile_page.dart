@@ -1240,7 +1240,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: _profileGold, size: 15),
+        Icon(icon, color: _c.accentBlue, size: 15),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -1249,7 +1249,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: .62),
+                  color: _c.muted,
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: .8,
@@ -1260,8 +1260,8 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                 value.isNotEmpty ? value : 'Not provided',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: _c.text,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),

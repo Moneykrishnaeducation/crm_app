@@ -383,7 +383,7 @@ class _MoreProfileCardState extends State<_MoreProfileCard> {
                                       const SizedBox(width: 4.5),
                                       Flexible(
                                         child: Text(
-                                          _clientId.isNotEmpty ? 'Client ID: #$_clientId' : 'Client ID unavailable',
+                                          _clientId.isNotEmpty ? 'Client ID: $_clientId' : 'Client ID unavailable',
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 1,
                                           style: TextStyle(

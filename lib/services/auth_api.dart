@@ -363,9 +363,14 @@ class AuthApi {
 
   Future<Map<String, String>?> getNativePositionMonitorConfig(String accountId) async {
     await restoreSession();
-    // The native service reads the same persisted JWT from FlutterSharedPreferences.
-    // Cookie-only sessions remain on the foreground Dart polling fallback.
-    if (_accessToken == null || _accessToken!.isEmpty) return null;
+    // The Android service runs in a separate process lifecycle and reads the
+    // Flutter SharedPreferences JWT directly. Await persistence here: session
+    // capture intentionally writes asynchronously, which could otherwise race
+    // the foreground-service startup immediately after the user taps Track.
+    final token = _accessToken;
+    if (token == null || token.isEmpty) return null;
+    await _persistAccessToken();
+
     final id = Uri.encodeComponent(accountId);
     final host = _headers['Host'];
     return <String, String>{

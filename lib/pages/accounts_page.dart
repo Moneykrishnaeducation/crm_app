@@ -934,29 +934,21 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
   bool _isSubmitting = false;
 
   static const List<String> _leverageOptions = [
-    '1:1',
-    '1:2',
-    '1:5',
-    '1:10',
-    '1:20',
     '1:50',
     '1:100',
     '1:200',
+    '1:300',
+    '1:400',
     '1:500',
-    '1:1000',
   ];
 
   static const Map<String, String> _leverageMargins = {
-    '1:1': '100% Margin',
-    '1:2': '50% Margin',
-    '1:5': '20% Margin',
-    '1:10': '10% Margin',
-    '1:20': '5% Margin',
     '1:50': '2% Margin',
     '1:100': '1% Margin',
     '1:200': '0.5% Margin',
+    '1:300': '0.33% Margin',
+    '1:400': '0.25% Margin',
     '1:500': '0.2% Margin',
-    '1:1000': '0.1% Margin',
   };
 
   @override

@@ -403,6 +403,8 @@ class AppNotificationCenter {
       final demoPnl = sum(demo);
       final livePnl = sum(live);
       final totalPnl = demoPnl + livePnl;
+      final demoAccountCount = _portfolioAccounts.where((account) => account['isDemo'] == true).length;
+      final liveAccountCount = _portfolioAccounts.length - demoAccountCount;
       String money(double value) {
         final sign = value >= 0 ? '+' : '-';
         return sign + String.fromCharCode(36) + value.abs().toStringAsFixed(2);
@@ -415,9 +417,9 @@ class AppNotificationCenter {
         return '#$ticket · $symbol $side $volume · ${money(_number(row['profit']))} · #${row['_accountId']}';
       }
       final body = <String>[
-        'DEMO ACCOUNTS · ${demo.length} positions · P/L ${money(demoPnl)}',
+        'DEMO · $demoAccountCount accounts · ${demo.length} positions · P/L ${money(demoPnl)}',
         if (demo.isEmpty) 'No open demo positions' else ...demo.map(detail),
-        'LIVE ACCOUNTS · ${live.length} positions · P/L ${money(livePnl)}',
+        'LIVE · $liveAccountCount accounts · ${live.length} positions · P/L ${money(livePnl)}',
         if (live.isEmpty) 'No open live positions' else ...live.map(detail),
       ].join('\n');
       final short = 'D${demoPnl >= 0 ? '+' : '-}${demoPnl.abs().toStringAsFixed(0)} L${livePnl >= 0 ? '+' : '-}${livePnl.abs().toStringAsFixed(0)}';

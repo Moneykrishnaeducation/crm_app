@@ -213,7 +213,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.54),
-      builder: (_) => const NotificationCenterBottomSheet(),
+      builder: (_) => NotificationCenterBottomSheet(onSelectPage: onSelectPage),
     );
   }
 
@@ -1163,7 +1163,9 @@ class _MarketSearchBottomSheetState extends State<MarketSearchBottomSheet>
 }
 
 class NotificationCenterBottomSheet extends StatefulWidget {
-  const NotificationCenterBottomSheet({super.key});
+  const NotificationCenterBottomSheet({super.key, this.onSelectPage});
+
+  final ValueChanged<String>? onSelectPage;
 
   @override
   State<NotificationCenterBottomSheet> createState() => _NotificationCenterBottomSheetState();
@@ -1674,9 +1676,24 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                     onTap: () async {
                                       try {
                                         await AppNotificationCenter.instance.markAsRead(item.id);
+                                        final action = item.actionUrl?.toLowerCase() ?? '';
+                                        String? destination;
+                                        if (action.contains('transaction')) {
+                                          destination = 'Transactions';
+                                        } else if (action.contains('profile')) {
+                                          destination = 'Profile';
+                                        } else if (action.contains('partnership')) {
+                                          destination = 'Partnership';
+                                        } else if (action.contains('trading')) {
+                                          destination = 'Trading Accounts';
+                                        }
+                                        if (destination != null && mounted) {
+                                          Navigator.of(context).pop();
+                                          widget.onSelectPage?.call(destination);
+                                        }
                                       } catch (_) {
                                         if (mounted) {
-                                          showAppMessage('Could not mark this notification as read.');
+                                          showAppMessage('Could not update this notification. Please retry.');
                                         }
                                       }
                                     },

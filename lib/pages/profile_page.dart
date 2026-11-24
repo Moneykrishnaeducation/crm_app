@@ -1788,7 +1788,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
         status: _bankStatus,
         details: [
           _PaymentDetailItem(label: 'Bank Name', value: _bankName),
-          _PaymentDetailItem(label: 'Account Number', value: _maskedBankAccountNumber, copyable: true),
+          _PaymentDetailItem(label: 'Account Number', value: _bankAccountNumber, copyable: true),
           _PaymentDetailItem(label: 'IFSC Code', value: _bankIfscCode, copyable: true),
           _PaymentDetailItem(label: 'Branch Name', value: _bankBranch),
         ],

@@ -703,15 +703,28 @@ class AuthApi {
 
   Future<Map<String, dynamic>> getTrustedDevices() =>
       _request('GET', 'profile/security/devices/');
-  Future<Map<String, dynamic>> trustCurrentDevice() =>
-      _request('POST', 'profile/security/devices/trust/', body: const {});
-  Future<Map<String, dynamic>> revokeTrustedDevice({int? deviceId}) => _request(
+  Future<Map<String, dynamic>> trustCurrentDevice({
+    required String deviceId,
+    String deviceName = 'Mobile device',
+    String deviceType = 'mobile',
+  }) => _request(
     'POST',
+    'profile/security/devices/trust/',
+    body: {
+      'device_id': deviceId,
+      'device_name': deviceName,
+      'device_type': deviceType,
+    },
+  );
+
+  Future<Map<String, dynamic>> revokeTrustedDevice({int? deviceId}) => _request(
+    'DELETE',
     deviceId == null
         ? 'profile/security/devices/revoke/'
         : 'profile/security/devices/$deviceId/revoke/',
     body: const {},
   );
+
   Future<Map<String, dynamic>> getCaptchaSettings() =>
       _request('GET', 'profile/security/captcha/');
   Future<Map<String, dynamic>> getTwoFactorSettings() =>
@@ -830,11 +843,16 @@ class AuthApi {
       );
 
   Future<Map<String, dynamic>> setCaptchaSettings(bool enabled) =>
-      _request('POST', 'profile/security/captcha/', body: {'enabled': enabled});
+      _request(
+        'PATCH',
+        'profile/security/captcha/',
+        body: {'require_captcha_at_login': enabled},
+      );
+
   Future<Map<String, dynamic>> setTwoFactorSettings(bool enabled) => _request(
-    'POST',
+    'PATCH',
     'profile/security/two-factor/',
-    body: {'enabled': enabled},
+    body: {'require_email_otp_at_login': enabled},
   );
   Future<Map<String, dynamic>> requestProfileEncryptionKey() => _request(
     'POST',

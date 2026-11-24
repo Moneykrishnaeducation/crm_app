@@ -102,6 +102,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   List<Map<String, dynamic>> _trustedDevices = [];
   bool _devicesLoading = false;
   String? _devicesError;
+  final ValueNotifier<int> _devicePageRevision = ValueNotifier<int>(0);
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   Color get _textColor =>
@@ -118,6 +119,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     super.initState();
     _checkBiometricStatus();
     unawaited(_loadSecuritySettings());
+  }
+
+  @override
+  void dispose() {
+    _devicePageRevision.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSecuritySettings() async {
@@ -751,7 +758,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         builder: (_) => _SecurityReferenceSubPage(
           title: page,
           content: page == 'Device Management'
-              ? _buildLiveTrustedDevicesContent()
+              ? ValueListenableBuilder<int>(
+                  valueListenable: _devicePageRevision,
+                  builder: (context, revision, child) =>
+                      _buildLiveTrustedDevicesContent(),
+                )
               : null,
         ),
       ),
@@ -780,6 +791,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         _isDeviceRevoked = devices.every((item) => item['status'] != 'trusted');
         _devicesLoading = false;
       });
+      _devicePageRevision.value++;
     } on AuthApiException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -2013,7 +2025,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         if (!mounted) return;
         await _loadTrustedDevices();
         if (!mounted) return;
-        Navigator.of(context).pop();
         _showSnack('Trusted device revoked');
       } on AuthApiException catch (error) {
         _showSnack(error.message);

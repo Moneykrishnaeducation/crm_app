@@ -432,6 +432,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   @override
   void dispose() {
     _notificationRefreshTimer?.cancel();
+    unawaited(AppNotificationCenter.instance.stopPositionMonitoring());
     WidgetsBinding.instance.removeObserver(this);
     FocusManager.instance.removeListener(_handleFocusChange);
     _dashboardScrollController.dispose();
@@ -452,6 +453,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       unawaited(AppNotificationCenter.instance.refreshFromBackend());
+      unawaited(AppNotificationCenter.instance.resumePositionMonitoring());
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      unawaited(AppNotificationCenter.instance.pausePositionMonitoring());
     }
   }
 

@@ -69,6 +69,7 @@ class AppNotificationCenter {
   DateTime _trackedPositionStartedAt = DateTime.now();
   Timer? _positionMonitorTimer;
   bool _positionPollInFlight = false;
+  int _positionMonitorRevision = 0;
   int _nextNotificationId = 1000;
 
   final ValueNotifier<List<AppNotificationItem>> notificationsNotifier =
@@ -262,14 +263,20 @@ class AppNotificationCenter {
     required String openTime,
   }) async {
     await stopPositionMonitoring();
+    final revision = ++_positionMonitorRevision;
     _trackedAccountId = accountId;
     _trackedPositionSymbol = symbol;
     _trackedPositionSide = isBuy ? 'BUY' : 'SELL';
     _trackedPositionLots = lots;
     _trackedPositionStartedAt = DateTime.tryParse(openTime.replaceAll('.', '-')) ?? DateTime.now();
     trackedPositionNotifier.value = positionId;
-    await _refreshTrackedPosition();
-    _positionMonitorTimer = Timer.periodic(const Duration(seconds: 15), (_) => _refreshTrackedPosition());
+    await _refreshTrackedPosition(revision: revision);
+    if (trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
+      _positionMonitorTimer = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) => _refreshTrackedPosition(revision: revision),
+      );
+    }
   }
 
   Future<void> pausePositionMonitoring() async {
@@ -279,13 +286,18 @@ class AppNotificationCenter {
 
   Future<void> resumePositionMonitoring() async {
     if (trackedPositionNotifier.value == null || _positionMonitorTimer != null) return;
-    await _refreshTrackedPosition();
-    if (trackedPositionNotifier.value != null) {
-      _positionMonitorTimer = Timer.periodic(const Duration(seconds: 15), (_) => _refreshTrackedPosition());
+    final revision = _positionMonitorRevision;
+    await _refreshTrackedPosition(revision: revision);
+    if (trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
+      _positionMonitorTimer = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) => _refreshTrackedPosition(revision: revision),
+      );
     }
   }
 
   Future<void> stopPositionMonitoring() async {
+    _positionMonitorRevision++;
     _positionMonitorTimer?.cancel();
     _positionMonitorTimer = null;
     final wasTracking = trackedPositionNotifier.value != null;
@@ -297,7 +309,7 @@ class AppNotificationCenter {
     if (wasTracking) await stopLiveUpdate(7777);
   }
 
-  Future<void> _refreshTrackedPosition() async {
+  Future<void> _refreshTrackedPosition({required int revision}) async {
     final accountId = _trackedAccountId;
     final positionId = trackedPositionNotifier.value;
     if (_positionPollInFlight || accountId == null || positionId == null) return;
@@ -305,6 +317,7 @@ class AppNotificationCenter {
     _positionPollInFlight = true;
     try {
       final positions = await AuthApi.instance.getOpenPositions(accountId);
+      if (revision != _positionMonitorRevision) return;
       Map<String, dynamic>? position;
       for (final item in positions) {
         final id = (item['ticket'] ?? item['position_ticket'] ?? item['position_id'] ?? item['id'] ?? '').toString();

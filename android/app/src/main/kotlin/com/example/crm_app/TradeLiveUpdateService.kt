@@ -158,11 +158,11 @@ class TradeLiveUpdateService : Service() {
             val totalPnl = demoPnl + livePnl
             val body = buildString {
                 append("DEMO ACCOUNTS · $demoCount positions · P/L ${money(demoPnl)}")
-                if (demoDetails.isEmpty()) append("\\n  No open demo positions")
-                else demoDetails.forEach { append("\\n  ").append(it) }
-                append("\\n\\nLIVE ACCOUNTS · $liveCount positions · P/L ${money(livePnl)}")
-                if (liveDetails.isEmpty()) append("\\n  No open live positions")
-                else liveDetails.forEach { append("\\n  ").append(it) }
+                if (demoDetails.isEmpty()) append("\n  No open demo positions")
+                else demoDetails.forEach { append("\n  ").append(it) }
+                append("\n\\nLIVE ACCOUNTS · $liveCount positions · P/L ${money(livePnl)}")
+                if (liveDetails.isEmpty()) append("\n  No open live positions")
+                else liveDetails.forEach { append("\n  ").append(it) }
             }
             val short = "D${if (demoPnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(demoPnl))} L${if (livePnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(livePnl))}"
             val notification = buildNotification(

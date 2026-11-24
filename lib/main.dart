@@ -369,6 +369,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _loadFavoriteAccounts();
     unawaited(_loadTradingAccounts());
     unawaited(AppNotificationCenter.instance.refreshFromBackend());
+    unawaited(AppNotificationCenter.instance.resumePositionMonitoring());
     _notificationRefreshTimer = Timer.periodic(
       const Duration(seconds: 60),
       (_) => unawaited(AppNotificationCenter.instance.refreshFromBackend()),

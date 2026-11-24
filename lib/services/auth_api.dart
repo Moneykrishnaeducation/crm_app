@@ -379,6 +379,40 @@ class AuthApi {
     };
   }
 
+  /// Build a single background-monitor configuration for every owned trading account.
+  /// Demo and live accounts are deliberately kept separate for portfolio P/L grouping.
+  Future<Map<String, String>?> getNativePortfolioMonitorConfig() async {
+    await restoreSession();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) return null;
+    await _persistAccessToken();
+
+    final response = await getUserTradingAccounts(fresh: true);
+    final rows = response['accounts'];
+    final accounts = <Map<String, dynamic>>[];
+    if (rows is List) {
+      for (final raw in rows.whereType<Map>()) {
+        final item = raw.cast<String, dynamic>();
+        final accountId = (item['account_id'] ?? '').toString().trim();
+        if (accountId.isEmpty) continue;
+        final accountType = (item['account_type'] ?? '').toString().toLowerCase();
+        final isDemo = item['is_demo'] == true || accountType == 'demo';
+        accounts.add(<String, dynamic>{
+          'accountId': accountId,
+          'accountName': (item['account_name'] ?? 'Trading account').toString(),
+          'isDemo': isDemo,
+          'url': _uri('open-positions/${Uri.encodeComponent(accountId)}/').toString(),
+        });
+      }
+    }
+    if (accounts.isEmpty) return null;
+    final host = _headers['Host'];
+    return <String, String>{
+      'accountsJson': jsonEncode(accounts),
+      if (host != null && host.isNotEmpty) 'host': host,
+    };
+  }
+
   Future<Map<String, dynamic>> registerPushDeviceToken({
     required String token,
     required String platform,

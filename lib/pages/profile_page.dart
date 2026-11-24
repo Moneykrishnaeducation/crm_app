@@ -1831,7 +1831,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           }
         } else if (action == 'copy') {
           await Clipboard.setData(ClipboardData(
-            text: 'Bank: $_bankName\\nAccount: $_bankAccountNumber\\nIFSC: $_bankIfscCode\\nBranch: $_bankBranch',
+            text: 'Bank: $_bankName\nAccount: $_bankAccountNumber\nIFSC: $_bankIfscCode\nBranch: $_bankBranch',
           ));
           _showSnack('Bank details copied to clipboard.');
         }
@@ -1870,7 +1870,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           }
         } else if (action == 'copy') {
           await Clipboard.setData(ClipboardData(
-            text: 'Wallet: $_cryptoWalletAddress\\nCurrency: $_cryptoCurrency',
+            text: 'Wallet: $_cryptoWalletAddress\nCurrency: $_cryptoCurrency',
           ));
           _showSnack('Crypto wallet details copied to clipboard.');
         }

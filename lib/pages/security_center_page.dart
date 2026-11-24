@@ -96,7 +96,7 @@ class SecurityCenterPage extends StatefulWidget {
 
 class _SecurityCenterPageState extends State<SecurityCenterPage> {
   bool _loginCaptchaEnabled = true;
-  bool _email2faEnabled = true;
+  bool _email2faEnabled = false;
   bool _biometricEnabled = false;
   bool _isDeviceRevoked = false;
   List<Map<String, dynamic>> _trustedDevices = [];

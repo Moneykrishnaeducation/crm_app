@@ -4160,48 +4160,6 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ValueListenableBuilder<String?>(
-                        valueListenable: AppNotificationCenter.instance.trackedPositionNotifier,
-                        builder: (context, trackedId, _) {
-                          final isTracked = trackedId == pos.id;
-                          return TextButton.icon(
-                            onPressed: () async {
-                              if (isTracked) {
-                                await AppNotificationCenter.instance.stopPositionMonitoring();
-                                if (mounted) showAppMessage('Trade live update stopped.');
-                              } else {
-                                final started = await AppNotificationCenter.instance.startPositionMonitoring(
-                                  accountId: _selectedLogin,
-                                  positionId: pos.id,
-                                  symbol: pos.symbol,
-                                  isBuy: pos.isBuy,
-                                  lots: pos.lots,
-                                  openTime: pos.openTime,
-                                );
-                                if (mounted) {
-                                  showAppMessage(
-                                    started
-                                        ? 'Live trade update started.'
-                                        : 'Could not start tracking this position. Refresh and try again.',
-                                  );
-                                }
-                              }
-                            },
-                            icon: Icon(
-                              isTracked ? LucideIcons.radioTower : LucideIcons.radio,
-                              size: 13,
-                            ),
-                            label: Text(isTracked ? 'Tracking' : 'Track'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: isTracked ? const Color(0xFF0B9E68) : const Color(0xFF1658C9),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                              minimumSize: const Size(0, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ),
-                          );
-                        },
-                      ),
                       TextButton(
                         onPressed: isClosing ? null : () => _closePosition(pos),
                         style: TextButton.styleFrom(

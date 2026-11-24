@@ -1617,7 +1617,7 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                       Icon(
                                         AppNotificationCenter.instance.lastLoadError == null
                                             ? LucideIcons.bellOff
-                                            : LucideIcons.cloudOff,
+                                            : LucideIcons.bellOff,
                                         size: 42,
                                         color: muted,
                                       ),

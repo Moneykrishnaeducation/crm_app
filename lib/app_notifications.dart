@@ -236,12 +236,6 @@ class AppNotificationCenter {
     }
   }
 
-  void _updateUnreadCount() {
-    unreadCountNotifier.value = notificationsNotifier.value
-        .where((n) => n.isUnread)
-        .length;
-  }
-
   static const MethodChannel _nativeChannel = MethodChannel(
     'com.vtindex.crm/live_updates',
   );
@@ -468,7 +462,7 @@ class AppNotificationCenter {
     final current = List<AppNotificationItem>.from(notificationsNotifier.value);
     current.insert(0, item);
     notificationsNotifier.value = current;
-    _updateUnreadCount();
+    unreadCountNotifier.value += 1;
 
     // 2. Dispatch to the native mobile notification panel
     if (sendToMobilePanel) {

@@ -348,6 +348,30 @@ class AuthApi {
     return 'The request failed. Please try again.';
   }
 
+  Future<Map<String, dynamic>> getNotifications({
+    int limit = 50,
+    bool unreadOnly = false,
+  }) {
+    final query = Uri(queryParameters: {
+      'limit': '$limit',
+      'unread_only': unreadOnly ? 'true' : 'false',
+    }).query;
+    return _request('GET', 'notifications/?$query');
+  }
+
+  Future<Map<String, dynamic>> markNotificationRead(String notificationId) {
+    final id = Uri.encodeComponent(notificationId);
+    return _request('POST', 'notifications/$id/mark-read/');
+  }
+
+  Future<Map<String, dynamic>> markAllNotificationsRead() =>
+      _request('POST', 'notifications/mark-all-read/');
+
+  Future<Map<String, dynamic>> deleteNotification(String notificationId) {
+    final id = Uri.encodeComponent(notificationId);
+    return _request('DELETE', 'notifications/$id/delete/');
+  }
+
   Future<Map<String, dynamic>> getTradingAccountHistory(
     String accountId, {
     int page = 1,

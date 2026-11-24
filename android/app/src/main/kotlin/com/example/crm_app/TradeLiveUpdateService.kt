@@ -9,30 +9,32 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Base64
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import org.json.JSONArray
 import org.json.JSONObject
-import android.util.Base64
+import java.net.HttpURLConnection
+import java.net.URL
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.spec.MGF1ParameterSpec
+import java.text.DecimalFormat
+import java.util.Locale
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.OAEPParameterSpec
 import javax.crypto.spec.PSource
-import java.net.HttpURLConnection
-import java.net.URL
-import java.text.DecimalFormat
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
+import javax.crypto.spec.SecretKeySpec
 
 /**
- * User-started foreground service that keeps one selected position's native
- * ongoing notification synchronized while the Flutter activity is backgrounded.
+ * Portfolio-wide foreground monitor. Every owned account is polled and positions
+ * are grouped into Demo and Live totals for one native ongoing notification.
  */
 class TradeLiveUpdateService : Service() {
     private val notificationId = 7777
@@ -52,28 +54,23 @@ class TradeLiveUpdateService : Service() {
             prefs.edit()
                 .putString("url", incoming.getStringExtra("url"))
                 .putString("host", incoming.getStringExtra("host"))
-                .putString("positionId", incoming.getStringExtra("positionId"))
-                .putString("accountId", incoming.getStringExtra("accountId"))
-                .putString("symbol", incoming.getStringExtra("symbol"))
-                .putString("side", incoming.getStringExtra("side"))
-                .putString("lots", incoming.getStringExtra("lots"))
+                .putString("accountsJson", incoming.getStringExtra("accountsJson"))
                 .putLong("startedAt", incoming.getLongExtra("startedAt", System.currentTimeMillis()))
                 .apply()
         }
 
-        val url = prefs.getString("url", null)
-        val positionId = prefs.getString("positionId", null)
-        if (url.isNullOrBlank() || positionId.isNullOrBlank()) {
+        val accountsJson = prefs.getString("accountsJson", null)
+        if (accountsJson.isNullOrBlank()) {
             stopSelf()
             return START_NOT_STICKY
         }
 
         try {
             val initial = buildNotification(
-                prefs.getString("symbol", "Trade") ?: "Trade",
-                "Connecting to live position data…",
-                "LIVE",
-                System.currentTimeMillis(),
+                "VT Index · Portfolio Live",
+                "Connecting to demo and live account positions…",
+                "D+0 L+0",
+                prefs.getLong("startedAt", System.currentTimeMillis()),
                 false
             )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -87,33 +84,105 @@ class TradeLiveUpdateService : Service() {
                 startForeground(notificationId, initial)
             }
         } catch (error: Exception) {
-            Log.e("VTTradeLive", "Unable to start foreground notification", error)
+            Log.e("VTTradeLive", "Unable to start portfolio foreground notification", error)
             stopSelf()
             return START_NOT_STICKY
         }
 
         if (executor == null || executor?.isShutdown == true) {
             executor = Executors.newSingleThreadScheduledExecutor()
-            executor?.scheduleWithFixedDelay({ refreshPosition() }, 0, 15, TimeUnit.SECONDS)
+            executor?.scheduleWithFixedDelay({ refreshPortfolio() }, 0, 15, TimeUnit.SECONDS)
         }
         return START_STICKY
     }
 
-    private fun refreshPosition() {
-        val endpoint = prefs.getString("url", null) ?: return
-        val positionId = prefs.getString("positionId", null) ?: return
-        var connection: HttpURLConnection? = null
+    private fun refreshPortfolio() {
+        val accountsJson = prefs.getString("accountsJson", null) ?: return
+        val accessToken = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .getString("flutter.vtindex_client_access_token", null)
+        if (accessToken.isNullOrBlank()) {
+            updateBody("Reopen VTIndex to restore secure portfolio synchronization")
+            return
+        }
+
+        var demoPnl = 0.0
+        var livePnl = 0.0
+        var demoCount = 0
+        var liveCount = 0
+        var successCount = 0
+        val demoDetails = mutableListOf<String>()
+        val liveDetails = mutableListOf<String>()
+
         try {
-            val accessToken = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-                .getString("flutter.vtindex_client_access_token", null)
-            if (accessToken.isNullOrBlank()) {
-                updateBody("Reopen VTIndex to restore secure trade synchronization")
+            val accounts = JSONArray(accountsJson)
+            for (index in 0 until accounts.length()) {
+                val account = accounts.optJSONObject(index) ?: continue
+                val accountId = account.optString("accountId")
+                val endpoint = account.optString("url")
+                if (accountId.isBlank() || endpoint.isBlank()) continue
+                try {
+                    val positions = fetchPositions(endpoint, accessToken)
+                    successCount++
+                    val isDemo = account.optBoolean("isDemo", false)
+                    val accountName = account.optString("accountName", accountId)
+                    for (positionIndex in 0 until positions.length()) {
+                        val position = positions.optJSONObject(positionIndex) ?: continue
+                        val profit = number(position, "profit")
+                        val ticket = firstString(position, "ticket", "position_ticket", "position_id", "id")
+                        val symbol = firstString(position, "symbol").ifBlank { "Trade" }
+                        val type = firstString(position, "type", "side", "position_type").uppercase(Locale.US)
+                        val side = if (type.contains("SELL")) "SELL" else "BUY"
+                        val volume = number(position, "volume", "lots")
+                        val pnlText = money(profit)
+                        val detail = "#$ticket · $symbol $side ${DecimalFormat("0.00").format(volume)} · $pnlText · $accountName"
+                        if (isDemo) {
+                            demoPnl += profit
+                            demoCount++
+                            demoDetails.add(detail)
+                        } else {
+                            livePnl += profit
+                            liveCount++
+                            liveDetails.add(detail)
+                        }
+                    }
+                } catch (error: Exception) {
+                    Log.w("VTTradeLive", "Account $accountId portfolio refresh failed", error)
+                }
+            }
+
+            if (successCount == 0 && accounts.length() > 0) {
+                updateBody("Account data temporarily unavailable · retrying")
                 return
             }
 
-            // Client API responses are encrypted per request. Generate a one-use
-            // RSA key pair and send its public key so the backend can encrypt this
-            // response for the native service just as it does for Flutter requests.
+            val totalPnl = demoPnl + livePnl
+            val body = buildString {
+                append("DEMO ACCOUNTS · $demoCount positions · P/L ${money(demoPnl)}")
+                if (demoDetails.isEmpty()) append("\\n  No open demo positions")
+                else demoDetails.forEach { append("\\n  ").append(it) }
+                append("\\n\\nLIVE ACCOUNTS · $liveCount positions · P/L ${money(livePnl)}")
+                if (liveDetails.isEmpty()) append("\\n  No open live positions")
+                else liveDetails.forEach { append("\\n  ").append(it) }
+            }
+            val short = "D${if (demoPnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(demoPnl))} L${if (livePnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(livePnl))}"
+            val notification = buildNotification(
+                "VT Index · Portfolio Live",
+                body,
+                short,
+                prefs.getLong("startedAt", System.currentTimeMillis()),
+                false,
+                if (totalPnl >= 0) 0xFF10B981.toInt() else 0xFFEF4444.toInt()
+            )
+            NotificationManagerCompat.from(this).notify(notificationId, notification)
+        } catch (error: Exception) {
+            Log.e("VTTradeLive", "Portfolio refresh failed", error)
+            updateBody("Portfolio synchronization interrupted · retrying")
+        }
+    }
+
+    private fun fetchPositions(endpoint: String, accessToken: String): JSONArray {
+        var connection: HttpURLConnection? = null
+        try {
             val responseKeyPair = createResponseKeyPair()
             connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
@@ -125,123 +194,62 @@ class TradeLiveUpdateService : Service() {
                     "X-Response-Encryption-Key",
                     Base64.encodeToString(responseKeyPair.public.encoded, Base64.NO_WRAP)
                 )
-                prefs.getString("host", null)?.takeIf { it.isNotBlank() }?.let { setRequestProperty("Host", it) }
+                prefs.getString("host", null)?.takeIf { it.isNotBlank() }
+                    ?.let { setRequestProperty("Host", it) }
             }
             val code = connection.responseCode
             if (code !in 200..299) {
                 val errorBody = try {
                     (connection.errorStream ?: connection.inputStream)
                         .bufferedReader().use { it.readText() }
-                } catch (_: Exception) {
-                    ""
-                }
-                Log.w("VTTradeLive", "Position API returned HTTP $code: " + errorBody.take(300))
-                updateBody("Trade data temporarily unavailable · HTTP $code")
-                return
+                } catch (_: Exception) { "" }
+                throw IllegalStateException("HTTP $code: ${errorBody.take(240)}")
             }
             val encryptedPayload = connection.inputStream.bufferedReader().use { it.readText() }
             val payload = decryptResponse(JSONObject(encryptedPayload), responseKeyPair)
-            val position = findPosition(payload, positionId)
-            if (position == null) {
-                stopSelf()
-                return
-            }
-
-            val profit = number(position, "profit")
-            val currentPrice = number(position, "current_price", "currentPrice", "price_current")
-            val openPrice = number(position, "open_price", "openPrice", "price_open")
-            val symbol = prefs.getString("symbol", "Trade") ?: "Trade"
-            val side = prefs.getString("side", "BUY") ?: "BUY"
-            val lots = prefs.getString("lots", "0.00") ?: "0.00"
-            val account = prefs.getString("accountId", "") ?: ""
-            val sign = if (profit >= 0) "+" else "-"
-            val pnl = sign + 36.toChar() + DecimalFormat("0.00").format(kotlin.math.abs(profit))
-            val body = "Account #$account · Ticket #$positionId · P/L $pnl · Price " +
-                DecimalFormat("0.00000").format(currentPrice) +
-                " (open " + DecimalFormat("0.00000").format(openPrice) + ")"
-            val title = "$symbol $side $lots"
-            val short = sign + DecimalFormat("0").format(kotlin.math.abs(profit)).take(5)
-            val notification = buildNotification(
-                title,
-                body,
-                short,
-                prefs.getLong("startedAt", System.currentTimeMillis()),
-                true,
-                if (profit >= 0) 0xFF10B981.toInt() else 0xFFEF4444.toInt()
-            )
-            NotificationManagerCompat.from(this).notify(notificationId, notification)
-        } catch (error: Exception) {
-            Log.w("VTTradeLive", "Position refresh failed", error)
-            updateBody("Live trade connection interrupted · retrying")
+            return findPositions(payload)
         } finally {
             connection?.disconnect()
         }
     }
 
-
-    private fun createResponseKeyPair(): KeyPair {
-        return KeyPairGenerator.getInstance("RSA").apply {
-            initialize(2048)
-        }.generateKeyPair()
+    private fun findPositions(root: JSONObject): JSONArray {
+        root.optJSONArray("positions")?.let { return it }
+        root.optJSONArray("results")?.let { return it }
+        root.optJSONObject("data")?.let { return findPositions(it) }
+        root.optJSONObject("result")?.let { return findPositions(it) }
+        root.optJSONObject("payload")?.let { return findPositions(it) }
+        return JSONArray()
     }
 
-    /**
-     * Decrypts the backend's vtindex:user-info:v1 response envelope.
-     * Protocol: RSA-OAEP-SHA256 wraps an AES-256 key; AES-256-GCM protects JSON.
-     */
+    private fun createResponseKeyPair(): KeyPair {
+        return KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+    }
+
+    /** Decrypts the backend vtindex:user-info:v1 RSA-OAEP + AES-GCM envelope. */
     private fun decryptResponse(envelope: JSONObject, keyPair: KeyPair): JSONObject {
         if (!envelope.optBoolean("encrypted", false) ||
             envelope.optInt("version", -1) != 1 ||
             envelope.optString("algorithm") != "RSA-OAEP-256+A256GCM"
-        ) {
-            throw IllegalStateException("Unexpected open-positions response format")
-        }
+        ) throw IllegalStateException("Unexpected open-positions response format")
 
         val aad = "vtindex:user-info:v1".toByteArray(Charsets.UTF_8)
-        val decode = { field: String ->
-            Base64.decode(envelope.getString(field), Base64.DEFAULT)
-        }
-
+        val decode = { field: String -> Base64.decode(envelope.getString(field), Base64.DEFAULT) }
         val rsa = Cipher.getInstance("RSA/ECB/OAEPPadding")
         rsa.init(
             Cipher.DECRYPT_MODE,
             keyPair.private,
-            OAEPParameterSpec(
-                "SHA-256",
-                "MGF1",
-                MGF1ParameterSpec.SHA256,
-                PSource.PSpecified(aad)
-            )
+            OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified(aad))
         )
         val aesKey = rsa.doFinal(decode("wrapped_key"))
-
         val aes = Cipher.getInstance("AES/GCM/NoPadding")
         aes.init(
             Cipher.DECRYPT_MODE,
-            javax.crypto.spec.SecretKeySpec(aesKey, "AES"),
+            SecretKeySpec(aesKey, "AES"),
             GCMParameterSpec(128, decode("nonce"))
         )
         aes.updateAAD(aad)
-        val plaintext = aes.doFinal(decode("ciphertext"))
-        return JSONObject(String(plaintext, Charsets.UTF_8))
-    }
-
-    private fun findPosition(root: JSONObject, targetId: String): JSONObject? {
-        val direct = root.optJSONArray("positions")
-            ?: root.optJSONObject("data")?.optJSONArray("positions")
-            ?: root.optJSONArray("results")
-        if (direct != null) {
-            for (index in 0 until direct.length()) {
-                val item = direct.optJSONObject(index) ?: continue
-                val id = firstString(item, "ticket", "position_ticket", "position_id", "id")
-                if (id == targetId) return item
-            }
-        }
-        val data = root.optJSONObject("data")
-        if (data != null && data !== root) return findPosition(data, targetId)
-        val result = root.optJSONObject("result")
-        if (result != null && result !== root) return findPosition(result, targetId)
-        return null
+        return JSONObject(String(aes.doFinal(decode("ciphertext")), Charsets.UTF_8))
     }
 
     private fun firstString(item: JSONObject, vararg keys: String): String {
@@ -261,10 +269,14 @@ class TradeLiveUpdateService : Service() {
         return 0.0
     }
 
+    private fun money(value: Double): String {
+        val sign = if (value >= 0) "+" else "-"
+        return sign + "$" + DecimalFormat("0.00").format(kotlin.math.abs(value))
+    }
+
     private fun updateBody(body: String) {
-        val title = prefs.getString("symbol", "Trade") ?: "Trade"
         val notification = buildNotification(
-            title,
+            "VT Index · Portfolio Live",
             body,
             "LIVE",
             prefs.getLong("startedAt", System.currentTimeMillis()),
@@ -286,7 +298,7 @@ class TradeLiveUpdateService : Service() {
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setSubText("LIVE TRADE")
+            .setSubText("DEMO + LIVE PORTFOLIO")
             .setColor(color)
             .setOngoing(true)
             .setAutoCancel(false)
@@ -309,7 +321,7 @@ class TradeLiveUpdateService : Service() {
                 "VT Index Live Updates",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Ongoing updates for a tracked open trading position"
+                description = "Portfolio-wide ongoing P/L updates for demo and live accounts"
                 setShowBadge(true)
                 enableVibration(false)
             }

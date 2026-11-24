@@ -26,7 +26,6 @@ class PushMessagingService {
         await Firebase.initializeApp();
       }
       if (!_initialized) {
-        _initialized = true;
         await FirebaseMessaging.instance.requestPermission(
           alert: true,
           badge: true,
@@ -37,6 +36,7 @@ class PushMessagingService {
         _tokenSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
           (token) => unawaited(_registerToken(token)),
         );
+        _initialized = true;
       }
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null && token.isNotEmpty) await _registerToken(token);

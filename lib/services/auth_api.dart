@@ -1031,19 +1031,54 @@ class AuthApi {
     final response = await http.Response.fromStream(streamed);
     _captureSession(response);
 
+    final isSuccessfulStatus =
+        response.statusCode >= 200 && response.statusCode < 300;
+
     dynamic decoded;
     try {
-      decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
-    } catch (_) {
-      throw AuthApiException('Invalid response from server.', statusCode: response.statusCode);
+      decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body);
+    } on FormatException {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      if (isSuccessfulStatus) {
+        // The server has already accepted the deposit. Its response body is
+        // informational only for this endpoint, so do not report a false
+        // failure if a proxy or renderer returns a non-JSON success body.
+        debugPrint(
+          'Manual deposit accepted (HTTP ${response.statusCode}); '
+          'response body was not JSON.',
+        );
+        return <String, dynamic>{
+          'message': 'Manual deposit request accepted.',
+        };
+      }
+      throw AuthApiException(
+        'Invalid response from server.',
+        statusCode: response.statusCode,
+      );
     }
 
     dynamic responsePayload = decoded;
     if (decoded is Map && decoded['encrypted'] == true) {
-      responsePayload = _decryptResponseEnvelope(
-        decoded.cast<String, dynamic>(),
-        responseKeyPair.keyId,
-      );
+      try {
+        responsePayload = _decryptResponseEnvelope(
+          decoded.cast<String, dynamic>(),
+          responseKeyPair.keyId,
+        );
+      } catch (error) {
+        if (!isSuccessfulStatus) rethrow;
+        // Do not turn a completed 2xx deposit into a failure merely because
+        // the encrypted acknowledgement could not be decoded. No response
+        // fields are required to complete this manual-deposit flow.
+        debugPrint(
+          'Manual deposit accepted (HTTP ${response.statusCode}); '
+          'encrypted acknowledgement could not be decoded: $error',
+        );
+        return <String, dynamic>{
+          'message': 'Manual deposit request accepted.',
+        };
+      }
     } else {
       _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
     }
@@ -1052,7 +1087,7 @@ class AuthApi {
         ? responsePayload
         : <String, dynamic>{'data': responsePayload};
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    if (!isSuccessfulStatus) {
       throw AuthApiException(
         _messageFrom(data),
         statusCode: response.statusCode,

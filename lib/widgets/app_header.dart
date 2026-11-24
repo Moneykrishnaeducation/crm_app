@@ -1378,7 +1378,7 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Live trade updates appear here when active trade monitoring is enabled.',
+                                'Use Track on an open position to start a native trade update.',
                                 style: TextStyle(color: muted, fontSize: 10, height: 1.35),
                               ),
                             ),

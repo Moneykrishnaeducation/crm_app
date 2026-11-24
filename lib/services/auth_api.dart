@@ -748,7 +748,7 @@ class AuthApi {
   Future<Map<String, dynamic>> logout() async {
     try {
       try {
-        const MethodChannel('com.vtindex.crm/live_updates').invokeMethod('stopPositionService');
+        await const MethodChannel('com.vtindex.crm/live_updates').invokeMethod<void>('stopPositionService');
       } catch (_) {}
 
       // Detach this installation before invalidating the authenticated session.

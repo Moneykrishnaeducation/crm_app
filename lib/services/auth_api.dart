@@ -1130,6 +1130,73 @@ class AuthApi {
         fieldName: 'banner',
       );
 
+  /// Return the signed-in user's identity and residence document statuses.
+  Future<Map<String, dynamic>> getProfileDocuments() =>
+      _request('GET', 'profile/documents/');
+
+  /// Upload a KYC document using the backend's multipart "document" field.
+  Future<Map<String, dynamic>> uploadVerificationDocument({
+    required String documentType,
+    required String filePath,
+  }) {
+    if (documentType != 'identity' && documentType != 'residence') {
+      throw ArgumentError.value(documentType, 'documentType');
+    }
+    return _uploadProfileImage(
+      filePath: filePath,
+      endpoint: 'profile/documents/$documentType/',
+      fieldName: 'document',
+    );
+  }
+
+  /// Verify the CRM password and receive the protected document bytes.
+  Future<({Uint8List bytes, String contentType, String fileName})>
+      getSecureProfileDocument({
+    required String documentType,
+    required String password,
+  }) async {
+    if (documentType != 'identity' && documentType != 'residence') {
+      throw ArgumentError.value(documentType, 'documentType');
+    }
+    await restoreSession();
+    final headers = _headers
+      ..['Accept'] = '*/*'
+      ..['Content-Type'] = 'application/json';
+    final request = http.Request(
+      'POST',
+      _uri('profile/documents/$documentType/view/'),
+    )
+      ..headers.addAll(headers)
+      ..body = jsonEncode({'password': password});
+    final streamed = await _client
+        .send(request)
+        .timeout(const Duration(seconds: 30));
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      dynamic payload;
+      try {
+        payload = jsonDecode(response.body);
+      } catch (_) {
+        payload = null;
+      }
+      final data = payload is Map
+          ? payload.cast<String, dynamic>()
+          : <String, dynamic>{};
+      throw AuthApiException(
+        _messageFrom(data),
+        statusCode: response.statusCode,
+        data: data,
+      );
+    }
+    final disposition = response.headers['content-disposition'] ?? '';
+    final match = RegExp(r'filename="?([^";]+)"?').firstMatch(disposition);
+    return (
+      bytes: response.bodyBytes,
+      contentType: response.headers['content-type'] ?? 'application/octet-stream',
+      fileName: match?.group(1) ?? '$documentType-document',
+    );
+  }
+
   Future<Map<String, dynamic>> _uploadProfileImage({
     required String filePath,
     required String endpoint,

@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:asn1lib/asn1lib.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -746,6 +747,10 @@ class AuthApi {
 
   Future<Map<String, dynamic>> logout() async {
     try {
+      try {
+        const MethodChannel('com.vtindex.crm/live_updates').invokeMethod('stopPositionService');
+      } catch (_) {}
+
       // Detach this installation before invalidating the authenticated session.
       try {
         final pushToken = await FirebaseMessaging.instance.getToken();

@@ -285,7 +285,11 @@ class AppNotificationCenter {
     final revision = ++_portfolioMonitorRevision;
     try {
       final config = await AuthApi.instance.getNativePortfolioMonitorConfig();
-      if (config == null || revision != _portfolioMonitorRevision) return false;
+      if (revision != _portfolioMonitorRevision) return false;
+      if (config == null) {
+        await stopPortfolioMonitoring();
+        return false;
+      }
       final decoded = jsonDecode(config['accountsJson'] ?? '[]');
       _portfolioAccounts = decoded is List
           ? decoded.whereType<Map>().map((row) => row.cast<String, dynamic>()).toList()
@@ -349,15 +353,9 @@ class AppNotificationCenter {
   }
 
   Future<void> resumePositionMonitoring() async {
-    if (!_portfolioMonitorEnabled) {
-      await startPortfolioMonitoring();
-      return;
-    }
-    if (_portfolioNativeServiceActive) {
-      await _refreshPortfolioPositions(revision: _portfolioMonitorRevision);
-    } else if (_portfolioMonitorTimer == null) {
-      await startPortfolioMonitoring();
-    }
+    // Refresh the owned-account list on every foreground return so newly
+    // created demo/live accounts are added to the background monitor.
+    await startPortfolioMonitoring();
   }
 
   Future<void> stopPortfolioMonitoring() async {

@@ -144,6 +144,9 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           if (id.isEmpty) continue;
           final bal = (item['balance'] as num?)?.toDouble() ?? 0.0;
           final eq = (item['equity'] as num?)?.toDouble() ?? bal;
+          final accountType = (item['account_type'] ?? item['accountType'] ?? item['type'] ?? item['account_category'] ?? '').toString().trim().toLowerCase();
+          final accountLabel = (item['account_label'] ?? item['label'] ?? '').toString().toLowerCase();
+          if (accountType.contains('demo') || accountLabel.contains('demo')) continue;
           final tier = (item['group_name'] ?? item['account_type'] ?? 'STANDARD').toString().toUpperCase();
           parsed.add({
             'id': id,
@@ -174,14 +177,55 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         if (mounted) setState(() => _withdrawalInfo = info);
       } catch (_) {}
       try {
-        final bank = await AuthApi.instance.getBankDetails();
-        if (mounted) setState(() => _bankDetails = bank);
+        final bank = _unwrapProfilePaymentDetails(await AuthApi.instance.getBankDetails());
+        if (mounted) {
+          setState(() {
+            _bankDetails = bank;
+            if (!_hasBankDestination && _hasCryptoDestination) _payout = 1;
+          });
+        }
       } catch (_) {}
       try {
-        final crypto = await AuthApi.instance.getCryptoDetails();
-        if (mounted) setState(() => _cryptoDetails = crypto);
+        final crypto = _unwrapProfilePaymentDetails(await AuthApi.instance.getCryptoDetails());
+        if (mounted) {
+          setState(() {
+            _cryptoDetails = crypto;
+            if (!_hasBankDestination && _hasCryptoDestination) _payout = 1;
+          });
+        }
       } catch (_) {}
     }
+  }
+
+  Map<String, dynamic> _unwrapProfilePaymentDetails(Map<String, dynamic> response) {
+    dynamic value = response;
+    for (var depth = 0; depth < 4 && value is Map; depth++) {
+      final map = value.cast<String, dynamic>();
+      if (map['data'] is Map) { value = map['data']; continue; }
+      if (map['profile'] is Map) { value = map['profile']; continue; }
+      if (map['result'] is Map) { value = map['result']; continue; }
+      return map;
+    }
+    return <String, dynamic>{};
+  }
+
+  bool get _hasBankDestination =>
+      (_bankDetails?['account_number'] ?? '').toString().trim().isNotEmpty &&
+      (_bankDetails?['account_number'] ?? '').toString().trim() != '—';
+
+  bool get _hasCryptoDestination =>
+      (_cryptoDetails?['wallet_address'] ?? '').toString().trim().isNotEmpty &&
+      (_cryptoDetails?['wallet_address'] ?? '').toString().trim() != '—';
+
+  String get _bankDestinationLabel {
+    final number = _bankDetails?['account_number'].toString() ?? '';
+    return number.length > 4 ? 'Account ending ' + number.substring(number.length - 4) : 'Saved bank account';
+  }
+
+  String get _cryptoDestinationLabel {
+    final address = _cryptoDetails?['wallet_address'].toString() ?? '';
+    final currency = _cryptoDetails?['currency']?.toString() ?? 'USDT';
+    return address.length > 12 ? currency + ' · ' + address.substring(0, 6) + '…' + address.substring(address.length - 4) : currency + ' · Saved wallet';
   }
 
   Map<String, dynamic> get _activeTradingAccount =>
@@ -1229,63 +1273,35 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         const SizedBox(height: 18),
         _stepTitle('2', 'CHOOSE PAYOUT METHOD', isDark),
         const SizedBox(height: 8),
-        if (isCompact) ...[
-          _payoutCard(
-            0,
-            LucideIcons.landmark,
-            'Bank Transfer',
-            _bankDetails?['account_number'] != null
-                ? 'Acc: ${_bankDetails!['account_number']}'
-                : 'Direct Wire Transfer',
-            _bankDetails?['status'] == 'approved' ? 'Verified' : 'Supported',
-            '1–3 Business Days',
-            isDark,
-          ),
-          const SizedBox(height: 8),
-          _payoutCard(
-            1,
-            LucideIcons.wallet,
-            'Crypto Wallet',
-            _cryptoDetails?['wallet_address'] != null
-                ? 'USDT (${_cryptoDetails!['currency'] ?? 'TRC20'})'
-                : 'USDT (TRC20 / ERC20)',
-            _cryptoDetails?['status'] == 'approved' ? 'Verified' : 'Ready',
-            'Near-Instant (~10–30m)',
-            isDark,
-          ),
-        ] else ...[
-          Row(
-            children: [
-              Expanded(
-                child: _payoutCard(
-                  0,
-                  LucideIcons.landmark,
-                  'Bank Transfer',
-                  _bankDetails?['account_number'] != null
-                      ? 'Acc: ${_bankDetails!['account_number']}'
-                      : 'Direct Wire Transfer',
-                  _bankDetails?['status'] == 'approved' ? 'Verified' : 'Supported',
-                  '1–3 Business Days',
-                  isDark,
-                ),
-              ),
+        if (!_hasBankDestination && !_hasCryptoDestination)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2B2418) : const Color(0xFFFFF8E8),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: isDark ? const Color(0xFF594625) : const Color(0xFFEEDBAA)),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(LucideIcons.info, color: Color(0xFFC18B20), size: 18),
               const SizedBox(width: 10),
-              Expanded(
-                child: _payoutCard(
-                  1,
-                  LucideIcons.wallet,
-                  'Crypto Wallet',
-                  _cryptoDetails?['wallet_address'] != null
-                      ? 'USDT (${_cryptoDetails!['currency'] ?? 'TRC20'})'
-                      : 'USDT (TRC20 / ERC20)',
-                  _cryptoDetails?['status'] == 'approved' ? 'Verified' : 'Ready',
-                  'Near-Instant (~10–30m)',
-                  isDark,
-                ),
-              ),
-            ],
-          ),
-        ],
+              Expanded(child: Text('Add a bank account or crypto wallet in Profile → Payment Methods before requesting a withdrawal.', style: TextStyle(color: isDark ? const Color(0xFFF2D99A) : const Color(0xFF765719), fontSize: 12, height: 1.4))),
+            ]),
+          )
+        else
+          LayoutBuilder(builder: (context, methodConstraints) {
+            final cards = <Widget>[
+              if (_hasBankDestination) _payoutCard(0, LucideIcons.landmark, 'Bank Transfer', _bankDestinationLabel, (_bankDetails?['status'] ?? 'Saved').toString(), '1–3 Business Days', isDark),
+              if (_hasCryptoDestination) _payoutCard(1, LucideIcons.wallet, 'Crypto Wallet', _cryptoDestinationLabel, (_cryptoDetails?['status'] ?? 'Saved').toString(), 'Near-Instant (~10–30m)', isDark),
+            ];
+            if (methodConstraints.maxWidth < 440 || cards.length == 1) {
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                for (var i = 0; i < cards.length; i++) ...[cards[i], if (i != cards.length - 1) const SizedBox(height: 8)],
+              ]);
+            }
+            return Row(children: [
+              for (var i = 0; i < cards.length; i++) ...[Expanded(child: cards[i]), if (i != cards.length - 1) const SizedBox(width: 10)],
+            ]);
+          }),
         const SizedBox(height: 18),
         Row(
           children: [
@@ -1307,7 +1323,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         const SizedBox(height: 18),
         _fundButton(
           'CONFIRM WITHDRAWAL',
-          onPressed: () => _submit(true),
+          onPressed: (!_hasBankDestination && !_hasCryptoDestination) ? null : () => _submit(true),
         ),
       ],
     );
@@ -2042,7 +2058,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
 
   Widget _fundButton(
     String label, {
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     bool isLoading = false,
   }) =>
       SizedBox(
@@ -2119,6 +2135,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     }
 
     if (withdrawal) {
+      if ((_payout == 0 && !_hasBankDestination) || (_payout == 1 && !_hasCryptoDestination)) {
+        showAppMessage('Select a saved payout method from Profile → Payment Methods.');
+        return;
+      }
       final available = _activeTradingAccount['available'] as double;
       if (parsedAmount > available) {
         showAppMessage(

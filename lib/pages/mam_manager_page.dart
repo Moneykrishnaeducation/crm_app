@@ -1433,6 +1433,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
         setState(() {
           _masters.insert(0, newMaster);
         });
+        _loadMamAccounts();
       },
     );
   }

@@ -468,9 +468,17 @@ class BrokerOpenPosition {
   final double profit;
 }
 class BrokerTradeRecord {
-  const BrokerTradeRecord({required this.symbol, required this.side, required this.volume, required this.closedAt, required this.profit});
+  const BrokerTradeRecord({
+    required this.symbol,
+    required this.side,
+    required this.volume,
+    required this.closedAt,
+    required this.profit,
+    this.commission = 0,
+    this.swap = 0,
+  });
   final String symbol, side, volume, closedAt;
-  final double profit;
+  final double profit, commission, swap;
 }
 
 class _AccountCredentialsPanel extends StatelessWidget {

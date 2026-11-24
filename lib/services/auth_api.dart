@@ -394,12 +394,12 @@ class AuthApi {
   }) async {
     final id = Uri.encodeComponent(accountId);
     final query = <String, String>{
-      'days_back': '$daysBack',
+      if (fromDate == null || toDate == null) 'days_back': '$daysBack',
       if (fromDate != null && fromDate.isNotEmpty) 'from_date': fromDate,
       if (toDate != null && toDate.isNotEmpty) 'to_date': toDate,
     };
     final queryString = Uri(queryParameters: query).query;
-    final response = await _request('GET', 'close-position/$id/?$queryString');
+    final response = await _request('GET', 'trading-account/$id/closed-positions/?$queryString');
     dynamic payload = response;
     for (var depth = 0; depth < 4; depth++) {
       if (payload is List) {

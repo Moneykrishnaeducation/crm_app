@@ -26,6 +26,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
   String _symbolFilter = 'All Symbols';
   String _timeframe = 'Day';
   bool _hideNetDeposit = false;
+  bool _loadingTrades = false;
+  String? _tradeLoadError;
+  List<BrokerTradeRecord> _loadedTrades = <BrokerTradeRecord>[];
+  int _requestGeneration = 0;
 
   Offset? _equityScrubOffset;
   Offset? _pnlScrubOffset;
@@ -47,6 +51,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
     _endDate = DateTime(today.year, today.month, today.day);
     _startDate = _endDate.subtract(const Duration(days: 6));
     _selectedPreset = '7days';
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadTrades());
   }
 
   @override
@@ -55,50 +60,82 @@ class _TradeReportPageState extends State<TradeReportPage> {
     if (widget.selectedAccountLogin != null &&
         widget.selectedAccountLogin != oldWidget.selectedAccountLogin) {
       _selectedLogin = widget.selectedAccountLogin!;
+      _loadedTrades = <BrokerTradeRecord>[];
+      _loadTrades();
+    } else if (widget.accounts != oldWidget.accounts) {
+      _loadTrades();
     }
   }
 
-  List<BrokerAccount> get _allAccounts {
-    if (widget.accounts != null && widget.accounts!.isNotEmpty) {
-      return widget.accounts!;
+  List<BrokerAccount> get _allAccounts => widget.accounts ?? const <BrokerAccount>[];
+
+  BrokerAccount? get _currentAccountOrNull {
+    for (final account in _allAccounts) {
+      if (account.login == _selectedLogin) return account;
     }
-    return const [
-      BrokerAccount(
-        'V Tamizharasan',
-        '52132132',
-        '1:500',
-        r'$0.00',
-        r'$0.00',
-        'Live MT5',
-        server: 'GTCGlobalSA-Server 2(MT5)',
-      ),
-      BrokerAccount(
-        'XRSIM-USD-1',
-        '3315',
-        '1:100',
-        r'$10,000.00',
-        r'$10,000.00',
-        'Demo MT5',
-        server: 'GTCGlobalSA-Demo(MT5)',
-      ),
-      BrokerAccount(
-        'Main MT5',
-        '8820412',
-        '1:200',
-        r'$2,450.00',
-        r'$2,450.00',
-        'Live MT5',
-        server: 'GTCGlobalSA-Live 1(MT5)',
-      ),
-    ];
+    return _allAccounts.isEmpty ? null : _allAccounts.first;
   }
 
-  BrokerAccount get _currentAccount {
-    final list = _allAccounts;
-    return list.firstWhere(
-      (a) => a.login == _selectedLogin,
-      orElse: () => list.first,
-    );
+  BrokerAccount get _currentAccount => _currentAccountOrNull ??
+      const BrokerAccount('Trading account', '', '—', r'$0.00', r'$0.00', 'Live MT5');
+
+  String _apiDate(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+
+  double _tradeNumber(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse((value ?? '').toString().replaceAll(',', '').trim()) ?? 0;
+  }
+
+  Future<void> _loadTrades() async {
+    final account = _currentAccountOrNull;
+    if (account == null || account.login.isEmpty) {
+      if (mounted) setState(() {
+        _loadedTrades = <BrokerTradeRecord>[];
+        _loadingTrades = false;
+        _tradeLoadError = null;
+      });
+      return;
+    }
+    final generation = ++_requestGeneration;
+    if (mounted) setState(() { _loadingTrades = true; _tradeLoadError = null; });
+    try {
+      final rawTrades = await AuthApi.instance.getClosedPositions(
+        account.login,
+        fromDate: _apiDate(_startDate),
+        toDate: _apiDate(_endDate),
+      );
+      final parsed = <BrokerTradeRecord>[];
+      for (final item in rawTrades) {
+        final symbol = (item['symbol'] ?? '').toString().trim();
+        if (symbol.isEmpty) continue;
+        final type = (item['type'] ?? item['side'] ?? 'buy').toString().toLowerCase();
+        final closedAt = (item['close_time'] ?? item['closed_at'] ?? item['closeTime'] ?? '').toString();
+        final commission = _tradeNumber(item['commission']);
+        final swap = _tradeNumber(item['swap']);
+        parsed.add(BrokerTradeRecord(
+          symbol: symbol,
+          side: type,
+          volume: _tradeNumber(item['volume']).toStringAsFixed(2),
+          closedAt: closedAt,
+          profit: _tradeNumber(item['profit']) + commission + swap,
+          commission: commission,
+          swap: swap,
+        ));
+      }
+      if (!mounted || generation != _requestGeneration) return;
+      setState(() { _loadedTrades = parsed; _loadingTrades = false; _tradeLoadError = null; });
+    } on AuthApiException catch (error) {
+      if (!mounted || generation != _requestGeneration) return;
+      setState(() { _loadingTrades = false; _tradeLoadError = error.message; _loadedTrades = <BrokerTradeRecord>[]; });
+    } catch (_) {
+      if (!mounted || generation != _requestGeneration) return;
+      setState(() {
+        _loadingTrades = false;
+        _tradeLoadError = 'Unable to load closed trades. Check your connection and retry.';
+        _loadedTrades = <BrokerTradeRecord>[];
+      });
+    }
   }
 
   String _formatCurrency(String raw) {
@@ -281,6 +318,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
         });
       }
     }
+    if (mounted) _loadTrades();
   }
 
   Widget _buildPresetTile({
@@ -452,6 +490,12 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }
 
   @override
+  void dispose() {
+    _requestGeneration++;
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pageBg = Theme.of(context).scaffoldBackgroundColor;
@@ -485,8 +529,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
         backgroundColor: cardBg,
         onRefresh: () async {
           HapticFeedback.lightImpact();
-          await Future.delayed(const Duration(milliseconds: 350));
-          if (mounted) setState(() {});
+          await _loadTrades();
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -496,7 +539,29 @@ class _TradeReportPageState extends State<TradeReportPage> {
             children: [
                   _buildDateRangeFilterRow(cardBg, cardBorder, mutedText, titleText),
                   const SizedBox(height: 14),
-                  _buildHeroAccountCard(currentAcc, balanceStr, equityStr),
+                  if (_loadingTrades)
+                    const Padding(padding: EdgeInsets.only(bottom: 12), child: LinearProgressIndicator(minHeight: 2)),
+                  if (_tradeLoadError != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFDC2626).withValues(alpha: .08), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: .25))),
+                      child: Row(children: [
+                        const Icon(LucideIcons.alertCircle, color: Color(0xFFDC2626), size: 17),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_tradeLoadError!, style: const TextStyle(fontSize: 11))),
+                        TextButton(onPressed: _loadTrades, child: const Text('Retry')),
+                      ]),
+                    ),
+                  if (_allAccounts.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: cardBorder)),
+                      child: Text('No trading accounts are available for this report.', style: TextStyle(color: mutedText, fontSize: 12)),
+                    )
+                  else
+                    _buildHeroAccountCard(currentAcc, balanceStr, equityStr),
                   const SizedBox(height: 22),
                   _buildReportSectionHeading(
                     'Trading activity',
@@ -820,6 +885,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Color title,
     bool isDark,
   ) {
+    final trades = _filteredTrades;
+    final lots = trades.fold<double>(0, (sum, trade) => sum + (double.tryParse(trade.volume) ?? 0));
+    final commission = trades.fold<double>(0, (sum, trade) => sum + trade.commission);
+    final swap = trades.fold<double>(0, (sum, trade) => sum + trade.swap);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -871,12 +940,12 @@ class _TradeReportPageState extends State<TradeReportPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Trade Volume (Million USD)',
+                        'Total Trade Lots',
                         style: TextStyle(fontSize: 12, color: muted),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '0.0000',
+                        lots.toStringAsFixed(2),
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w700,
@@ -912,11 +981,11 @@ class _TradeReportPageState extends State<TradeReportPage> {
                       children: [
                         Text('Commissions', style: TextStyle(fontSize: 12, color: muted)),
                         const SizedBox(height: 4),
-                        Text('0.00', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
+                        Text(commission.abs().toStringAsFixed(2), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
                         const SizedBox(height: 14),
                         Text('Trade Count', style: TextStyle(fontSize: 12, color: muted)),
                         const SizedBox(height: 4),
-                        Text('0', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
+                        Text('${trades.length}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
                       ],
                     ),
                   ),
@@ -926,11 +995,11 @@ class _TradeReportPageState extends State<TradeReportPage> {
                       children: [
                         Text('Trade Lots', style: TextStyle(fontSize: 12, color: muted)),
                         const SizedBox(height: 4),
-                        Text('0.00', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
+                        Text(lots.toStringAsFixed(2), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
                         const SizedBox(height: 14),
-                        Text('Interest (USD)', style: TextStyle(fontSize: 12, color: muted)),
+                        Text('Swap (USD)', style: TextStyle(fontSize: 12, color: muted)),
                         const SizedBox(height: 4),
-                        Text('0.00', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
+                        Text(swap.toStringAsFixed(2), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: title)),
                       ],
                     ),
                   ),
@@ -951,10 +1020,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Color title,
     bool isDark,
   ) {
+    final closedPnL = _filteredTrades.fold<double>(0, (sum, trade) => sum + trade.profit);
     const posPnL = 0.00;
-    const closedPnL = 0.00;
     const posTotalPnL = 0.00;
-    const closedTotalPnL = 0.00;
+    final closedTotalPnL = closedPnL;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1109,6 +1178,20 @@ class _TradeReportPageState extends State<TradeReportPage> {
 
   // --- Deposit / Withdraw 2x2 Grid Cards ---
   Widget _buildDepositWithdrawGrid(
+    Color bg,
+    Color border,
+    Color muted,
+    Color title,
+    bool isDark,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: bg, border: Border.all(color: border), borderRadius: BorderRadius.circular(16)),
+      child: Text('Cash flow is not included in closed-trade history.', style: TextStyle(color: muted, fontSize: 11)),
+    );
+  }
+
+  Widget _buildDepositWithdrawGrid_UNUSED(
     Color bg,
     Color border,
     Color muted,
@@ -1315,14 +1398,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
       final yesterday = now.subtract(const Duration(days: 1));
       return DateTime(yesterday.year, yesterday.month, yesterday.day);
     }
-    return DateTime.tryParse(value.trim());
+    final normalized = value.trim().replaceFirstMapped(
+      RegExp(r'^(\d{4})\.(\d{2})\.(\d{2})'),
+      (match) => '${match[1]}-${match[2]}-${match[3]}',
+    );
+    return DateTime.tryParse(normalized);
   }
 
   List<BrokerTradeRecord> get _filteredTrades {
     final start = DateTime(_startDate.year, _startDate.month, _startDate.day);
     final endExclusive = DateTime(_endDate.year, _endDate.month, _endDate.day)
         .add(const Duration(days: 1));
-    return _currentAccount.recentTrades.where((trade) {
+    return _loadedTrades.where((trade) {
       if (_symbolFilter != 'All Symbols' && trade.symbol != _symbolFilter) {
         return false;
       }
@@ -1370,7 +1457,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }
 
   Widget _buildEquityCurveSection(Color bg, Color border, Color title, bool isDark) {
-    final history = _currentAccount.equityHistory;
+    final history = <double>[];
     final muted = isDark ? const Color(0xFF8190A5) : const Color(0xFF8995A7);
     final start = history.isEmpty ? 0.0 : history.first;
     final end = history.isEmpty ? 0.0 : history.last;

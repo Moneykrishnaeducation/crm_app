@@ -492,6 +492,16 @@ class AuthApi {
     );
   }
 
+  Future<Map<String, dynamic>> getPammOpenPositions(
+    String accountId, {
+    required bool isManager,
+  }) =>
+      _request(
+        'GET',
+        '${isManager ? 'open-positions' : 'get-trading-positions'}/${Uri.encodeComponent(accountId)}/',
+        useRootApi: true,
+      );
+
   Future<List<Map<String, dynamic>>> getClosedPositions(
     String accountId, {
     int daysBack = 30,

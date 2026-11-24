@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:crm_app/app_notifications.dart';
 import 'package:crm_app/services/auth_api.dart';
@@ -9,7 +10,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crm_app/pages/pamm_tab_pages.dart';
 import 'package:crm_app/widgets/pool_trades_modal.dart';
-import 'package:crm_app/pages/trade_pattern_analysis_page.dart';
 
 part 'pamm_managed_tab_content.dart';
 part 'pamm_available_tab_content.dart';
@@ -1640,41 +1640,17 @@ class _PammPageState extends State<PammPage> {
     );
   }
 
-  void _openTradePatternAnalysis([_PammPool? pool]) {
-    final targetPool = pool ?? _selectedManagedPool ?? _selectedAvailablePool;
-    final login = targetPool?.login ?? '3503';
-    if (widget.onSelectPage != null) {
-      widget.onSelectPage!('Trade Pattern Analysis');
-    } else {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => TradePatternAnalysisPage(
-            initialAccountLogin: login,
-            onBack: () => Navigator.of(context).pop(),
-          ),
-        ),
-      );
-    }
-  }
-
   Widget _poolAnalyticsCard([_PammPool? pool]) => _managedDetailCard(
     title: 'Analytics and activity',
-    subtitle: 'Review trading activity',
+    subtitle: 'Live MT5 positions for this PAMM account',
     icon: Icons.monitor_heart_outlined,
     child: Column(
       children: [
         _detailAction(
-          'View pool trades',
-          'Orders and floating P/L',
+          'Open positions',
+          'View positions for MT5 login ${pool?.login ?? ''}',
           Icons.bar_chart,
           () => _openPoolTrades(pool),
-        ),
-        const SizedBox(height: 8),
-        _detailAction(
-          'Trade pattern analysis',
-          'Behavioral metrics and win rate',
-          Icons.trending_up,
-          () => _openTradePatternAnalysis(pool),
         ),
       ],
     ),
@@ -1929,6 +1905,24 @@ class _PammPageState extends State<PammPage> {
 
   void _showPammMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _pammRequestError(Object error, String fallback) {
+    if (error is! AuthApiException) return fallback;
+    final details = error.data?['details'];
+    if (details is Map) {
+      final fields = details.entries.map((entry) {
+        final value = entry.value is List
+            ? (entry.value as List).join(', ')
+            : entry.value.toString();
+        return '${entry.key}: $value';
+      }).join(' · ');
+      if (fields.isNotEmpty) return '${error.message}: $fields';
+    }
+    if (details is String && details.trim().isNotEmpty && details != error.message) {
+      return '${error.message}: ${details.trim()}';
+    }
+    return error.message;
   }
 
   Future<void> _showCreatedPammCredentials({
@@ -2458,15 +2452,17 @@ class _PammPageState extends State<PammPage> {
                           ),
                         ),
                         if (!managed) ...[
-                          Text(
-                            ' • ${pool.manager}',
-                            style: GoogleFonts.poppins(
-                              color: _muted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Text(
+                              ' • ${pool.manager}',
+                              style: GoogleFonts.poppins(
+                                color: _muted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
@@ -2806,11 +2802,20 @@ class _PammPageState extends State<PammPage> {
 
   String _money(double value) => '\$${value.toStringAsFixed(2)}';
 
+  String _generatePammPassword() {
+    final random = math.Random.secure();
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const digits = '0123456789';
+    String pick(String characters) => characters[random.nextInt(characters.length)];
+    return '${pick(uppercase)}${List.generate(3, (_) => pick(lowercase)).join()}_${List.generate(3, (_) => pick(digits)).join()}';
+  }
+
   Future<void> _createPool() async {
     final name = TextEditingController();
     final share = TextEditingController(text: '20');
-    final masterPassword = TextEditingController();
-    final investorPassword = TextEditingController();
+    final masterPassword = TextEditingController(text: _generatePammPassword());
+    final investorPassword = TextEditingController(text: _generatePammPassword());
     final formKey = GlobalKey<FormState>();
     var leverage = '1:500';
     var showMasterPassword = false;
@@ -2925,6 +2930,10 @@ class _PammPageState extends State<PammPage> {
               TextFormField(
                 controller: controller,
                 obscureText: password && !visible,
+                inputFormatters: password
+                    ? [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]'))]
+                    : null,
+                maxLength: password ? 12 : null,
                 keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
                 style: TextStyle(color: _text, fontSize: 12.5, fontWeight: FontWeight.w600),
                 decoration: inputDecoration(
@@ -2980,6 +2989,8 @@ class _PammPageState extends State<PammPage> {
               TextFormField(
                 controller: controller,
                 obscureText: !visible,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]'))],
+                maxLength: 12,
                 style: TextStyle(color: _text, fontSize: 11),
                 decoration: inputDecoration(
                   'Enter password',
@@ -3007,7 +3018,7 @@ class _PammPageState extends State<PammPage> {
                   ),
                   TextButton.icon(
                     onPressed: () {
-                      controller.text = 'Pamm_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}A1';
+                      controller.text = _generatePammPassword();
                     },
                     icon: const Icon(LucideIcons.refreshCw, size: 12),
                     label: const Text('Regenerate', style: TextStyle(fontSize: 9)),
@@ -3294,7 +3305,7 @@ class _PammPageState extends State<PammPage> {
                                     } catch (error) {
                                       if (!sheetContext.mounted) return;
                                       setSheetState(() => isCreating = false);
-                                      final message = error is AuthApiException ? error.message : 'Could not create the PAMM account.';
+                                      final message = _pammRequestError(error, 'Could not create the PAMM account.');
                                       ScaffoldMessenger.of(sheetContext).showSnackBar(SnackBar(content: Text(message)));
                                     }
                                   },
@@ -3848,14 +3859,17 @@ class _PammPageState extends State<PammPage> {
     ],
   );
 
-  void _joinInvestmentDialog(_PammPool pool) {
+  Future<void> _joinInvestmentDialog(_PammPool pool) async {
     final alias = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    showDialog<void>(
+    ModalRoute<dynamic>? joinRoute;
+    await showDialog<void>(
       context: context,
       barrierDismissible: true,
       useSafeArea: false,
-      builder: (dialogContext) => Dialog(
+      builder: (dialogContext) {
+        joinRoute ??= ModalRoute.of(dialogContext);
+        return Dialog(
         alignment: Alignment.bottomCenter,
         backgroundColor: _card,
         insetPadding: EdgeInsets.zero,
@@ -4072,6 +4086,8 @@ class _PammPageState extends State<PammPage> {
                                     _search.clear();
                                   });
                                   if (dialogContext.mounted) Navigator.pop(dialogContext);
+                                  final route = joinRoute;
+                                  if (route != null) await route.completed;
                                   if (mounted) {
                                     await _showCreatedPammCredentials(
                                       title: 'PAMM investment account created',
@@ -4098,8 +4114,12 @@ class _PammPageState extends State<PammPage> {
             ],
           ),
         ),
-      ),
-    ).whenComplete(alias.dispose);
+        );
+      },
+    );
+    final route = joinRoute;
+    if (route != null) await route.completed;
+    alias.dispose();
   }
 
   Widget _joinFieldLabel(String label) => Padding(

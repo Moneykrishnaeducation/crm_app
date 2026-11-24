@@ -1,7 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:crm_app/services/auth_api.dart';
 
 class PoolOpenPosition {
   const PoolOpenPosition({
@@ -13,8 +13,8 @@ class PoolOpenPosition {
     required this.currentPrice,
     required this.profit,
     this.swap = '0.00',
-    this.openTime = '2026-11-21 11:15',
-    this.comment = 'PAMM execution',
+    this.openTime = '',
+    this.comment = '',
   });
 
   final String ticket;
@@ -76,6 +76,7 @@ class _PoolTradesModalState extends State<PoolTradesModal>
   late AnimationController _pulseController;
   bool _loading = false;
   late List<PoolOpenPosition> _positions;
+  String? _error;
 
   bool get _dark => Theme.of(context).brightness == Brightness.dark;
 
@@ -98,7 +99,8 @@ class _PoolTradesModalState extends State<PoolTradesModal>
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
 
-    _positions = widget.initialPositions ?? _generateDefaultPositions(widget.poolLogin);
+    _positions = widget.initialPositions ?? [];
+    _refreshPositions();
   }
 
   @override
@@ -107,125 +109,56 @@ class _PoolTradesModalState extends State<PoolTradesModal>
     super.dispose();
   }
 
-  List<PoolOpenPosition> _generateDefaultPositions(String login) {
-    if (login == '3420' || login.contains('214171')) {
-      return const [
-        PoolOpenPosition(
-          ticket: '98402',
-          symbol: 'EURUSD',
-          type: 'BUY',
-          volume: '0.25',
-          openPrice: '1.08450',
-          currentPrice: '1.08720',
-          profit: 67.50,
-          swap: '0.00',
-          openTime: 'Today, 09:15',
-          comment: 'PAMM Pool Alloc',
-        ),
-        PoolOpenPosition(
-          ticket: '98409',
-          symbol: 'GBPUSD',
-          type: 'SELL',
-          volume: '0.15',
-          openPrice: '1.29800',
-          currentPrice: '1.29610',
-          profit: 28.50,
-          swap: '-0.85',
-          openTime: 'Today, 10:40',
-          comment: 'Session Trend',
-        ),
-        PoolOpenPosition(
-          ticket: '98418',
-          symbol: 'XAUUSD',
-          type: 'BUY',
-          volume: '0.05',
-          openPrice: '2685.10',
-          currentPrice: '2689.44',
-          profit: 21.70,
-          swap: '0.00',
-          openTime: 'Today, 11:20',
-          comment: 'Gold Breakout',
-        ),
-      ];
-    }
-
-    return const [
-      PoolOpenPosition(
-        ticket: '98201',
-        symbol: 'EURUSD',
-        type: 'BUY',
-        volume: '0.20',
-        openPrice: '1.08450',
-        currentPrice: '1.08720',
-        profit: 54.00,
-        swap: '0.00',
-        openTime: 'Today, 10:14',
-        comment: 'PAMM Master 3503',
-      ),
-      PoolOpenPosition(
-        ticket: '98208',
-        symbol: 'GBPUSD',
-        type: 'SELL',
-        volume: '0.15',
-        openPrice: '1.29800',
-        currentPrice: '1.29610',
-        profit: 28.50,
-        swap: '-0.65',
-        openTime: 'Today, 11:28',
-        comment: 'PAMM Master 3503',
-      ),
-      PoolOpenPosition(
-        ticket: '98214',
-        symbol: 'XAUUSD',
-        type: 'BUY',
-        volume: '0.05',
-        openPrice: '2685.10',
-        currentPrice: '2685.44',
-        profit: 1.70,
-        swap: '0.00',
-        openTime: 'Today, 12:05',
-        comment: 'PAMM Master 3503',
-      ),
-      PoolOpenPosition(
-        ticket: '98229',
-        symbol: 'BTCUSD',
-        type: 'BUY',
-        volume: '0.02',
-        openPrice: '67400.0',
-        currentPrice: '67280.0',
-        profit: -2.40,
-        swap: '-0.20',
-        openTime: 'Today, 13:42',
-        comment: 'Micro Hedging',
-      ),
-    ];
-  }
-
   Future<void> _refreshPositions() async {
-    setState(() => _loading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 650));
-    if (!mounted) return;
-
-    final random = math.Random();
-    setState(() {
-      _positions = _positions.map((p) {
-        final delta = (random.nextDouble() - 0.45) * 4.0;
-        final newProfit = (p.profit + delta).clamp(-500.0, 500.0);
+    if (mounted) setState(() { _loading = true; _error = null; });
+    try {
+      final response = await AuthApi.instance.getPammOpenPositions(
+        widget.poolLogin,
+        isManager: widget.isManager,
+      );
+      dynamic data = response;
+      for (var depth = 0; depth < 5 && data is Map; depth++) {
+        final map = data.cast<String, dynamic>();
+        final positions = map['positions'] ?? map['results'];
+        if (positions is List) {
+          data = positions;
+          break;
+        }
+        data = map['data'] ?? map['result'] ?? map['payload'];
+      }
+      if (data is! List) {
+        throw const AuthApiException('The server returned an unexpected positions response.');
+      }
+      final positions = data.whereType<Map>().map((raw) {
+        final item = raw.cast<String, dynamic>();
+        double number(Object? value) {
+          if (value is num) return value.toDouble();
+          return double.tryParse(value?.toString().replaceAll(',', '') ?? '') ?? 0;
+        }
         return PoolOpenPosition(
-          ticket: p.ticket,
-          symbol: p.symbol,
-          type: p.type,
-          volume: p.volume,
-          openPrice: p.openPrice,
-          currentPrice: p.currentPrice,
-          profit: double.parse(newProfit.toStringAsFixed(2)),
-          swap: p.swap,
-          openTime: p.openTime,
-          comment: p.comment,
+          ticket: (item['ticket'] ?? item['position'] ?? item['id'] ?? '').toString(),
+          symbol: (item['symbol'] ?? 'Unknown symbol').toString(),
+          type: (item['type'] ?? item['side'] ?? '').toString(),
+          volume: number(item['volume']).toStringAsFixed(2),
+          openPrice: number(item['open_price'] ?? item['price']).toString(),
+          currentPrice: number(item['current_price'] ?? item['price'] ?? item['open_price']).toString(),
+          profit: number(item['profit']),
+          swap: number(item['swap']).toStringAsFixed(2),
+          openTime: (item['open_time'] ?? item['time'] ?? item['created_at'] ?? '').toString(),
+          comment: (item['comment'] ?? '').toString(),
         );
-      }).toList();
-      _loading = false;
-    });
+      }).toList(growable: false);
+      if (!mounted) return;
+      setState(() { _positions = positions; _loading = false; });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = error is AuthApiException
+            ? error.message
+            : 'Unable to load open positions. Please try again.';
+      });
+    }
   }
 
   double get _totalProfit =>
@@ -502,9 +435,29 @@ class _PoolTradesModalState extends State<PoolTradesModal>
 
           // Positions List / Empty State
           Expanded(
-            child: _positions.isEmpty
-                ? _buildEmptyState()
-                : ListView.separated(
+            child: _loading && _positions.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null && _positions.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: _muted)),
+                              const SizedBox(height: 10),
+                              OutlinedButton.icon(
+                                onPressed: _loading ? null : _refreshPositions,
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _positions.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
                     itemCount: _positions.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),

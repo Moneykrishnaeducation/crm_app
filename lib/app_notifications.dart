@@ -119,10 +119,10 @@ class AppNotificationCenter {
         // 1. Standard notifications channel (deposits, executions, security alerts)
         await androidPlugin.createNotificationChannel(
           const AndroidNotificationChannel(
-            'vt_index_channel',
-            'VT Index Notifications',
+            'vt_index_alerts_v2',
+            'VT Index Alerts',
             description:
-                'Trading, funding, and security alerts for VT Index CRM',
+                'High-priority trading, funding, and security alerts for VT Index CRM',
             importance: Importance.high,
             enableVibration: true,
           ),
@@ -776,10 +776,10 @@ class AppNotificationCenter {
       }
 
       final androidDetails = AndroidNotificationDetails(
-        'vt_index_channel',
-        'VT Index Notifications',
+        'vt_index_alerts_v2',
+        'VT Index Alerts',
         channelDescription:
-            'Trading, funding, and security alerts for VT Index CRM',
+            'High-priority trading, funding, and security alerts for VT Index CRM',
         importance: Importance.high,
         priority: Priority.high,
         icon: smallIcon,

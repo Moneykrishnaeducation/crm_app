@@ -92,6 +92,7 @@ class MainActivity : FlutterFragmentActivity() {
                     try {
                         val serviceIntent = Intent(this, TradeLiveUpdateService::class.java).apply {
                             putExtra("url", call.argument<String>("url"))
+                            putExtra("host", call.argument<String>("host"))
                             putExtra("accountId", call.argument<String>("accountId"))
                             putExtra("positionId", call.argument<String>("positionId"))
                             putExtra("symbol", call.argument<String>("symbol"))

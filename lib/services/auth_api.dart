@@ -102,14 +102,57 @@ class AuthApi {
     String method,
     String path, {
     Map<String, dynamic>? body,
+    bool encryptProfileBody = false,
   }) async {
     await restoreSession();
     final headers = _headers;
     final responseKeyPair = _createResponseEncryptionKeyPair();
     headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
-    if (body != null) headers['Content-Type'] = 'application/json';
+
+    Map<String, dynamic>? wireBody = body;
+    if (body != null && encryptProfileBody) {
+      // The server issues a short-lived, one-use key for every encrypted write.
+      final requestKey = await requestProfileEncryptionKey();
+      final keyId = _findString(requestKey, const ['key_id']);
+      final pem = _findString(requestKey, const ['public_key']);
+      if (keyId == null || pem == null) {
+        _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+        throw const AuthApiException(
+          'The server did not provide a profile encryption key.',
+        );
+      }
+
+      const aadText = 'vtindex:profile-request:v1';
+      final aad = Uint8List.fromList(utf8.encode(aadText));
+      final aesKey = _randomBytes(32);
+      final nonce = _randomBytes(12);
+      final cipher = GCMBlockCipher(AESEngine())
+        ..init(true, AEADParameters(KeyParameter(aesKey), 128, nonce, aad));
+      final ciphertext = cipher.process(
+        Uint8List.fromList(utf8.encode(jsonEncode(body))),
+      );
+      final wrappedKey = _rsaOaepSha256Encrypt(
+        aesKey,
+        pem,
+        encodingParams: aad,
+      );
+
+      headers['X-Request-Encryption-Key-Id'] = keyId;
+      headers['Content-Type'] = 'application/vnd.vtindex.encrypted+json';
+      wireBody = <String, dynamic>{
+        'encrypted': true,
+        'version': 1,
+        'algorithm': 'RSA-OAEP-256+A256GCM',
+        'wrapped_key': base64Encode(wrappedKey),
+        'nonce': base64Encode(nonce),
+        'ciphertext': base64Encode(ciphertext),
+      };
+    } else if (body != null) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     final request = http.Request(method, _uri(path))..headers.addAll(headers);
-    if (body != null) request.body = jsonEncode(body);
+    if (wireBody != null) request.body = jsonEncode(wireBody);
     final streamed = await _client
         .send(request)
         .timeout(const Duration(seconds: 25));
@@ -121,6 +164,7 @@ class AuthApi {
           ? <String, dynamic>{}
           : jsonDecode(response.body);
     } on FormatException {
+      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
       throw AuthApiException(
         'The server returned an invalid response.',
         statusCode: response.statusCode,
@@ -999,13 +1043,76 @@ class AuthApi {
     return data;
   }
 
-  /// Get approved user bank details
+  /// Fetch the authenticated user's profile.
+  Future<Map<String, dynamic>> getProfile() => _request('GET', 'profile/');
+
+  /// Save the profile fields supported by Django's EditPersonalInfoView.
+  /// Name, email, gender, nationality, occupation and tax residency are not
+  /// editable through this endpoint.
+  Future<Map<String, dynamic>> updatePersonalInfo({
+    String? phoneNumber,
+    String? dateOfBirth,
+    String? address,
+    String? city,
+    String? state,
+    String? country,
+    String? zipCode,
+  }) {
+    final body = <String, dynamic>{
+      if (phoneNumber != null) 'phone_number': phoneNumber,
+      if (dateOfBirth != null) 'dob': dateOfBirth,
+      if (address != null) 'address': address,
+      if (city != null) 'city': city,
+      if (state != null) 'state': state,
+      if (country != null) 'country': country,
+      if (zipCode != null) 'zip_code': zipCode,
+    };
+    return _request(
+      'POST',
+      'profile/edit/',
+      body: body,
+      encryptProfileBody: true,
+    );
+  }
+
+  /// Fetch the current user's bank payout details.
   Future<Map<String, dynamic>> getBankDetails() =>
       _request('GET', 'profile/bank-details/');
 
-  /// Get approved user crypto details
+  /// Submit a bank payout destination. The API returns a pending approval status.
+  Future<Map<String, dynamic>> updateBankDetails({
+    required String bankName,
+    required String accountNumber,
+    String? branchName,
+    String? ifscCode,
+  }) =>
+      _request(
+        'POST',
+        'profile/bank-details/',
+        body: {
+          'bank_name': bankName,
+          'account_number': accountNumber,
+          if (branchName != null) 'branch_name': branchName,
+          if (ifscCode != null) 'ifsc_code': ifscCode,
+        },
+        encryptProfileBody: true,
+      );
+
+  /// Fetch the current user's crypto destination.
   Future<Map<String, dynamic>> getCryptoDetails() =>
       _request('GET', 'profile/crypto-details/');
+
+  /// Submit a crypto wallet destination. Changes require admin approval.
+  Future<Map<String, dynamic>> updateCryptoDetails({
+    required String walletAddress,
+    required String currency,
+  }) =>
+      _request(
+        'POST',
+        'profile/crypto-details/',
+        body: {'wallet_address': walletAddress, 'currency': currency},
+        encryptProfileBody: true,
+      );
 
   Future<String> encryptPasswordForPasswordFlow(String password) async {
     final response = await requestPasswordKey();

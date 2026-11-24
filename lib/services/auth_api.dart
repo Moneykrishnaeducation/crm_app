@@ -723,6 +723,7 @@ class AuthApi {
         ? 'profile/security/devices/revoke/'
         : 'profile/security/devices/$deviceId/revoke/',
     body: const {},
+    encryptProfileBody: true,
   );
 
   Future<Map<String, dynamic>> getCaptchaSettings() =>
@@ -853,6 +854,7 @@ class AuthApi {
     'PATCH',
     'profile/security/two-factor/',
     body: {'require_email_otp_at_login': enabled},
+    encryptProfileBody: true,
   );
   Future<Map<String, dynamic>> changeClientLoginPassword({
     required String currentPassword,
@@ -889,7 +891,7 @@ class AuthApi {
   );
 
   Future<Map<String, dynamic>> requestProfileEncryptionKey() => _request(
-    'POST',
+    'GET',
     'profile/security/request-encryption-key/',
     body: const {},
   );
@@ -898,6 +900,7 @@ class AuthApi {
         'POST',
         'profile/security/verify-password/',
         body: {'password': password},
+        encryptProfileBody: true,
       );
 
   /// Trading groups for account creation (type: 'real' or 'demo')

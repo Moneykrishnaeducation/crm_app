@@ -993,6 +993,47 @@ class AuthApi {
         },
       );
 
+  /// Create a MAM master account through the authenticated Django API.
+  Future<Map<String, dynamic>> createMamAccount({
+    required String accountName,
+    required String leverage,
+    required double profitSharingPercentage,
+    required String riskLevel,
+    required String payoutFrequency,
+  }) =>
+      _request(
+        'POST',
+        'mam-accounts/create/',
+        body: {
+          'account_name': accountName.trim(),
+          'leverage': leverage.contains(':') ? leverage.split(':').last : leverage,
+          'profit_sharing_percentage': profitSharingPercentage.toStringAsFixed(2),
+          'risk_level': riskLevel.toLowerCase() == 'low' ||
+                  riskLevel.toLowerCase() == 'low-risk'
+              ? 'low'
+              : (riskLevel.toLowerCase() == 'high' ||
+                      riskLevel.toLowerCase() == 'aggressive'
+                  ? 'high'
+                  : 'medium'),
+          'payout_frequency': payoutFrequency.toLowerCase().replaceAll(' ', '-'),
+        },
+      );
+
+  /// Fetch the authenticated user's MAM master accounts.
+  Future<List<Map<String, dynamic>>> getUserMamAccounts() async {
+    final response = await _request('GET', 'user-mam-accounts/');
+    dynamic data = response;
+    if (data['results'] is List) data = data['results'];
+    if (data['data'] is List) data = data['data'];
+    if (data is! List) {
+      throw const AuthApiException('Unexpected MAM accounts response format.');
+    }
+    return data
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+  }
+
   /// Live USD to INR exchange rate
   Future<double> getUsdInrRate() async {
     try {

@@ -417,10 +417,14 @@ class AppNotificationCenter {
         return '#$ticket · $symbol $side $volume · ${money(_number(row['profit']))} · #${row['_accountId']}';
       }
       final body = <String>[
-        'DEMO · $demoAccountCount accounts · ${demo.length} positions · P/L ${money(demoPnl)}',
-        if (demo.isEmpty) 'No open demo positions' else ...demo.map(detail),
-        'LIVE · $liveAccountCount accounts · ${live.length} positions · P/L ${money(livePnl)}',
-        if (live.isEmpty) 'No open live positions' else ...live.map(detail),
+        if (demo.isNotEmpty) ...[
+          'DEMO · $demoAccountCount accounts · ${demo.length} positions · P/L ${money(demoPnl)}',
+          ...demo.map(detail),
+        ],
+        if (live.isNotEmpty) ...[
+          'LIVE · $liveAccountCount accounts · ${live.length} positions · P/L ${money(livePnl)}',
+          ...live.map(detail),
+        ],
       ].join('\n');
       final demoSign = demoPnl >= 0 ? '+' : '-';
       final liveSign = livePnl >= 0 ? '+' : '-';
@@ -429,7 +433,7 @@ class AppNotificationCenter {
         id: 7777,
         title: 'VT Index · Portfolio Live',
         body: body,
-        subText: 'DEMO + LIVE POSITIONS',
+        subText: 'OPEN POSITIONS',
         shortText: short,
         colorHex: totalPnl >= 0 ? '#10B981' : '#EF4444',
         iconType: 'trade',

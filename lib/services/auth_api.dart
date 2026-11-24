@@ -1275,8 +1275,12 @@ class AuthApi {
     required String label,
   }) async {
     await restoreSession();
+    // DRF negotiates the request against configured renderers before
+    // executing the view. These file endpoints still return FileResponse,
+    // but image/* is not a configured DRF renderer and causes HTTP 406.
+    // Request JSON for negotiation; the view's FileResponse remains raw bytes.
     final headers = _headers
-      ..['Accept'] = 'image/*'
+      ..['Accept'] = 'application/json'
       ..['Cache-Control'] = 'no-cache';
     final request = http.Request('GET', _uri(endpoint))
       ..headers.addAll(headers);

@@ -1561,7 +1561,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   }
 
   String get _maskedBankAccountNumber {
-    final account = _bankAccountNumber.replaceAll(RegExp(r'\\s+'), '');
+    final account = _bankAccountNumber.replaceAll(' ', '');
     if (account.isEmpty || account == '—') return account;
     if (account.length <= 4) return '**** $account';
 

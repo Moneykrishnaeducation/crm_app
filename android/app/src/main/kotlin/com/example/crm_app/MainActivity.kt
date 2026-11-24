@@ -108,6 +108,12 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "stopPositionService" -> {
                     stopService(Intent(this, TradeLiveUpdateService::class.java))
+                    // Clear persisted tracking metadata even if Android already
+                    // stopped the service and therefore will not call onDestroy().
+                    getSharedPreferences("vt_trade_live_service", Context.MODE_PRIVATE)
+                        .edit()
+                        .clear()
+                        .apply()
                     cancelLiveNotification(7777)
                     result.success(true)
                 }

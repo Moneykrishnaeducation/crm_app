@@ -1176,10 +1176,6 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
   late final AnimationController _animCtrl;
   String _selectedCategory = 'All';
 
-  static bool _isLiveUpdateRunning = false;
-  static Timer? _liveTickerTimer;
-  static int _liveTickerCount = 0;
-
   @override
   void initState() {
     super.initState();
@@ -1221,50 +1217,6 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
     } catch (error) {
       if (mounted) showAppMessage('Could not clear all notifications. Please retry.');
     }
-  }
-
-  Future<void> _toggleLiveUpdateSimulation() async {
-    if (_isLiveUpdateRunning) {
-      _liveTickerTimer?.cancel();
-      _liveTickerTimer = null;
-      _isLiveUpdateRunning = false;
-      await AppNotificationCenter.instance.stopLiveUpdate(7777);
-      showAppMessage('Native OS Live Update stopped.');
-    } else {
-      _isLiveUpdateRunning = true;
-      _liveTickerCount = 0;
-      await AppNotificationCenter.instance.startLiveUpdate(
-        id: 7777,
-        title: 'XAUUSD BUY 0.10 — Running Live',
-        body: 'Floating P&L: <font color="#10B981"><b>+\$45.20</b></font> · Entry: 2,351.20',
-        subText: 'LIVE',
-        shortText: 'XAU ▲ +\$45.20',
-        colorHex: '#10B981',
-        iconType: 'trade',
-        usesChronometer: true,
-      );
-      showAppMessage('Native Live Update started! Check your phone status bar.');
-
-      _liveTickerTimer?.cancel();
-      _liveTickerTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-        if (!_isLiveUpdateRunning) {
-          timer.cancel();
-          return;
-        }
-        _liveTickerCount++;
-        final pnl = (45.20 + (_liveTickerCount * 3.40)).toStringAsFixed(2);
-        await AppNotificationCenter.instance.updateLiveUpdate(
-          id: 7777,
-          title: 'XAUUSD BUY 0.10 — Running Live',
-          body: 'Floating P&L: <font color="#10B981"><b>+\$$pnl</b></font> · Entry: 2,351.20',
-          subText: 'LIVE',
-          shortText: 'XAU ▲ +\$$pnl',
-          colorHex: '#10B981',
-          iconType: 'trade',
-        );
-      });
-    }
-    if (mounted) setState(() {});
   }
 
   @override
@@ -1418,114 +1370,16 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                         ),
                       ),
                       Divider(height: 1, color: border),
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: _isLiveUpdateRunning
-                              ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                              : const Color(0xFF1658C9).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: _isLiveUpdateRunning
-                                ? const Color(0xFF10B981).withValues(alpha: 0.45)
-                                : const Color(0xFF1658C9).withValues(alpha: 0.25),
-                            width: 1,
-                          ),
-                        ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
                         child: Row(
                           children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _isLiveUpdateRunning
-                                    ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                                    : const Color(0xFF1658C9).withValues(alpha: 0.15),
-                              ),
-                              child: Icon(
-                                _isLiveUpdateRunning ? LucideIcons.radio : LucideIcons.activity,
-                                color: _isLiveUpdateRunning
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFF1658C9),
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
+                            Icon(LucideIcons.radio, size: 15, color: const Color(0xFF0B9E68)),
+                            const SizedBox(width: 8),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          _isLiveUpdateRunning
-                                              ? 'OS Live Update Active'
-                                              : 'Native OS Live Update',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: cs.onSurface,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                        decoration: BoxDecoration(
-                                          color: _isLiveUpdateRunning
-                                              ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                                              : muted.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          _isLiveUpdateRunning ? 'STREAMING' : 'READY',
-                                          style: TextStyle(
-                                            color: _isLiveUpdateRunning
-                                                ? const Color(0xFF10B981)
-                                                : muted,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    _isLiveUpdateRunning
-                                        ? 'Streaming live trade to status bar'
-                                        : 'Test Moto Live Updates pill',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: muted, fontSize: 10),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _toggleLiveUpdateSimulation,
-                              style: TextButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                backgroundColor: _isLiveUpdateRunning
-                                    ? const Color(0xFFEF4444).withValues(alpha: 0.12)
-                                    : const Color(0xFF1658C9),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
                               child: Text(
-                                _isLiveUpdateRunning ? 'Stop' : 'Start Test',
-                                style: TextStyle(
-                                  color: _isLiveUpdateRunning ? const Color(0xFFEF4444) : Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                'Live trade updates appear here when active trade monitoring is enabled.',
+                                style: TextStyle(color: muted, fontSize: 10, height: 1.35),
                               ),
                             ),
                           ],

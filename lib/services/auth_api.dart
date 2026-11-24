@@ -1027,7 +1027,9 @@ class AuthApi {
       ));
     }
 
-    final streamed = await _client.send(request).timeout(const Duration(seconds: 25));
+    final streamed = await _client
+        .send(request)
+        .timeout(const Duration(seconds: 75));
     final response = await http.Response.fromStream(streamed);
     _captureSession(response);
 

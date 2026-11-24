@@ -144,7 +144,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
 
   Future<void> _loadLiveAccounts() async {
     try {
-      final res = await AuthApi.instance.getNonDemoAccounts();
+      final res = await AuthApi.instance.getNonDemoAccounts(fresh: true);
       final accs = (res['accounts'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       if (accs.isNotEmpty && mounted) {
         final liveAccs = <BrokerAccount>[];
@@ -1388,86 +1388,68 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   }
 
   Future<void> _executeTransfer(double amount) async {
-    setState(() => _isProcessing = true);
-    HapticFeedback.mediumImpact();
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-
+    if (_isProcessing) return;
     final fromLogin = _source;
     final toLogin = _destination;
 
-    // Update state balances
-    final currentSourceBal = _balances[fromLogin] ?? 0.0;
-    final currentDestBal = _balances[toLogin] ?? 0.0;
-    _balances[fromLogin] = (currentSourceBal - amount).clamp(0.0, double.infinity);
-    _balances[toLogin] = currentDestBal + amount;
+    setState(() => _isProcessing = true);
+    HapticFeedback.mediumImpact();
 
-    // Also update _accountList
-    final sIdx = _accountList.indexWhere((a) => a.login == fromLogin);
-    if (sIdx != -1) {
-      final a = _accountList[sIdx];
-      final b = _formatMoney(_balances[fromLogin]!);
-      _accountList[sIdx] = BrokerAccount(
-        a.name, a.login, a.leverage, b, b, a.type,
-        server: a.server, currency: a.currency,
-      );
-    }
-    final dIdx = _accountList.indexWhere((a) => a.login == toLogin);
-    if (dIdx != -1) {
-      final a = _accountList[dIdx];
-      final b = _formatMoney(_balances[toLogin]!);
-      _accountList[dIdx] = BrokerAccount(
-        a.name, a.login, a.leverage, b, b, a.type,
-        server: a.server, currency: a.currency,
-      );
-    }
-
-    String trxId = 'TRX-${(100000 + math.Random().nextInt(900000))}';
-    String transferStatus = 'Completed';
     try {
-      final res = await AuthApi.instance.createInternalTransfer(
+      final response = await AuthApi.instance.createInternalTransfer(
         fromAccount: fromLogin,
         toAccount: toLogin,
         amount: amount,
       );
-      if (res['transaction_id'] != null) {
-        trxId = 'TRX-${res['transaction_id']}';
-      }
-    } catch (_) {
-      transferStatus = 'Preview';
+
+      if (!mounted) return;
+
+      // The server is the source of truth. Never mutate balances or show a
+      // receipt unless the transfer endpoint confirms completion.
+      await _loadLiveAccounts();
+      if (!mounted) return;
+
+      final transactionId = response['transaction_id'];
+      final record = _InternalTransferRecord(
+        id: transactionId != null ? 'TRX-$transactionId' : 'TRX-PENDING',
+        sourceLogin: fromLogin,
+        destinationLogin: toLogin,
+        amount: amount,
+        timestamp: DateTime.now(),
+        status: 'Completed',
+      );
+
+      widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
+      unawaited(AppNotificationCenter.instance.sendNotification(
+        title: 'Internal Transfer Successful (${amount.toStringAsFixed(2)})',
+        body: 'Transferred ${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin. Ref: ${record.id}.',
+        category: 'Funds',
+        icon: LucideIcons.arrowLeftRight,
+        isGold: false,
+        sendToMobilePanel: true,
+      ));
+
+      _amountController.clear();
+      setState(() => _isProcessing = false);
+      _showSuccessReceipt(record);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isProcessing = false);
+
+      final message = error is AuthApiException
+          ? error.message
+          : 'The transfer could not be completed. Please try again.';
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 5),
+          ),
+        );
     }
-
-    final record = _InternalTransferRecord(
-      id: trxId,
-      sourceLogin: fromLogin,
-      destinationLogin: toLogin,
-      amount: amount,
-      timestamp: DateTime.now(),
-      status: transferStatus,
-    );
-
-    widget.onTransferCompleted?.call(fromLogin, toLogin, amount);
-
-    unawaited(AppNotificationCenter.instance.sendNotification(
-      title: transferStatus == 'Completed'
-          ? 'Internal Transfer Successful (\${amount.toStringAsFixed(2)})'
-          : 'Internal Transfer Preview (\${amount.toStringAsFixed(2)})',
-      body: transferStatus == 'Completed'
-          ? 'Transferred \${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin successfully. Ref: ${record.id}.'
-          : 'Local preview only: \${amount.toStringAsFixed(2)} from #$fromLogin to #$toLogin. Ref: ${record.id}.',
-      category: 'Funds',
-      icon: LucideIcons.arrowLeftRight,
-      isGold: false,
-      sendToMobilePanel: true,
-    ));
-
-    _amountController.clear();
-    _isProcessing = false;
-    setState(() {});
-
-    _showSuccessReceipt(record);
   }
 
   void _showSuccessReceipt(_InternalTransferRecord record) {
@@ -1515,7 +1497,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Transfer Preview Ready',
+                  'Transfer Completed',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                     fontSize: 20,
@@ -1524,7 +1506,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Local account balances were updated for this preview only',
+                  'Your transfer has been confirmed by the server',
                   style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
@@ -1563,7 +1545,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                       const SizedBox(height: 8),
                       _buildSummaryRow(label: 'To Account', value: '#${record.destinationLogin}'),
                       const SizedBox(height: 8),
-                      _buildSummaryRow(label: 'Status', value: 'Preview only', valueColor: colors.primary, isBold: true),
+                      _buildSummaryRow(label: 'Status', value: record.status, valueColor: const Color(0xFF10B981), isBold: true),
                     ],
                   ),
                 ),

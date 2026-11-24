@@ -1389,20 +1389,20 @@ class _TradeReportPageState extends State<TradeReportPage> {
 
   // --- Data-driven account analytics ---
   DateTime? _tradeClosedDate(String value) {
-    final normalized = value.trim().toLowerCase();
+    final lower = value.trim().toLowerCase();
     final now = DateTime.now();
-    if (normalized.startsWith('today')) {
+    if (lower.startsWith('today')) {
       return DateTime(now.year, now.month, now.day);
     }
-    if (normalized.startsWith('yesterday')) {
+    if (lower.startsWith('yesterday')) {
       final yesterday = now.subtract(const Duration(days: 1));
       return DateTime(yesterday.year, yesterday.month, yesterday.day);
     }
-    final normalized = value.trim().replaceFirstMapped(
+    final isoDate = value.trim().replaceFirstMapped(
       RegExp(r'^(\d{4})\.(\d{2})\.(\d{2})'),
       (match) => '${match[1]}-${match[2]}-${match[3]}',
     );
-    return DateTime.tryParse(normalized);
+    return DateTime.tryParse(isoDate);
   }
 
   List<BrokerTradeRecord> get _filteredTrades {

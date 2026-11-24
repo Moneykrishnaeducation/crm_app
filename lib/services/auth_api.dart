@@ -1255,31 +1255,89 @@ class AuthApi {
     return data;
   }
 
-  /// Fetch an authenticated image as bytes; image routes return FileResponse.
+  /// Fetch an authenticated profile photo as raw image bytes.
   Future<Uint8List> getProfileImageBytes() =>
-      _getProfileImageBytes('profile/image/');
+      _getProfileImageBytes(
+        'profile/image/?t=${DateTime.now().millisecondsSinceEpoch}',
+        label: 'Profile photo',
+      );
 
+  /// The banner endpoint supports raw streaming with stream=1. This uses the
+  /// same /api/profile/banner/ route exposed by the web client.
   Future<Uint8List> getProfileBannerBytes() =>
-      _getProfileImageBytes('profile/banner/view/');
+      _getProfileImageBytes(
+        'profile/banner/?stream=1&t=${DateTime.now().millisecondsSinceEpoch}',
+        label: 'Profile banner',
+      );
 
-  Future<Uint8List> _getProfileImageBytes(String endpoint) async {
+  Future<Uint8List> _getProfileImageBytes(
+    String endpoint, {
+    required String label,
+  }) async {
     await restoreSession();
-    final headers = _headers..['Accept'] = 'image/*';
+    final headers = _headers
+      ..['Accept'] = 'image/*'
+      ..['Cache-Control'] = 'no-cache';
     final request = http.Request('GET', _uri(endpoint))
       ..headers.addAll(headers);
+
     final streamed = await _client
         .send(request)
         .timeout(const Duration(seconds: 25));
     final response = await http.Response.fromStream(streamed);
+    final contentType = (response.headers['content-type'] ?? '').toLowerCase();
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      var serverMessage = '';
+      try {
+        final payload = jsonDecode(response.body);
+        if (payload is Map) {
+          serverMessage = (payload['detail'] ??
+                  payload['error'] ??
+                  payload['message'] ??
+                  '')
+              .toString();
+        }
+      } catch (_) {
+        // The response may be an HTML error page or an empty body.
+      }
+      debugPrint(
+        '$label request failed: HTTP ${response.statusCode}; '
+        'content-type=${contentType.isEmpty ? 'unknown' : contentType}; '
+        'message=${serverMessage.isEmpty ? 'no server message' : serverMessage}',
+      );
       throw AuthApiException(
-        'Unable to load profile image.',
+        serverMessage.isNotEmpty
+            ? '$label could not be loaded: $serverMessage'
+            : '$label request failed (HTTP ${response.statusCode}).',
         statusCode: response.statusCode,
       );
     }
+
     if (response.bodyBytes.isEmpty) {
-      throw const AuthApiException('The profile image is empty.');
+      throw AuthApiException('$label response was empty.');
     }
+
+    if (!contentType.startsWith('image/')) {
+      var responseMessage = 'The server did not return image data.';
+      try {
+        final payload = jsonDecode(response.body);
+        if (payload is Map) {
+          final message = payload['detail'] ??
+              payload['error'] ??
+              payload['message'];
+          if (message != null) responseMessage = message.toString();
+        }
+      } catch (_) {
+        // Keep the generic content-type diagnostic for non-JSON responses.
+      }
+      debugPrint(
+        '$label returned unexpected content-type: '
+        '${contentType.isEmpty ? 'unknown' : contentType}',
+      );
+      throw AuthApiException('$label could not be displayed: $responseMessage');
+    }
+
     return response.bodyBytes;
   }
 

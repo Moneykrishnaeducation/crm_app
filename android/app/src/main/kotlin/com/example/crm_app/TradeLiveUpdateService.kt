@@ -15,6 +15,14 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import org.json.JSONArray
 import org.json.JSONObject
+import android.util.Base64
+import java.security.KeyPair
+import java.security.KeyPairGenerator
+import java.security.spec.MGF1ParameterSpec
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.OAEPParameterSpec
+import javax.crypto.spec.PSource
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.DecimalFormat
@@ -103,21 +111,37 @@ class TradeLiveUpdateService : Service() {
                 return
             }
 
+            // Client API responses are encrypted per request. Generate a one-use
+            // RSA key pair and send its public key so the backend can encrypt this
+            // response for the native service just as it does for Flutter requests.
+            val responseKeyPair = createResponseKeyPair()
             connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 10000
                 readTimeout = 10000
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty(
+                    "X-Response-Encryption-Key",
+                    Base64.encodeToString(responseKeyPair.public.encoded, Base64.NO_WRAP)
+                )
                 prefs.getString("host", null)?.takeIf { it.isNotBlank() }?.let { setRequestProperty("Host", it) }
             }
             val code = connection.responseCode
             if (code !in 200..299) {
+                val errorBody = try {
+                    (connection.errorStream ?: connection.inputStream)
+                        .bufferedReader().use { it.readText() }
+                } catch (_: Exception) {
+                    ""
+                }
+                Log.w("VTTradeLive", "Position API returned HTTP $code: " + errorBody.take(300))
                 updateBody("Trade data temporarily unavailable · HTTP $code")
                 return
             }
-            val payload = connection.inputStream.bufferedReader().use { it.readText() }
-            val position = findPosition(JSONObject(payload), positionId)
+            val encryptedPayload = connection.inputStream.bufferedReader().use { it.readText() }
+            val payload = decryptResponse(JSONObject(encryptedPayload), responseKeyPair)
+            val position = findPosition(payload, positionId)
             if (position == null) {
                 stopSelf()
                 return
@@ -152,6 +176,54 @@ class TradeLiveUpdateService : Service() {
         } finally {
             connection?.disconnect()
         }
+    }
+
+
+    private fun createResponseKeyPair(): KeyPair {
+        return KeyPairGenerator.getInstance("RSA").apply {
+            initialize(2048)
+        }.generateKeyPair()
+    }
+
+    /**
+     * Decrypts the backend's vtindex:user-info:v1 response envelope.
+     * Protocol: RSA-OAEP-SHA256 wraps an AES-256 key; AES-256-GCM protects JSON.
+     */
+    private fun decryptResponse(envelope: JSONObject, keyPair: KeyPair): JSONObject {
+        if (!envelope.optBoolean("encrypted", false) ||
+            envelope.optInt("version", -1) != 1 ||
+            envelope.optString("algorithm") != "RSA-OAEP-256+A256GCM"
+        ) {
+            throw IllegalStateException("Unexpected open-positions response format")
+        }
+
+        val aad = "vtindex:user-info:v1".toByteArray(Charsets.UTF_8)
+        val decode = { field: String ->
+            Base64.decode(envelope.getString(field), Base64.DEFAULT)
+        }
+
+        val rsa = Cipher.getInstance("RSA/ECB/OAEPPadding")
+        rsa.init(
+            Cipher.DECRYPT_MODE,
+            keyPair.private,
+            OAEPParameterSpec(
+                "SHA-256",
+                "MGF1",
+                MGF1ParameterSpec.SHA256,
+                PSource.PSpecified(aad)
+            )
+        )
+        val aesKey = rsa.doFinal(decode("wrapped_key"))
+
+        val aes = Cipher.getInstance("AES/GCM/NoPadding")
+        aes.init(
+            Cipher.DECRYPT_MODE,
+            javax.crypto.spec.SecretKeySpec(aesKey, "AES"),
+            GCMParameterSpec(128, decode("nonce"))
+        )
+        aes.updateAAD(aad)
+        val plaintext = aes.doFinal(decode("ciphertext"))
+        return JSONObject(String(plaintext, Charsets.UTF_8))
     }
 
     private fun findPosition(root: JSONObject, targetId: String): JSONObject? {

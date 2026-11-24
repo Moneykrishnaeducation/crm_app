@@ -114,9 +114,105 @@ class BrokerMorePage extends StatelessWidget {
   }
 }
 
-class _MoreProfileCard extends StatelessWidget {
+class _MoreProfileCard extends StatefulWidget {
   const _MoreProfileCard({required this.onTap});
   final VoidCallback onTap;
+
+  @override
+  State<_MoreProfileCard> createState() => _MoreProfileCardState();
+}
+
+class _MoreProfileCardState extends State<_MoreProfileCard> {
+  String _displayName = 'Loading profile…';
+  String _displayEmail = '';
+  String _clientId = '';
+  ImageProvider? _profileImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileSummary();
+  }
+
+  Map<String, dynamic> _unwrapProfile(Map<String, dynamic> response) {
+    dynamic value = response;
+    for (var depth = 0; depth < 4 && value is Map; depth++) {
+      final map = value.cast<String, dynamic>();
+      if (map['user'] is Map) {
+        return (map['user'] as Map).cast<String, dynamic>();
+      }
+      if (map['profile'] is Map) {
+        return (map['profile'] as Map).cast<String, dynamic>();
+      }
+      if (map['data'] is Map) {
+        value = map['data'];
+        continue;
+      }
+      return map;
+    }
+    return <String, dynamic>{};
+  }
+
+  String _firstValue(Map<String, dynamic> profile, List<String> keys) {
+    for (final key in keys) {
+      final value = profile[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return '';
+  }
+
+  Future<void> _loadProfileSummary() async {
+    try {
+      final response = await AuthApi.instance.getProfile();
+      final profile = _unwrapProfile(response);
+      final name = _firstValue(profile, const [
+        'name', 'full_name', 'fullName', 'username', 'first_name',
+      ]);
+      final email = _firstValue(profile, const ['email', 'email_address']);
+      final clientId = _firstValue(profile, const [
+        'client_id', 'clientId', 'user_id', 'userId', 'id',
+      ]);
+
+      ImageProvider? avatar;
+      if (_firstValue(profile, const ['profile_pic', 'profile_image', 'avatar']).isNotEmpty) {
+        try {
+          final bytes = await AuthApi.instance.getProfileImageBytes();
+          if (bytes.isNotEmpty) avatar = MemoryImage(bytes);
+        } catch (error) {
+          debugPrint('More page profile image load skipped: $error');
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _displayName = name.isNotEmpty ? name : '—';
+        _displayEmail = email;
+        _clientId = clientId;
+        _profileImage = avatar;
+      });
+    } catch (error) {
+      debugPrint('More page profile summary load failed: $error');
+      if (!mounted) return;
+      setState(() {
+        _displayName = '—';
+        _displayEmail = '';
+        _clientId = '';
+      });
+    }
+  }
+
+  String get _avatarInitials {
+    final parts = _displayName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty || _displayName == '—') return 'U';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +273,7 @@ class _MoreProfileCard extends StatelessWidget {
           child: InkWell(
             onTap: () {
               HapticFeedback.lightImpact();
-              onTap();
+              widget.onTap();
             },
             borderRadius: BorderRadius.circular(22),
             splashColor: _brokerGold.withValues(alpha: 0.08),
@@ -227,7 +323,7 @@ class _MoreProfileCard extends StatelessWidget {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        'INR-DEVOP B',
+                                        _displayName,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           color: cs.onSurface,
@@ -247,7 +343,7 @@ class _MoreProfileCard extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  'iyyanar@vtindex.com',
+                                  _displayEmail.isNotEmpty ? _displayEmail : 'Email unavailable',
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: cs.onSurfaceVariant,
@@ -287,7 +383,7 @@ class _MoreProfileCard extends StatelessWidget {
                                       const SizedBox(width: 4.5),
                                       Flexible(
                                         child: Text(
-                                          'Client ID: #331589',
+                                          _clientId.isNotEmpty ? 'Client ID: #$_clientId' : 'Client ID unavailable',
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 1,
                                           style: TextStyle(
@@ -442,17 +538,26 @@ class _MoreProfileCard extends StatelessWidget {
                   ],
                 ),
               ),
-              child: const Center(
-                child: Text(
-                  'IB',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
+              child: _profileImage != null
+                  ? ClipOval(
+                      child: Image(
+                        image: _profileImage!,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        _avatarInitials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
             ),
           ),
         ),

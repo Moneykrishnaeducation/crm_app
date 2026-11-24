@@ -875,6 +875,7 @@ class AuthApi {
   Future<Map<String, dynamic>> submitAccountClosureRequest({
     required String password,
     required String reason,
+    String requestType = 'delete',
   }) => _request(
     'POST',
     'profile/security/account-closure/',
@@ -882,6 +883,7 @@ class AuthApi {
       'password': password,
       'reason': reason,
       'confirm_closure': true,
+      'request_type': requestType,
     },
     encryptProfileBody: true,
   );

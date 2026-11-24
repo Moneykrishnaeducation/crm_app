@@ -110,6 +110,8 @@ class TradeLiveUpdateService : Service() {
         var demoCount = 0
         var liveCount = 0
         var successCount = 0
+        var demoAccountCount = 0
+        var liveAccountCount = 0
         val demoDetails = mutableListOf<String>()
         val liveDetails = mutableListOf<String>()
 
@@ -124,6 +126,7 @@ class TradeLiveUpdateService : Service() {
                     val positions = fetchPositions(endpoint, accessToken)
                     successCount++
                     val isDemo = account.optBoolean("isDemo", false)
+                    if (isDemo) demoAccountCount++ else liveAccountCount++
                     val accountName = account.optString("accountName", accountId)
                     for (positionIndex in 0 until positions.length()) {
                         val position = positions.optJSONObject(positionIndex) ?: continue
@@ -157,10 +160,10 @@ class TradeLiveUpdateService : Service() {
 
             val totalPnl = demoPnl + livePnl
             val body = buildString {
-                append("DEMO ACCOUNTS · $demoCount positions · P/L ${money(demoPnl)}")
+                append("DEMO · $demoAccountCount accounts · $demoCount positions · P/L ${money(demoPnl)}")
                 if (demoDetails.isEmpty()) append("\n  No open demo positions")
                 else demoDetails.forEach { append("\n  ").append(it) }
-                append("\n\nLIVE ACCOUNTS · $liveCount positions · P/L ${money(livePnl)}")
+                append("\n\nLIVE · $liveAccountCount accounts · $liveCount positions · P/L ${money(livePnl)}")
                 if (liveDetails.isEmpty()) append("\n  No open live positions")
                 else liveDetails.forEach { append("\n  ").append(it) }
             }

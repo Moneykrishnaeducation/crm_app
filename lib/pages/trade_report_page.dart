@@ -1317,69 +1317,128 @@ class _TradeReportPageState extends State<TradeReportPage> {
     final net = _tradeNumber(cashFlow['net']);
     final count = cashFlow['count'] is num
         ? (cashFlow['count'] as num).toInt()
-        : int.tryParse('\${cashFlow['count'] ?? 0}') ?? 0;
+        : int.tryParse((cashFlow['count'] ?? 0).toString()) ?? 0;
     final currency = _currentAccount.currency;
+
     Widget metric(String label, double value, Color valueColor, {bool isCount = false}) {
+      final displayValue = isCount
+          ? value.toInt().toString()
+          : currency + ' ' + value.abs().toStringAsFixed(2);
       return Expanded(
         child: Container(
           padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: TextStyle(fontSize: 11, color: muted)),
-            const SizedBox(height: 7),
-            Text(
-              _loadingReportData ? '—' : (_hideNetDeposit && label == 'Net cash flow'
-                  ? '••••••' : '$currency \${value.abs().toStringAsFixed(2)}'),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: valueColor),
-            ),
-          ]),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 11, color: muted)),
+              const SizedBox(height: 7),
+              Text(
+                _loadingReportData
+                    ? '—'
+                    : (_hideNetDeposit && label == 'Net cash flow'
+                        ? '••••••'
+                        : displayValue),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: valueColor,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
+
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: bg, border: Border.all(color: border), borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Expanded(child: Text('Cash flow summary',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: title))),
-          if (_loadingReportData)
-            SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2, color: muted)),
-          if (!_loadingReportData && _reportDataError == null)
-            InkWell(
-              onTap: () => setState(() => _hideNetDeposit = !_hideNetDeposit),
-              child: Padding(padding: const EdgeInsets.all(4),
-                child: Icon(_hideNetDeposit ? LucideIcons.eyeOff : LucideIcons.eye, size: 16, color: muted)),
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Cash flow summary',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: title,
+                  ),
+                ),
+              ),
+              if (_loadingReportData)
+                SizedBox(
+                  width: 15,
+                  height: 15,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: muted),
+                ),
+              if (!_loadingReportData && _reportDataError == null)
+                InkWell(
+                  onTap: () => setState(() => _hideNetDeposit = !_hideNetDeposit),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      _hideNetDeposit ? LucideIcons.eyeOff : LucideIcons.eye,
+                      size: 16,
+                      color: muted,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (_reportDataError != null)
+            Text(_reportDataError!, style: TextStyle(fontSize: 11, color: muted))
+          else ...[
+            Row(
+              children: [
+                metric('Deposits', deposits, const Color(0xFF16A36A)),
+                const SizedBox(width: 9),
+                metric('Withdrawals', withdrawals, const Color(0xFFEF5350)),
+              ],
             ),
-        ]),
-        const SizedBox(height: 10),
-        if (_reportDataError != null)
-          Text(_reportDataError!, style: TextStyle(fontSize: 11, color: muted))
-        else ...[
-          Row(children: [
-            metric('Deposits', deposits, const Color(0xFF16A36A)),
-            const SizedBox(width: 9),
-            metric('Withdrawals', withdrawals, const Color(0xFFEF5350)),
-          ]),
-          const SizedBox(height: 9),
-          Row(children: [
-            metric('Net cash flow', net, net >= 0 ? const Color(0xFF16A36A) : const Color(0xFFEF5350)),
-            const SizedBox(width: 9),
-            metric('Transactions', count.toDouble(), title, isCount: true),
-          ]),
-          const SizedBox(height: 7),
-          Text('\${count} approved cash-flow transactions in the selected period',
-            style: TextStyle(fontSize: 10, color: muted)),
+            const SizedBox(height: 9),
+            Row(
+              children: [
+                metric(
+                  'Net cash flow',
+                  net,
+                  net >= 0 ? const Color(0xFF16A36A) : const Color(0xFFEF5350),
+                ),
+                const SizedBox(width: 9),
+                metric('Transactions', count.toDouble(), title, isCount: true),
+              ],
+            ),
+            const SizedBox(height: 7),
+            Text(
+              count.toString() + ' approved cash-flow transactions in the selected period',
+              style: TextStyle(fontSize: 10, color: muted),
+            ),
+          ],
+          if (_reportDataError != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _loadReportData,
+                icon: const Icon(LucideIcons.refreshCw, size: 14),
+                label: const Text('Retry'),
+              ),
+            ),
         ],
-        if (_reportDataError != null)
-          Align(alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: _loadReportData,
-              icon: const Icon(LucideIcons.refreshCw, size: 14),
-              label: const Text('Retry'),
-            )),
-      ]),
+      ),
     );
   }
 

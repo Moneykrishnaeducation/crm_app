@@ -4145,13 +4145,18 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Opened: ${pos.openTime}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 10.5,
+                  Expanded(
+                    child: Text(
+                      'Opened: ${pos.openTime}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 10.5,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 6),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

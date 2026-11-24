@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:asn1lib/asn1lib.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
@@ -745,6 +746,19 @@ class AuthApi {
 
   Future<Map<String, dynamic>> logout() async {
     try {
+      // Detach this installation before invalidating the authenticated session.
+      try {
+        final pushToken = await FirebaseMessaging.instance.getToken();
+        if (pushToken != null && pushToken.isNotEmpty && hasToken) {
+          await _request(
+            'POST',
+            'notifications/push/unregister/',
+            body: <String, dynamic>{'token': pushToken},
+          );
+        }
+      } catch (_) {
+        // Firebase may be unconfigured on local builds; logout must still work.
+      }
       return await _request('GET', 'logout/');
     } finally {
       _cookies.clear();

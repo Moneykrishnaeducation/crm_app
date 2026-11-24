@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../app_notifications.dart';
+import '../services/auth_api.dart';
 import 'mam_master_node_workspace.dart';
 
 // -----------------------------------------------------------------------------
@@ -154,6 +155,7 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
   String _selectedRisk = 'Medium';
   String _selectedLeverage = '1:500';
   String _selectedPayout = 'Weekly (Default)';
+  bool _isSubmitting = false;
 
   final List<String> _leverages = const ['1:100', '1:200', '1:400', '1:500'];
   final List<String> _payoutOptions = const [
@@ -172,43 +174,86 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
     super.dispose();
   }
 
-  void _submit() {
-    final strategyName = _strategyNameController.text.trim().isEmpty
-        ? 'Apex Global Alpha Pool'
-        : _strategyNameController.text.trim();
-    final profitShare =
-        double.tryParse(_profitShareController.text.trim()) ?? 20.0;
-    final randSuffix = (DateTime.now().millisecondsSinceEpoch % 900000 + 100000)
-        .toString();
-    final login = '2100$randSuffix';
-    final cleanPayout = _selectedPayout.replaceAll(' (Default)', '');
+  Future<void> _submit() async {
+    if (_isSubmitting) return;
+    final strategyName = _strategyNameController.text.trim();
+    final profitShare = double.tryParse(_profitShareController.text.trim());
 
-    final newMaster = MamMasterAccount(
-      name: strategyName,
-      login: login,
-      profitShare: profitShare,
-      leverage: _selectedLeverage,
-      balance: 0.00,
-      status: 'Active',
-      risk: _selectedRisk,
-      payout: cleanPayout,
-      allocationMethod: 'Lot Proportional',
-      investorsCount: 0,
-      totalAum: 0.0,
-      monthlyGain: 0.0,
-      server: 'VTindex-MT5',
-      tradingPlatform: 'MetaTrader 5 (MT5)',
-      algoTrading: 'Manual',
-      pendingRelease: 0.00,
-      releasedPayout: 0.00,
-      pendingWallet: 0.00,
-      totalSettled: 0.00,
-      tradesProcessed: 0,
-    );
+    if (strategyName.isEmpty) {
+      showAppMessage('Enter a name for your MAM master account.');
+      return;
+    }
+    if (profitShare == null || !profitShare.isFinite ||
+        profitShare < 0.01 || profitShare > 100) {
+      showAppMessage('Enter a valid profit share percentage (0.01–100).');
+      return;
+    }
 
-    Navigator.pop(context);
-    widget.onCreated(newMaster);
-    showAppMessage('Master MAM Account "$login" established successfully!');
+    final cleanPayout = _selectedPayout.replaceAll(' (Default)', '').toLowerCase();
+    final payoutFrequency = switch (cleanPayout) {
+      'daily' => 'weekly',
+      'half-yearly' => 'half-yearly',
+      'quarterly' => 'quarterly',
+      'monthly' => 'monthly',
+      _ => 'weekly',
+    };
+
+    setState(() => _isSubmitting = true);
+    try {
+      final response = await AuthApi.instance.createMamAccount(
+        accountName: strategyName,
+        leverage: _selectedLeverage,
+        profitSharingPercentage: profitShare,
+        riskLevel: _selectedRisk,
+        payoutFrequency: payoutFrequency,
+      );
+      final accountId = (response['account_id'] ??
+              (response['mam_account'] is Map
+                  ? (response['mam_account'] as Map)['account_id']
+                  : null))
+          ?.toString();
+      if (accountId == null || accountId.isEmpty) {
+        throw const AuthApiException(
+          'The server created no account ID in its response. Refresh your MAM accounts before retrying.',
+        );
+      }
+
+      final newMaster = MamMasterAccount(
+        name: (response['account_name'] ?? strategyName).toString(),
+        login: accountId,
+        profitShare: profitShare,
+        leverage: _selectedLeverage,
+        balance: 0.0,
+        status: 'Active',
+        risk: _selectedRisk,
+        payout: cleanPayout,
+        allocationMethod: 'Lot Proportional',
+        investorsCount: 0,
+        totalAum: 0.0,
+        monthlyGain: 0.0,
+        server: 'VTindex-MT5',
+        tradingPlatform: 'MetaTrader 5 (MT5)',
+        algoTrading: 'Manual',
+        pendingRelease: 0.0,
+        releasedPayout: 0.0,
+        pendingWallet: 0.0,
+        totalSettled: 0.0,
+        tradesProcessed: 0,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+      widget.onCreated(newMaster);
+      showAppMessage('MAM master account $accountId created successfully.');
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is AuthApiException
+          ? error.message
+          : 'MAM account could not be created. Please try again.';
+      showAppMessage(message);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -450,7 +495,7 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
                         SizedBox(
                           height: 48,
                           child: FilledButton.icon(
-                            onPressed: _submit,
+                            onPressed: _isSubmitting ? null : _submit,
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFFF59E0B),
                               foregroundColor: const Color(0xFF142238),
@@ -459,9 +504,11 @@ class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            icon: const Icon(LucideIcons.arrowRight, size: 18),
-                            label: const Text(
-                              'ESTABLISH MASTER ACCOUNT',
+                            icon: _isSubmitting
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF142238)))
+                                : const Icon(LucideIcons.arrowRight, size: 18),
+                            label: Text(
+                              _isSubmitting ? 'CREATING MT5 ACCOUNT…' : 'ESTABLISH MASTER ACCOUNT',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,

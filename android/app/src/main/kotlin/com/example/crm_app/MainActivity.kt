@@ -3,6 +3,8 @@ package com.vtindex.crm
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.app.PendingIntent
 import android.os.Build
 import android.view.Display
 import android.view.WindowManager
@@ -71,9 +73,14 @@ class MainActivity : FlutterFragmentActivity() {
                     val shortText = call.argument<String>("shortText") ?: "LIVE"
                     val colorHex = call.argument<String>("colorHex") ?: "#10B981"
                     val iconType = call.argument<String>("iconType") ?: "trade"
+                    val usesChronometer = call.argument<Boolean>("usesChronometer") ?: false
+                    val startedAtMillis = call.argument<Long>("startedAtMillis")
 
-                    postPromotedNotification(id, title, body, subText, shortText, colorHex, iconType)
-                    result.success(true)
+                    val posted = postPromotedNotification(
+                        id, title, body, subText, shortText, colorHex, iconType,
+                        usesChronometer, startedAtMillis
+                    )
+                    result.success(posted)
                 }
                 "stopLiveUpdate" -> {
                     val id = call.argument<Int>("id") ?: 7777
@@ -234,53 +241,83 @@ class MainActivity : FlutterFragmentActivity() {
         subText: String,
         shortText: String,
         colorHex: String?,
-        iconType: String?
-    ) {
-        val iconRes = if (iconType == "vt") R.drawable.ic_stat_vt else R.drawable.ic_stat_live
+        iconType: String?,
+        usesChronometer: Boolean,
+        startedAtMillis: Long?
+    ): Boolean {
+        if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+            return false
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
 
+        val iconRes = if (iconType == "vt") R.drawable.ic_stat_vt else R.drawable.ic_stat_live
         val colorInt = try {
             if (!colorHex.isNullOrEmpty()) android.graphics.Color.parseColor(colorHex)
             else android.graphics.Color.parseColor("#10B981")
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             android.graphics.Color.parseColor("#10B981")
         }
-
         val largeIcon = try {
             android.graphics.BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 
-        val builder = NotificationCompat.Builder(this, LIVE_CHANNEL_ID)
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val contentPendingIntent = PendingIntent.getActivity(
+            this,
+            id,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val displayBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            android.text.Html.fromHtml(body, android.text.Html.FROM_HTML_MODE_LEGACY)
+        } else {
+            @Suppress("DEPRECATION")
+            android.text.Html.fromHtml(body)
+        }
+
+        val notification = NotificationCompat.Builder(this, LIVE_CHANNEL_ID)
             .setSmallIcon(iconRes)
             .setContentTitle(title)
+            .setContentText(displayBody)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(displayBody))
             .setSubText(subText)
             .setColor(colorInt)
             .setOngoing(true)
+            .setAutoCancel(false)
             .setOnlyAlertOnce(true)
-            .setShowWhen(true)
-            .setUsesChronometer(true)
+            .setSilent(true)
+            .setShowWhen(usesChronometer)
+            .setWhen(startedAtMillis ?: System.currentTimeMillis())
+            .setUsesChronometer(usesChronometer)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(contentPendingIntent)
+            .setRequestPromotedOngoing(true)
+            .setShortCriticalText(shortText.trim().take(7))
+            .apply {
+                if (largeIcon != null) setLargeIcon(largeIcon)
+            }
+            .build()
 
-        if (largeIcon != null) {
-            builder.setLargeIcon(largeIcon)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            builder.setContentText(android.text.Html.fromHtml(body, android.text.Html.FROM_HTML_MODE_LEGACY))
-        } else {
-            builder.setContentText(body)
-        }
-
-        // Android 16/17 + Moto Live Updates Promoted Ongoing Request
-        builder.extras.putBoolean("android.requestPromotedOngoing", true)
-        builder.extras.putCharSequence("android.shortCriticalText", shortText)
-
-        try {
-            NotificationManagerCompat.from(this).notify(id, builder.build())
+        return try {
+            NotificationManagerCompat.from(this).notify(id, notification)
+            true
         } catch (e: SecurityException) {
             e.printStackTrace()
+            false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 

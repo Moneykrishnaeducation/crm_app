@@ -1821,6 +1821,7 @@ class MamPageState extends State<MamPage> {
         setState(() {
           _masters.insert(0, newMaster);
         });
+        _loadMamAccounts();
       },
     );
   }

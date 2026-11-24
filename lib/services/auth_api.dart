@@ -881,6 +881,26 @@ class AuthApi {
     );
   }
 
+  /// Update the investor password for an owned MT5 trading account.
+  Future<Map<String, dynamic>> updateTradingAccountPassword({
+    required String accountId,
+    required String newPassword,
+  }) => _request(
+    'POST',
+    'update-password/${Uri.encodeComponent(accountId)}/',
+    body: {'new_password': newPassword},
+  );
+
+  /// Update leverage for an owned MT5 trading account.
+  Future<Map<String, dynamic>> updateTradingAccountLeverage({
+    required String accountId,
+    required String leverage,
+  }) => _request(
+    'POST',
+    'update-leverage/${Uri.encodeComponent(accountId)}/',
+    body: {'leverage': leverage},
+  );
+
   /// Fetch non-demo accounts (for internal transfer)
   Future<Map<String, dynamic>> getNonDemoAccounts({bool fresh = false}) =>
       _request('GET', 'non-demo-accounts/${fresh ? '?fresh=true' : ''}');

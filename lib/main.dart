@@ -364,6 +364,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _currentThemeMode = widget.themeMode;
     _loadFavoriteAccounts();
     unawaited(_loadTradingAccounts());
+    unawaited(AppNotificationCenter.instance.refreshFromBackend());
   }
 
   Future<void> _loadFavoriteAccounts() async {
@@ -437,6 +438,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void _handleFocusChange() {
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      unawaited(AppNotificationCenter.instance.refreshFromBackend());
     }
   }
 

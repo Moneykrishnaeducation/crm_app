@@ -245,7 +245,11 @@ class TradeLiveUpdateService : Service() {
         }
     }
 
-    override fun onTimeout(startId: Int, fgsType: Int) {\n        stopSelf(startId)\n    }\n\n    override fun onDestroy() {
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        stopSelf(startId)
+    }
+
+    override fun onDestroy() {
         executor?.shutdownNow()
         executor = null
         super.onDestroy()

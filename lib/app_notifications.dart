@@ -69,6 +69,7 @@ class AppNotificationCenter {
   DateTime _trackedPositionStartedAt = DateTime.now();
   Timer? _positionMonitorTimer;
   bool _positionPollInFlight = false;
+  bool _lastPositionPollSucceeded = false;
   int _positionMonitorRevision = 0;
   int _nextNotificationId = 1000;
 
@@ -264,7 +265,7 @@ class AppNotificationCenter {
     return 0;
   }
 
-  Future<void> startPositionMonitoring({
+  Future<bool> startPositionMonitoring({
     required String accountId,
     required String positionId,
     required String symbol,
@@ -280,13 +281,17 @@ class AppNotificationCenter {
     _trackedPositionLots = lots;
     _trackedPositionStartedAt = DateTime.tryParse(openTime.replaceAll('.', '-')) ?? DateTime.now();
     trackedPositionNotifier.value = positionId;
+    _lastPositionPollSucceeded = false;
     await _refreshTrackedPosition(revision: revision);
-    if (trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
-      _positionMonitorTimer = Timer.periodic(
-        const Duration(seconds: 15),
-        (_) => _refreshTrackedPosition(revision: revision),
-      );
+    if (!_lastPositionPollSucceeded || trackedPositionNotifier.value == null || revision != _positionMonitorRevision) {
+      await stopPositionMonitoring();
+      return false;
     }
+    _positionMonitorTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _refreshTrackedPosition(revision: revision),
+    );
+    return true;
   }
 
   Future<void> pausePositionMonitoring() async {
@@ -334,6 +339,7 @@ class AppNotificationCenter {
         if (id == positionId) { position = item; break; }
       }
       if (position == null) { await stopPositionMonitoring(); return; }
+      _lastPositionPollSucceeded = true;
       final profit = _number(position['profit']);
       final currentPrice = _number(position['current_price'] ?? position['currentPrice']);
       final openPrice = _number(position['open_price'] ?? position['openPrice']);
@@ -365,10 +371,8 @@ class AppNotificationCenter {
     'com.vtindex.crm/live_updates',
   );
 
-  /// Starts a Native OS Live Update notification.
-  /// On modern Android (Android 14/15/16/17, Motorola Moto Live Updates, Samsung Now Bar),
-  /// ongoing status notifications with chronometer/subText and promoted status
-  /// are pinned directly to the status bar pill, lock screen, and notification drawer.
+  /// Starts an ongoing trade notification. Android 16+ may promote eligible
+  /// notifications to Live Updates; older devices show the standard ongoing card.
   Future<void> startLiveUpdate({
     required int id,
     required String title,
@@ -567,7 +571,7 @@ class AppNotificationCenter {
   /// Sends a new notification to:
   /// 1. The in-app notification selection list / center
   /// 2. The mobile device system notification panel (drawer/status bar)
-  /// 3. Promotes to the Native OS Live Update status bar pill
+  /// 3. Optionally starts a separate ongoing Live Update when explicitly requested
   Future<void> sendNotification({
     required String title,
     required String body,

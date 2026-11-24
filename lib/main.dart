@@ -374,7 +374,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _loadFavoriteAccounts() async {
+  void _handlePushAction() {\n    final action = PushMessagingService.instance.pendingActionUrl.value;\n    if (action == null || action.isEmpty || !mounted) return;\n    PushMessagingService.instance.pendingActionUrl.value = null;\n    final value = action.toLowerCase();\n    if (value.contains('security')) {\n      _selectPage('Security Center');\n    } else if (value.contains('withdraw')) {\n      _selectPage('Withdraw');\n    } else if (value.contains('deposit')) {\n      _selectPage('Deposit');\n    } else if (value.contains('transfer')) {\n      _selectPage('Internal Transfer');\n    } else if (value.contains('transaction') || value.contains('history')) {\n      _selectPage('Transactions');\n    } else if (value.contains('account') || value.contains('trade') || value.contains('position')) {\n      _selectPage('Trading Accounts');\n    } else {\n      _selectPage('Dashboard');\n    }\n  }\n\n  Future<void> _loadFavoriteAccounts() async {
     try {
       final preferences = await SharedPreferences.getInstance();
       final stored =
@@ -436,7 +436,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _notificationRefreshTimer?.cancel();
     unawaited(AppNotificationCenter.instance.stopPositionMonitoring());
     WidgetsBinding.instance.removeObserver(this);
-    FocusManager.instance.removeListener(_handleFocusChange);
+    FocusManager.instance.removeListener(_handleFocusChange);\n    PushMessagingService.instance.pendingActionUrl.removeListener(_handlePushAction);
     _dashboardScrollController.dispose();
     _transactionsScrollController.dispose();
     _accountsScrollController.dispose();

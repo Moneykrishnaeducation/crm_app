@@ -162,14 +162,11 @@ class AppNotificationCenter {
     if (text.contains('withdraw')) return LucideIcons.arrowUpRight;
     if (text.contains('deposit')) return LucideIcons.wallet;
     if (text.contains('transfer')) return LucideIcons.arrowLeftRight;
-    if (text.contains('document') || type == 'DOCUMENT') {
-      return LucideIcons.fileCheck;
+    if (text.contains('document') || type == 'DOCUMENT' || type == 'IB' || type == 'PROFILE') {
+      return LucideIcons.shieldCheck;
     }
-    if (type == 'ACCOUNT') return LucideIcons.chartNoAxesCombined;
-    if (type == 'IB') return LucideIcons.users;
-    if (type == 'PROFILE') return LucideIcons.userRound;
-    if (type == 'CRYPTO') return LucideIcons.coins;
-    if (type == 'BANK') return LucideIcons.landmark;
+    if (type == 'ACCOUNT') return LucideIcons.trendingUp;
+    if (type == 'CRYPTO' || type == 'BANK') return LucideIcons.wallet;
     return LucideIcons.bell;
   }
 
@@ -651,10 +648,13 @@ class AppNotificationCenter {
       }
     }
     if (item == null || !item.isUnread) return;
-    await AuthApi.instance.markNotificationRead(id);
+    final response = await AuthApi.instance.markNotificationRead(id);
     item.isUnread = false;
     notificationsNotifier.value = List<AppNotificationItem>.from(notificationsNotifier.value);
-    _updateUnreadCount();
+    final serverCount = response['unread_count'];
+    unreadCountNotifier.value = serverCount is num
+        ? serverCount.toInt()
+        : (unreadCountNotifier.value > 0 ? unreadCountNotifier.value - 1 : 0);
   }
 
   Future<void> clearAll() async {

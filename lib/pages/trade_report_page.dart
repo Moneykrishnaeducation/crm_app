@@ -1323,7 +1323,9 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Widget metric(String label, double value, Color valueColor, {bool isCount = false}) {
       final displayValue = isCount
           ? value.toInt().toString()
-          : currency + ' ' + value.abs().toStringAsFixed(2);
+          : currency + ' ' +
+              ((label == 'Net cash flow' && value < 0) ? '-' : '') +
+              value.abs().toStringAsFixed(2);
       return Expanded(
         child: Container(
           padding: const EdgeInsets.all(13),

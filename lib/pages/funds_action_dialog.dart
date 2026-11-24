@@ -851,7 +851,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          '1.4 MB · Ready for review',
+                          '${_proofBytes == null ? '0 KB' : (_proofBytes!.length / 1024).toStringAsFixed(1) + ' KB'} · Ready for review',
                           style: TextStyle(
                             color: Color(0xFF16D994),
                             fontSize: 9.5,
@@ -2160,7 +2160,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     setState(() => _isSubmitting = true);
 
     final amountStr = parsedAmount.toStringAsFixed(2);
-    final currencyStr = _method == 2 ? 'USDT' : (_currency == 0 ? 'USD' : 'INR');
+    final currencyStr = _method == 1 ? 'INR' : (_method == 2 ? 'USDT' : (_currency == 0 ? 'USD' : 'INR'));
     final estimatedUsd = _getEstimatedUsd();
     final methodName = switch (_method) {
       0 => 'Cheese Pay (Instant UPI / Cards)',

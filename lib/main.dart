@@ -363,6 +363,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     FocusManager.instance.addListener(_handleFocusChange);
+    PushMessagingService.instance.pendingActionUrl.addListener(_handlePushAction);
     _currentThemeMode = widget.themeMode;
     unawaited(PushMessagingService.instance.initializeAndRegister());
     _loadFavoriteAccounts();

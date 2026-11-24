@@ -714,15 +714,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     if (page == 'Logout') {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(
-          builder: (_) => _AppEntry(
-            themeMode: _effectiveThemeMode,
-            onThemeModeChanged: widget.onThemeModeChanged,
-          ),
-        ),
-        (route) => false,
-      );
+      unawaited(_logoutAndReturnToEntry());
       return;
     }
     if (page == 'Security Center') {
@@ -758,6 +750,24 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (page == 'Trading Accounts' || page == 'Demo Accounts') {
       unawaited(_loadTradingAccounts(refresh: true));
     }
+  }
+
+  Future<void> _logoutAndReturnToEntry() async {
+    try {
+      await AuthApi.instance.logout();
+    } catch (_) {
+      // Local credentials are cleared by AuthApi even when the request fails.
+    }
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => _AppEntry(
+          themeMode: _effectiveThemeMode,
+          onThemeModeChanged: widget.onThemeModeChanged,
+        ),
+      ),
+      (route) => false,
+    );
   }
 
   int get _primaryTabIndex => switch (_selectedPage) {

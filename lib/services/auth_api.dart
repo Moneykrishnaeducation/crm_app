@@ -672,7 +672,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> logout() async {
     try {
-      return await _request('POST', 'logout/');
+      return await _request('GET', 'logout/');
     } finally {
       _cookies.clear();
       _accessToken = null;

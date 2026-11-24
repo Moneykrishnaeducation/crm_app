@@ -19,7 +19,7 @@ class PushMessagingService {
   static const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
   static const _storageBucket = String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
 
-  bool _initialized = false;
+  bool _initialized = false;\n  final ValueNotifier<String?> pendingActionUrl = ValueNotifier<String?>(null);
   StreamSubscription<String>? _tokenSubscription;
   StreamSubscription<RemoteMessage>? _foregroundSubscription;
   StreamSubscription<RemoteMessage>? _openedSubscription;

@@ -111,6 +111,22 @@ class MainActivity : FlutterFragmentActivity() {
                     cancelLiveNotification(7777)
                     result.success(true)
                 }
+                "getPositionServiceState" -> {
+                    val state = getSharedPreferences("vt_trade_live_service", Context.MODE_PRIVATE)
+                    val positionId = state.getString("positionId", null)
+                    if (positionId.isNullOrBlank()) {
+                        result.success(null)
+                    } else {
+                        result.success(mapOf(
+                            "positionId" to positionId,
+                            "accountId" to (state.getString("accountId", "") ?: ""),
+                            "symbol" to (state.getString("symbol", "Trade") ?: "Trade"),
+                            "side" to (state.getString("side", "BUY") ?: "BUY"),
+                            "lots" to (state.getString("lots", "0.00") ?: "0.00"),
+                            "startedAt" to state.getLong("startedAt", System.currentTimeMillis())
+                        ))
+                    }
+                }
                 else -> result.notImplemented()
             }
         }

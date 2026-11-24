@@ -7,8 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'app_notifications.dart';
 import 'services/auth_api.dart';
 
-/// Firebase options are supplied at build time; no Firebase secrets/config files
-/// are committed to the repository.
+/// Firebase configuration is supplied locally through google-services.json.
 class PushMessagingService {
   PushMessagingService._();
   static final PushMessagingService instance = PushMessagingService._();
@@ -19,17 +18,12 @@ class PushMessagingService {
   StreamSubscription<RemoteMessage>? _foregroundSubscription;
   StreamSubscription<RemoteMessage>? _openedSubscription;
 
-  bool get isConfigured =>
-      _apiKey.isNotEmpty &&
-      _appId.isNotEmpty &&
-      _senderId.isNotEmpty &&
-      _projectId.isNotEmpty;
-
   Future<void> initializeAndRegister() async {
     if (kIsWeb || !AuthApi.instance.hasToken) return;
     try {
       if (Firebase.apps.isEmpty) {
-        // Android's google-services.json supplies the native default app.\n        await Firebase.initializeApp();
+        // Android's google-services.json supplies the native default app.
+        await Firebase.initializeApp();
       }
       if (!_initialized) {
         _initialized = true;

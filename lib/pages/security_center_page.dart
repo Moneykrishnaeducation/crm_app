@@ -838,10 +838,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           _deviceMessageCard('No trusted devices are currently registered.')
         else
           ..._trustedDevices.map(_buildLiveDeviceCard),
-        if (activeDevices.isNotEmpty) ...[
-          const SizedBox(height: 18),
-          _buildSecurityFooterActions(),
-        ],
+        const SizedBox(height: 18),
+        _buildSecurityFooterActions(),
       ],
     );
   }

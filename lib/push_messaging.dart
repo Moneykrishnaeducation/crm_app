@@ -1,0 +1,120 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+
+import 'app_notifications.dart';
+import 'services/auth_api.dart';
+
+/// Firebase options are supplied at build time; no Firebase secrets/config files
+/// are committed to the repository.
+class PushMessagingService {
+  PushMessagingService._();
+  static final PushMessagingService instance = PushMessagingService._();
+
+  static const _apiKey = String.fromEnvironment('FIREBASE_API_KEY');
+  static const _appId = String.fromEnvironment('FIREBASE_APP_ID');
+  static const _senderId = String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID');
+  static const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+  static const _storageBucket = String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
+
+  bool _initialized = false;
+  StreamSubscription<String>? _tokenSubscription;
+  StreamSubscription<RemoteMessage>? _foregroundSubscription;
+  StreamSubscription<RemoteMessage>? _openedSubscription;
+
+  bool get isConfigured =>
+      _apiKey.isNotEmpty &&
+      _appId.isNotEmpty &&
+      _senderId.isNotEmpty &&
+      _projectId.isNotEmpty;
+
+  Future<void> initializeAndRegister() async {
+    if (kIsWeb || !isConfigured || !AuthApi.instance.hasToken) return;
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: FirebaseOptions(
+            apiKey: _apiKey,
+            appId: _appId,
+            messagingSenderId: _senderId,
+            projectId: _projectId,
+            storageBucket: _storageBucket.isEmpty ? null : _storageBucket,
+          ),
+        );
+      }
+      if (!_initialized) {
+        _initialized = true;
+        await FirebaseMessaging.instance.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        _foregroundSubscription = FirebaseMessaging.onMessage.listen(_showForegroundPush);
+        _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen(_handlePushOpen);
+        _tokenSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
+          (token) => unawaited(_registerToken(token)),
+        );
+      }
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null && token.isNotEmpty) await _registerToken(token);
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) _handlePushOpen(initialMessage);
+    } catch (error) {
+      debugPrint('PushMessagingService: Firebase is not ready: $error');
+    }
+  }
+
+  Future<void> _registerToken(String token) async {
+    if (!AuthApi.instance.hasToken) return;
+    final platform = defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+    try {
+      await AuthApi.instance.registerPushDeviceToken(token: token, platform: platform);
+    } catch (error) {
+      debugPrint('PushMessagingService: token registration failed: $error');
+    }
+  }
+
+  Future<void> _showForegroundPush(RemoteMessage message) async {
+    final title = message.notification?.title ?? message.data['title']?.toString();
+    final body = message.notification?.body ?? message.data['body']?.toString();
+    if (title == null || title.isEmpty) return;
+    await AppNotificationCenter.instance.sendNotification(
+      title: title,
+      body: body ?? '',
+      category: _category(message.data['notification_type']?.toString()),
+      sendToMobilePanel: true,
+      updateLivePill: false,
+    );
+    unawaited(AppNotificationCenter.instance.refreshFromBackend());
+  }
+
+  void _handlePushOpen(RemoteMessage message) {
+    unawaited(AppNotificationCenter.instance.refreshFromBackend());
+    // The existing notification center remains the source of truth for
+    // action routing; the next refresh loads the persisted action_url.
+  }
+
+  String _category(String? type) {
+    switch ((type ?? '').toUpperCase()) {
+      case 'BANK':
+      case 'CRYPTO':
+        return 'Funds';
+      case 'ACCOUNT':
+        return 'Trading';
+      case 'PROFILE':
+      case 'DOCUMENT':
+      case 'IB':
+        return 'Security';
+      default:
+        return 'General';
+    }
+  }
+
+  Future<void> dispose() async {
+    await _tokenSubscription?.cancel();
+    await _foregroundSubscription?.cancel();
+    await _openedSubscription?.cancel();
+  }
+}

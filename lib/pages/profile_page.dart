@@ -3608,7 +3608,7 @@ class _BannerOptionTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Icon(
-                selected ? LucideIcons.circleCheck : LucideIcons.circle,
+                selected ? Icons.check_circle : Icons.radio_button_unchecked,
                 color: selected ? _profileBlue : _profileMuted,
                 size: 19,
               ),

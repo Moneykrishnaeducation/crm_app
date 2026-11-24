@@ -2005,8 +2005,10 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       try {
         await AuthApi.instance.revokeTrustedDevice(deviceId: deviceId);
         if (!mounted) return;
-        _showSnack('Trusted device revoked');
         await _loadTrustedDevices();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        _showSnack('Trusted device revoked');
       } on AuthApiException catch (error) {
         _showSnack(error.message);
       } catch (_) {
@@ -2189,6 +2191,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           _trustedDevices = [];
           _isDeviceRevoked = true;
         });
+        Navigator.of(context).pop();
         _showSnack('All trusted devices have been revoked');
       } on AuthApiException catch (error) {
         _showSnack(error.message);

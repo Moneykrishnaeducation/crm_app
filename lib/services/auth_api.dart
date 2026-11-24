@@ -964,11 +964,10 @@ class AuthApi {
       'method': method,
       'description': description.isNotEmpty ? description : 'Withdrawal via ${method.toUpperCase()}',
     };
-    try {
-      return await _request('POST', 'withdrawal/request/', body: body);
-    } catch (_) {
-      return await _request('POST', 'withdraw-request/', body: body);
-    }
+    // Use the enhanced withdrawal endpoint only. Do not retry a rejected
+    // request against the legacy endpoint: a 403 is a business-rule denial
+    // (for example, incomplete KYC), not an endpoint compatibility failure.
+    return _request('POST', 'withdrawal/request/', body: body);
   }
 
   /// Initiate CheesePay deposit

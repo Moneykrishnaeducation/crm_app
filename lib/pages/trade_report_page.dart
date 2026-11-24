@@ -1319,7 +1319,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
         ? (cashFlow['count'] as num).toInt()
         : int.tryParse('\${cashFlow['count'] ?? 0}') ?? 0;
     final currency = _currentAccount.currency;
-    Widget metric(String label, double value, Color valueColor) {
+    Widget metric(String label, double value, Color valueColor, {bool isCount = false}) {
       return Expanded(
         child: Container(
           padding: const EdgeInsets.all(13),
@@ -1366,7 +1366,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
           Row(children: [
             metric('Net cash flow', net, net >= 0 ? const Color(0xFF16A36A) : const Color(0xFFEF5350)),
             const SizedBox(width: 9),
-            metric('Transactions', count.toDouble(), title),
+            metric('Transactions', count.toDouble(), title, isCount: true),
           ]),
           const SizedBox(height: 7),
           Text('\${count} approved cash-flow transactions in the selected period',

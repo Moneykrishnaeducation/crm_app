@@ -30,6 +30,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
   String? _tradeLoadError;
   List<BrokerTradeRecord> _loadedTrades = <BrokerTradeRecord>[];
   int _requestGeneration = 0;
+  int _reportRequestGeneration = 0;
+  bool _loadingReportData = false;
+  String? _reportDataError;
+  Map<String, dynamic>? _reportData;
 
   Offset? _equityScrubOffset;
   Offset? _pnlScrubOffset;
@@ -46,24 +50,40 @@ class _TradeReportPageState extends State<TradeReportPage> {
   @override
   void initState() {
     super.initState();
-    _selectedLogin = widget.selectedAccountLogin ?? '52132132';
+    _selectedLogin = widget.selectedAccountLogin ??
+        (widget.accounts != null && widget.accounts!.isNotEmpty
+            ? widget.accounts!.first.login
+            : '');
     final today = DateTime.now();
     _endDate = DateTime(today.year, today.month, today.day);
     _startDate = _endDate.subtract(const Duration(days: 6));
     _selectedPreset = '7days';
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadTrades());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTrades();
+      _loadReportData();
+    });
   }
 
   @override
   void didUpdateWidget(covariant TradeReportPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selectedAccountLogin != null &&
-        widget.selectedAccountLogin != oldWidget.selectedAccountLogin) {
+    final accountChanged =
+        widget.selectedAccountLogin != oldWidget.selectedAccountLogin;
+    final accountsChanged = widget.accounts != oldWidget.accounts;
+    if (accountChanged && widget.selectedAccountLogin != null) {
       _selectedLogin = widget.selectedAccountLogin!;
+    } else if (accountsChanged &&
+        !_allAccounts.any((account) => account.login == _selectedLogin) &&
+        _allAccounts.isNotEmpty) {
+      _selectedLogin = _allAccounts.first.login;
+    }
+    if (accountChanged || accountsChanged) {
       _loadedTrades = <BrokerTradeRecord>[];
+      _reportData = null;
+      _requestGeneration++;
+      _reportRequestGeneration++;
       _loadTrades();
-    } else if (widget.accounts != oldWidget.accounts) {
-      _loadTrades();
+      _loadReportData();
     }
   }
 
@@ -73,7 +93,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
     for (final account in _allAccounts) {
       if (account.login == _selectedLogin) return account;
     }
-    return _allAccounts.isEmpty ? null : _allAccounts.first;
+    return null;
   }
 
   BrokerAccount get _currentAccount => _currentAccountOrNull ??
@@ -89,7 +109,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
 
   Future<void> _loadTrades() async {
     final account = _currentAccountOrNull;
-    if (account == null || account.login.isEmpty) {
+    final requestedLogin = _selectedLogin.trim();
+    if (account == null || requestedLogin.isEmpty ||
+        account.login != requestedLogin) {
+      _requestGeneration++;
       if (mounted) setState(() {
         _loadedTrades = <BrokerTradeRecord>[];
         _loadingTrades = false;
@@ -98,7 +121,14 @@ class _TradeReportPageState extends State<TradeReportPage> {
       return;
     }
     final generation = ++_requestGeneration;
-    if (mounted) setState(() { _loadingTrades = true; _tradeLoadError = null; });
+    if (mounted) {
+      setState(() {
+        // Never keep the previous account's trades visible during a switch.
+        _loadedTrades = <BrokerTradeRecord>[];
+        _loadingTrades = true;
+        _tradeLoadError = null;
+      });
+    }
     try {
       final rawTrades = await AuthApi.instance.getClosedPositions(
         account.login,
@@ -137,6 +167,91 @@ class _TradeReportPageState extends State<TradeReportPage> {
       });
     }
   }
+
+  Future<void> _loadReportData() async {
+    final account = _currentAccountOrNull;
+    final requestedLogin = _selectedLogin.trim();
+    if (account == null || requestedLogin.isEmpty ||
+        account.login != requestedLogin) {
+      _reportRequestGeneration++;
+      if (mounted) {
+        setState(() {
+          _reportData = null;
+          _loadingReportData = false;
+          _reportDataError = null;
+        });
+      }
+      return;
+    }
+    final generation = ++_reportRequestGeneration;
+    if (mounted) {
+      setState(() {
+        _reportData = null;
+        _loadingReportData = true;
+        _reportDataError = null;
+      });
+    }
+    try {
+      final response = await AuthApi.instance.getTradingAccountReportData(
+        account.login,
+        fromDate: _apiDate(_startDate),
+        toDate: _apiDate(_endDate),
+      );
+      dynamic payload = response;
+      for (var depth = 0; depth < 3 && payload is Map; depth++) {
+        final map = payload.cast<String, dynamic>();
+        if (map['cash_flow'] is Map && map['equity_curve'] is Map) break;
+        payload = map['data'] ?? map['result'] ?? map['payload'];
+      }
+      if (payload is! Map ||
+          payload['cash_flow'] is! Map ||
+          payload['equity_curve'] is! Map) {
+        throw const AuthApiException(
+          'The report service returned an unexpected response.',
+        );
+      }
+      if (!mounted || generation != _reportRequestGeneration) return;
+      setState(() {
+        _reportData = payload.cast<String, dynamic>();
+        _loadingReportData = false;
+        _reportDataError = null;
+      });
+    } on AuthApiException catch (error) {
+      if (!mounted || generation != _reportRequestGeneration) return;
+      setState(() {
+        _reportData = null;
+        _loadingReportData = false;
+        _reportDataError = error.message;
+      });
+    } catch (_) {
+      if (!mounted || generation != _reportRequestGeneration) return;
+      setState(() {
+        _reportData = null;
+        _loadingReportData = false;
+        _reportDataError = 'Unable to load cash flow and equity history. Retry the report.';
+      });
+    }
+  }
+
+  Map<String, dynamic> get _cashFlowData {
+    final value = _reportData?['cash_flow'];
+    return value is Map ? value.cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  List<Map<String, dynamic>> get _equitySnapshots {
+    final curve = _reportData?['equity_curve'];
+    if (curve is! Map || curve['snapshots'] is! List) {
+      return <Map<String, dynamic>>[];
+    }
+    return (curve['snapshots'] as List)
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList(growable: false);
+  }
+
+  List<double> get _equityHistory => _equitySnapshots
+      .map((snapshot) => _tradeNumber(snapshot['equity']))
+      .toList(growable: false);
 
   String _formatCurrency(String raw) {
     final cleaned = raw.replaceAll(r'$', '').replaceAll(',', '').trim();
@@ -318,7 +433,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
         });
       }
     }
-    if (mounted) _loadTrades();
+    if (mounted) {
+      _loadTrades();
+      _loadReportData();
+    }
   }
 
   Widget _buildPresetTile({
@@ -462,10 +580,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
                             : null,
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          setState(() {
-                            _selectedLogin = acc.login;
-                          });
-                          widget.onAccountChanged?.call(acc.login);
+                          if (acc.login != _selectedLogin) {
+                            setState(() {
+                              _selectedLogin = acc.login;
+                              _loadedTrades = <BrokerTradeRecord>[];
+                              _tradeLoadError = null;
+                            });
+                            widget.onAccountChanged?.call(acc.login);
+                            // This report is pushed as a separate route, so
+                            // explicitly reload after changing its local account.
+                            _loadTrades();
+                            _loadReportData();
+                          }
                           Navigator.pop(ctx);
                         },
                       );
@@ -492,6 +618,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   @override
   void dispose() {
     _requestGeneration++;
+    _reportRequestGeneration++;
     super.dispose();
   }
 
@@ -1184,10 +1311,136 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Color title,
     bool isDark,
   ) {
+    final cashFlow = _cashFlowData;
+    final deposits = _tradeNumber(cashFlow['deposits']);
+    final withdrawals = _tradeNumber(cashFlow['withdrawals']);
+    final net = _tradeNumber(cashFlow['net']);
+    final count = cashFlow['count'] is num
+        ? (cashFlow['count'] as num).toInt()
+        : int.tryParse((cashFlow['count'] ?? 0).toString()) ?? 0;
+    final currency = _currentAccount.currency;
+
+    Widget metric(String label, double value, Color valueColor, {bool isCount = false}) {
+      final displayValue = isCount
+          ? value.toInt().toString()
+          : currency + ' ' +
+              ((label == 'Net cash flow' && value < 0) ? '-' : '') +
+              value.abs().toStringAsFixed(2);
+      return Expanded(
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 11, color: muted)),
+              const SizedBox(height: 7),
+              Text(
+                _loadingReportData
+                    ? '—'
+                    : (_hideNetDeposit && label == 'Net cash flow'
+                        ? '••••••'
+                        : displayValue),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: valueColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: bg, border: Border.all(color: border), borderRadius: BorderRadius.circular(16)),
-      child: Text('Cash flow is not included in closed-trade history.', style: TextStyle(color: muted, fontSize: 11)),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Cash flow summary',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: title,
+                  ),
+                ),
+              ),
+              if (_loadingReportData)
+                SizedBox(
+                  width: 15,
+                  height: 15,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: muted),
+                ),
+              if (!_loadingReportData && _reportDataError == null)
+                InkWell(
+                  onTap: () => setState(() => _hideNetDeposit = !_hideNetDeposit),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      _hideNetDeposit ? LucideIcons.eyeOff : LucideIcons.eye,
+                      size: 16,
+                      color: muted,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (_reportDataError != null)
+            Text(_reportDataError!, style: TextStyle(fontSize: 11, color: muted))
+          else ...[
+            Row(
+              children: [
+                metric('Deposits', deposits, const Color(0xFF16A36A)),
+                const SizedBox(width: 9),
+                metric('Withdrawals', withdrawals, const Color(0xFFEF5350)),
+              ],
+            ),
+            const SizedBox(height: 9),
+            Row(
+              children: [
+                metric(
+                  'Net cash flow',
+                  net,
+                  net >= 0 ? const Color(0xFF16A36A) : const Color(0xFFEF5350),
+                ),
+                const SizedBox(width: 9),
+                metric('Transactions', count.toDouble(), title, isCount: true),
+              ],
+            ),
+            const SizedBox(height: 7),
+            Text(
+              count.toString() + ' approved cash-flow transactions in the selected period',
+              style: TextStyle(fontSize: 10, color: muted),
+            ),
+          ],
+          if (_reportDataError != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _loadReportData,
+                icon: const Icon(LucideIcons.refreshCw, size: 14),
+                label: const Text('Retry'),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1457,7 +1710,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }
 
   Widget _buildEquityCurveSection(Color bg, Color border, Color title, bool isDark) {
-    final history = <double>[];
+    final history = _equityHistory;
     final muted = isDark ? const Color(0xFF8190A5) : const Color(0xFF8995A7);
     final start = history.isEmpty ? 0.0 : history.first;
     final end = history.isEmpty ? 0.0 : history.last;
@@ -1491,8 +1744,11 @@ class _TradeReportPageState extends State<TradeReportPage> {
           ),
           child: history.length < 2
               ? _buildChartEmptyState(
-                  'Equity history unavailable',
-                  'This account has not supplied enough equity snapshots to draw a curve.',
+                  _loadingReportData ? 'Loading equity history' :
+                    (_reportDataError != null ? 'Equity history unavailable' : 'Building equity history'),
+                  _loadingReportData ? 'Retrieving account snapshots for this date range.' :
+                    (_reportDataError != null ? _reportDataError! :
+                      'Real MT5 snapshots are collected periodically. The curve will appear after at least two snapshots are available.'),
                   isDark, muted,
                 )
               : CustomPaint(

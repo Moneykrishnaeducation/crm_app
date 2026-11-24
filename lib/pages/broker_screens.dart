@@ -10,11 +10,13 @@ class BrokerDashboardPage extends StatefulWidget {
     required this.balanceVisible,
     required this.onToggleBalance,
     required this.onSelectPage,
+    required this.onOpenReport,
     this.scrollController,
   });
   final bool balanceVisible;
   final VoidCallback onToggleBalance;
   final ValueChanged<String> onSelectPage;
+  final VoidCallback onOpenReport;
   final ScrollController? scrollController;
 
   @override
@@ -75,7 +77,10 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
                   subtitle: 'Manage your trading funds',
                 ),
                 const SizedBox(height: 10),
-                _QuickActionsRow(onSelectPage: widget.onSelectPage),
+                _QuickActionsRow(
+                  onSelectPage: widget.onSelectPage,
+                  onOpenReport: widget.onOpenReport,
+                ),
                 const SizedBox(height: 20),
                 _DashboardSectionHeading(
                   title: 'Explore',
@@ -502,8 +507,12 @@ class _DashboardSectionHeading extends StatelessWidget {
 }
 
 class _QuickActionsRow extends StatelessWidget {
-  const _QuickActionsRow({required this.onSelectPage});
+  const _QuickActionsRow({
+    required this.onSelectPage,
+    required this.onOpenReport,
+  });
   final ValueChanged<String> onSelectPage;
+  final VoidCallback onOpenReport;
 
   @override
   Widget build(BuildContext context) {
@@ -553,11 +562,7 @@ class _QuickActionsRow extends StatelessWidget {
               icon: LucideIcons.fileText,
               label: 'Report Center',
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const TradeReportPage(),
-                  ),
-                );
+                onOpenReport();
               },
             ),
           ),

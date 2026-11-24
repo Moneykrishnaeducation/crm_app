@@ -252,6 +252,7 @@ class TradeLiveUpdateService : Service() {
     override fun onDestroy() {
         executor?.shutdownNow()
         executor = null
+        prefs.edit().clear().apply()
         super.onDestroy()
     }
 }

@@ -4165,7 +4165,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                                 await AppNotificationCenter.instance.stopPositionMonitoring();
                                 if (mounted) showAppMessage('Trade live update stopped.');
                               } else {
-                                await AppNotificationCenter.instance.startPositionMonitoring(
+                                final started = await AppNotificationCenter.instance.startPositionMonitoring(
                                   accountId: _selectedLogin,
                                   positionId: pos.id,
                                   symbol: pos.symbol,
@@ -4173,7 +4173,13 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                                   lots: pos.lots,
                                   openTime: pos.openTime,
                                 );
-                                if (mounted) showAppMessage('Live trade update started.');
+                                if (mounted) {
+                                  showAppMessage(
+                                    started
+                                        ? 'Live trade update started.'
+                                        : 'Could not start tracking this position. Refresh and try again.',
+                                  );
+                                }
                               }
                             },
                             icon: Icon(

@@ -208,6 +208,7 @@ class AppNotificationCenter {
     isLoading = true;
     lastLoadError = null;
     try {
+      if (!AuthApi.instance.hasToken) return;
       final response = await AuthApi.instance.getNotifications(limit: limit);
       dynamic payload = response;
       for (var depth = 0; depth < 4 && payload is Map; depth++) {
@@ -234,6 +235,7 @@ class AppNotificationCenter {
       debugPrint('AppNotificationCenter: backend refresh failed: $error');
     } finally {
       isLoading = false;
+      notificationsNotifier.value = List<AppNotificationItem>.from(notificationsNotifier.value);
     }
   }
 
@@ -641,7 +643,13 @@ class AppNotificationCenter {
   }
 
   Future<void> markAsRead(String id) async {
-    final item = notificationsNotifier.value.where((n) => n.id == id).firstOrNull;
+    AppNotificationItem? item;
+    for (final candidate in notificationsNotifier.value) {
+      if (candidate.id == id) {
+        item = candidate;
+        break;
+      }
+    }
     if (item == null || !item.isUnread) return;
     await AuthApi.instance.markNotificationRead(id);
     item.isUnread = false;

@@ -287,10 +287,35 @@ class AppNotificationCenter {
       await stopPositionMonitoring();
       return false;
     }
-    _positionMonitorTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _refreshTrackedPosition(revision: revision),
-    );
+    var nativeServiceStarted = false;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        final config = await AuthApi.instance.getNativePositionMonitorConfig(accountId);
+        if (config != null) {
+          nativeServiceStarted = await _nativeChannel.invokeMethod<bool>(
+                'startPositionService',
+                <String, dynamic>{
+                  ...config,
+                  'accountId': accountId,
+                  'positionId': positionId,
+                  'symbol': symbol,
+                  'side': isBuy ? 'BUY' : 'SELL',
+                  'lots': lots.toStringAsFixed(2),
+                  'startedAt': _trackedPositionStartedAt.millisecondsSinceEpoch,
+                },
+              ) ??
+              false;
+        }
+      } catch (error) {
+        debugPrint('AppNotificationCenter: native position service unavailable: $error');
+      }
+    }
+    if (!nativeServiceStarted) {
+      _positionMonitorTimer = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) => _refreshTrackedPosition(revision: revision),
+      );
+    }
     return true;
   }
 
@@ -303,6 +328,10 @@ class AppNotificationCenter {
     if (trackedPositionNotifier.value == null || _positionMonitorTimer != null) return;
     final revision = _positionMonitorRevision;
     await _refreshTrackedPosition(revision: revision);
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // Android's foreground service continues polling while the activity is inactive.
+      return;
+    }
     if (trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
       _positionMonitorTimer = Timer.periodic(
         const Duration(seconds: 15),
@@ -321,7 +350,14 @@ class AppNotificationCenter {
     _trackedPositionSymbol = null;
     _trackedPositionSide = null;
     _trackedPositionLots = 0;
-    if (wasTracking) await stopLiveUpdate(7777);
+    if (wasTracking) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          await _nativeChannel.invokeMethod('stopPositionService');
+        } catch (_) {}
+      }
+      await stopLiveUpdate(7777);
+    }
   }
 
   Future<void> _refreshTrackedPosition({required int revision}) async {

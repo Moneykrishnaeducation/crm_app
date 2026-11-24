@@ -1186,6 +1186,7 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
       duration: const Duration(milliseconds: 320),
     )..forward();
     AppNotificationCenter.instance.notificationsNotifier.addListener(_onNotificationsChanged);
+    unawaited(AppNotificationCenter.instance.refreshFromBackend());
   }
 
   void _onNotificationsChanged() {
@@ -1202,14 +1203,22 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
   List<AppNotificationItem> get _notifications => AppNotificationCenter.instance.notifications;
   int get _unreadCount => AppNotificationCenter.instance.unreadCount;
 
-  void _markAllAsRead() {
-    AppNotificationCenter.instance.markAllAsRead();
-    showAppMessage('All notifications marked as read.');
+  Future<void> _markAllAsRead() async {
+    try {
+      await AppNotificationCenter.instance.markAllAsRead();
+      if (mounted) showAppMessage('All notifications marked as read.');
+    } catch (error) {
+      if (mounted) showAppMessage('Could not update notifications. Please retry.');
+    }
   }
 
-  void _clearAll() {
-    AppNotificationCenter.instance.clearAll();
-    showAppMessage('All notifications cleared.');
+  Future<void> _clearAll() async {
+    try {
+      await AppNotificationCenter.instance.clearAll();
+      if (mounted) showAppMessage('Notifications cleared.');
+    } catch (error) {
+      if (mounted) showAppMessage('Could not clear all notifications. Please retry.');
+    }
   }
 
   Future<void> _toggleLiveUpdateSimulation() async {
@@ -1390,19 +1399,10 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                               ),
                             ),
                             IconButton(
-                              tooltip: 'Send test notification',
-                              onPressed: () async {
-                                await AppNotificationCenter.instance.sendNotification(
-                                  title: 'Market Order Executed',
-                                  body: 'Bought 0.20 lots EURUSD at 1.0845. Stop loss and take profit confirmed.',
-                                  category: 'Trading',
-                                  icon: LucideIcons.trendingUp,
-                                  isGold: true,
-                                  sendToMobilePanel: true,
-                                );
-                              },
+                              tooltip: 'Refresh notifications',
+                              onPressed: () => AppNotificationCenter.instance.refreshFromBackend(),
                               icon: Icon(
-                                LucideIcons.bellRing,
+                                LucideIcons.refreshCw,
                                 color: dark ? const Color(0xFFFFD566) : const Color(0xFFB3861B),
                                 size: 18,
                               ),
@@ -1609,10 +1609,23 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(LucideIcons.bellOff, size: 42, color: muted),
+                                    if (AppNotificationCenter.instance.isLoading)
+                                      const CircularProgressIndicator()
+                                    else
+                                      Icon(
+                                        AppNotificationCenter.instance.lastLoadError == null
+                                            ? LucideIcons.bellOff
+                                            : LucideIcons.cloudOff,
+                                        size: 42,
+                                        color: muted,
+                                      ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      "You're all caught up!",
+                                      AppNotificationCenter.instance.isLoading
+                                          ? 'Loading notifications'
+                                          : AppNotificationCenter.instance.lastLoadError == null
+                                              ? "You're all caught up!"
+                                              : 'Could not load notifications',
                                       style: TextStyle(
                                         color: cs.onSurface,
                                         fontSize: 15,
@@ -1621,10 +1634,20 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'No notifications found in this filter category.',
+                                      AppNotificationCenter.instance.lastLoadError == null
+                                          ? 'Your account updates will appear here.'
+                                          : 'Check your connection and refresh to try again.',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(color: muted, fontSize: 11),
                                     ),
+                                    if (AppNotificationCenter.instance.lastLoadError != null) ...[
+                                      const SizedBox(height: 10),
+                                      TextButton.icon(
+                                        onPressed: () => AppNotificationCenter.instance.refreshFromBackend(),
+                                        icon: const Icon(LucideIcons.refreshCw, size: 14),
+                                        label: const Text('Try again'),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               )
@@ -1649,19 +1672,13 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
 
                                   return InkWell(
                                     onTap: () async {
-                                      AppNotificationCenter.instance.markAsRead(item.id);
-                                      final short = AppNotificationCenter.instance.generatePillShortText(item.title, item.body, item.category);
-                                      final color = AppNotificationCenter.instance.generatePillColorHex(item.title, item.body, item.isGold, item.category);
-                                      await AppNotificationCenter.instance.startLiveUpdate(
-                                        id: 7777,
-                                        title: item.title,
-                                        body: item.body,
-                                        subText: item.category.toUpperCase(),
-                                        shortText: short,
-                                        colorHex: color,
-                                        iconType: item.category == 'Trading' ? 'trade' : 'vt',
-                                      );
-                                      showAppMessage('Viewing: ${item.title} (Loaded to OS Live Update)');
+                                      try {
+                                        await AppNotificationCenter.instance.markAsRead(item.id);
+                                      } catch (_) {
+                                        if (mounted) {
+                                          showAppMessage('Could not mark this notification as read.');
+                                        }
+                                      }
                                     },
                                     borderRadius: BorderRadius.circular(14),
                                     child: Container(

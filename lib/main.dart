@@ -517,7 +517,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final login = (item['account_id'] ?? item['login'] ?? item['account'] ?? '').toString();
     final accountType = (item['account_type'] ?? '').toString().toLowerCase();
     final group = (item['group_name'] ?? item['group_alias'] ?? '').toString();
-    final isDemo = accountType == 'demo' || group.toLowerCase().contains('demo');
+    final isDemo = item['is_demo'] == true ||
+        accountType == 'demo' ||
+        group.toLowerCase().contains('demo');
     final currency = (item['currency'] ?? 'USD').toString();
     final balance = _accountNumber(item['balance']);
     final equity = _accountNumber(item['equity'] ?? item['balance']);
@@ -555,14 +557,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       final records = await AuthApi.instance.getMobileAccounts(refresh: refresh);
       final mapped = records.map(_mapApiAccount)
-          .where((account) =>
-              account.login.isNotEmpty && account.type == 'Live MT5')
+          .where((account) => account.login.isNotEmpty)
+          .toList(growable: false);
+      final liveAccounts = mapped
+          .where((account) => account.type == 'Live MT5')
+          .toList(growable: false);
+      final demoAccounts = mapped
+          .where((account) => account.type.startsWith('Demo MT5'))
           .toList(growable: false);
       if (!mounted) return;
       setState(() {
         _accounts
           ..clear()
-          ..addAll(mapped);
+          ..addAll(liveAccounts);
+        _demoAccounts
+          ..clear()
+          ..addAll(demoAccounts);
         _accountsLoading = false;
       });
     } on AuthApiException catch (error) {
@@ -582,30 +592,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  final List<BrokerAccount> _demoAccounts = [
-    BrokerAccount(
-      'Demo Standard',
-      '3498102',
-      '1:500',
-      r'$10,000.00',
-      r'$10,000.00',
-      'Demo MT5 Standard',
-      server: 'VTIndex-Demo',
-      currency: 'USD',
-      floatingPnl: 0.0,
-    ),
-    BrokerAccount(
-      'Demo ECN Pro',
-      '3481940',
-      '1:200',
-      r'$25,000.00',
-      r'$25,180.40',
-      'Demo MT5 ECN',
-      server: 'VTIndex-Demo',
-      currency: 'USD',
-      floatingPnl: 180.40,
-    ),
-  ];
+  final List<BrokerAccount> _demoAccounts = <BrokerAccount>[];
 
   void _addDemoAccount(BrokerAccount account) {
     setState(() => _demoAccounts.insert(0, account));
@@ -696,7 +683,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       _resetScrollFor(page);
       if (page == 'Transactions') {
         setState(() => _activityRefreshToken++);
-      } else if (page == 'Trading Accounts') {
+      } else if (page == 'Trading Accounts' || page == 'Demo Accounts') {
         unawaited(_loadTradingAccounts(refresh: true));
       }
       return;
@@ -768,7 +755,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       _selectedPage = page;
       if (page == 'Transactions') _activityRefreshToken++;
     });
-    if (page == 'Trading Accounts') {
+    if (page == 'Trading Accounts' || page == 'Demo Accounts') {
       unawaited(_loadTradingAccounts(refresh: true));
     }
   }

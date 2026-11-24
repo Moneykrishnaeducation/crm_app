@@ -3534,7 +3534,7 @@ class _SecurityReferenceSubPage extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Your account remains active until a request is reviewed and approved.',
+                            'Your account remains active while a request is pending staff review.',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: .86),
                               fontSize: 11,
@@ -3761,175 +3761,139 @@ class _SecurityReferenceSubPage extends StatelessWidget {
         ? 'Confirm deactivation request'
         : 'Confirm account deletion request';
     final description = deactivate
-        ? 'Your account access may be temporarily suspended after the request is reviewed. Do you want to submit a deactivation request?'
-        : 'Account deletion is permanent once approved and may remove access to your account data. Do you want to submit a deletion request?';
-    bool isVerifying = false;
+        ? 'Your account will remain active until the deactivation request is reviewed and approved.'
+        : 'Account deletion is permanent once approved. Your account remains active while the request is pending.';
+    final passwordController = TextEditingController();
+    final reasonController = TextEditingController();
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) {
-          return Container(
-            padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
-            decoration: BoxDecoration(
-              color: Theme.of(sheetContext).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 38,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .outlineVariant,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 16, 22, 24),
+          decoration: BoxDecoration(
+            color: Theme.of(sheetContext).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  const SizedBox(height: 22),
-                  Row(
-                    children: [
-                      Icon(
-                        deactivate
-                            ? LucideIcons.pauseCircle
-                            : LucideIcons.trash2,
-                        color: const Color(0xFFFF3152),
-                        size: 24,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            color: Theme.of(sheetContext).colorScheme.onSurface,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
+                ),
+                const SizedBox(height: 22),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Theme.of(sheetContext).colorScheme.onSurface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      color: Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurfaceVariant,
-                      fontSize: 13,
-                      height: 1.5,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: Theme.of(sheetContext).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: reasonController,
+                  maxLines: 2,
+                  maxLength: 1000,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'CRM login password',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(LucideIcons.lockKeyhole),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetContext, false),
+                        child: const Text('Cancel'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: isVerifying
-                              ? null
-                              : () => Navigator.pop(sheetContext, false),
-                          child: const Text('Cancel'),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFE04452),
                         ),
+                        onPressed: () {
+                          if (passwordController.text.isEmpty) {
+                            showAppMessage('Enter your CRM login password.');
+                            return;
+                          }
+                          Navigator.pop(sheetContext, true);
+                        },
+                        child: const Text('Submit request'),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF3152),
-                          ),
-                          onPressed: isVerifying
-                              ? null
-                              : () async {
-                                  setSheetState(() => isVerifying = true);
-                                  try {
-                                    final biometric = BiometricSignIn.instance;
-                                    final biometricEnabled = await biometric
-                                        .isEnabled();
-                                    if (biometricEnabled) {
-                                      final available = await biometric
-                                          .isAvailable();
-                                      if (!available) {
-                                        if (sheetContext.mounted) {
-                                          setSheetState(
-                                            () => isVerifying = false,
-                                          );
-                                          showAppMessage(
-                                            'Biometric authentication is enabled but unavailable on this device.',
-                                          );
-                                        }
-                                        return;
-                                      }
-                                      final authenticated = await biometric
-                                          .authenticate(
-                                            localizedReason: deactivate
-                                                ? 'Authenticate to confirm your account deactivation request'
-                                                : 'Authenticate to confirm your account deletion request',
-                                          );
-                                      if (!authenticated) {
-                                        if (sheetContext.mounted) {
-                                          setSheetState(
-                                            () => isVerifying = false,
-                                          );
-                                          showAppMessage(
-                                            'Biometric verification was not completed. No request was confirmed.',
-                                          );
-                                        }
-                                        return;
-                                      }
-                                    }
-                                    if (sheetContext.mounted)
-                                      Navigator.pop(sheetContext, true);
-                                  } catch (_) {
-                                    if (sheetContext.mounted) {
-                                      setSheetState(() => isVerifying = false);
-                                      showAppMessage(
-                                        'Biometric verification failed. No request was confirmed.',
-                                      );
-                                    }
-                                  }
-                                },
-                          child: isVerifying
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Confirm Request'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          );
-        },
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            deactivate
-                ? 'Deactivation request preview confirmed. No request was sent.'
-                : 'Deletion request preview confirmed. No request was sent.',
           ),
         ),
-      );
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await AuthApi.instance.submitAccountClosureRequest(
+          password: passwordController.text,
+          reason: reasonController.text.trim(),
+          requestType: deactivate ? 'deactivate' : 'delete',
+        );
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              deactivate
+                  ? 'Deactivation request submitted for review.'
+                  : 'Account deletion request submitted for review.',
+            ),
+          ),
+        );
+      } catch (error) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
     }
+    passwordController.dispose();
+    reasonController.dispose();
   }
 
   static Widget _subCard(BuildContext context, Widget child) => Container(

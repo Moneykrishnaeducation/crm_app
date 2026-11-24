@@ -95,6 +95,7 @@ class MainActivity : FlutterFragmentActivity() {
                             putExtra("host", call.argument<String>("host"))
                             putExtra("accountId", call.argument<String>("accountId"))
                             putExtra("positionId", call.argument<String>("positionId"))
+                            putExtra("accountsJson", call.argument<String>("accountsJson"))
                             putExtra("symbol", call.argument<String>("symbol"))
                             putExtra("side", call.argument<String>("side"))
                             putExtra("lots", call.argument<String>("lots"))
@@ -119,16 +120,12 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "getPositionServiceState" -> {
                     val state = getSharedPreferences("vt_trade_live_service", Context.MODE_PRIVATE)
-                    val positionId = state.getString("positionId", null)
-                    if (positionId.isNullOrBlank()) {
+                    val accountsJson = state.getString("accountsJson", null)
+                    if (accountsJson.isNullOrBlank()) {
                         result.success(null)
                     } else {
                         result.success(mapOf(
-                            "positionId" to positionId,
-                            "accountId" to (state.getString("accountId", "") ?: ""),
-                            "symbol" to (state.getString("symbol", "Trade") ?: "Trade"),
-                            "side" to (state.getString("side", "BUY") ?: "BUY"),
-                            "lots" to (state.getString("lots", "0.00") ?: "0.00"),
+                            "accountsJson" to accountsJson,
                             "startedAt" to state.getLong("startedAt", System.currentTimeMillis())
                         ))
                     }

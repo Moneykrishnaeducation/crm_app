@@ -145,15 +145,9 @@ class AppNotificationCenter {
 
       _isPluginInitialized = true;
 
-      // Clear a leftover trade tracker from a process that was terminated by the OS.
-      await _localNotifications.cancel(id: 7777);
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        try {
-          await _nativeChannel.invokeMethod('stopLiveUpdate', {'id': 7777});
-        } catch (_) {
-          // The native channel may not be available on non-Android test hosts.
-        }
-      }
+      // A tracked trade is now owned by the Android foreground service.
+      // Do not clear notification 7777 during Flutter process startup: the
+      // service may still be running after the activity process is recreated.
     } catch (e) {
       debugPrint(
         'AppNotificationCenter: platform notification init warning: $e',

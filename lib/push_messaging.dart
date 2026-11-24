@@ -13,12 +13,6 @@ class PushMessagingService {
   PushMessagingService._();
   static final PushMessagingService instance = PushMessagingService._();
 
-  static const _apiKey = String.fromEnvironment('FIREBASE_API_KEY');
-  static const _appId = String.fromEnvironment('FIREBASE_APP_ID');
-  static const _senderId = String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID');
-  static const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
-  static const _storageBucket = String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
-
   bool _initialized = false;
   final ValueNotifier<String?> pendingActionUrl = ValueNotifier<String?>(null);
   StreamSubscription<String>? _tokenSubscription;
@@ -32,18 +26,10 @@ class PushMessagingService {
       _projectId.isNotEmpty;
 
   Future<void> initializeAndRegister() async {
-    if (kIsWeb || !isConfigured || !AuthApi.instance.hasToken) return;
+    if (kIsWeb || !AuthApi.instance.hasToken) return;
     try {
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-          options: FirebaseOptions(
-            apiKey: _apiKey,
-            appId: _appId,
-            messagingSenderId: _senderId,
-            projectId: _projectId,
-            storageBucket: _storageBucket.isEmpty ? null : _storageBucket,
-          ),
-        );
+        // Android's google-services.json supplies the native default app.\n        await Firebase.initializeApp();
       }
       if (!_initialized) {
         _initialized = true;

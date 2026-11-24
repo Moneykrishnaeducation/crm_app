@@ -792,22 +792,22 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                     type: FileType.custom,
                     allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
                   );
-                  if (files.isNotEmpty) {
-                    final file = files.first;
-                    final bytes = await file.readAsBytes();
-                    setState(() {
-                      _uploadedProofName = file.name;
-                      _proofBytes = bytes;
-                    });
-                    showAppMessage('Attached transaction proof: ${file.name}');
+                  if (files.isEmpty) return;
+                  final file = files.first;
+                  final bytes = await file.readAsBytes();
+                  if (bytes.isEmpty) {
+                    showAppMessage('The selected proof file is empty.');
                     return;
                   }
-                } catch (_) {}
-                setState(() {
-                  _uploadedProofName = 'bank_transfer_receipt_3311.pdf';
-                  _proofBytes = [1, 2, 3, 4];
-                });
-                showAppMessage('Attached transaction proof: bank_transfer_receipt_3311.pdf (1.4 MB)');
+                  if (!mounted) return;
+                  setState(() {
+                    _uploadedProofName = file.name;
+                    _proofBytes = bytes;
+                  });
+                  showAppMessage('Attached transaction proof: ${file.name}');
+                } catch (error) {
+                  showAppMessage('Could not read the selected proof file: $error');
+                }
               },
               icon: const Icon(LucideIcons.cloudUpload, size: 16),
               label: const Text('Upload transaction proof (JPG, PNG or PDF)'),
@@ -865,7 +865,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                     icon: const Icon(LucideIcons.x, size: 16),
                     color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
                     tooltip: 'Remove',
-                    onPressed: () => setState(() => _uploadedProofName = null),
+                    onPressed: () => setState(() { _uploadedProofName = null; _proofBytes = null; }),
                   ),
                 ],
               ),
@@ -2150,6 +2150,13 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       return;
     }
 
+    if (!withdrawal && _method == 1) {
+      if (_proofBytes == null || _proofBytes!.isEmpty || _uploadedProofName == null) {
+        showAppMessage('Upload your bank transfer receipt before submitting the manual deposit.');
+        return;
+      }
+    }
+
     setState(() => _isSubmitting = true);
 
     final amountStr = parsedAmount.toStringAsFixed(2);
@@ -2182,11 +2189,11 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         }
       } else if (_method == 1) {
         final rate = _usdInrRate > 0 ? _usdInrRate : 83.5;
-        final amountUsd = _currency == 1 ? parsedAmount / rate : parsedAmount;
+        final amountUsd = parsedAmount / rate; // Manual deposit amount is entered in INR.
         final res = await AuthApi.instance.submitManualDeposit(
           accountId: accId,
           amountUsd: amountUsd,
-          proofBytes: _proofBytes ?? [0],
+          proofBytes: _proofBytes,
           proofFileName: _uploadedProofName ?? 'proof.jpg',
         );
         if (res['transaction_id'] != null) {
@@ -2204,7 +2211,15 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           refId = 'VTX-DEP-${res['transaction_id']}';
         }
       }
-    } catch (_) {}
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      final message = error is AuthApiException
+          ? error.message
+          : 'Deposit request could not be submitted. Please try again.';
+      showAppMessage(message);
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);

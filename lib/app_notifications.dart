@@ -252,14 +252,15 @@ class AppNotificationCenter {
     String shortText = 'LIVE',
     String colorHex = '#10B981',
     String iconType = 'trade',
-    bool usesChronometer = true,
+    bool usesChronometer = false,
+    int? startedAtMillis,
   }) async {
     if (kIsWeb) return;
 
     // 1. Try native platform promoted live update channel first (triggers Android 16/17 & Moto Live Updates pill)
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       try {
-        await _nativeChannel.invokeMethod('startLiveUpdate', {
+        final nativeResult = await _nativeChannel.invokeMethod<bool>('startLiveUpdate', {
           'id': id,
           'title': title,
           'body': body,
@@ -267,8 +268,10 @@ class AppNotificationCenter {
           'shortText': shortText,
           'colorHex': colorHex,
           'iconType': iconType,
+          'usesChronometer': usesChronometer,
+          if (startedAtMillis != null) 'startedAtMillis': startedAtMillis,
         });
-        return;
+        if (nativeResult == true) return;
       } catch (e) {
         debugPrint(
           'AppNotificationCenter: native startLiveUpdate channel failed, falling back to local notifications: $e',
@@ -301,6 +304,7 @@ class AppNotificationCenter {
         subText: subText,
         showWhen: true,
         usesChronometer: usesChronometer,
+        when: startedAtMillis == null ? null : DateTime.fromMillisecondsSinceEpoch(startedAtMillis),
         icon: '@mipmap/ic_launcher',
         color: const Color(0xFF1658C9),
         playSound: false,
@@ -339,6 +343,8 @@ class AppNotificationCenter {
     String shortText = 'LIVE',
     String colorHex = '#10B981',
     String iconType = 'trade',
+    bool usesChronometer = false,
+    int? startedAtMillis,
   }) async {
     await startLiveUpdate(
       id: id,
@@ -348,6 +354,8 @@ class AppNotificationCenter {
       shortText: shortText,
       colorHex: colorHex,
       iconType: iconType,
+      usesChronometer: usesChronometer,
+      startedAtMillis: startedAtMillis,
     );
   }
 
@@ -442,7 +450,7 @@ class AppNotificationCenter {
     IconData icon = LucideIcons.bell,
     bool isGold = false,
     bool sendToMobilePanel = true,
-    bool updateLivePill = true,
+    bool updateLivePill = false,
     String? pillShortText,
     String? colorHex,
   }) async {

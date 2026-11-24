@@ -10,6 +10,7 @@ void main() {
           balanceVisible: true,
           onToggleBalance: () {},
           onSelectPage: (_) {},
+          onOpenReport: () {},
         ),
       ),
     );

@@ -1201,13 +1201,13 @@ class _MarketsSection extends StatefulWidget {
   final ValueChanged<int>? onTabSelected;
 
   static const List<String> _tabs = [
+    'All',
     'Favorites',
     'Metals',
     'Energy',
     'FX Minors',
     'Index',
     'Cryptos',
-    'All',
   ];
 
   @override

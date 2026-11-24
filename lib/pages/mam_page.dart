@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../widgets/mam_master_node_workspace.dart';
+import '../services/auth_api.dart';
 import '../widgets/mam_modals.dart';
 import 'mam_investor_page.dart';
 import 'funds_action_dialog.dart';
@@ -473,6 +474,7 @@ class MamPageState extends State<MamPage> {
       ),
     ];
 
+    _loadMamAccounts();
     _managerSearchController.addListener(() {
       setState(
         () => _managerSearchQuery = _managerSearchController.text.trim(),
@@ -1773,6 +1775,43 @@ class MamPageState extends State<MamPage> {
     setState(() {
       _selectedMasterDetail = master;
     });
+  }
+
+  Future<void> _loadMamAccounts() async {
+    try {
+      final accounts = await AuthApi.instance.getUserMamAccounts();
+      if (!mounted) return;
+      setState(() {
+        _masters = accounts.map(_mamMasterFromApi).toList();
+      });
+    } catch (error) {
+      debugPrint('Could not load MAM accounts: $error');
+      if (mounted) showAppMessage(
+        error is AuthApiException ? error.message : 'Could not load MAM accounts.',
+      );
+    }
+  }
+
+  MamMasterAccount _mamMasterFromApi(Map<String, dynamic> account) {
+    final login = (account['account_id'] ?? '').toString();
+    final risk = (account['risk_level'] ?? 'medium').toString();
+    final payout = (account['payout_frequency'] ?? 'weekly').toString();
+    return MamMasterAccount(
+      name: (account['account_name'] ?? 'MAM Account $login').toString(),
+      login: login,
+      profitShare: (account['profit_sharing_percentage'] as num?)?.toDouble() ?? 0,
+      leverage: '1:${account['leverage'] ?? 100}',
+      balance: (account['balance'] as num?)?.toDouble() ?? 0,
+      status: (account['status'] ?? 'Active').toString().toLowerCase() == 'active'
+          ? 'Active'
+          : 'Paused',
+      risk: risk[0].toUpperCase() + risk.substring(1),
+      payout: payout[0].toUpperCase() + payout.substring(1),
+      allocationMethod: 'Lot Proportional',
+      investorsCount: 0,
+      totalAum: (account['balance'] as num?)?.toDouble() ?? 0,
+      monthlyGain: 0,
+    );
   }
 
   void _openCreateMasterSheet() {

@@ -2247,16 +2247,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _showChangeLoginPassword() async {
-    final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
-
-    // Popup 1: reuse the Security Center's existing identity-verification UI.
-    final verified = await showSecurityPasswordModal(
-      context,
-      biometricSignIn: bio,
-    );
-    if (!mounted || verified != true) return;
-
-    // Popup 2: collect and validate the new password.
     final draft = await showModalBottomSheet<_PasswordDraft>(
       context: context,
       isScrollControlled: true,
@@ -2267,7 +2257,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
     if (!mounted || draft == null) return;
 
-    // Popup 3: explicit final confirmation.
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       useSafeArea: true,
@@ -2277,17 +2266,26 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
     if (!mounted || confirmed != true) return;
 
-    // Popup 4: success state. This remains a UI preview until the backend
-    // password-update endpoint is connected.
-    await showModalBottomSheet<void>(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _PasswordChangeSuccessSheet(),
-    );
+    try {
+      await AuthApi.instance.changeClientLoginPassword(
+        currentPassword: draft.currentPassword,
+        newPassword: draft.newPassword,
+        confirmPassword: draft.newPassword,
+      );
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        isDismissible: false,
+        enableDrag: false,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const _PasswordChangeSuccessSheet(),
+      );
+    } catch (error) {
+      if (mounted) showAppMessage(error.toString());
+    }
   }
+
 }
 
 class _LaptopSecurityGraphic extends StatelessWidget {
@@ -2736,7 +2734,8 @@ class _VerifySecurityPasswordModalState
 }
 
 class _PasswordDraft {
-  const _PasswordDraft(this.newPassword);
+  const _PasswordDraft(this.currentPassword, this.newPassword);
+  final String currentPassword;
   final String newPassword;
 }
 
@@ -2748,8 +2747,10 @@ class _NewPasswordFormSheet extends StatefulWidget {
 }
 
 class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
+  final _currentPassword = TextEditingController();
   final _newPassword = TextEditingController();
   final _confirm = TextEditingController();
+  bool _hideCurrent = true;
   bool _hideNew = true;
   bool _hideConfirm = true;
   String? _error;
@@ -2762,6 +2763,7 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
 
   @override
   void dispose() {
+    _currentPassword.dispose();
     _newPassword.dispose();
     _confirm.dispose();
     super.dispose();
@@ -2828,14 +2830,16 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
   }
 
   void _continue() {
-    if (_newPassword.text.length < 8) {
+    if (_currentPassword.text.isEmpty) {
+      setState(() => _error = 'Enter your current login password.');
+    } else if (_newPassword.text.length < 8) {
       setState(
         () => _error = 'Use at least 8 characters for your new password.',
       );
     } else if (_newPassword.text != _confirm.text) {
       setState(() => _error = 'The new passwords do not match.');
     } else {
-      Navigator.of(context).pop(_PasswordDraft(_newPassword.text));
+      Navigator.of(context).pop(_PasswordDraft(_currentPassword.text, _newPassword.text));
     }
   }
 
@@ -2948,6 +2952,14 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
                   ),
                 ),
                 const SizedBox(height: 18),
+                _passwordField(
+                  'Current password',
+                  'Enter your current CRM password',
+                  _currentPassword,
+                  _hideCurrent,
+                  () => setState(() => _hideCurrent = !_hideCurrent),
+                ),
+                const SizedBox(height: 16),
                 _passwordField(
                   'New password',
                   'Enter your new password',
@@ -3612,7 +3624,7 @@ class _SecurityReferenceSubPage extends StatelessWidget {
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
-                      'Both actions require confirmation. Account requests are shown as a preview and are not submitted to the server.',
+                      'Both actions require your CRM password. Requests are reviewed by our support team; your account remains active until approval.',
                       style: TextStyle(
                         color: muted,
                         fontSize: 11,

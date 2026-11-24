@@ -20,10 +20,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Check Identity info
-    expect(find.text('INR-DEVOP B'), findsOneWidget);
-    expect(find.text('iyyanar@vtindex.com'), findsOneWidget);
-    expect(find.text('Client ID: #331589'), findsOneWidget);
-    expect(find.text('IB'), findsOneWidget); // User initials in gradient avatar
+    expect(find.text('—'), findsOneWidget);
+    expect(find.text('Email unavailable'), findsOneWidget);
+    expect(find.text('Client ID unavailable'), findsOneWidget);
+    expect(find.text('U'), findsOneWidget); // Dynamic initials fallback
 
     // Check Badges & Trust indicators
     expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
@@ -36,7 +36,7 @@ void main() {
     expect(find.text('View profile'), findsOneWidget);
 
     // Test Tap interaction triggers navigation callback
-    await tester.tap(find.text('INR-DEVOP B'));
+    await tester.tap(find.text('—'));
     await tester.pumpAndSettle();
     expect(navigatedTo, 'Profile');
   });

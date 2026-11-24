@@ -225,13 +225,14 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   Future<void> _pickAndUploadDocument({required String documentType}) async {
     try {
-      final picked = await FilePicker.platform.pickFiles(
+      // file_picker v12+ exposes static methods and returns a single
+      // PlatformFile from pickFile().
+      final picked = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
-        allowMultiple: false,
       );
-      if (picked == null || picked.files.isEmpty) return;
-      final path = picked.files.single.path;
+      if (picked == null) return;
+      final path = picked.path;
       if (path == null || path.isEmpty) {
         _showSnack('Unable to read the selected document.');
         return;
@@ -3532,6 +3533,89 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Compact selectable option used by the profile-banner theme sheet.
+class _BannerOptionTile extends StatelessWidget {
+  const _BannerOptionTile({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = selected ? _profileBlueDark : _profileText;
+    return Material(
+      color: selected ? _profileBlueLight : _profilePanel,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? _profileBlue : _profileBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: selected ? Colors.white : _profileBlueLight,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, color: _profileBlue, size: 19),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: _profileTextSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                selected ? LucideIcons.circleCheck : LucideIcons.circle,
+                color: selected ? _profileBlue : _profileMuted,
+                size: 19,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

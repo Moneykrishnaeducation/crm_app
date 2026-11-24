@@ -70,6 +70,7 @@ class AppNotificationCenter {
   Timer? _positionMonitorTimer;
   bool _positionPollInFlight = false;
   bool _lastPositionPollSucceeded = false;
+  bool _nativePositionServiceActive = false;
   int _positionMonitorRevision = 0;
   int _nextNotificationId = 1000;
 
@@ -282,8 +283,25 @@ class AppNotificationCenter {
       await stopPositionMonitoring();
       return false;
     }
-    // While Flutter is foregrounded, keep the UI synchronized with Dart polling.
-    // The native foreground service takes over when the app becomes inactive.
+    // Start the Android service while the app is still foregrounded. Android
+    // restricts background service launches, so waiting until onPause is too late
+    // on some devices. The service then owns polling in both app states.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final nativeStarted = await _startNativePositionService();
+      if (revision != _positionMonitorRevision ||
+          trackedPositionNotifier.value == null) {
+        return false;
+      }
+      if (nativeStarted) {
+        _nativePositionServiceActive = true;
+        return true;
+      }
+      debugPrint(
+        'AppNotificationCenter: native service did not start; '
+        'using foreground Dart polling fallback.',
+      );
+    }
+
     _positionMonitorTimer = Timer.periodic(
       const Duration(seconds: 15),
       (_) => _refreshTrackedPosition(revision: revision),
@@ -310,6 +328,7 @@ class AppNotificationCenter {
         _trackedPositionStartedAt = DateTime.fromMillisecondsSinceEpoch(startedAt.toInt());
       }
       trackedPositionNotifier.value = positionId;
+      _nativePositionServiceActive = true;
     } catch (error) {
       debugPrint('AppNotificationCenter: could not restore native tracking state: $error');
     }
@@ -343,25 +362,47 @@ class AppNotificationCenter {
   }
 
   Future<void> pausePositionMonitoring() async {
-    _positionMonitorTimer?.cancel();
-    _positionMonitorTimer = null;
-    if (defaultTargetPlatform == TargetPlatform.android &&
-        trackedPositionNotifier.value != null) {
-      await _startNativePositionService();
+    if (trackedPositionNotifier.value == null ||
+        defaultTargetPlatform != TargetPlatform.android ||
+        _nativePositionServiceActive) {
+      return;
+    }
+
+    // Do not cancel Dart polling until Android confirms that its foreground
+    // service has started. Previously a failed service start silently stopped
+    // all position refreshes as soon as the app was backgrounded.
+    final started = await _startNativePositionService();
+    if (started) {
+      _nativePositionServiceActive = true;
+      _positionMonitorTimer?.cancel();
+      _positionMonitorTimer = null;
+    } else {
+      debugPrint(
+        'AppNotificationCenter: background service unavailable; '
+        'retaining Dart polling as a best-effort fallback.',
+      );
     }
   }
 
   Future<void> resumePositionMonitoring() async {
-    if (trackedPositionNotifier.value == null || _positionMonitorTimer != null) return;
+    if (trackedPositionNotifier.value == null) return;
+    if (_positionMonitorTimer != null && !_nativePositionServiceActive) return;
+
     final revision = _positionMonitorRevision;
-    if (defaultTargetPlatform == TargetPlatform.android) {
+    if (defaultTargetPlatform == TargetPlatform.android &&
+        _nativePositionServiceActive) {
       // The Flutter UI has resumed, so hand tracking back from the service.
       try {
         await _nativeChannel.invokeMethod('stopPositionService');
-      } catch (_) {}
+      } catch (error) {
+        debugPrint('AppNotificationCenter: could not stop native service: $error');
+      }
+      _nativePositionServiceActive = false;
     }
     await _refreshTrackedPosition(revision: revision);
-    if (trackedPositionNotifier.value != null && revision == _positionMonitorRevision) {
+    if (trackedPositionNotifier.value != null &&
+        revision == _positionMonitorRevision &&
+        _positionMonitorTimer == null) {
       _positionMonitorTimer = Timer.periodic(
         const Duration(seconds: 15),
         (_) => _refreshTrackedPosition(revision: revision),
@@ -374,6 +415,7 @@ class AppNotificationCenter {
     _positionMonitorTimer?.cancel();
     _positionMonitorTimer = null;
     final wasTracking = trackedPositionNotifier.value != null;
+    _nativePositionServiceActive = false;
     trackedPositionNotifier.value = null;
     _trackedAccountId = null;
     _trackedPositionSymbol = null;

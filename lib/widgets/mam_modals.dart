@@ -61,11 +61,11 @@ class MamManagerProfileData {
   const MamManagerProfileData({
     required this.name,
     required this.login,
-    this.isLive = true,
+    this.isLive = false,
     this.accountBalance = 0.0,
     this.currentEquity = 0.0,
     this.performanceFee = 0.0,
-    this.historicalGrowth = 0.00,
+    this.historicalGrowth = 0.0,
     this.riskProfile = 'Unknown',
     this.trackRecordDays = 0,
     this.execution = '',
@@ -84,35 +84,45 @@ class MamManagerProfileData {
   final String execution;
   final bool isVerified;
 
+  static double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value.replaceAll(',', '').trim()) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim()) ?? 0;
+    return 0;
+  }
+
   factory MamManagerProfileData.fromPool(dynamic pool) {
     try {
-      final name = (pool.name as String?) ?? '';
-      final rawLogin = (pool.id as String?) ?? '';
-      final cleanLogin = rawLogin.replaceAll(RegExp(r'[^0-9]'), '');
-      final login = cleanLogin;
-      final fee = (pool.performanceFee as num?)?.toDouble() ?? 0.0;
-      final risk = (pool.riskScore?.toString()) ?? 'Unknown';
-      final aum = (pool.totalAum as num?)?.toDouble() ?? 0.0;
-      final roi = (pool.monthlyRoi as num?)?.toDouble() ?? 0.00;
+      final name = pool.name?.toString() ?? '';
+      final rawLogin = pool.id?.toString() ?? '';
+      final login = rawLogin.replaceAll(RegExp(r'[^0-9]'), '');
+      final status = pool.status?.toString().toLowerCase() ?? '';
 
       return MamManagerProfileData(
         name: name,
         login: login,
-        isLive: true,
-        accountBalance: aum,
-        currentEquity: 0.0,
-        performanceFee: fee,
-        historicalGrowth: roi,
-        riskProfile: risk,
-        trackRecordDays: 0,
-        execution: '',
-        isVerified: false,
+        isLive: status == 'active',
+        accountBalance: _toDouble(pool.totalAum),
+        currentEquity: _toDouble(pool.currentEquity),
+        performanceFee: _toDouble(pool.performanceFee),
+        historicalGrowth: _toDouble(pool.monthlyRoi),
+        riskProfile: pool.riskScore?.toString() ?? 'Unknown',
+        trackRecordDays: _toInt(pool.trackRecordDays),
+        execution: pool.execution?.toString() ?? '',
+        isVerified: pool.isVerified == true,
       );
-    } catch (_) {
-      return const MamManagerProfileData(
-        name: '',
-        login: '',
-      );
+    } catch (error, stackTrace) {
+      debugPrint('MAM manager profile parsing failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return const MamManagerProfileData(name: '', login: '');
     }
   }
 
@@ -122,12 +132,12 @@ class MamManagerProfileData {
       login: master.login,
       isLive: master.status.toLowerCase() == 'active',
       accountBalance: master.balance,
-      currentEquity: 0.0,
+      currentEquity: master.balance,
       performanceFee: master.profitShare,
       historicalGrowth: master.monthlyGain,
       riskProfile: master.risk,
       trackRecordDays: 0,
-      execution: '',
+      execution: master.execution,
       isVerified: false,
     );
   }

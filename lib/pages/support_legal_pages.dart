@@ -758,6 +758,304 @@ class _TicketRequestSheetState extends State<_TicketRequestSheet> {
 
 }
 
+class _LiveTicketRequestSheet extends StatefulWidget {
+  const _LiveTicketRequestSheet();
+  @override
+  State<_LiveTicketRequestSheet> createState() => _LiveTicketRequestSheetState();
+}
+
+class _LiveTicketRequestSheetState extends State<_LiveTicketRequestSheet> {
+  final _form = GlobalKey<FormState>();
+  final _subject = TextEditingController();
+  final _description = TextEditingController();
+  String _department = 'Trading & MT5';
+  PlatformFile? _file;
+  bool _busy = false;
+  bool _picking = false;
+  static const _departments = <(String, IconData, Color)>[
+    ('Trading & MT5', Icons.trending_up, Color(0xFFFFA400)),
+    ('Deposit & Payout', Icons.credit_card_outlined, Color(0xFF00B98B)),
+    ('Account & KYC', Icons.verified_user_outlined, Color(0xFFB43DFF)),
+    ('Partnership / IB', Icons.people_alt_outlined, Color(0xFFFF9D00)),
+    ('Technical Issue', Icons.build_outlined, Color(0xFF00BCD4)),
+    ('Others', Icons.help_outline, Color(0xFFFF4565)),
+  ];
+  @override
+  void dispose() { _subject.dispose(); _description.dispose(); super.dispose(); }
+  Future<void> _pick() async {
+    setState(() => _picking = true);
+    try {
+      final result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: const ['png','jpg','jpeg','webp','pdf']);
+      if (result.isEmpty || !mounted) return;
+      final file = result.files.first;
+      final size = await file.length();
+      if (size == null || size > 5 * 1024 * 1024) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Attachment must be 5 MB or smaller.')));
+      } else { setState(() => _file = file); }
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not attach file: $error')));
+    } finally { if (mounted) setState(() => _picking = false); }
+  }
+  Future<void> _submit() async {
+    if (_busy || !_form.currentState!.validate()) return;
+    setState(() => _busy = true);
+    try {
+      List<int>? bytes;
+      if (_file != null) {
+        bytes = _file!.bytes ?? (_file!.path == null ? null : await File(_file!.path!).readAsBytes());
+        if (bytes == null) throw Exception('Could not read the selected attachment.');
+      }
+      await AuthApi.instance.createSupportTicket(
+        subject: _subject.text.trim(), description: _description.text.trim(),
+        department: _department, fileName: _file?.name, fileBytes: bytes,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ticket could not be submitted: $error')));
+    } finally { if (mounted) setState(() => _busy = false); }
+  }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    InputDecoration dec(String hint) => InputDecoration(
+      hintText: hint, filled: true, fillColor: theme.scaffoldBackgroundColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.dividerColor)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.dividerColor)),
+    );
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Material(color: scheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .94),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Padding(padding: const EdgeInsets.fromLTRB(18, 14, 10, 12), child: Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Create support ticket', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+                Text('Our team will respond in this conversation.', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10)),
+              ])),
+              IconButton(onPressed: _busy ? null : () => Navigator.pop(context), icon: const Icon(Icons.close)),
+            ])),
+            Divider(height: 1, color: theme.dividerColor),
+            Flexible(child: Form(key: _form, child: ListView(shrinkWrap: true, padding: const EdgeInsets.all(18), children: [
+              Text('DEPARTMENT', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 9),
+              LayoutBuilder(builder: (context, constraints) {
+                final columns = constraints.maxWidth < 450 ? 2 : 3;
+                final width = (constraints.maxWidth - (columns - 1) * 8) / columns;
+                return Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final item in _departments)
+                    SizedBox(width: width, height: 42, child: _TicketDepartmentChip(
+                      label: item.$1, icon: item.$2, accent: item.$3,
+                      selected: _department == item.$1,
+                      onTap: _busy ? () {} : () => setState(() => _department = item.$1),
+                    )),
+                ]);
+              }),
+              const SizedBox(height: 16),
+              TextFormField(controller: _subject, maxLength: 200, decoration: dec('Subject').copyWith(counterText: ''),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Enter a subject' : null),
+              const SizedBox(height: 10),
+              TextFormField(controller: _description, minLines: 4, maxLines: 7, maxLength: 5000,
+                decoration: dec('Describe the issue. Include relevant account IDs or error messages. Never share passwords.'),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Describe your issue' : null),
+              OutlinedButton.icon(onPressed: _busy || _picking ? null : _pick,
+                icon: const Icon(LucideIcons.paperclip, size: 16),
+                label: Text(_picking ? 'Selecting…' : (_file?.name ?? 'Attach screenshot or PDF · max 5 MB'), overflow: TextOverflow.ellipsis)),
+              if (_file != null) TextButton(onPressed: _busy ? null : () => setState(() => _file = null), child: const Text('Remove attachment')),
+            ]))),
+            Divider(height: 1, color: theme.dividerColor),
+            Padding(padding: const EdgeInsets.fromLTRB(18, 10, 18, 14), child: Row(children: [
+              Expanded(child: OutlinedButton(onPressed: _busy ? null : () => Navigator.pop(context), child: const Text('Cancel'))),
+              const SizedBox(width: 9),
+              Expanded(child: FilledButton.icon(onPressed: _busy ? null : _submit,
+                icon: _busy ? const SizedBox(width: 15,height: 15,child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(LucideIcons.send, size: 15),
+                label: Text(_busy ? 'Submitting…' : 'Submit ticket'))),
+            ])),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _LiveTicketDetailsPage extends StatefulWidget {
+  const _LiveTicketDetailsPage({required this.ticket});
+  final Map<String, dynamic> ticket;
+  @override
+  State<_LiveTicketDetailsPage> createState() => _LiveTicketDetailsPageState();
+}
+
+class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
+  final _reply = TextEditingController();
+  Map<String, dynamic>? _ticket;
+  List<Map<String, dynamic>> _messages = [];
+  PlatformFile? _file;
+  bool _loading = true, _sending = false, _picking = false, _changed = false;
+  String? _error;
+  int get _id => int.tryParse((_ticket?['id'] ?? widget.ticket['id'] ?? '').toString()) ?? 0;
+  String get _status => (_ticket?['status'] ?? widget.ticket['status'] ?? 'open').toString().toLowerCase();
+  @override
+  void initState() { super.initState(); _ticket = Map<String, dynamic>.from(widget.ticket); _load(); }
+  @override
+  void dispose() { _reply.dispose(); super.dispose(); }
+  Future<void> _load() async {
+    try {
+      final data = await AuthApi.instance.getSupportTicket(_id);
+      final rows = data['messages'];
+      if (!mounted) return;
+      setState(() {
+        _ticket = data;
+        _messages = rows is List ? rows.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList() : [];
+        _loading = false; _error = null;
+      });
+    } catch (error) { if (mounted) setState(() { _loading = false; _error = error.toString(); }); }
+  }
+  Future<void> _pick() async {
+    setState(() => _picking = true);
+    try {
+      final result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: const ['png','jpg','jpeg','webp','pdf']);
+      if (result.isEmpty || !mounted) return;
+      final file = result.files.first;
+      final size = await file.length();
+      if (size == null || size > 5 * 1024 * 1024) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Attachment must be 5 MB or smaller.')));
+      } else { setState(() => _file = file); }
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not attach file: $error')));
+    } finally { if (mounted) setState(() => _picking = false); }
+  }
+  Future<void> _send() async {
+    final content = _reply.text.trim();
+    if (_sending || (content.isEmpty && _file == null) || _status == 'closed') return;
+    setState(() => _sending = true);
+    try {
+      List<int>? bytes;
+      if (_file != null) {
+        bytes = _file!.bytes ?? (_file!.path == null ? null : await File(_file!.path!).readAsBytes());
+        if (bytes == null) throw Exception('Could not read the selected attachment.');
+      }
+      await AuthApi.instance.replySupportTicket(ticketId: _id, message: content, fileName: _file?.name, fileBytes: bytes);
+      _reply.clear(); _file = null; _changed = true; FocusScope.of(context).unfocus();
+      await _load();
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reply could not be sent: $error')));
+    } finally { if (mounted) setState(() => _sending = false); }
+  }
+  String _date(dynamic value) {
+    final d = DateTime.tryParse((value ?? '').toString())?.toLocal();
+    if (d == null) return '—';
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context), scheme = theme.colorScheme;
+    final ticket = _ticket ?? widget.ticket;
+    final raw = (ticket['subject'] ?? 'Support request').toString();
+    final subject = raw.replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
+    final dept = RegExp(r'^\[([^\]]+)\]').firstMatch(raw)?.group(1) ?? 'General Support';
+    final statusColor = _status == 'closed' ? const Color(0xFF249B72) : _status == 'pending' ? const Color(0xFF3989D6) : const Color(0xFFE39A24);
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(title: const Text('Ticket details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+        backgroundColor: theme.scaffoldBackgroundColor, surfaceTintColor: Colors.transparent,
+        actions: [IconButton(onPressed: _load, icon: const Icon(LucideIcons.refreshCw, size: 18))]),
+      body: Column(children: [
+        Expanded(child: _loading ? const Center(child: CircularProgressIndicator())
+          : _error != null ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
+              TextButton(onPressed: _load, child: const Text('Retry')),
+            ]))
+          : ListView(padding: const EdgeInsets.all(16), children: [
+              Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: theme.dividerColor)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Expanded(child: Text('TICKET #$_id', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w900))),
+                    Text(_status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900)),
+                  ]),
+                  const SizedBox(height: 10),
+                  Text(subject, style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 7),
+                  Text(dept, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10)),
+                  if ((ticket['description'] ?? '').toString().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(ticket['description'].toString(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11, height: 1.45)),
+                  ],
+                  const SizedBox(height: 8),
+                  Text('Created ${_date(ticket['created_at'])} · Updated ${_date(ticket['updated_at'])}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9)),
+                ])),
+              const SizedBox(height: 20),
+              Row(children: [
+                Expanded(child: Text('CONVERSATION', style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w900))),
+                Text('${_messages.length} messages', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9)),
+              ]),
+              const SizedBox(height: 12),
+              if (_messages.isEmpty) Padding(padding: const EdgeInsets.all(18), child: Text('No replies yet. Our team will respond here.', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))),
+              for (final message in _messages) _bubble(message, theme),
+            ])),
+        if (!_loading && _error == null)
+          SafeArea(top: false, child: Container(
+            padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + MediaQuery.viewInsetsOf(context).bottom),
+            decoration: BoxDecoration(color: scheme.surface, border: Border(top: BorderSide(color: theme.dividerColor))),
+            child: _status == 'closed'
+              ? Row(children: [
+                  Expanded(child: Text('This ticket is closed.', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))),
+                  TextButton(onPressed: _sending ? null : () async {
+                    setState(() => _sending = true);
+                    try {
+                      await AuthApi.instance.changeSupportTicketStatus(_id, 'open');
+                      _changed = true; await _load();
+                    } catch (error) {
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not reopen ticket: $error')));
+                    } finally { if (mounted) setState(() => _sending = false); }
+                  }, child: const Text('Reopen')),
+                ])
+              : Column(mainAxisSize: MainAxisSize.min, children: [
+                  if (_file != null) Row(children: [
+                    Expanded(child: Text(_file!.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.primary, fontSize: 9))),
+                    IconButton(onPressed: _sending ? null : () => setState(() => _file = null), icon: const Icon(Icons.close, size: 16)),
+                  ]),
+                  Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    IconButton(onPressed: _picking || _sending ? null : _pick, icon: _picking ? const SizedBox(width: 17,height: 17,child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(LucideIcons.paperclip)),
+                    Expanded(child: TextField(controller: _reply, minLines: 1, maxLines: 4,
+                      decoration: InputDecoration(hintText: 'Write a reply…', filled: true, fillColor: theme.scaffoldBackgroundColor,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide.none)))),
+                    const SizedBox(width: 8),
+                    SizedBox(width: 44,height: 44,child: FilledButton(onPressed: _sending ? null : _send,
+                      style: FilledButton.styleFrom(padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      child: _sending ? const SizedBox(width: 16,height: 16,child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(LucideIcons.send, size: 16))),
+                  ]),
+                ]),
+          )),
+      ]),
+    );
+  }
+  Widget _bubble(Map<String, dynamic> message, ThemeData theme) {
+    final scheme = theme.colorScheme;
+    final mine = message['sender']?.toString() == (_ticket?['created_by'] ?? widget.ticket['created_by'])?.toString();
+    final content = (message['content'] ?? '').toString();
+    final fileName = (message['file_name'] ?? '').toString();
+    return Align(alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: ConstrainedBox(constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .86),
+        child: Container(margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: mine ? scheme.primary.withValues(alpha: .10) : scheme.surface,
+            borderRadius: BorderRadius.circular(14), border: Border.all(color: theme.dividerColor.withValues(alpha: .7))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(mine ? 'You' : (message['sender_name'] ?? 'Support team').toString(),
+              style: TextStyle(color: mine ? scheme.primary : scheme.onSurface, fontSize: 9, fontWeight: FontWeight.w900)),
+            if (content.isNotEmpty) ...[const SizedBox(height: 6), Text(content, style: TextStyle(color: scheme.onSurface, fontSize: 11, height: 1.45))],
+            if (fileName.isNotEmpty) ...[const SizedBox(height: 8), Text('Attachment: $fileName', style: TextStyle(color: scheme.primary, fontSize: 9, fontWeight: FontWeight.w700))],
+            const SizedBox(height: 5),
+            Text(_date(message['created_at']), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 8)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 class _TicketDepartmentChip extends StatelessWidget {
   const _TicketDepartmentChip({required this.label, required this.icon, required this.accent, required this.selected, required this.onTap});
 

@@ -534,9 +534,7 @@ class MamPageState extends State<MamPage> {
             _availablePools.length;
 
   String _formatCurrency(double val) {
-    if (val >= 1000000) return '\$${(val / 1000000).toStringAsFixed(2)}M';
-    if (val >= 1000) return '\$${(val / 1000).toStringAsFixed(1)}K';
-    return '\$${val.toStringAsFixed(0)}';
+    return '\$${val.toStringAsFixed(2)}';
   }
 
   void _copyToClipboard(String text, String label) {
@@ -1844,7 +1842,7 @@ class MamPageState extends State<MamPage> {
             child: _metricCard(
               label: 'INVESTMENT',
               value:
-                  '\$${_investorAccounts.fold<double>(0, (sum, account) => sum + account.balance).toStringAsFixed(0)}',
+                  '\$${_investorAccounts.fold<double>(0, (sum, account) => sum + account.balance).toStringAsFixed(2)}',
               subtext: 'Current balance',
               icon: LucideIcons.wallet,
               accent: _c.blue,
@@ -1865,7 +1863,7 @@ class MamPageState extends State<MamPage> {
             child: _metricCard(
               label: 'PROFIT',
               value:
-                  '\$${_investorAccounts.fold<double>(0, (sum, account) => sum + account.totalProfit).toStringAsFixed(0)}',
+                  '\$${_investorAccounts.fold<double>(0, (sum, account) => sum + account.totalProfit).toStringAsFixed(2)}',
               subtext: 'Total realized',
               icon: LucideIcons.trendingUp,
               accent: _c.green,
@@ -4559,7 +4557,7 @@ class MamPageState extends State<MamPage> {
         Expanded(
           child: _metricCard(
             label: 'TOTAL INVESTED',
-            value: '\$${_totalInvested.toStringAsFixed(0)}',
+            value: '\$${_totalInvested.toStringAsFixed(2)}',
             subtext: 'Allocated capital',
             icon: LucideIcons.wallet,
             accent: _c.blue,
@@ -4570,7 +4568,7 @@ class MamPageState extends State<MamPage> {
           child: _metricCard(
             label: 'UNREALIZED PnL',
             value:
-                '${_totalUnrealizedPnl >= 0 ? '+' : ''}\$${_totalUnrealizedPnl.toStringAsFixed(0)}',
+                '${_totalUnrealizedPnl >= 0 ? '+' : ''}\$${_totalUnrealizedPnl.toStringAsFixed(2)}',
             subtext: 'Floating return',
             icon: LucideIcons.trendingUp,
             accent: _totalUnrealizedPnl >= 0 ? _c.green : _c.red,
@@ -4797,7 +4795,7 @@ class MamPageState extends State<MamPage> {
                     Expanded(
                       child: _microStat(
                         'Allocated Capital',
-                        '\$${item.initialCapital.toStringAsFixed(0)}',
+                        '\$${item.initialCapital.toStringAsFixed(2)}',
                         icon: LucideIcons.dollarSign,
                       ),
                     ),
@@ -5387,7 +5385,7 @@ class MamPageState extends State<MamPage> {
                       Expanded(
                         child: _microStat(
                           'Perf Fee / Min Dep',
-                          '${pool.performanceFee.toStringAsFixed(0)}% • \$${pool.minDeposit.toStringAsFixed(0)}',
+                          '${pool.performanceFee.toStringAsFixed(0)}% • \$${pool.minDeposit.toStringAsFixed(2)}',
                           icon: LucideIcons.percent,
                         ),
                       ),

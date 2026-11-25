@@ -3,6 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crm_app/pages/mam_page.dart';
 
 void main() {
+  testWidgets('master dashboard displays exact AUM currency values', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: MamPage(initialTab: 0)));
+
+    expect(find.text('MANAGED AUM'), findsOneWidget);
+    expect(find.text('\$1700400.00'), findsOneWidget);
+  });
+
   testWidgets('investor tab lists accounts before opening account details, without duplicate second header', (
     tester,
   ) async {

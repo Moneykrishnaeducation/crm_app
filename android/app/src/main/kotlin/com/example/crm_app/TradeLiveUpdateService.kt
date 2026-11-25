@@ -92,7 +92,7 @@ class TradeLiveUpdateService : Service() {
 
         if (executor == null || executor?.isShutdown == true) {
             executor = Executors.newSingleThreadScheduledExecutor()
-            executor?.scheduleWithFixedDelay({ refreshPortfolio() }, 0, 15, TimeUnit.SECONDS)
+            executor?.scheduleWithFixedDelay({ refreshPortfolio() }, 0, 45, TimeUnit.SECONDS)
         }
         return START_STICKY
     }
@@ -190,7 +190,7 @@ class TradeLiveUpdateService : Service() {
     private fun fetchPositions(endpoint: String, accessToken: String): JSONArray {
         var connection: HttpURLConnection? = null
         try {
-            val responseKeyPair = createResponseKeyPair()
+            val responseKeyPair = getOrCreateResponseKeyPair()
             connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 10000
@@ -255,8 +255,26 @@ class TradeLiveUpdateService : Service() {
         return JSONArray()
     }
 
+    @Volatile
+    private var cachedKeyPair: KeyPair? = null
+    @Volatile
+    private var keyPairGeneratedAt: Long = 0L
+
+    @Synchronized
+    private fun getOrCreateResponseKeyPair(): KeyPair {
+        val now = System.currentTimeMillis()
+        val existing = cachedKeyPair
+        if (existing != null && (now - keyPairGeneratedAt) < 1800000L) { // 30-minute key cache rotation
+            return existing
+        }
+        val created = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+        cachedKeyPair = created
+        keyPairGeneratedAt = now
+        return created
+    }
+
     private fun createResponseKeyPair(): KeyPair {
-        return KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+        return getOrCreateResponseKeyPair()
     }
 
     /** Decrypts the backend vtindex:user-info:v1 RSA-OAEP + AES-GCM envelope. */

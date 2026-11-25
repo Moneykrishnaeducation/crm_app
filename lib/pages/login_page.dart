@@ -160,6 +160,13 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    if (!AuthApi.instance.hasToken) {
+      showAppMessage(
+        'Please sign in with your email and password first to enable biometric authentication.',
+      );
+      return;
+    }
+
     setState(() => _biometricBusy = true);
     try {
       final authenticated = await _biometricService.authenticate(
@@ -167,9 +174,22 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (!mounted) return;
       if (authenticated) {
-        if (!mounted) return;
-        HapticFeedback.selectionClick();
-        widget.onLogin?.call();
+        try {
+          await AuthApi.instance.restoreSession();
+          await AuthApi.instance.getProfile();
+          if (!mounted) return;
+          HapticFeedback.selectionClick();
+          widget.onLogin?.call();
+        } on AuthApiException catch (e) {
+          showAppMessage('Session expired: ${e.message}. Please log in again.');
+        } catch (_) {
+          if (AuthApi.instance.hasToken) {
+            HapticFeedback.selectionClick();
+            widget.onLogin?.call();
+          } else {
+            showAppMessage('Session expired. Please log in with your credentials.');
+          }
+        }
       } else {
         showAppMessage(
           'Biometric sign-in was canceled. Use your login ID and password instead.',

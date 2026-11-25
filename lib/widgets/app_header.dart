@@ -399,7 +399,7 @@ class CustomerSupportBottomSheet extends StatelessWidget {
                               isScrollControlled: true,
                               useSafeArea: true,
                               backgroundColor: Colors.transparent,
-                              builder: (_) => const _TicketRequestSheet(),
+                              builder: (_) => const _LiveTicketRequestSheet(),
                             );
                           },
                         ),

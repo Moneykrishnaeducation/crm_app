@@ -30,6 +30,8 @@ class BiometricSignIn {
 
     try {
       if (!await _localAuth.isDeviceSupported()) return false;
+      final canCheck = await _localAuth.canCheckBiometrics;
+      if (!canCheck) return false;
       return (await _localAuth.getAvailableBiometrics()).isNotEmpty;
     } catch (_) {
       return false;

@@ -315,7 +315,7 @@ class AuthApi {
           .timeout(const Duration(seconds: 25));
       response = await http.Response.fromStream(streamed);
     } catch (error) {
-      if (_configuredBaseUrl.isEmpty && _isNetworkConnectionError(error)) {
+      if (kDebugMode && _configuredBaseUrl.isEmpty && _isNetworkConnectionError(error)) {
         final fallbackUri = _useLocalhost ? _productionBaseUri : _localBaseUri;
         try {
           final fallbackHeaders = _headersForUri(fallbackUri);
@@ -613,14 +613,17 @@ class AuthApi {
       }
     } catch (_) {}
 
-    final tokenFuture = FirebaseMessaging.instance.onRegistered
-        .where((token) => token.isNotEmpty)
-        .first
-        .timeout(const Duration(seconds: 2));
-    await FirebaseMessaging.instance.register();
-    final resolved = await tokenFuture;
-    _pushToken = resolved;
-    return resolved;
+    try {
+      final tokenFuture = FirebaseMessaging.instance.onRegistered
+          .where((token) => token.isNotEmpty)
+          .first
+          .timeout(const Duration(seconds: 2));
+      await FirebaseMessaging.instance.register();
+      final resolved = await tokenFuture;
+      _pushToken = resolved;
+      return resolved;
+    } catch (_) {}
+    return '';
   }
 
   Future<Map<String, dynamic>> unregisterPushDeviceToken(String token) {

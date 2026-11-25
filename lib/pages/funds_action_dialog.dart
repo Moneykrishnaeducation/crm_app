@@ -2340,7 +2340,6 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         methodName: fee > 0 ? '$methodName (Fee: \$$fee)' : methodName,
         settlementTime: settlementTime,
         onConfirm: () async {
-          Navigator.pop(ctx);
           final accId = acc['id']?.toString() ?? '3311';
           final methodStr = _payout == 0 ? 'bank' : 'crypto';
           String refId =
@@ -2356,8 +2355,17 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             if (res['transaction_id'] != null) {
               refId = 'VTX-WTH-${res['transaction_id']}';
             }
-          } catch (_) {}
+          } on AuthApiException catch (error) {
+            if (ctx.mounted) Navigator.pop(ctx);
+            showAppMessage(error.message);
+            return;
+          } catch (error) {
+            if (ctx.mounted) Navigator.pop(ctx);
+            showAppMessage('Withdrawal request failed. Please check your connection and try again.');
+            return;
+          }
 
+          if (ctx.mounted) Navigator.pop(ctx);
           final amtStr = amount.toStringAsFixed(2);
 
           if (widget.onCompleted != null) {
@@ -2667,7 +2675,7 @@ class _DepositResponseSheet extends StatelessWidget {
   }
 }
 
-class _WithdrawConfirmationSheet extends StatelessWidget {
+class _WithdrawConfirmationSheet extends StatefulWidget {
   const _WithdrawConfirmationSheet({
     required this.amount,
     required this.accountName,
@@ -2682,7 +2690,16 @@ class _WithdrawConfirmationSheet extends StatelessWidget {
   final String accountTier;
   final String methodName;
   final String settlementTime;
-  final VoidCallback onConfirm;
+  final FutureOr<void> Function() onConfirm;
+
+  @override
+  State<_WithdrawConfirmationSheet> createState() =>
+      _WithdrawConfirmationSheetState();
+}
+
+class _WithdrawConfirmationSheetState
+    extends State<_WithdrawConfirmationSheet> {
+  bool _isConfirming = false;
 
   @override
   Widget build(BuildContext context) {
@@ -2748,7 +2765,7 @@ class _WithdrawConfirmationSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '\$${amount.toStringAsFixed(2)} USD',
+                  '\$${widget.amount.toStringAsFixed(2)} USD',
                   style: TextStyle(
                     color: textPrimary,
                     fontSize: 28,
@@ -2769,13 +2786,13 @@ class _WithdrawConfirmationSheet extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _detailRow('Source Account', '$accountName ($accountTier)', isDark, muted, textPrimary),
+                _detailRow('Source Account', '${widget.accountName} (${widget.accountTier})', isDark, muted, textPrimary),
                 const SizedBox(height: 10),
-                _detailRow('Payout Method', methodName, isDark, muted, textPrimary),
+                _detailRow('Payout Method', widget.methodName, isDark, muted, textPrimary),
                 const SizedBox(height: 10),
                 _detailRow('Broker Processing Fee', 'Free (\$0.00)', isDark, muted, const Color(0xFF10B981)),
                 const SizedBox(height: 10),
-                _detailRow('Estimated Settlement', settlementTime, isDark, muted, textPrimary),
+                _detailRow('Estimated Settlement', widget.settlementTime, isDark, muted, textPrimary),
               ],
             ),
           ),
@@ -2808,11 +2825,26 @@ class _WithdrawConfirmationSheet extends StatelessWidget {
           SizedBox(
             height: 48,
             child: FilledButton.icon(
-              onPressed: onConfirm,
-              icon: const Icon(LucideIcons.check, size: 17),
-              label: const Text(
-                'Authorize & Submit Request',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              onPressed: _isConfirming
+                  ? null
+                  : () async {
+                      setState(() => _isConfirming = true);
+                      try {
+                        await widget.onConfirm();
+                      } finally {
+                        if (mounted) setState(() => _isConfirming = false);
+                      }
+                    },
+              icon: _isConfirming
+                  ? const SizedBox(
+                      width: 17,
+                      height: 17,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(LucideIcons.check, size: 17),
+              label: Text(
+                _isConfirming ? 'Authorizing Request…' : 'Authorize & Submit Request',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF1658C9),

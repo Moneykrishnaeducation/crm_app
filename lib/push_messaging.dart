@@ -40,7 +40,9 @@ class PushMessagingService {
         );
         _initialized = true;
       }
-      await FirebaseMessaging.instance.register();
+      try {
+        await FirebaseMessaging.instance.register();
+      } catch (_) {}
       final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
       if (initialMessage != null) _handlePushOpen(initialMessage);
     } catch (error) {

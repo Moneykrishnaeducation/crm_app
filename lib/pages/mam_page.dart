@@ -1857,17 +1857,6 @@ class MamPageState extends State<MamPage> {
     return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 
-  bool _apiBool(dynamic value, {bool fallback = false}) {
-    if (value is bool) return value;
-    if (value is num) return value != 0;
-    if (value is String) {
-      final normalized = value.trim().toLowerCase();
-      if (['true', '1', 'yes', 'enabled', 'active'].contains(normalized)) return true;
-      if (['false', '0', 'no', 'disabled', 'paused', 'inactive'].contains(normalized)) return false;
-    }
-    return fallback;
-  }
-
   MamMasterAccount _mamMasterFromApi(Map<String, dynamic> account) {
     final login = (account['account_id'] ?? '').toString();
     final rawRisk = (account['risk_level'] ?? '').toString().trim();

@@ -12,6 +12,7 @@ class BrokerDashboardPage extends StatefulWidget {
     required this.onSelectPage,
     required this.onOpenReport,
     required this.accounts,
+    required this.onRefreshAccounts,
     this.scrollController,
   });
   final bool balanceVisible;
@@ -19,6 +20,7 @@ class BrokerDashboardPage extends StatefulWidget {
   final ValueChanged<String> onSelectPage;
   final VoidCallback onOpenReport;
   final List<BrokerAccount> accounts;
+  final Future<void> Function() onRefreshAccounts;
   final ScrollController? scrollController;
 
   @override
@@ -128,7 +130,7 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
           child: RefreshIndicator(
-            onRefresh: () async { await _loadDashboardDetails(); },
+            onRefresh: () async { await widget.onRefreshAccounts(); await _loadDashboardDetails(); },
             child: SingleChildScrollView(
               controller: widget.scrollController,
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -140,7 +142,7 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
                     const SizedBox(height: 5),
                     Text('Your combined trading portfolio', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   ])),
-                  IconButton(onPressed: _loadDashboardDetails, tooltip: 'Refresh dashboard', icon: const Icon(LucideIcons.refreshCw)),
+                  IconButton(onPressed: () async { await widget.onRefreshAccounts(); await _loadDashboardDetails(); }, tooltip: 'Refresh dashboard', icon: const Icon(LucideIcons.refreshCw)),
                 ]),
                 const SizedBox(height: 18),
                 _PortfolioSummaryCard(

@@ -777,9 +777,10 @@ class _LiveTicketRequestSheetState extends State<_LiveTicketRequestSheet> {
     try {
       final result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: const ['png','jpg','jpeg','webp','pdf']);
       if (result.isEmpty || !mounted) return;
-      final file = result.files.first;
+      final file = result.first;
       final size = await file.length();
       if (size == null || size > 5 * 1024 * 1024) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Attachment must be 5 MB or smaller.')));
       } else { setState(() => _file = file); }
     } catch (error) {
@@ -792,8 +793,8 @@ class _LiveTicketRequestSheetState extends State<_LiveTicketRequestSheet> {
     try {
       List<int>? bytes;
       if (_file != null) {
-        bytes = _file!.bytes ?? (_file!.path == null ? null : await File(_file!.path!).readAsBytes());
-        if (bytes == null) throw Exception('Could not read the selected attachment.');
+        bytes = await _file!.readAsBytes();
+        if (bytes.isEmpty) throw Exception('Could not read the selected attachment.');
       }
       await AuthApi.instance.createSupportTicket(
         subject: _subject.text.trim(), description: _description.text.trim(),
@@ -907,9 +908,10 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
     try {
       final result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: const ['png','jpg','jpeg','webp','pdf']);
       if (result.isEmpty || !mounted) return;
-      final file = result.files.first;
+      final file = result.first;
       final size = await file.length();
       if (size == null || size > 5 * 1024 * 1024) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Attachment must be 5 MB or smaller.')));
       } else { setState(() => _file = file); }
     } catch (error) {
@@ -923,8 +925,8 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
     try {
       List<int>? bytes;
       if (_file != null) {
-        bytes = _file!.bytes ?? (_file!.path == null ? null : await File(_file!.path!).readAsBytes());
-        if (bytes == null) throw Exception('Could not read the selected attachment.');
+        bytes = await _file!.readAsBytes();
+        if (bytes.isEmpty) throw Exception('Could not read the selected attachment.');
       }
       await AuthApi.instance.replySupportTicket(ticketId: _id, message: content, fileName: _file?.name, fileBytes: bytes);
       _reply.clear(); _file = null; FocusScope.of(context).unfocus();

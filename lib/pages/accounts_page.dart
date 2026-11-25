@@ -263,6 +263,80 @@ class _ReferenceAccountCard extends StatelessWidget {
   }
 }
 
+
+/// Lightweight portfolio sparkline used by account cards and account details.
+class _PortfolioLinePainter extends CustomPainter {
+  const _PortfolioLinePainter({
+    required this.values,
+    required this.lineColor,
+    required this.fillColor,
+  });
+
+  final List<double> values;
+  final Color lineColor;
+  final Color fillColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || size.width <= 0 || size.height <= 0) return;
+
+    var minValue = values.first;
+    var maxValue = values.first;
+    for (final value in values) {
+      if (value < minValue) minValue = value;
+      if (value > maxValue) maxValue = value;
+    }
+
+    final range = maxValue - minValue;
+    final safeRange = range == 0 ? 1.0 : range;
+    final points = <Offset>[];
+
+    for (var index = 0; index < values.length; index++) {
+      final x = size.width * index / (values.length - 1);
+      final normalized = (values[index] - minValue) / safeRange;
+      final y = size.height - (normalized * (size.height * 0.78)) -
+          (size.height * 0.11);
+      points.add(Offset(x, y));
+    }
+
+    final linePath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (var index = 1; index < points.length; index++) {
+      linePath.lineTo(points[index].dx, points[index].dy);
+    }
+
+    final fillPath = Path.from(linePath)
+      ..lineTo(points.last.dx, size.height)
+      ..lineTo(points.first.dx, size.height)
+      ..close();
+
+    final fillPaint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+    final linePaint = Paint()
+      ..color = lineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(linePath, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PortfolioLinePainter oldDelegate) {
+    if (oldDelegate.lineColor != lineColor ||
+        oldDelegate.fillColor != fillColor ||
+        oldDelegate.values.length != values.length) {
+      return true;
+    }
+    for (var index = 0; index < values.length; index++) {
+      if (oldDelegate.values[index] != values[index]) return true;
+    }
+    return false;
+  }
+}
+
 class _AccountLogoBadge extends StatelessWidget {
   const _AccountLogoBadge({required this.size});
 

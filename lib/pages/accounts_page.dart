@@ -30,10 +30,15 @@ class BrokerAccountsPage extends StatefulWidget {
 
 class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
   final _searchController = TextEditingController();
+  Timer? _searchDebounce;
   String _query = '';
 
   @override
-  void dispose() { _searchController.dispose(); super.dispose(); }
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,74 +59,102 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
 
     return Container(
       color: theme.scaffoldBackgroundColor,
-      child: ListView(
+      child: CustomScrollView(
         controller: widget.scrollController,
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-        padding: EdgeInsets.fromLTRB(16, 12, 16, bottomNavPadding),
-        children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('MY PORTFOLIO', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-              const SizedBox(height: 6),
-              Text('Trading accounts', style: TextStyle(color: fg, fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.7)),
-              const SizedBox(height: 5),
-              Text('Manage your MT5 accounts in one place', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
-            ])),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-              decoration: BoxDecoration(color: green.withValues(alpha: dark ? .16 : .09), borderRadius: BorderRadius.circular(30), border: Border.all(color: green.withValues(alpha: .25))),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 7, height: 7, decoration: const BoxDecoration(color: green, shape: BoxShape.circle)),
-                const SizedBox(width: 7),
-                Text('${liveAccounts.length} LIVE', style: const TextStyle(color: green, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .5)),
-              ]),
-            ),
-          ]),
-          const SizedBox(height: 18),
-          const SizedBox(height: 14),
-          Row(children: [
-            Expanded(child: SizedBox(height: 48, child: FilledButton.icon(
-              onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, isDismissible: true, useSafeArea: true, backgroundColor: Colors.transparent, barrierColor: Colors.black54,
-                builder: (_) => _OpenLiveAccountSheet(onCreated: widget.onAccountCreated)),
-              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF17243A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), elevation: 0),
-              icon: const Icon(LucideIcons.plus, size: 17),
-              label: const Text('Open live account', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-            ))),
-            const SizedBox(width: 10),
-            Expanded(child: SizedBox(height: 48, child: OutlinedButton.icon(
-              onPressed: () => widget.onSelectPage('Demo Accounts'),
-              style: OutlinedButton.styleFrom(foregroundColor: fg, backgroundColor: surface, side: BorderSide(color: border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-              icon: const Icon(LucideIcons.flaskConical, size: 17, color: blue),
-              label: const Text('Demo accounts', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-            ))),
-          ]),
-          const SizedBox(height: 21),
-          const SizedBox(height: 11),
-          TextField(
-            controller: _searchController,
-            onChanged: (value) => setState(() => _query = value),
-            style: TextStyle(color: fg, fontSize: 12),
-            decoration: InputDecoration(
-              hintText: 'Search name or account number', hintStyle: TextStyle(color: muted, fontSize: 11),
-              prefixIcon: Icon(LucideIcons.search, color: muted, size: 18),
-              suffixIcon: _query.isEmpty ? null : IconButton(tooltip: 'Clear search', onPressed: () { _searchController.clear(); setState(() => _query = ''); }, icon: Icon(LucideIcons.x, color: muted, size: 16)),
-              filled: true, fillColor: surface, isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: border)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: blue, width: 1.4)),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('MY PORTFOLIO', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                      const SizedBox(height: 6),
+                      Text('Trading accounts', style: TextStyle(color: fg, fontSize: 25, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -.7)),
+                      const SizedBox(height: 5),
+                      Text('Manage your MT5 accounts in one place', style: TextStyle(color: muted, fontSize: 11, height: 1.4)),
+                    ])),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                      decoration: BoxDecoration(color: green.withValues(alpha: dark ? .16 : .09), borderRadius: BorderRadius.circular(30), border: Border.all(color: green.withValues(alpha: .25))),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Container(width: 7, height: 7, decoration: const BoxDecoration(color: green, shape: BoxShape.circle)),
+                        const SizedBox(width: 7),
+                        Text('${liveAccounts.length} LIVE', style: const TextStyle(color: green, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .5)),
+                      ]),
+                    ),
+                  ]),
+                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Expanded(child: SizedBox(height: 48, child: FilledButton.icon(
+                      onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, isDismissible: true, useSafeArea: true, backgroundColor: Colors.transparent, barrierColor: Colors.black54,
+                        builder: (_) => _OpenLiveAccountSheet(onCreated: widget.onAccountCreated)),
+                      style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: const Color(0xFF17243A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), elevation: 0),
+                      icon: const Icon(LucideIcons.plus, size: 17),
+                      label: const Text('Open live account', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                    ))),
+                    const SizedBox(width: 10),
+                    Expanded(child: SizedBox(height: 48, child: OutlinedButton.icon(
+                      onPressed: () => widget.onSelectPage('Demo Accounts'),
+                      style: OutlinedButton.styleFrom(foregroundColor: fg, backgroundColor: surface, side: BorderSide(color: border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                      icon: const Icon(LucideIcons.flaskConical, size: 17, color: blue),
+                      label: const Text('Demo accounts', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                    ))),
+                  ]),
+                  const SizedBox(height: 21),
+                  const SizedBox(height: 11),
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      _searchDebounce?.cancel();
+                      _searchDebounce = Timer(const Duration(milliseconds: 200), () {
+                        if (mounted) setState(() => _query = value);
+                      });
+                    },
+                    style: TextStyle(color: fg, fontSize: 12),
+                    decoration: InputDecoration(
+                      hintText: 'Search name or account number', hintStyle: TextStyle(color: muted, fontSize: 11),
+                      prefixIcon: Icon(LucideIcons.search, color: muted, size: 18),
+                      suffixIcon: _query.isEmpty ? null : IconButton(tooltip: 'Clear search', onPressed: () { _searchDebounce?.cancel(); _searchController.clear(); setState(() => _query = ''); }, icon: Icon(LucideIcons.x, color: muted, size: 16)),
+                      filled: true, fillColor: surface, isDense: true, contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: blue, width: 1.4)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (widget.isLoading && widget.accounts.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 44),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (widget.loadError != null && widget.accounts.isEmpty)
+                    _AccountLoadError(message: widget.loadError!, onRetry: widget.onRetry)
+                  else if (filtered.isEmpty)
+                    _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchDebounce?.cancel(); _searchController.clear(); setState(() => _query = ''); }),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          if (widget.isLoading && widget.accounts.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 44),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (widget.loadError != null && widget.accounts.isEmpty)
-            _AccountLoadError(message: widget.loadError!, onRetry: widget.onRetry)
-          else if (filtered.isEmpty)
-            _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchController.clear(); setState(() => _query = ''); })
-          else
-            ...filtered.map((account) => _ReferenceAccountCard(account: account, isFavorite: widget.favoriteLogins.contains(account.login), onToggleFavorite: () => widget.onToggleFavorite(account.login), onTap: () => widget.onAccountSelected(account))),
+          if (!widget.isLoading && widget.loadError == null && filtered.isNotEmpty)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, bottomNavPadding),
+              sliver: SliverList.builder(
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final account = filtered[index];
+                  return _ReferenceAccountCard(
+                    account: account,
+                    isFavorite: widget.favoriteLogins.contains(account.login),
+                    onToggleFavorite: () => widget.onToggleFavorite(account.login),
+                    onTap: () => widget.onAccountSelected(account),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -197,12 +230,14 @@ class _ReferenceAccountCard extends StatelessWidget {
               const SizedBox(height: 5),
               Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
             ])),
-            SizedBox(width: sparkWidth, height: 35, child: CustomPaint(
-              key: const ValueKey('account_list_performance_chart'),
-              painter: _PortfolioLinePainter(
-                values: equity,
-                lineColor: chartColor,
-                fillColor: chartColor.withValues(alpha: .10),
+            SizedBox(width: sparkWidth, height: 35, child: RepaintBoundary(
+              child: CustomPaint(
+                key: const ValueKey('account_list_performance_chart'),
+                painter: _PortfolioLinePainter(
+                  values: equity,
+                  lineColor: chartColor,
+                  fillColor: chartColor.withValues(alpha: .10),
+                ),
               ),
             )),
             const SizedBox(width: 2),
@@ -289,24 +324,25 @@ class _PortfolioLinePainter extends CustomPainter {
 
     final range = maxValue - minValue;
     final safeRange = range == 0 ? 1.0 : range;
-    final points = <Offset>[];
+    final linePath = Path();
+    var lastX = 0.0;
 
     for (var index = 0; index < values.length; index++) {
       final x = size.width * index / (values.length - 1);
       final normalized = (values[index] - minValue) / safeRange;
       final y = size.height - (normalized * (size.height * 0.78)) -
           (size.height * 0.11);
-      points.add(Offset(x, y));
-    }
-
-    final linePath = Path()..moveTo(points.first.dx, points.first.dy);
-    for (var index = 1; index < points.length; index++) {
-      linePath.lineTo(points[index].dx, points[index].dy);
+      if (index == 0) {
+        linePath.moveTo(x, y);
+      } else {
+        linePath.lineTo(x, y);
+      }
+      lastX = x;
     }
 
     final fillPath = Path.from(linePath)
-      ..lineTo(points.last.dx, size.height)
-      ..lineTo(points.first.dx, size.height)
+      ..lineTo(lastX, size.height)
+      ..lineTo(0, size.height)
       ..close();
 
     final fillPaint = Paint()
@@ -2747,12 +2783,14 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                   return SizedBox(
                     height: chartHeight,
                     width: double.infinity,
-                    child: CustomPaint(
-                      key: const ValueKey('account_detail_performance_chart'),
-                      painter: _PortfolioLinePainter(
-                        values: chartHistory,
-                        lineColor: chartColor,
-                        fillColor: chartColor.withValues(alpha: .10),
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        key: const ValueKey('account_detail_performance_chart'),
+                        painter: _PortfolioLinePainter(
+                          values: chartHistory,
+                          lineColor: chartColor,
+                          fillColor: chartColor.withValues(alpha: .10),
+                        ),
                       ),
                     ),
                   );

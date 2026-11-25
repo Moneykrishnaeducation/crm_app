@@ -247,9 +247,20 @@ class _TradeReportPageState extends State<TradeReportPage> {
         .toList(growable: false);
   }
 
-  List<double> get _equityHistory => _equitySnapshots
-      .map((snapshot) => _tradeNumber(snapshot['equity']))
-      .toList(growable: false);
+  List<double>? _cachedEquityHistory;
+  Map<String, dynamic>? _lastEquityCurveSource;
+
+  List<double> get _equityHistory {
+    final curve = _reportData?['equity_curve'];
+    if (identical(curve, _lastEquityCurveSource) && _cachedEquityHistory != null) {
+      return _cachedEquityHistory!;
+    }
+    _lastEquityCurveSource = curve is Map<String, dynamic> ? curve : null;
+    _cachedEquityHistory = _equitySnapshots
+        .map((snapshot) => _tradeNumber(snapshot['equity']))
+        .toList(growable: false);
+    return _cachedEquityHistory!;
+  }
 
   String _formatCurrency(String raw) {
     final cleaned = raw.replaceAll(r'$', '').replaceAll(',', '').trim();
@@ -1083,8 +1094,10 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   SizedBox(
                     width: 92,
                     height: 52,
-                    child: CustomPaint(
-                      painter: _VolumeArcGaugePainter(isDark: isDark),
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        painter: _VolumeArcGaugePainter(isDark: isDark),
+                      ),
                     ),
                   ),
                 ],
@@ -1551,15 +1564,17 @@ class _TradeReportPageState extends State<TradeReportPage> {
                       'Real MT5 snapshots are collected periodically. The curve will appear after at least two snapshots are available.'),
                   isDark, muted,
                 )
-              : CustomPaint(
-                  painter: _TradeReportLinePainter(
-                    values: history,
-                    lineColor: const Color(0xFF3B82F6),
-                    gridColor: isDark ? const Color(0xFF29384D) : const Color(0xFFE9EEF5),
-                    labelColor: muted,
-                    currency: _currentAccount.currency,
+              : RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _TradeReportLinePainter(
+                      values: history,
+                      lineColor: const Color(0xFF3B82F6),
+                      gridColor: isDark ? const Color(0xFF29384D) : const Color(0xFFE9EEF5),
+                      labelColor: muted,
+                      currency: _currentAccount.currency,
+                    ),
+                    child: const SizedBox.expand(),
                   ),
-                  child: const SizedBox.expand(),
                 ),
         ),
       ],
@@ -1695,16 +1710,18 @@ class _TradeReportPageState extends State<TradeReportPage> {
         child: trades.isEmpty
             ? _buildChartEmptyState('No P&L data for this selection',
                 'Closed trade results will appear here when supplied by the account.', isDark, muted)
-            : CustomPaint(
-                painter: _TradeReportBarPainter(
-                  values: trades.map((trade) => trade.profit).toList(),
-                  labels: trades.map((trade) => trade.symbol).toList(),
-                  positiveColor: const Color(0xFF16A36A),
-                  negativeColor: const Color(0xFFEF5350),
-                  gridColor: isDark ? const Color(0xFF29384D) : const Color(0xFFE9EEF5),
-                  labelColor: muted,
+            : RepaintBoundary(
+                child: CustomPaint(
+                  painter: _TradeReportBarPainter(
+                    values: trades.map((trade) => trade.profit).toList(),
+                    labels: trades.map((trade) => trade.symbol).toList(),
+                    positiveColor: const Color(0xFF16A36A),
+                    negativeColor: const Color(0xFFEF5350),
+                    gridColor: isDark ? const Color(0xFF29384D) : const Color(0xFFE9EEF5),
+                    labelColor: muted,
+                  ),
+                  child: const SizedBox.expand(),
                 ),
-                child: const SizedBox.expand(),
               ),
       ),
       const SizedBox(height: 13),
@@ -1883,8 +1900,21 @@ class _TradeReportLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _TradeReportLinePainter old) =>
-      old.values != values || old.lineColor != lineColor || old.gridColor != gridColor;
+  bool shouldRepaint(covariant _TradeReportLinePainter old) {
+    if (identical(old.values, values)) {
+      return old.lineColor != lineColor || old.gridColor != gridColor || old.labelColor != labelColor;
+    }
+    if (old.values.length != values.length ||
+        old.lineColor != lineColor ||
+        old.gridColor != gridColor ||
+        old.labelColor != labelColor) {
+      return true;
+    }
+    for (var i = 0; i < values.length; i++) {
+      if (old.values[i] != values[i]) return true;
+    }
+    return false;
+  }
 }
 
 class _TradeReportBarPainter extends CustomPainter {
@@ -1925,6 +1955,27 @@ class _TradeReportBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _TradeReportBarPainter old) =>
-      old.values != values || old.labels != labels || old.gridColor != gridColor;
+  bool shouldRepaint(covariant _TradeReportBarPainter old) {
+    if (identical(old.values, values) && identical(old.labels, labels)) {
+      return old.gridColor != gridColor ||
+          old.positiveColor != positiveColor ||
+          old.negativeColor != negativeColor ||
+          old.labelColor != labelColor;
+    }
+    if (old.values.length != values.length ||
+        old.labels.length != labels.length ||
+        old.positiveColor != positiveColor ||
+        old.negativeColor != negativeColor ||
+        old.gridColor != gridColor ||
+        old.labelColor != labelColor) {
+      return true;
+    }
+    for (var i = 0; i < values.length; i++) {
+      if (old.values[i] != values[i]) return true;
+    }
+    for (var i = 0; i < labels.length; i++) {
+      if (old.labels[i] != labels[i]) return true;
+    }
+    return false;
+  }
 }

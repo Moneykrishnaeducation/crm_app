@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app_notifications.dart';
@@ -256,11 +257,13 @@ class MamPageState extends State<MamPage> {
   // Search & Filter controllers
   final TextEditingController _managerSearchController =
       TextEditingController();
+  Timer? _managerSearchDebounce;
   String _managerStatusFilter = 'All Masters';
   String _managerSearchQuery = '';
 
   final TextEditingController _availableSearchController =
       TextEditingController();
+  Timer? _availableSearchDebounce;
   String _availableFilter = 'All Pools';
   String _availableSearchQuery = '';
 
@@ -402,14 +405,24 @@ class MamPageState extends State<MamPage> {
 
     _loadMamAccounts();
     _managerSearchController.addListener(() {
-      setState(
-        () => _managerSearchQuery = _managerSearchController.text.trim(),
-      );
+      _managerSearchDebounce?.cancel();
+      _managerSearchDebounce = Timer(const Duration(milliseconds: 250), () {
+        if (mounted) {
+          setState(
+            () => _managerSearchQuery = _managerSearchController.text.trim(),
+          );
+        }
+      });
     });
     _availableSearchController.addListener(() {
-      setState(
-        () => _availableSearchQuery = _availableSearchController.text.trim(),
-      );
+      _availableSearchDebounce?.cancel();
+      _availableSearchDebounce = Timer(const Duration(milliseconds: 250), () {
+        if (mounted) {
+          setState(
+            () => _availableSearchQuery = _availableSearchController.text.trim(),
+          );
+        }
+      });
     });
   }
 
@@ -425,6 +438,8 @@ class MamPageState extends State<MamPage> {
 
   @override
   void dispose() {
+    _managerSearchDebounce?.cancel();
+    _availableSearchDebounce?.cancel();
     _managerSearchController.dispose();
     _availableSearchController.dispose();
     super.dispose();
@@ -1276,8 +1291,9 @@ class MamPageState extends State<MamPage> {
     final statusColor = isActive ? _c.green : _c.gold;
     final riskLevel = _riskToLevel(master.risk);
 
-    return InkWell(
-      onTap: () => _openMasterDetails(master),
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () => _openMasterDetails(master),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
@@ -1647,7 +1663,7 @@ class MamPageState extends State<MamPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _microStat(
@@ -1975,8 +1991,9 @@ class MamPageState extends State<MamPage> {
   Widget _buildInvestorAccountCard(MamInvestorAccount account) {
     final statusColor = account.isCopying ? _c.green : _c.gold;
 
-    return InkWell(
-      onTap: () => _openInvestorAccountDetails(account.accountId),
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () => _openInvestorAccountDetails(account.accountId),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(13),
@@ -2155,7 +2172,7 @@ class MamPageState extends State<MamPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   void _openInvestorAccountDetails(String accountId) {
@@ -2394,9 +2411,10 @@ class MamPageState extends State<MamPage> {
       riskLevel = 3;
     }
 
-    return InkWell(
-      onTap: () => _openManagerProfileModal(pool),
-      borderRadius: BorderRadius.circular(16),
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () => _openManagerProfileModal(pool),
+        borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -2677,7 +2695,7 @@ class MamPageState extends State<MamPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   void _openManagerProfileModal(AvailableMamPool pool) {

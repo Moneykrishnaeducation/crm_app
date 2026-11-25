@@ -554,7 +554,7 @@ class _PoolTradesModalState extends State<PoolTradesModal>
                           color: _blue, fontSize: 11, fontWeight: FontWeight.w700,
                         ))),
                         DataCell(Text(
-                          '${position.profit >= 0 ? '+' : ''}\${position.profit.toStringAsFixed(2)}',
+                          '\$${position.profit >= 0 ? '+' : ''}${position.profit.toStringAsFixed(2)}',
                           style: GoogleFonts.jetBrainsMono(
                             color: pnlColor, fontSize: 11, fontWeight: FontWeight.w800,
                           ),

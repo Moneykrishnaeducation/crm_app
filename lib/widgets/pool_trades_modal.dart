@@ -373,70 +373,66 @@ class _PoolTradesModalState extends State<PoolTradesModal>
                 bottom: BorderSide(color: _border),
               ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _kpiCard(
-                    title: 'FLOATING P/L',
-                    value:
-                        '${_totalProfit >= 0 ? '+' : ''}\$${_totalProfit.toStringAsFixed(2)}',
-                    color: _totalProfit >= 0 ? _green : _rose,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _kpiCard(
-                    title: 'TOTAL VOLUME',
-                    value: '${_totalVolume.toStringAsFixed(2)} Lots',
-                    color: _blue,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _kpiCard(
-                    title: 'OPEN ORDERS',
-                    value: '${_positions.length} Positions',
-                    color: _text,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _kpiCard(
-                    title: 'ORDER TYPES',
-                    value: '$_buyCount BUY • $_sellCount SELL',
-                    color: _muted,
-                    customChild: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '$_buyCount BUY',
-                            style: GoogleFonts.inter(
-                              color: _blue,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          Text(
-                            ' • ',
-                            style: TextStyle(color: _muted, fontSize: 11),
-                          ),
-                          Text(
-                            '$_sellCount SELL',
-                            style: GoogleFonts.inter(
-                              color: _rose,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = wideLayout
+                    ? (constraints.maxWidth - 24) / 4
+                    : (constraints.maxWidth - 8) / 2;
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    SizedBox(
+                      width: cardWidth,
+                      child: _kpiCard(
+                        title: 'FLOATING P/L',
+                        value: '${_totalProfit >= 0 ? '+' : ''}\$${_totalProfit.toStringAsFixed(2)}',
+                        color: _totalProfit >= 0 ? _green : _rose,
                       ),
                     ),
-                  ),
-                ),
-              ],
+                    SizedBox(
+                      width: cardWidth,
+                      child: _kpiCard(
+                        title: 'TOTAL VOLUME',
+                        value: '${_totalVolume.toStringAsFixed(2)} Lots',
+                        color: _blue,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _kpiCard(
+                        title: 'OPEN ORDERS',
+                        value: '${_positions.length} Positions',
+                        color: _text,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _kpiCard(
+                        title: 'ORDER TYPES',
+                        value: '$_buyCount BUY • $_sellCount SELL',
+                        color: _muted,
+                        customChild: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('$_buyCount BUY', style: GoogleFonts.inter(
+                                color: _blue, fontSize: 11, fontWeight: FontWeight.w800,
+                              )),
+                              Text(' • ', style: TextStyle(color: _muted, fontSize: 11)),
+                              Text('$_sellCount SELL', style: GoogleFonts.inter(
+                                color: _rose, fontSize: 11, fontWeight: FontWeight.w800,
+                              )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 

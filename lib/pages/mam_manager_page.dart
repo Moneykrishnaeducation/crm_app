@@ -160,78 +160,13 @@ class _MamManagerPageState extends State<MamManagerPage> {
   bool _showGuide = false;
 
   MamMasterAccount? _selectedMasterDetail;
-  late List<MamMasterAccount> _masters;
+  List<MamMasterAccount> _masters = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _masters = [
-      MamMasterAccount(
-        name: 'Devo-Testmam',
-        login: '2141715173',
-        profitShare: 40.0,
-        leverage: '1:500',
-        balance: 0.00,
-        status: 'Active',
-        risk: 'Medium',
-        payout: 'Weekly',
-        allocationMethod: 'Lot Proportional',
-        investorsCount: 12,
-        totalAum: 482500.0,
-        monthlyGain: 14.8,
-        server: 'VTindex-MT5',
-        tradingPlatform: 'MetaTrader 5 (MT5)',
-        algoTrading: 'Manual',
-        pendingRelease: 4.03,
-        releasedPayout: 0.00,
-        pendingWallet: 0.00,
-        totalSettled: 0.00,
-        tradesProcessed: 0,
-      ),
-      MamMasterAccount(
-        name: 'Alpha Quant Alpha-1',
-        login: '8849102',
-        profitShare: 20.0,
-        leverage: '1:500',
-        balance: 45200.00,
-        status: 'Active',
-        risk: 'Moderate',
-        payout: 'Monthly',
-        allocationMethod: 'Equity Proportional',
-        investorsCount: 48,
-        totalAum: 482500.0,
-        monthlyGain: 14.8,
-      ),
-      MamMasterAccount(
-        name: 'Prime Trend Rider',
-        login: '8850231',
-        profitShare: 25.0,
-        leverage: '1:200',
-        balance: 18500.00,
-        status: 'Active',
-        risk: 'Low-Risk',
-        payout: 'Bi-Weekly',
-        allocationMethod: 'Lot Proportional',
-        investorsCount: 64,
-        totalAum: 620400.0,
-        monthlyGain: 11.2,
-      ),
-      MamMasterAccount(
-        name: 'Apex Scalper High-Freq',
-        login: '8839014',
-        profitShare: 30.0,
-        leverage: '1:500',
-        balance: 8900.00,
-        status: 'Paused',
-        risk: 'Aggressive',
-        payout: 'Weekly',
-        allocationMethod: 'Equity Ratio',
-        investorsCount: 19,
-        totalAum: 115000.0,
-        monthlyGain: 26.5,
-      ),
-    ];
-
+    _masters = [];
     _loadMamAccounts();
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text.trim());
@@ -857,6 +792,12 @@ class _MamManagerPageState extends State<MamManagerPage> {
   // MASTERS LIST SECTION
   // ---------------------------------------------------------------------------
   Widget _buildMastersSection() {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 36),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
     if (_filteredMasters.isEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
@@ -1390,39 +1331,69 @@ class _MamManagerPageState extends State<MamManagerPage> {
   }
 
   Future<void> _loadMamAccounts() async {
+    if (mounted) setState(() => _isLoading = true);
     try {
       final accounts = await AuthApi.instance.getUserMamAccounts();
       if (!mounted) return;
       setState(() {
-        _masters = accounts.map(_mamMasterFromApi).toList();
+        _masters = accounts
+            .where((account) => (account['account_id'] ?? '').toString().trim().isNotEmpty)
+            .map(_mamMasterFromApi)
+            .toList();
+        _isLoading = false;
       });
     } catch (error) {
       debugPrint('Could not load MAM accounts: $error');
-      if (mounted) showAppMessage(
+      if (!mounted) return;
+      setState(() {
+        _masters = [];
+        _isLoading = false;
+      });
+      showAppMessage(
         error is AuthApiException ? error.message : 'Could not load MAM accounts.',
       );
     }
   }
 
+  double _apiDouble(Map<String, dynamic> account, String key) {
+    final value = account[key];
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0.0;
+  }
+
+  int _apiInt(Map<String, dynamic> account, String key) {
+    final value = account[key];
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
   MamMasterAccount _mamMasterFromApi(Map<String, dynamic> account) {
     final login = (account['account_id'] ?? '').toString();
-    final risk = (account['risk_level'] ?? 'medium').toString();
-    final payout = (account['payout_frequency'] ?? 'weekly').toString();
+    final risk = (account['risk_level'] ?? 'Unknown').toString();
+    final payout = (account['payout_frequency'] ?? 'Unknown').toString();
+    final leverageValue = account['leverage']?.toString() ?? '';
+
     return MamMasterAccount(
-      name: (account['account_name'] ?? 'MAM Account $login').toString(),
+      name: (account['account_name'] ?? '').toString(),
       login: login,
-      profitShare: (account['profit_sharing_percentage'] as num?)?.toDouble() ?? 0,
-      leverage: '1:${account['leverage'] ?? 100}',
-      balance: (account['balance'] as num?)?.toDouble() ?? 0,
-      status: (account['status'] ?? 'Active').toString().toLowerCase() == 'active'
-          ? 'Active'
-          : 'Paused',
-      risk: risk[0].toUpperCase() + risk.substring(1),
-      payout: payout[0].toUpperCase() + payout.substring(1),
-      allocationMethod: 'Lot Proportional',
-      investorsCount: 0,
-      totalAum: (account['balance'] as num?)?.toDouble() ?? 0,
-      monthlyGain: 0,
+      profitShare: _apiDouble(account, 'profit_sharing_percentage'),
+      leverage: leverageValue.isEmpty ? '—' : '1:$leverageValue',
+      balance: _apiDouble(account, 'balance'),
+      status: (account['status'] ?? 'Unknown').toString(),
+      risk: risk.isEmpty ? 'Unknown' : risk[0].toUpperCase() + risk.substring(1),
+      payout: payout.isEmpty ? 'Unknown' : payout[0].toUpperCase() + payout.substring(1),
+      allocationMethod: (account['allocation_method'] ?? '—').toString(),
+      investorsCount: _apiInt(account, 'investors_count'),
+      totalAum: _apiDouble(account, 'total_aum'),
+      monthlyGain: _apiDouble(account, 'monthly_gain'),
+      server: (account['server'] ?? '').toString(),
+      tradingPlatform: (account['trading_platform'] ?? '').toString(),
+      algoTrading: (account['algo_trading'] ?? '').toString(),
+      pendingRelease: _apiDouble(account, 'pending_release'),
+      releasedPayout: _apiDouble(account, 'released_payout'),
+      pendingWallet: _apiDouble(account, 'pending_wallet'),
+      totalSettled: _apiDouble(account, 'total_settled'),
+      tradesProcessed: _apiInt(account, 'trades_processed'),
     );
   }
 
@@ -1438,401 +1409,3 @@ class _MamManagerPageState extends State<MamManagerPage> {
     );
   }
 }
-
-// -----------------------------------------------------------------------------
-// CREATE MAM MASTER SHEET
-// -----------------------------------------------------------------------------
-class _CreateMamMasterSheet extends StatefulWidget {
-  const _CreateMamMasterSheet({required this.colors, required this.onCreated});
-
-  final _MamColors colors;
-  final ValueChanged<MamMasterAccount> onCreated;
-
-  @override
-  State<_CreateMamMasterSheet> createState() => _CreateMamMasterSheetState();
-}
-
-class _CreateMamMasterSheetState extends State<_CreateMamMasterSheet> {
-  final _nameController = TextEditingController();
-  final _loginController = TextEditingController(text: '8851490');
-  String _allocationMethod = 'Lot Proportional';
-  String _leverage = '1:500';
-  double _profitShare = 20.0;
-  String _riskLevel = 'Moderate';
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _loginController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = widget.colors;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(16, 14, 16, 20 + bottomInset),
-      decoration: BoxDecoration(
-        color: c.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: c.muted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Deploy MAM Master Node',
-                        style: GoogleFonts.inter(
-                          color: c.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Configure execution rule & profit share ratio.',
-                        style: TextStyle(color: c.muted, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(LucideIcons.x, size: 20, color: c.muted),
-                  onPressed: () => Navigator.pop(context),
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _inputField(
-              label: 'Master Pool Name',
-              hint: 'e.g., Quantum FX Master Node',
-              controller: _nameController,
-            ),
-            const SizedBox(height: 12),
-            _inputField(
-              label: 'MT5 Master Account Login',
-              hint: 'e.g., 8851490',
-              controller: _loginController,
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Allocation Rule',
-              style: TextStyle(
-                color: c.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              initialValue: _allocationMethod,
-              dropdownColor: c.card,
-              style: TextStyle(color: c.text, fontSize: 12.5),
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                filled: true,
-                fillColor: c.subCard,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: c.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: c.border),
-                ),
-              ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'Lot Proportional',
-                  child: Text('Lot Proportional by Balance'),
-                ),
-                DropdownMenuItem(
-                  value: 'Equity Ratio',
-                  child: Text('Equity Ratio Allocation'),
-                ),
-                DropdownMenuItem(
-                  value: 'Equal Risk',
-                  child: Text('Equal Risk Percentage'),
-                ),
-              ],
-              onChanged: (val) {
-                if (val != null) setState(() => _allocationMethod = val);
-              },
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Leverage',
-                        style: TextStyle(
-                          color: c.muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      DropdownButtonFormField<String>(
-                        initialValue: _leverage,
-                        dropdownColor: c.card,
-                        style: TextStyle(color: c.text, fontSize: 12.5),
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          filled: true,
-                          fillColor: c.subCard,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: c.border),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: c.border),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: '1:100',
-                            child: Text('1:100'),
-                          ),
-                          DropdownMenuItem(
-                            value: '1:200',
-                            child: Text('1:200'),
-                          ),
-                          DropdownMenuItem(
-                            value: '1:500',
-                            child: Text('1:500'),
-                          ),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _leverage = val);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Risk Profile',
-                        style: TextStyle(
-                          color: c.muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      DropdownButtonFormField<String>(
-                        initialValue: _riskLevel,
-                        dropdownColor: c.card,
-                        style: TextStyle(color: c.text, fontSize: 12.5),
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          filled: true,
-                          fillColor: c.subCard,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: c.border),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: c.border),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'Low-Risk',
-                            child: Text('Low-Risk'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Moderate',
-                            child: Text('Moderate'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Aggressive',
-                            child: Text('Aggressive'),
-                          ),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _riskLevel = val);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Performance Profit Share',
-                  style: TextStyle(
-                    color: c.text,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  '${_profitShare.toInt()}%',
-                  style: GoogleFonts.inter(
-                    color: c.blue,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            Slider(
-              value: _profitShare,
-              min: 5,
-              max: 50,
-              divisions: 9,
-              activeColor: c.blue,
-              inactiveColor: c.border,
-              onChanged: (val) => setState(() => _profitShare = val),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: c.blue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(44),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Launch MAM Node',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _inputField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    final c = widget.colors;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: c.muted,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          style: TextStyle(color: c.text, fontSize: 12.5),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: c.muted, fontSize: 12),
-            filled: true,
-            fillColor: c.subCard,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.border),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _submit() {
-    final name = _nameController.text.trim().isEmpty
-        ? 'Alpha MAM Master'
-        : _nameController.text.trim();
-    final login = _loginController.text.trim().isEmpty
-        ? '8859012'
-        : _loginController.text.trim();
-
-    final master = MamMasterAccount(
-      name: name,
-      login: login,
-      profitShare: _profitShare,
-      leverage: _leverage,
-      balance: 10000.0,
-      status: 'Active',
-      risk: _riskLevel,
-      payout: 'Monthly',
-      allocationMethod: _allocationMethod,
-      investorsCount: 0,
-      totalAum: 10000.0,
-      monthlyGain: 0.0,
-    );
-
-    widget.onCreated(master);
-    Navigator.pop(context);
-  }
-}
-

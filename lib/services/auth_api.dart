@@ -471,6 +471,96 @@ class AuthApi {
     return _request('GET', 'account-details/$id/');
   }
 
+
+  Future<Map<String, dynamic>> _multipartRequest(
+    String method,
+    String path, {
+    required Map<String, String> fields,
+    String? fileField,
+    String? fileName,
+    List<int>? fileBytes,
+  }) async {
+    await restoreSession();
+    final keyPair = _createResponseEncryptionKeyPair();
+    final request = http.MultipartRequest(method, _uri(path))
+      ..headers.addAll(_headers)
+      ..headers['X-Response-Encryption-Key'] = keyPair.publicKey
+      ..fields.addAll(fields);
+    if (fileField != null && fileName != null && fileBytes != null) {
+      request.files.add(http.MultipartFile.fromBytes(
+        fileField, fileBytes, filename: fileName,
+      ));
+    }
+    final streamed = await _client.send(request).timeout(const Duration(seconds: 35));
+    final response = await http.Response.fromStream(streamed);
+    _captureSession(response);
+    dynamic decoded;
+    try {
+      decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+    } on FormatException {
+      _responseEncryptionPrivateKeys.remove(keyPair.keyId);
+      throw AuthApiException('The server returned an invalid response.', statusCode: response.statusCode);
+    }
+    dynamic payload = decoded;
+    if (decoded is Map && decoded['encrypted'] == true) {
+      payload = _decryptResponseEnvelope(decoded.cast<String, dynamic>(), keyPair.keyId);
+    } else {
+      _responseEncryptionPrivateKeys.remove(keyPair.keyId);
+    }
+    final data = payload is Map<String, dynamic> ? payload : <String, dynamic>{'data': payload};
+    if (response.statusCode < 200 || response.statusCode >= 300 || data['error'] is String) {
+      throw AuthApiException(_messageFrom(data), statusCode: response.statusCode, data: data);
+    }
+    return data;
+  }
+
+  Future<List<Map<String, dynamic>>> getSupportTickets() async {
+    final response = await _request('GET', 'tickets/');
+    final grouped = <Map<String, dynamic>>[];
+    for (final key in ['open', 'pending', 'closed']) {
+      final rows = response[key];
+      if (rows is List) {
+        for (final row in rows.whereType<Map>()) {
+          grouped.add(row.cast<String, dynamic>());
+        }
+      }
+    }
+    return grouped;
+  }
+
+  Future<Map<String, dynamic>> getSupportTicket(int ticketId) =>
+      _request('GET', 'tickets/$ticketId/');
+
+  Future<Map<String, dynamic>> createSupportTicket({
+    required String subject,
+    required String description,
+    required String department,
+    String? fileName,
+    List<int>? fileBytes,
+  }) => _multipartRequest(
+    'POST', 'tickets/create/',
+    fields: <String, String>{
+      'subject': '[$department] $subject',
+      'description': description,
+    },
+    fileField: fileBytes == null ? null : 'documents',
+    fileName: fileName,
+    fileBytes: fileBytes,
+  );
+
+  Future<Map<String, dynamic>> replySupportTicket({
+    required int ticketId,
+    required String message,
+    String? fileName,
+    List<int>? fileBytes,
+  }) => _multipartRequest(
+    'POST', 'tickets/$ticketId/send-message/',
+    fields: <String, String>{'content': message},
+    fileField: fileBytes == null ? null : 'file',
+    fileName: fileName,
+    fileBytes: fileBytes,
+  );
+
   Future<List<Map<String, dynamic>>> getOpenPositions(String accountId) async {
     final id = Uri.encodeComponent(accountId);
     final response = await _request('GET', 'open-positions/$id/');

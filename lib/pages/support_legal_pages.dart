@@ -882,7 +882,7 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
   Map<String, dynamic>? _ticket;
   List<Map<String, dynamic>> _messages = [];
   PlatformFile? _file;
-  bool _loading = true, _sending = false, _picking = false, _changed = false;
+  bool _loading = true, _sending = false, _picking = false;
   String? _error;
   int get _id => int.tryParse((_ticket?['id'] ?? widget.ticket['id'] ?? '').toString()) ?? 0;
   String get _status => (_ticket?['status'] ?? widget.ticket['status'] ?? 'open').toString().toLowerCase();
@@ -927,7 +927,7 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
         if (bytes == null) throw Exception('Could not read the selected attachment.');
       }
       await AuthApi.instance.replySupportTicket(ticketId: _id, message: content, fileName: _file?.name, fileBytes: bytes);
-      _reply.clear(); _file = null; _changed = true; FocusScope.of(context).unfocus();
+      _reply.clear(); _file = null; FocusScope.of(context).unfocus();
       await _load();
     } catch (error) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reply could not be sent: $error')));
@@ -940,7 +940,8 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
   }
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context), scheme = theme.colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final ticket = _ticket ?? widget.ticket;
     final raw = (ticket['subject'] ?? 'Support request').toString();
     final subject = raw.replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
@@ -995,7 +996,7 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
                     setState(() => _sending = true);
                     try {
                       await AuthApi.instance.changeSupportTicketStatus(_id, 'open');
-                      _changed = true; await _load();
+                      await _load();
                     } catch (error) {
                       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not reopen ticket: $error')));
                     } finally { if (mounted) setState(() => _sending = false); }

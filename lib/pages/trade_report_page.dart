@@ -1868,12 +1868,13 @@ class _TradeReportLinePainter extends CustomPainter {
         chart.bottom - ((v - low) / (high - low)) * chart.height;
     final grid = Paint()..color = gridColor..strokeWidth = 1;
     final textStyle = TextStyle(color: labelColor, fontSize: 9);
+    final tp = TextPainter(textDirection: TextDirection.ltr);
     for (var i = 0; i <= 3; i++) {
       final gy = chart.top + chart.height * i / 3;
       canvas.drawLine(Offset(chart.left, gy), Offset(chart.right, gy), grid);
       final value = high - (high - low) * i / 3;
-      final tp = TextPainter(text: TextSpan(text: value.toStringAsFixed(0), style: textStyle),
-        textDirection: TextDirection.ltr)..layout(maxWidth: left - 5);
+      tp.text = TextSpan(text: value.toStringAsFixed(0), style: textStyle);
+      tp.layout(maxWidth: left - 5);
       tp.paint(canvas, Offset(0, gy - tp.height / 2));
     }
     final path = Path();
@@ -1893,10 +1894,12 @@ class _TradeReportLinePainter extends CustomPainter {
       final x = chart.left + chart.width * index / (values.length - 1);
       canvas.drawCircle(Offset(x, y(values[index])), 3.5, Paint()..color = lineColor);
     }
-    final first = TextPainter(text: TextSpan(text: 'First', style: textStyle), textDirection: TextDirection.ltr)..layout();
-    final last = TextPainter(text: TextSpan(text: 'Latest', style: textStyle), textDirection: TextDirection.ltr)..layout();
-    first.paint(canvas, Offset(chart.left, chart.bottom + 7));
-    last.paint(canvas, Offset(chart.right - last.width, chart.bottom + 7));
+    tp.text = TextSpan(text: 'First', style: textStyle);
+    tp.layout();
+    tp.paint(canvas, Offset(chart.left, chart.bottom + 7));
+    tp.text = TextSpan(text: 'Latest', style: textStyle);
+    tp.layout();
+    tp.paint(canvas, Offset(chart.right - tp.width, chart.bottom + 7));
   }
 
   @override
@@ -1937,6 +1940,7 @@ class _TradeReportBarPainter extends CustomPainter {
     canvas.drawLine(Offset(chart.left, zeroY), Offset(chart.right, zeroY), grid);
     final slot = chart.width / values.length;
     final barWidth = math.min(25.0, slot * .52).toDouble();
+    final tp = TextPainter(textDirection: TextDirection.ltr);
     for (var i = 0; i < values.length; i++) {
       final value = values[i];
       final barHeight = (value.abs() / maxAbs) * (chart.height * .43);
@@ -1947,9 +1951,11 @@ class _TradeReportBarPainter extends CustomPainter {
       canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(4)),
         Paint()..color = value >= 0 ? positiveColor : negativeColor);
       final label = labels[i].length > 7 ? labels[i].substring(0, 7) : labels[i];
-      final tp = TextPainter(text: TextSpan(text: label,
-        style: TextStyle(color: labelColor, fontSize: math.min(9.0, slot * .24).toDouble())),
-        textDirection: TextDirection.ltr)..layout(maxWidth: slot);
+      tp.text = TextSpan(
+        text: label,
+        style: TextStyle(color: labelColor, fontSize: math.min(9.0, slot * .24).toDouble()),
+      );
+      tp.layout(maxWidth: slot);
       tp.paint(canvas, Offset(x + (barWidth - tp.width) / 2, chart.bottom + 7));
     }
   }

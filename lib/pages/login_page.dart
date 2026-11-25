@@ -556,7 +556,7 @@ class _LoginPageState extends State<LoginPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: isDark
           ? const Color(0xFF18191E)
           : const Color(0xFFEAF1FB),
@@ -1789,6 +1789,21 @@ class _LoginBackgroundPainter extends CustomPainter {
 
   final bool isDark;
 
+  static final TextPainter _moreThanAGamePainter = TextPainter(
+    text: const TextSpan(
+      text: 'MORE\nTHAN\nA GAME',
+      style: TextStyle(
+        color: Color(0xFF0F1E36),
+        fontSize: 9.5,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 2.2,
+        height: 1.3,
+      ),
+    ),
+    textAlign: TextAlign.center,
+    textDirection: TextDirection.ltr,
+  )..layout();
+
   @override
   void paint(Canvas canvas, Size size) {
     if (isDark) {
@@ -1933,21 +1948,7 @@ class _LoginBackgroundPainter extends CustomPainter {
     }
 
     // 6. Bottom-right text: "MORE THAN A GAME" with gold horizontal line
-    final textPainter = TextPainter(
-      text: const TextSpan(
-        text: 'MORE\nTHAN\nA GAME',
-        style: TextStyle(
-          color: Color(0xFF0F1E36),
-          fontSize: 9.5,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 2.2,
-          height: 1.3,
-        ),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
+    final textPainter = _moreThanAGamePainter;
     final textX = size.width - textPainter.width - 24;
     final textY = size.height - textPainter.height - 30;
     if (textX > 0 && textY > 0) {

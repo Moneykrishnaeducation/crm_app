@@ -188,7 +188,8 @@ void main() {
 
       // Tap Trade Report
       await tester.tap(find.text('Trade Report'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
 
       expect(find.byType(TradeReportPage), findsOneWidget);
       expect(find.text('Trade Time'), findsOneWidget);

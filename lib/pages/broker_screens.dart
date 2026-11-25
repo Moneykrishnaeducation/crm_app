@@ -3832,48 +3832,55 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     );
   }
 
-  Widget _buildOpenPositionsList(BuildContext context, bool isDark) {
+  Widget _buildOpenPositionsSliver(BuildContext context, bool isDark) {
     if ((_accountsLoading && _remoteOpenPositions == null) ||
         _positionsLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(28),
-        child: Center(child: CircularProgressIndicator()),
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(28),
+          child: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
     if (_positionsError != null) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
-        child: Column(
-          children: [
-            Text(
-              _positionsError!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
-            ),
-            TextButton.icon(
-              onPressed: () => unawaited(_loadOpenPositions(_selectedLogin)),
-              icon: const Icon(LucideIcons.refreshCw, size: 15),
-              label: const Text('Retry'),
-            ),
-          ],
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
+          child: Column(
+            children: [
+              Text(
+                _positionsError!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+              ),
+              TextButton.icon(
+                onPressed: () => unawaited(_loadOpenPositions(_selectedLogin)),
+                icon: const Icon(LucideIcons.refreshCw, size: 15),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }
     final positions = _currentOpenPositions.where((p) => _matchesActivity('${p.symbol} ${p.id} ${p.isBuy ? 'buy' : 'sell'}', p.openTime)).toList();
-    if (positions.isEmpty) return _buildEmptyState(context);
+    if (positions.isEmpty) return SliverToBoxAdapter(child: _buildEmptyState(context));
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+    return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-      itemCount: positions.length,
-      itemBuilder: (context, index) {
-        final pos = positions[index];
-        final isProfit = pos.profit >= 0;
-        final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
-        final isClosing = _closingPositionTickets.contains(pos.id);
+      sliver: SliverList.builder(
+        itemCount: positions.length,
+        itemBuilder: (context, index) => _buildOpenPositionCard(context, positions[index], isDark),
+      ),
+    );
+  }
 
-        return Container(
+  Widget _buildOpenPositionCard(BuildContext context, ActivityOpenPosition pos, bool isDark) {
+    final isProfit = pos.profit >= 0;
+    final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final isClosing = _closingPositionTickets.contains(pos.id);
+
+    return Container(
           margin: const EdgeInsets.only(bottom: 9),
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
@@ -4069,80 +4076,84 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
             ],
           ),
         );
-      },
-    );
   }
 
-  Widget _buildPendingOrdersList(BuildContext context, bool isDark) {
+  Widget _buildPendingOrdersSliver(BuildContext context, bool isDark) {
     if ((_accountsLoading && _remotePendingOrders == null) ||
         _pendingLoading) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 40),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(strokeWidth: 2.6),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Loading live pending orders...',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 2.6),
                 ),
-              ),
-            ],
+                SizedBox(height: 12),
+                Text(
+                  'Loading live pending orders...',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     if (_pendingError != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _pendingError!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _pendingError!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextButton.icon(
-                onPressed: () => unawaited(_loadPendingOrders(_selectedLogin)),
-                icon: const Icon(LucideIcons.refreshCw, size: 15),
-                label: const Text('Retry'),
-              ),
-            ],
+                const SizedBox(height: 10),
+                TextButton.icon(
+                  onPressed: () => unawaited(_loadPendingOrders(_selectedLogin)),
+                  icon: const Icon(LucideIcons.refreshCw, size: 15),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     final orders = _currentPendingOrders.where((o) => _matchesActivity('${o.symbol} ${o.orderType} ${o.id}', o.placedTime)).toList();
-    if (orders.isEmpty) return _buildEmptyState(context);
+    if (orders.isEmpty) return SliverToBoxAdapter(child: _buildEmptyState(context));
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+    return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        final isBuy = order.orderType.toLowerCase().contains('buy');
+      sliver: SliverList.builder(
+        itemCount: orders.length,
+        itemBuilder: (context, index) => _buildPendingOrderCard(context, orders[index], isDark),
+      ),
+    );
+  }
 
-        return Container(
+  Widget _buildPendingOrderCard(BuildContext context, ActivityPendingOrder order, bool isDark) {
+    final isBuy = order.orderType.toLowerCase().contains('buy');
+
+    return Container(
           margin: const EdgeInsets.only(bottom: 9),
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
@@ -4305,53 +4316,58 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
             ],
           ),
         );
-      },
-    );
   }
 
-  Widget _buildClosedPositionsList(BuildContext context, bool isDark) {
+  Widget _buildClosedPositionsSliver(BuildContext context, bool isDark) {
     if (_closedPositionsLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(child: CircularProgressIndicator()),
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
     if (_closedPositionsError != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
-        child: Column(
-          children: [
-            Text(
-              _closedPositionsError!,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontSize: 12,
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+          child: Column(
+            children: [
+              Text(
+                _closedPositionsError!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 12,
+                ),
               ),
-            ),
-            TextButton.icon(
-              onPressed: () => unawaited(_loadClosedPositions(_selectedLogin)),
-              icon: const Icon(LucideIcons.refreshCw, size: 15),
-              label: const Text('Retry'),
-            ),
-          ],
+              TextButton.icon(
+                onPressed: () => unawaited(_loadClosedPositions(_selectedLogin)),
+                icon: const Icon(LucideIcons.refreshCw, size: 15),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }
     final positions = _currentClosedPositions.where((p) => _matchesActivity('${p.symbol} ${p.id} ${p.isBuy ? 'buy' : 'sell'}', p.closeTime)).toList();
-    if (positions.isEmpty) return _buildEmptyState(context);
+    if (positions.isEmpty) return SliverToBoxAdapter(child: _buildEmptyState(context));
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+    return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-      itemCount: positions.length,
-      itemBuilder: (context, index) {
-        final pos = positions[index];
-        final isProfit = pos.netProfit >= 0;
-        final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+      sliver: SliverList.builder(
+        itemCount: positions.length,
+        itemBuilder: (context, index) => _buildClosedPositionCard(context, positions[index], isDark),
+      ),
+    );
+  }
 
-        return Container(
+  Widget _buildClosedPositionCard(BuildContext context, ActivityClosedPosition pos, bool isDark) {
+    final isProfit = pos.netProfit >= 0;
+    final profitColor = isProfit ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+
+    return Container(
           margin: const EdgeInsets.only(bottom: 9),
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
@@ -4504,8 +4520,6 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
             ],
           ),
         );
-      },
-    );
   }
 
   Widget _buildFundsTab(BuildContext context, bool isDark) {
@@ -4778,38 +4792,51 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: width > 900 ? 860 : 680),
-          child: ListView(
+          child: CustomScrollView(
             controller: widget.scrollController,
-            padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
-            children: [
+            slivers: [
               // Accessible title tag for widget tests
-              const SizedBox(
-                width: 0,
-                height: 0,
-                child: Text(
-                  'Transactions',
-                  style: TextStyle(fontSize: 0, color: Colors.transparent),
+              const SliverToBoxAdapter(
+                child: SizedBox(
+                  width: 0,
+                  height: 0,
+                  child: Text(
+                    'Transactions',
+                    style: TextStyle(fontSize: 0, color: Colors.transparent),
+                  ),
                 ),
               ),
               // Hero Equity & Balance Card
-              _buildHeroCard(
-                context,
-                activeAccount,
-                _currentEquity,
-                _currentBalance,
-                _currentTotalPL,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _buildHeroCard(
+                    context,
+                    activeAccount,
+                    _currentEquity,
+                    _currentBalance,
+                    _currentTotalPL,
+                  ),
+                ),
               ),
               // 4-Tab Navigation Bar
-              _buildTabBar(context, openCount, pendingCount),
-              _buildActivityFilters(context, isDark),
+              SliverToBoxAdapter(
+                child: _buildTabBar(context, openCount, pendingCount),
+              ),
+              SliverToBoxAdapter(
+                child: _buildActivityFilters(context, isDark),
+              ),
               // Tab Content Area
               switch (_activeTab) {
-                0 => _buildOpenPositionsList(context, isDark),
-                1 => _buildPendingOrdersList(context, isDark),
-                2 => _buildClosedPositionsList(context, isDark),
-                3 => _buildFundsTab(context, isDark),
-                _ => _buildEmptyState(context),
+                0 => _buildOpenPositionsSliver(context, isDark),
+                1 => _buildPendingOrdersSliver(context, isDark),
+                2 => _buildClosedPositionsSliver(context, isDark),
+                3 => SliverToBoxAdapter(child: _buildFundsTab(context, isDark)),
+                _ => SliverToBoxAdapter(child: _buildEmptyState(context)),
               },
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 110),
+              ),
             ],
           ),
         ),

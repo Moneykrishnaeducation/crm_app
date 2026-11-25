@@ -133,6 +133,8 @@ class AuthApi {
   final Map<String, dynamic> _responseEncryptionPrivateKeys = <String, dynamic>{};
   ({String publicKey, String keyId, RSAPrivateKey privateKey})? _cachedSessionKeyPair;
   Future<({String publicKey, String keyId, RSAPrivateKey privateKey})>? _generatingSessionKeyPair;
+  int _sessionKeyUseCount = 0;
+  DateTime? _sessionKeyCreatedAt;
 
   bool get hasToken =>
       (_accessToken != null && _accessToken!.isNotEmpty) ||
@@ -393,9 +395,16 @@ class AuthApi {
   }
 
   Future<({String publicKey, String keyId})> _getOrCreateResponseEncryptionKeyPair() async {
+    final now = DateTime.now();
     final cached = _cachedSessionKeyPair;
     if (cached != null) {
-      return (publicKey: cached.publicKey, keyId: cached.keyId);
+      final isExpired = _sessionKeyCreatedAt != null &&
+          now.difference(_sessionKeyCreatedAt!).inMinutes > 30;
+      if (_sessionKeyUseCount < 100 && !isExpired) {
+        _sessionKeyUseCount++;
+        return (publicKey: cached.publicKey, keyId: cached.keyId);
+      }
+      _cachedSessionKeyPair = null;
     }
     final inProgress = _generatingSessionKeyPair;
     if (inProgress != null) {
@@ -411,6 +420,8 @@ class AuthApi {
         privateKey: RSAPrivateKey(data.modulus, data.privateExponent, data.p, data.q),
       );
       _cachedSessionKeyPair = pair;
+      _sessionKeyCreatedAt = DateTime.now();
+      _sessionKeyUseCount = 1;
       return pair;
     });
 

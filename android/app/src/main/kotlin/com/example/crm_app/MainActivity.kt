@@ -90,6 +90,16 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "startPositionService" -> {
                     try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            val permissionCheck = ContextCompat.checkSelfPermission(
+                                this,
+                                android.Manifest.permission.POST_NOTIFICATIONS
+                            )
+                            if (permissionCheck != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                result.success(false)
+                                return@setMethodCallHandler
+                            }
+                        }
                         val serviceIntent = Intent(this, TradeLiveUpdateService::class.java).apply {
                             putExtra("url", call.argument<String>("url"))
                             putExtra("host", call.argument<String>("host"))

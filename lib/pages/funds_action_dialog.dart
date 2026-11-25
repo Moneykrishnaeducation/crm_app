@@ -1764,12 +1764,16 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        item['label'] as String,
-                        style: TextStyle(
-                          color: textPrimary,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
+                      Expanded(
+                        child: Text(
+                          item['label'] as String,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -1781,6 +1785,8 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                         ),
                         child: Text(
                           item['tier'] as String,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Color(0xFF2563EB),
                             fontSize: 8,

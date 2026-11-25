@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../app_notifications.dart';
 import '../pages/funds_action_dialog.dart';
+import 'pool_trades_modal.dart';
 
 // -----------------------------------------------------------------------------
 // MAM MASTER ACCOUNT DATA MODEL
@@ -868,123 +869,16 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   }
 
   void _openPerformanceSheet(MamWorkspaceColors c) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: c.border),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.muted.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Node Performance Stats',
-                    style: GoogleFonts.inter(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: c.text,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // 2x2 Grid of Performance Metrics
-              Row(
-                children: [
-                  Expanded(
-                    child: _statBox(c, 'Monthly ROI', '+${_master.monthlyGain > 0 ? _master.monthlyGain.toStringAsFixed(1) : "14.8"}%', c.green),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _statBox(c, 'Win Rate', '78.4%', c.blue),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _statBox(c, 'Max Drawdown', '6.2%', c.gold),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _statBox(c, 'Profit Factor', '2.34', c.text),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: c.blue,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    // Show actual MT5 MAM positions and live trade metrics instead of
+    // placeholder ROI / win-rate figures.
+    PoolTradesModal.show(
+      context,
+      poolLogin: _master.login,
+      poolName: _master.name,
+      isManager: true,
     );
   }
 
-  Widget _statBox(MamWorkspaceColors c, String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: c.subCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: c.subBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(fontSize: 11, color: c.muted)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ---------------------------------------------------------------------------
   // MAIN BUILD

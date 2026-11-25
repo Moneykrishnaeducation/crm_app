@@ -1184,6 +1184,35 @@ class AuthApi {
         },
       );
 
+  /// Fetch investor trading accounts linked to a MAM master account.
+  Future<List<Map<String, dynamic>>> getMamInvestors(String mamId) async {
+    final dynamic response = await _request(
+      'GET',
+      'mam-investors/${Uri.encodeComponent(mamId)}/',
+    );
+
+    dynamic data = response;
+    if (data is Map && data['results'] is List) {
+      data = data['results'];
+    } else if (data is Map && data['data'] is List) {
+      data = data['data'];
+    } else if (data is Map && data['investors'] is List) {
+      data = data['investors'];
+    }
+
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => item.cast<String, dynamic>())
+          .toList();
+    }
+
+    // The backend returns a message object when there are no linked investors.
+    if (data is Map && data['message'] != null) return const [];
+
+    throw const AuthApiException('Unexpected MAM investors response format.');
+  }
+
   /// Live USD to INR exchange rate
   Future<double> getUsdInrRate() async {
     try {

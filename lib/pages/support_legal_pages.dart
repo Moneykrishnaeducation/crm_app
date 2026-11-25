@@ -36,8 +36,8 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
   List<Map<String, dynamic>> get _visibleTickets => _filter == 'All' ? _tickets : _tickets.where((t) => _ticketStatus(t) == _filter.toLowerCase()).toList();
 
   void _openTicketDetails(Map<String, dynamic> ticket) async {
-    final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => _LiveTicketDetailsPage(ticket: ticket)));
-    if (changed == true && mounted) _loadTickets();
+    await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => _LiveTicketDetailsPage(ticket: ticket)));
+    if (mounted) _loadTickets();
   }
 
   Future<void> _openRequestForm() async {
@@ -90,16 +90,6 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
         ]),
       ),
     );
-  }
-
-  Future<void> _openRequestForm() async {
-    final submitted = await showModalBottomSheet<bool>(
-      context: context, isScrollControlled: true, useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _LiveTicketRequestSheet(),
-    );
-    if (!mounted || submitted != true) return;
-    await _loadTickets();
   }
 
   @override
@@ -854,7 +844,7 @@ class _LiveTicketRequestSheetState extends State<_LiveTicketRequestSheet> {
                 ]);
               }),
               const SizedBox(height: 16),
-              TextFormField(controller: _subject, maxLength: 200, decoration: dec('Subject').copyWith(counterText: ''),
+              TextFormField(controller: _subject, maxLength: 175, decoration: dec('Subject').copyWith(counterText: ''),
                 validator: (v) => v == null || v.trim().isEmpty ? 'Enter a subject' : null),
               const SizedBox(height: 10),
               TextFormField(controller: _description, minLines: 4, maxLines: 7, maxLength: 5000,

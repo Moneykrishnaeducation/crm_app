@@ -28,9 +28,9 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
   }
 
   String _ticketStatus(Map<String, dynamic> ticket) => (ticket['status'] ?? 'open').toString().toLowerCase();
-  String _ticketSubject(Map<String, dynamic> ticket) => (ticket['subject'] ?? 'Support request').toString().replaceFirst(RegExp(r'^\\[[^\\]]+\\]\\s*'), '');
+  String _ticketSubject(Map<String, dynamic> ticket) => (ticket['subject'] ?? 'Support request').toString().replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
   String _ticketDepartment(Map<String, dynamic> ticket) {
-    final match = RegExp(r'^\\[([^\\]]+)\\]').firstMatch((ticket['subject'] ?? '').toString());
+    final match = RegExp(r'^\[([^\]]+)\]').firstMatch((ticket['subject'] ?? '').toString());
     return match?.group(1) ?? 'General Support';
   }
   List<Map<String, dynamic>> get _visibleTickets => _filter == 'All' ? _tickets : _tickets.where((t) => _ticketStatus(t) == _filter.toLowerCase()).toList();

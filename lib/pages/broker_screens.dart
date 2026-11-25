@@ -305,6 +305,49 @@ class _DashboardPerformanceCard extends StatelessWidget {
   }
 }
 
+class _PortfolioLinePainter extends CustomPainter {
+  const _PortfolioLinePainter({required this.values, required this.lineColor, required this.fillColor});
+  final List<double> values;
+  final Color lineColor;
+  final Color fillColor;
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || size.isEmpty) return;
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    final range = (maxValue - minValue).abs() < .001 ? 1.0 : maxValue - minValue;
+    final points = List<Offset>.generate(values.length, (i) => Offset(size.width * i / (values.length - 1), size.height - 7 - ((values[i] - minValue) / range) * (size.height - 18)));
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (var i = 1; i < points.length; i++) {
+      final prev = points[i - 1], current = points[i], mid = (prev.dx + current.dx) / 2;
+      path.cubicTo(mid, prev.dy, mid, current.dy, current.dx, current.dy);
+    }
+    final area = Path.from(path)..lineTo(size.width, size.height)..lineTo(0, size.height)..close();
+    canvas.drawPath(area, Paint()..color = fillColor);
+    canvas.drawPath(path, Paint()..color = lineColor..style = PaintingStyle.stroke..strokeWidth = 2.4..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+    canvas.drawCircle(points.last, 3.5, Paint()..color = lineColor);
+  }
+  @override
+  bool shouldRepaint(covariant _PortfolioLinePainter old) => old.values != values || old.lineColor != lineColor || old.fillColor != fillColor;
+}
+
+class _PositionStat extends StatelessWidget {
+  const _PositionStat({required this.label, required this.value, required this.icon, this.positive = true});
+  final String label, value;
+  final IconData icon;
+  final bool positive;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    Icon(icon, size: 15, color: positive ? const Color(0xFF169B68) : const Color(0xFFD34B4B)),
+    const SizedBox(width: 7),
+    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
+      const SizedBox(height: 3),
+      Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w800)),
+    ])),
+  ]);
+}
+
 class _DashboardSectionHeading extends StatelessWidget {
   const _DashboardSectionHeading({
     required this.title,

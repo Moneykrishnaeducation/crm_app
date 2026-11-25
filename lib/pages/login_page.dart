@@ -547,8 +547,10 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             // 1. Full-screen decorative background graphic painter
             Positioned.fill(
-              child: CustomPaint(
-                painter: _LoginBackgroundPainter(isDark: isDark),
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: _LoginBackgroundPainter(isDark: isDark),
+                ),
               ),
             ),
 
@@ -570,7 +572,7 @@ class _LoginPageState extends State<LoginPage> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(38),
                           child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isDark

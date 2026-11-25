@@ -1034,7 +1034,6 @@ class _MarketSearchBottomSheetState extends State<MarketSearchBottomSheet>
                                 ),
                               )
                             : ListView.separated(
-                                shrinkWrap: true,
                                 padding: EdgeInsets.fromLTRB(
                                   16,
                                   8,
@@ -1531,7 +1530,6 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                 ),
                               )
                             : ListView.separated(
-                                shrinkWrap: true,
                                 padding: EdgeInsets.fromLTRB(
                                   16,
                                   8,

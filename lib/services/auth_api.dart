@@ -355,7 +355,7 @@ class AuthApi {
     try {
       decoded = response.body.isEmpty
           ? <String, dynamic>{}
-          : jsonDecode(response.body);
+          : await _decodeJsonBody(response.body);
     } on FormatException {
       _cleanupResponseKeyPair(responseKeyPair.keyId);
       throw AuthApiException(
@@ -420,6 +420,14 @@ class AuthApi {
     } finally {
       _generatingSessionKeyPair = null;
     }
+  }
+
+  static Future<dynamic> _decodeJsonBody(String body) async {
+    if (body.isEmpty) return <String, dynamic>{};
+    if (body.length > 50000) {
+      return await Isolate.run(() => jsonDecode(body));
+    }
+    return jsonDecode(body);
   }
 
   void _cleanupResponseKeyPair(String keyId) {
@@ -664,21 +672,27 @@ class AuthApi {
   }) async {
     await restoreSession();
     final keyPair = await _getOrCreateResponseEncryptionKeyPair();
-    final request = http.MultipartRequest(method, _uri(path))
-      ..headers.addAll(_headers)
-      ..headers['X-Response-Encryption-Key'] = keyPair.publicKey
-      ..fields.addAll(fields);
-    if (fileField != null && fileName != null && fileBytes != null) {
-      request.files.add(http.MultipartFile.fromBytes(
-        fileField, fileBytes, filename: fileName,
-      ));
+    http.Response response;
+    try {
+      final request = http.MultipartRequest(method, _uri(path))
+        ..headers.addAll(_headers)
+        ..headers['X-Response-Encryption-Key'] = keyPair.publicKey
+        ..fields.addAll(fields);
+      if (fileField != null && fileName != null && fileBytes != null) {
+        request.files.add(http.MultipartFile.fromBytes(
+          fileField, fileBytes, filename: fileName,
+        ));
+      }
+      final streamed = await _client.send(request).timeout(const Duration(seconds: 35));
+      response = await http.Response.fromStream(streamed);
+    } catch (_) {
+      _cleanupResponseKeyPair(keyPair.keyId);
+      rethrow;
     }
-    final streamed = await _client.send(request).timeout(const Duration(seconds: 35));
-    final response = await http.Response.fromStream(streamed);
     _captureSession(response);
     dynamic decoded;
     try {
-      decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+      decoded = response.body.isEmpty ? <String, dynamic>{} : await _decodeJsonBody(response.body);
     } on FormatException {
       _cleanupResponseKeyPair(keyPair.keyId);
       throw AuthApiException('The server returned an invalid response.', statusCode: response.statusCode);
@@ -1609,14 +1623,20 @@ class AuthApi {
       ),
     );
 
-    final streamed = await _client.send(request).timeout(
-      const Duration(seconds: 75),
-    );
-    final response = await http.Response.fromStream(streamed);
+    http.Response response;
+    try {
+      final streamed = await _client.send(request).timeout(
+        const Duration(seconds: 75),
+      );
+      response = await http.Response.fromStream(streamed);
+    } catch (_) {
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
+      rethrow;
+    }
     _captureSession(response);
     dynamic decoded;
     try {
-      decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+      decoded = response.body.isEmpty ? <String, dynamic>{} : await _decodeJsonBody(response.body);
     } on FormatException {
       _cleanupResponseKeyPair(responseKeyPair.keyId);
       throw AuthApiException(
@@ -1830,10 +1850,16 @@ class AuthApi {
       ));
     }
 
-    final streamed = await _client
-        .send(request)
-        .timeout(const Duration(seconds: 75));
-    final response = await http.Response.fromStream(streamed);
+    http.Response response;
+    try {
+      final streamed = await _client
+          .send(request)
+          .timeout(const Duration(seconds: 75));
+      response = await http.Response.fromStream(streamed);
+    } catch (_) {
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
+      rethrow;
+    }
     _captureSession(response);
 
     final isSuccessfulStatus =
@@ -1843,7 +1869,7 @@ class AuthApi {
     try {
       decoded = response.body.isEmpty
           ? <String, dynamic>{}
-          : jsonDecode(response.body);
+          : await _decodeJsonBody(response.body);
     } on FormatException {
       _cleanupResponseKeyPair(responseKeyPair.keyId);
       if (isSuccessfulStatus) {
@@ -2070,17 +2096,23 @@ class AuthApi {
     request.headers.addAll(headers);
     request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
 
-    final streamed = await _client
-        .send(request)
-        .timeout(const Duration(seconds: 45));
-    final response = await http.Response.fromStream(streamed);
+    http.Response response;
+    try {
+      final streamed = await _client
+          .send(request)
+          .timeout(const Duration(seconds: 45));
+      response = await http.Response.fromStream(streamed);
+    } catch (_) {
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
+      rethrow;
+    }
     _captureSession(response);
 
     dynamic decoded;
     try {
       decoded = response.body.isEmpty
           ? <String, dynamic>{}
-          : jsonDecode(response.body);
+          : await _decodeJsonBody(response.body);
     } on FormatException {
       _cleanupResponseKeyPair(responseKeyPair.keyId);
       throw AuthApiException(

@@ -1820,6 +1820,12 @@ class MamPageState extends State<MamPage> {
         try {
           final investors = await AuthApi.instance.getMamInvestors(master.login);
           master.investorsCount = investors.length;
+          final investorCapital = investors.fold<double>(
+            0.0,
+            (total, investor) => total + _apiDouble(investor['balance']),
+          );
+          // Managed AUM reflects the master balance plus linked investor capital.
+          master.totalAum = master.balance + investorCapital;
         } catch (error) {
           debugPrint('Could not load investors for MAM ${master.login}: $error');
         }

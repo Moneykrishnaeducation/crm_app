@@ -135,7 +135,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
   double _amount(String value) => double.tryParse(value.replaceAll(RegExp(r'[^0-9.+-]'), '')) ?? 0;
   String _money(double value) {
     final currency = account?.currency ?? 'USD';
-    final prefix = currency.toUpperCase() == 'USD' ? r'\$' : '$currency ';
+    final prefix = currency.toUpperCase() == 'USD' ? '\$' : '$currency ';
     return '$prefix${value.abs().toStringAsFixed(2)}';
   }
 
@@ -183,7 +183,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
                 ),
-                child: const Text(
+                child: Text(
                   '${account?.currency ?? 'USD'}  ·  LIVE ACCOUNT',
                   style: TextStyle(
                     color: Colors.white,
@@ -292,8 +292,8 @@ class _PortfolioSummaryCard extends StatelessWidget {
                   visible ? '${pnl >= 0 ? '+' : '-'}${_money(pnl)}' : '••••••',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF65E6B0),
+                  style: TextStyle(
+                    color: pnl >= 0 ? const Color(0xFF65E6B0) : const Color(0xFFFFA4A4),
                     fontSize: 21,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.6,
@@ -301,7 +301,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Illustrative data',
+                  account == null ? 'No trading account connected' : 'Equity ${visible ? _money(equity) : '••••••'}',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.68),
                     fontSize: 9,

@@ -1167,6 +1167,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                       activeIndex: primaryIndex,
                                       child: BrokerDashboardPage(
                                         accounts: _accounts,
+                                        onRefreshAccounts: () => _loadTradingAccounts(refresh: true),
                                         balanceVisible: _balanceVisible,
                                         onToggleBalance: () => setState(
                                           () => _balanceVisible =

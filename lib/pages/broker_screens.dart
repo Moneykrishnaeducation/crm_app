@@ -305,14 +305,14 @@ class _DashboardPerformanceCard extends StatelessWidget {
         const SizedBox(height: 12),
         if (loading) const LinearProgressIndicator(minHeight: 2)
         else if (values.length < 2) Text(error ?? 'Not enough closed-trade history to draw a trend yet.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11))
-        else SizedBox(height: 112, child: CustomPaint(size: Size.infinite, painter: _PortfolioLinePainter(values: values, lineColor: color, fillColor: color.withValues(alpha: .10)))),
+        else SizedBox(height: 112, child: CustomPaint(size: Size.infinite, painter: _DashboardPortfolioLinePainter(values: values, lineColor: color, fillColor: color.withValues(alpha: .10)))),
       ]),
     );
   }
 }
 
-class _PortfolioLinePainter extends CustomPainter {
-  const _PortfolioLinePainter({required this.values, required this.lineColor, required this.fillColor});
+class _DashboardPortfolioLinePainter extends CustomPainter {
+  const _DashboardPortfolioLinePainter({required this.values, required this.lineColor, required this.fillColor});
   final List<double> values;
   final Color lineColor;
   final Color fillColor;
@@ -334,7 +334,7 @@ class _PortfolioLinePainter extends CustomPainter {
     canvas.drawCircle(points.last, 3.5, Paint()..color = lineColor);
   }
   @override
-  bool shouldRepaint(covariant _PortfolioLinePainter old) => old.values != values || old.lineColor != lineColor || old.fillColor != fillColor;
+  bool shouldRepaint(covariant _DashboardPortfolioLinePainter old) => old.values != values || old.lineColor != lineColor || old.fillColor != fillColor;
 }
 
 class _DashboardSectionHeading extends StatelessWidget {

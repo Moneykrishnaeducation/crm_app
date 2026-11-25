@@ -11,6 +11,8 @@ void main() {
           onToggleBalance: () {},
           onSelectPage: (_) {},
           onOpenReport: () {},
+          accounts: const [],
+          onRefreshAccounts: () async {},
         ),
       ),
     );

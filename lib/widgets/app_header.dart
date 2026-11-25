@@ -111,38 +111,24 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
     Widget? overlay,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final border = theme.dividerColor.withValues(alpha: isDark ? 0.55 : 0.72);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Tooltip(
         message: tooltip,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(13),
-            child: Ink(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: isDark ? 0.48 : 0.68,
-                ),
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: border, width: 0.8),
-              ),
-              child: Center(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(icon, size: 18, color: iconColor ?? theme.colorScheme.onSurface),
-                    if (overlay != null) overlay,
-                  ],
-                ),
-              ),
-            ),
+        child: IconButton(
+          onPressed: onPressed,
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.all(8),
+          constraints: const BoxConstraints.tightFor(width: 38, height: 42),
+          splashRadius: 20,
+          color: iconColor ?? theme.colorScheme.onSurface,
+          icon: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Icon(icon, size: 20),
+              if (overlay != null) overlay,
+            ],
           ),
         ),
       ),

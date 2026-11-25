@@ -117,15 +117,9 @@ class AvailableMamPool {
 // VISUAL RISK GAUGE METER (3-BAR SEGMENTED)
 // -----------------------------------------------------------------------------
 class _RiskMeter extends StatelessWidget {
-  const _RiskMeter({
-    required this.level,
-    this.barWidth = 3.0,
-    this.barSpacing = 2.0,
-  });
+  const _RiskMeter({required this.level});
 
   final int level; // 1 = Low, 2 = Med, 3 = High
-  final double barWidth;
-  final double barSpacing;
 
   @override
   Widget build(BuildContext context) {
@@ -147,9 +141,9 @@ class _RiskMeter extends StatelessWidget {
       children: [
         for (int i = 0; i < 3; i++)
           Container(
-            width: barWidth,
+            width: 3.0,
             height: heights[i],
-            margin: EdgeInsets.only(right: i < 2 ? barSpacing : 0),
+            margin: EdgeInsets.only(right: i < 2 ? 2.0 : 0),
             decoration: BoxDecoration(
               color: i < level
                   ? activeColor
@@ -1055,23 +1049,6 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
       onInvestTap: () {
         Navigator.pop(context);
         _openInvestModal(pool);
-      },
-    );
-  }
-
-  void _openPasswordInvestModal(AvailableMamPool pool, MamManagerProfileData data) {
-    showInvestInManagerModal(
-      context,
-      manager: data,
-      onConfirmed: (password) {
-        final allocatedAmount = 1000.0;
-        setState(() {
-          pool.copiersCount += 1;
-          pool.totalAum += allocatedAmount;
-        });
-        if (widget.onJoinedPool != null) {
-          widget.onJoinedPool!(pool);
-        }
       },
     );
   }

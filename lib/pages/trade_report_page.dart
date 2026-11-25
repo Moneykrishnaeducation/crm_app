@@ -24,7 +24,6 @@ class _TradeReportPageState extends State<TradeReportPage> {
   late DateTime _endDate;
   String _selectedPreset = 'custom';
   String _symbolFilter = 'All Symbols';
-  String _timeframe = 'Day';
   bool _hideNetDeposit = false;
   bool _loadingTrades = false;
   String? _tradeLoadError;
@@ -34,9 +33,6 @@ class _TradeReportPageState extends State<TradeReportPage> {
   bool _loadingReportData = false;
   String? _reportDataError;
   Map<String, dynamic>? _reportData;
-
-  Offset? _equityScrubOffset;
-  Offset? _pnlScrubOffset;
 
   final List<String> _symbolOptions = const [
     'All Symbols',
@@ -113,11 +109,13 @@ class _TradeReportPageState extends State<TradeReportPage> {
     if (account == null || requestedLogin.isEmpty ||
         account.login != requestedLogin) {
       _requestGeneration++;
-      if (mounted) setState(() {
-        _loadedTrades = <BrokerTradeRecord>[];
-        _loadingTrades = false;
-        _tradeLoadError = null;
-      });
+      if (mounted) {
+        setState(() {
+          _loadedTrades = <BrokerTradeRecord>[];
+          _loadingTrades = false;
+          _tradeLoadError = null;
+        });
+      }
       return;
     }
     final generation = ++_requestGeneration;
@@ -1323,9 +1321,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
     Widget metric(String label, double value, Color valueColor, {bool isCount = false}) {
       final displayValue = isCount
           ? value.toInt().toString()
-          : currency + ' ' +
-              ((label == 'Net cash flow' && value < 0) ? '-' : '') +
-              value.abs().toStringAsFixed(2);
+          : '$currency ${(label == 'Net cash flow' && value < 0) ? '-' : ''}${value.abs().toStringAsFixed(2)}';
       return Expanded(
         child: Container(
           padding: const EdgeInsets.all(13),
@@ -1426,7 +1422,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
             ),
             const SizedBox(height: 7),
             Text(
-              count.toString() + ' approved cash-flow transactions in the selected period',
+              '$count approved cash-flow transactions in the selected period',
               style: TextStyle(fontSize: 10, color: muted),
             ),
           ],
@@ -1441,202 +1437,6 @@ class _TradeReportPageState extends State<TradeReportPage> {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDepositWithdrawGrid_UNUSED(
-    Color bg,
-    Color border,
-    Color muted,
-    Color title,
-    bool isDark,
-  ) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: border, width: 0.8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Net Deposit (USD)', style: TextStyle(fontSize: 11, color: muted)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(LucideIcons.creditCard, size: 14, color: Color(0xFF2563EB)),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _hideNetDeposit ? '••••••' : '0.00',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _hideNetDeposit = !_hideNetDeposit);
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(4),
-                            child: Icon(
-                              _hideNetDeposit ? LucideIcons.eyeOff : LucideIcons.eye,
-                              size: 15,
-                              color: muted,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: border, width: 0.8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Deposit/Withdraw Count', style: TextStyle(fontSize: 11, color: muted)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(LucideIcons.refreshCw, size: 14, color: Color(0xFF2563EB)),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('0', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: border, width: 0.8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Total Deposit (USD)', style: TextStyle(fontSize: 11, color: muted)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(LucideIcons.arrowDownToLine, size: 14, color: Color(0xFF2563EB)),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: border, width: 0.8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Total Withdraw (USD)', style: TextStyle(fontSize: 11, color: muted)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(LucideIcons.arrowUpFromLine, size: 14, color: Color(0xFF2563EB)),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('0.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: title)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -1804,7 +1604,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('P&L Analysis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: title)),
           const SizedBox(height: 3),
-          Text('Closed trade results · ${_symbolFilter}', style: TextStyle(fontSize: 11, color: muted)),
+          Text('Closed trade results · $_symbolFilter', style: TextStyle(fontSize: 11, color: muted)),
         ])),
         PopupMenuButton<String>(
           initialValue: _symbolFilter,
@@ -1950,39 +1750,6 @@ class _TradeReportPageState extends State<TradeReportPage> {
     const SizedBox(width: 5),
     Text(label, style: TextStyle(fontSize: 9, color: muted)),
   ]);
-
-  Widget _buildTimeframePill(String label, bool active) {
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() {
-          _timeframe = label;
-          _pnlScrubOffset = null;
-        });
-      },
-      borderRadius: BorderRadius.circular(6),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
-        decoration: BoxDecoration(
-          color: active ? const Color(0xFF2563EB) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active
-                ? Colors.white
-                : (Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF64748B)),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -2061,259 +1828,6 @@ class _VolumeArcGaugePainter extends CustomPainter {
       oldDelegate.isDark != isDark;
 }
 
-// -----------------------------------------------------------------------------
-// Equity Curve Painter (solid blue curve line with Y-grid and X-dates)
-// -----------------------------------------------------------------------------
-class _EquityCurvePainter extends CustomPainter {
-  const _EquityCurvePainter({
-    required this.isDark,
-    this.scrubOffset,
-  });
-  final bool isDark;
-  final Offset? scrubOffset;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const leftMargin = 28.0;
-    const bottomMargin = 22.0;
-    final chartWidth = size.width - leftMargin;
-    final chartHeight = size.height - bottomMargin;
-
-    final gridPaint = Paint()
-      ..color = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)
-      ..strokeWidth = 1.0;
-
-    final textStyle = TextStyle(
-      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-      fontSize: 10,
-      fontWeight: FontWeight.w400,
-    );
-
-    // Y-axis grid and labels: 1, 0.8, 0.6, 0.4, 0.2, 0
-    final yLabels = ['1', '0.8', '0.6', '0.4', '0.2', '0'];
-    for (int i = 0; i < yLabels.length; i++) {
-      final y = (chartHeight / (yLabels.length - 1)) * i;
-
-      canvas.drawLine(
-        Offset(leftMargin, y),
-        Offset(size.width, y),
-        gridPaint,
-      );
-
-      final tp = TextPainter(
-        text: TextSpan(text: yLabels[i], style: textStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(leftMargin - tp.width - 6, y - tp.height / 2));
-    }
-
-    final baselineY = chartHeight;
-
-    // Smooth blue gradient fill beneath the curve down to baseline
-    final fillGradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [
-        const Color(0xFF2563EB).withValues(alpha: 0.16),
-        const Color(0xFF2563EB).withValues(alpha: 0.0),
-      ],
-    );
-    final fillPaint = Paint()
-      ..shader = fillGradient.createShader(Rect.fromLTWH(leftMargin, baselineY - 26, chartWidth, 26))
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(Rect.fromLTWH(leftMargin, baselineY - 26, chartWidth, 26), fillPaint);
-
-    // Solid blue curve/line across baseline
-    final linePaint = Paint()
-      ..color = const Color(0xFF2563EB)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(
-      Offset(leftMargin, baselineY),
-      Offset(size.width, baselineY),
-      linePaint,
-    );
-
-    // X-axis dates: 10/18, 11/02, 11/17
-    final dates = ['10/18', '11/02', '11/17'];
-    for (int i = 0; i < dates.length; i++) {
-      final x = leftMargin + (chartWidth / (dates.length - 1)) * i;
-      final tp = TextPainter(
-        text: TextSpan(text: dates[i], style: textStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      var dx = x - tp.width / 2;
-      if (i == 0) dx = leftMargin;
-      if (i == dates.length - 1) dx = size.width - tp.width;
-
-      tp.paint(canvas, Offset(dx, chartHeight + 6));
-    }
-
-    // Touch scrubbing indicator
-    if (scrubOffset != null) {
-      final clampedX = scrubOffset!.dx.clamp(leftMargin, size.width);
-
-      // Guide line
-      final guidePaint = Paint()
-        ..color = const Color(0xFF2563EB).withValues(alpha: 0.45)
-        ..strokeWidth = 1.2
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(clampedX, 0),
-        Offset(clampedX, baselineY),
-        guidePaint,
-      );
-
-      // Glowing dot at baseline
-      final haloPaint = Paint()..color = const Color(0xFF2563EB).withValues(alpha: 0.25);
-      canvas.drawCircle(Offset(clampedX, baselineY), 8.0, haloPaint);
-
-      final dotOuterPaint = Paint()..color = const Color(0xFF2563EB);
-      canvas.drawCircle(Offset(clampedX, baselineY), 4.5, dotOuterPaint);
-
-      final dotInnerPaint = Paint()..color = Colors.white;
-      canvas.drawCircle(Offset(clampedX, baselineY), 2.0, dotInnerPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _EquityCurvePainter oldDelegate) =>
-      oldDelegate.isDark != isDark || oldDelegate.scrubOffset != scrubOffset;
-}
-
-// -----------------------------------------------------------------------------
-// P&L Analysis Chart Painter (dashed blue baseline across intervals)
-// -----------------------------------------------------------------------------
-class _PnLAnalysisChartPainter extends CustomPainter {
-  const _PnLAnalysisChartPainter({
-    required this.isDark,
-    required this.timeframe,
-    this.scrubOffset,
-  });
-  final bool isDark;
-  final String timeframe;
-  final Offset? scrubOffset;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const leftMargin = 28.0;
-    const bottomMargin = 22.0;
-    final chartWidth = size.width - leftMargin;
-    final chartHeight = size.height - bottomMargin;
-
-    final gridPaint = Paint()
-      ..color = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)
-      ..strokeWidth = 1.0;
-
-    final textStyle = TextStyle(
-      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-      fontSize: 10,
-      fontWeight: FontWeight.w400,
-    );
-
-    // Y-axis grid and labels: 1, 0.8, 0.6, 0.4, 0.2, 0
-    final yLabels = ['1', '0.8', '0.6', '0.4', '0.2', '0'];
-    for (int i = 0; i < yLabels.length; i++) {
-      final y = (chartHeight / (yLabels.length - 1)) * i;
-
-      canvas.drawLine(
-        Offset(leftMargin, y),
-        Offset(size.width, y),
-        gridPaint,
-      );
-
-      final tp = TextPainter(
-        text: TextSpan(text: yLabels[i], style: textStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(leftMargin - tp.width - 6, y - tp.height / 2));
-    }
-
-    // Dashed blue baseline along 0
-    final baselineY = chartHeight;
-    final dotPaint = Paint()
-      ..color = const Color(0xFF2563EB)
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round;
-
-    const dashWidth = 3.5;
-    const dashSpace = 4.0;
-    double curX = leftMargin;
-    while (curX < size.width) {
-      canvas.drawLine(
-        Offset(curX, baselineY),
-        Offset(math.min(curX + dashWidth, size.width), baselineY),
-        dotPaint,
-      );
-      curX += dashWidth + dashSpace;
-    }
-
-    // X-axis intervals
-    final labels = timeframe == 'Hour'
-        ? const ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59']
-        : const [
-            '10/18',
-            '10/22',
-            '10/26',
-            '10/30',
-            '11/03',
-            '11/07',
-            '11/11',
-            '11/15',
-          ];
-
-    for (int i = 0; i < labels.length; i++) {
-      final x = leftMargin + (chartWidth / (labels.length - 1)) * i;
-      final tp = TextPainter(
-        text: TextSpan(text: labels[i], style: textStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      var dx = x - tp.width / 2;
-      if (i == 0) dx = leftMargin;
-      if (i == labels.length - 1) dx = size.width - tp.width;
-
-      tp.paint(canvas, Offset(dx, chartHeight + 6));
-    }
-
-    // Touch scrubbing indicator
-    if (scrubOffset != null) {
-      final clampedX = scrubOffset!.dx.clamp(leftMargin, size.width);
-
-      // Guide line
-      final guidePaint = Paint()
-        ..color = const Color(0xFF2563EB).withValues(alpha: 0.45)
-        ..strokeWidth = 1.2
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(clampedX, 0),
-        Offset(clampedX, baselineY),
-        guidePaint,
-      );
-
-      // Glowing dot
-      final haloPaint = Paint()..color = const Color(0xFF2563EB).withValues(alpha: 0.25);
-      canvas.drawCircle(Offset(clampedX, baselineY), 8.0, haloPaint);
-
-      final dotOuterPaint = Paint()..color = const Color(0xFF2563EB);
-      canvas.drawCircle(Offset(clampedX, baselineY), 4.5, dotOuterPaint);
-
-      final dotInnerPaint = Paint()..color = Colors.white;
-      canvas.drawCircle(Offset(clampedX, baselineY), 2.0, dotInnerPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _PnLAnalysisChartPainter oldDelegate) =>
-      oldDelegate.isDark != isDark ||
-      oldDelegate.timeframe != timeframe ||
-      oldDelegate.scrubOffset != scrubOffset;
-}
-
-
 class _TradeReportLinePainter extends CustomPainter {
   const _TradeReportLinePainter({
     required this.values, required this.lineColor, required this.gridColor,
@@ -2333,7 +1847,8 @@ class _TradeReportLinePainter extends CustomPainter {
     final spread = (maxValue - minValue).abs();
     final pad = spread == 0 ? math.max(1.0, maxValue.abs() * .02).toDouble() : spread * .16;
     final low = minValue - pad, high = maxValue + pad;
-    final y = (double v) => chart.bottom - ((v - low) / (high - low)) * chart.height;
+    double y(double v) =>
+        chart.bottom - ((v - low) / (high - low)) * chart.height;
     final grid = Paint()..color = gridColor..strokeWidth = 1;
     final textStyle = TextStyle(color: labelColor, fontSize: 9);
     for (var i = 0; i <= 3; i++) {

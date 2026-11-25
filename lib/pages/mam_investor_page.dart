@@ -172,15 +172,9 @@ class MamInvestmentSubscription {
 // VISUAL RISK GAUGE METER (3-BAR SEGMENTED)
 // -----------------------------------------------------------------------------
 class _RiskMeter extends StatelessWidget {
-  const _RiskMeter({
-    required this.level,
-    this.barWidth = 3.5,
-    this.barSpacing = 2.5,
-  });
+  const _RiskMeter({required this.level});
 
   final int level; // 1 = Low, 2 = Med, 3 = High
-  final double barWidth;
-  final double barSpacing;
 
   @override
   Widget build(BuildContext context) {
@@ -202,9 +196,9 @@ class _RiskMeter extends StatelessWidget {
       children: [
         for (int i = 0; i < 3; i++)
           Container(
-            width: barWidth,
+            width: 3.5,
             height: heights[i],
-            margin: EdgeInsets.only(right: i < 2 ? barSpacing : 0),
+            margin: EdgeInsets.only(right: i < 2 ? 2.5 : 0),
             decoration: BoxDecoration(
               color: i < level
                   ? activeColor

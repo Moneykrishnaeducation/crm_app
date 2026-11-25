@@ -306,8 +306,11 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
       if (!mounted) return;
       setState(() {
         for (final file in accepted) {
-          if (_replyAttachments.length < 5) _replyAttachments.add(file);
-          else rejected = true;
+          if (_replyAttachments.length < 5) {
+            _replyAttachments.add(file);
+          } else {
+            rejected = true;
+          }
         }
       });
       if (rejected && mounted) {
@@ -316,9 +319,11 @@ class _MockTicketDetailsPageState extends State<_MockTicketDetailsPage> {
         );
       }
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not attach files: $error')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not attach files: $error')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _pickingReplyAttachment = false);
     }
@@ -929,6 +934,7 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
         if (bytes.isEmpty) throw Exception('Could not read the selected attachment.');
       }
       await AuthApi.instance.replySupportTicket(ticketId: _id, message: content, fileName: _file?.name, fileBytes: bytes);
+      if (!mounted) return;
       _reply.clear(); _file = null; FocusScope.of(context).unfocus();
       await _load();
     } catch (error) {
@@ -1000,7 +1006,9 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
                       await AuthApi.instance.changeSupportTicketStatus(_id, 'open');
                       await _load();
                     } catch (error) {
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not reopen ticket: $error')));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not reopen ticket: $error')));
+                      }
                     } finally { if (mounted) setState(() => _sending = false); }
                   }, child: const Text('Reopen')),
                 ])

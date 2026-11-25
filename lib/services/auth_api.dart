@@ -127,6 +127,8 @@ class AuthApi {
   final Map<String, String> _cookies = <String, String>{};
   String? _accessToken;
   static const _accessTokenStorageKey = 'vtindex_client_access_token';
+  String? _pushToken;
+  static const _pushTokenStorageKey = 'vtindex_client_push_token';
   Future<void>? _restoreFuture;
   final Map<String, dynamic> _responseEncryptionPrivateKeys = <String, dynamic>{};
   ({String publicKey, String keyId, RSAPrivateKey privateKey})? _cachedSessionKeyPair;
@@ -149,6 +151,7 @@ class AuthApi {
     try {
       final preferences = await SharedPreferences.getInstance();
       _accessToken ??= preferences.getString(_accessTokenStorageKey);
+      _pushToken ??= preferences.getString(_pushTokenStorageKey);
     } catch (_) {
       // A missing local session is handled by the API's 401 response.
     }
@@ -576,12 +579,40 @@ class AuthApi {
   Future<Map<String, dynamic>> registerPushDeviceToken({
     required String token,
     required String platform,
-  }) {
+  }) async {
+    _pushToken = token;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(_pushTokenStorageKey, token);
+    } catch (_) {}
     return _request(
       'POST',
       'notifications/push/register/',
       body: <String, dynamic>{'token': token, 'platform': platform},
     );
+  }
+
+  Future<String?> _resolveRegisteredPushToken() async {
+    if (_pushToken != null && _pushToken!.isNotEmpty) {
+      return _pushToken;
+    }
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final stored = preferences.getString(_pushTokenStorageKey);
+      if (stored != null && stored.isNotEmpty) {
+        _pushToken = stored;
+        return stored;
+      }
+    } catch (_) {}
+
+    final tokenFuture = FirebaseMessaging.instance.onRegistered
+        .where((token) => token.isNotEmpty)
+        .first
+        .timeout(const Duration(seconds: 2));
+    await FirebaseMessaging.instance.register();
+    final resolved = await tokenFuture;
+    _pushToken = resolved;
+    return resolved;
   }
 
   Future<Map<String, dynamic>> unregisterPushDeviceToken(String token) {
@@ -1055,7 +1086,7 @@ class AuthApi {
 
       // Detach this installation before invalidating the authenticated session.
       try {
-        final pushToken = await FirebaseMessaging.instance.getToken();
+        final pushToken = await _resolveRegisteredPushToken();
         if (pushToken != null && pushToken.isNotEmpty && hasToken) {
           await _request(
             'POST',
@@ -1071,9 +1102,11 @@ class AuthApi {
       _cachedSessionKeyPair = null;
       _cookies.clear();
       _accessToken = null;
+      _pushToken = null;
       try {
         final preferences = await SharedPreferences.getInstance();
         await preferences.remove(_accessTokenStorageKey);
+        await preferences.remove(_pushTokenStorageKey);
       } catch (_) {}
       _restoreFuture = null;
     }

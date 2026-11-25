@@ -212,7 +212,6 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.value,
-    this.trailing,
     this.onTap,
     this.showChevron = true,
   });
@@ -221,7 +220,6 @@ class _SettingsTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? value;
-  final Widget? trailing;
   final VoidCallback? onTap;
   final bool showChevron;
 
@@ -278,35 +276,33 @@ class _SettingsTile extends StatelessWidget {
               const SizedBox(width: 8),
               SizedBox(
                 width: 96,
-                child: trailing != null
-                    ? Align(alignment: Alignment.centerRight, child: trailing)
-                    : Row(
-                        children: [
-                          if (value != null) ...[
-                            Expanded(
-                              child: Text(
-                                value!,
-                                textAlign: TextAlign.end,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: onTap == null ? colors.onSurfaceVariant : colors.primary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            if (showChevron) const SizedBox(width: 7),
-                          ] else
-                            const Spacer(),
-                          if (showChevron)
-                            Icon(
-                              LucideIcons.chevronRight,
-                              size: 16,
-                              color: colors.onSurfaceVariant.withValues(alpha: .7),
-                            ),
-                        ],
+                child: Row(
+                  children: [
+                    if (value != null) ...[
+                      Expanded(
+                        child: Text(
+                          value!,
+                          textAlign: TextAlign.end,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: onTap == null ? colors.onSurfaceVariant : colors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
+                      if (showChevron) const SizedBox(width: 7),
+                    ] else
+                      const Spacer(),
+                    if (showChevron)
+                      Icon(
+                        LucideIcons.chevronRight,
+                        size: 16,
+                        color: colors.onSurfaceVariant.withValues(alpha: .7),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),

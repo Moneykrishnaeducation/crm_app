@@ -57,12 +57,14 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
   Future<void> _loadDashboardDetails() async {
     final accounts = widget.accounts;
     if (accounts.isEmpty) {
-      if (mounted) setState(() {
-        _openPositionCount = 0;
-        _openPositionPnl = 0;
-        _realizedPerformance = const [];
-        _loadingDetails = false;
-      });
+      if (mounted) {
+        setState(() {
+          _openPositionCount = 0;
+          _openPositionPnl = 0;
+          _realizedPerformance = const [];
+          _loadingDetails = false;
+        });
+      }
       return;
     }
     setState(() { _loadingDetails = true; _detailsError = null; });
@@ -81,7 +83,7 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
         final profits = trades.map((row) {
           final rawDate = row['close_time'] ?? row['closed_at'] ?? row['created_at'] ?? row['time'] ?? row['date'];
           final parsedDate = rawDate == null ? null : DateTime.tryParse(rawDate.toString());
-          return (date: parsedDate == null ? null : parsedDate.toUtc().toIso8601String().substring(0, 10), value: _number(row['profit'] ?? row['pnl'] ?? row['closed_profit']));
+          return (date: parsedDate?.toUtc().toIso8601String().substring(0, 10), value: _number(row['profit'] ?? row['pnl'] ?? row['closed_profit']));
         }).where((item) => item.date != null).toList();
         return (positions: positions, profits: profits);
       }));
@@ -198,7 +200,6 @@ class _PortfolioSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final pnlColor = pnl >= 0 ? const Color(0xFF70E2B0) : const Color(0xFFFFA4A4);
     return Container(
       padding: const EdgeInsets.all(18),
@@ -3036,12 +3037,16 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                             children: [
                               Row(
                                 children: [
-                                  Text(
-                                    acc.name,
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
+                                  Flexible(
+                                    child: Text(
+                                      acc.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -3065,6 +3070,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                               const SizedBox(height: 3),
                               Text(
                                 'Login: ${acc.login} • Lev: ${acc.leverage}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 11.5,
@@ -3073,6 +3080,7 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [

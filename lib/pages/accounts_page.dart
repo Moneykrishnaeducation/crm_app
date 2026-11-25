@@ -2322,7 +2322,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
 
   String _apiMoney(dynamic value, String currency) {
     final amount = _apiNumber(value);
-    return '$currency ' + amount.toStringAsFixed(2);
+    return '$currency ${amount.toStringAsFixed(2)}';
   }
 
   Future<void> _loadAccountData() async {
@@ -2563,7 +2563,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     Widget tab(String value) {
       final selected = _tab == value;
       return Expanded(child: Semantics(
-        button: true, selected: selected, label: value + ' tab',
+        button: true, selected: selected, label: '$value tab',
         child: InkWell(
           onTap: () => setState(() => _tab = value),
           borderRadius: BorderRadius.circular(11),
@@ -2762,7 +2762,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               const SizedBox(height: 8),
               Row(children: ['1D', '1W', '1M', '3M', 'YTD', 'All'].map((value) {
                 final selected = _range == value;
-                return Expanded(child: Semantics(button: true, selected: selected, label: value + ' performance range', child: InkWell(
+                return Expanded(child: Semantics(button: true, selected: selected, label: '$value performance range', child: InkWell(
                   onTap: () => setState(() => _range = value),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(

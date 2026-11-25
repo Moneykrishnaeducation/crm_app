@@ -33,13 +33,14 @@ class PushMessagingService {
         );
         _foregroundSubscription = FirebaseMessaging.onMessage.listen(_showForegroundPush);
         _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen(_handlePushOpen);
-        _tokenSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
-          (token) => unawaited(_registerToken(token)),
+        _tokenSubscription = FirebaseMessaging.instance.onRegistered.listen(
+          (token) {
+            if (token.isNotEmpty) unawaited(_registerToken(token));
+          },
         );
         _initialized = true;
       }
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token != null && token.isNotEmpty) await _registerToken(token);
+      await FirebaseMessaging.instance.register();
       final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
       if (initialMessage != null) _handlePushOpen(initialMessage);
     } catch (error) {

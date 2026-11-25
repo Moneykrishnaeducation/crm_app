@@ -64,15 +64,6 @@ class AppNotificationCenter {
   String? lastLoadError;
   final ValueNotifier<String?> trackedPositionNotifier = ValueNotifier<String?>(null);
   String? _trackedAccountId;
-  String? _trackedPositionSymbol;
-  String? _trackedPositionSide;
-  double _trackedPositionLots = 0;
-  DateTime _trackedPositionStartedAt = DateTime.now();
-  Timer? _positionMonitorTimer;
-  bool _positionPollInFlight = false;
-  bool _lastPositionPollSucceeded = false;
-  bool _nativePositionServiceActive = false;
-  int _positionMonitorRevision = 0;
   int _nextNotificationId = 1000;
   Timer? _portfolioMonitorTimer;
   bool _portfolioPollInFlight = false;
@@ -373,8 +364,12 @@ class AppNotificationCenter {
   Future<void> stopPositionMonitoring() => stopPortfolioMonitoring();
 
   Future<void> _refreshPortfolioPositions({required int revision}) async {
-    if (_portfolioPollInFlight || revision != _portfolioMonitorRevision ||
-        _portfolioAccounts.isEmpty || !AuthApi.instance.hasToken) return;
+    if (_portfolioPollInFlight ||
+        revision != _portfolioMonitorRevision ||
+        _portfolioAccounts.isEmpty ||
+        !AuthApi.instance.hasToken) {
+      return;
+    }
     _portfolioPollInFlight = true;
     try {
       final results = await Future.wait(_portfolioAccounts.map((account) async {
@@ -475,7 +470,7 @@ class AppNotificationCenter {
           'colorHex': colorHex,
           'iconType': iconType,
           'usesChronometer': usesChronometer,
-          if (startedAtMillis != null) 'startedAtMillis': startedAtMillis,
+          'startedAtMillis': ?startedAtMillis,
         });
         if (nativeResult == true) return;
       } catch (e) {

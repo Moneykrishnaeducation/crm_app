@@ -246,13 +246,13 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
 
   String get _bankDestinationLabel {
     final number = _bankDetails?['account_number'].toString() ?? '';
-    return number.length > 4 ? 'Account ending ' + number.substring(number.length - 4) : 'Saved bank account';
+    return number.length > 4 ? 'Account ending ${number.substring(number.length - 4)}' : 'Saved bank account';
   }
 
   String get _cryptoDestinationLabel {
     final address = _cryptoDetails?['wallet_address'].toString() ?? '';
     final currency = _cryptoDetails?['currency']?.toString() ?? 'USDT';
-    return address.length > 12 ? currency + ' · ' + address.substring(0, 6) + '…' + address.substring(address.length - 4) : currency + ' · Saved wallet';
+    return address.length > 12 ? '$currency · ${address.substring(0, 6)}…${address.substring(address.length - 4)}' : '$currency · Saved wallet';
   }
 
   Map<String, dynamic> get _activeTradingAccount =>
@@ -880,7 +880,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${_proofBytes == null ? '0 KB' : (_proofBytes!.length / 1024).toStringAsFixed(1) + ' KB'} · Ready for review',
+                          '${_proofBytes == null ? '0 KB' : '${(_proofBytes!.length / 1024).toStringAsFixed(1)} KB'} · Ready for review',
                           style: TextStyle(
                             color: Color(0xFF16D994),
                             fontSize: 9.5,
@@ -1175,7 +1175,6 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       ]);
 
   Widget _buildWithdrawForm(BuildContext context, bool isDark, BoxConstraints constraints) {
-    final isCompact = constraints.maxWidth < 440;
     final textPrimary = isDark ? Colors.white : _fundInk;
     final badgeBg = isDark ? const Color(0xFF1E2D47) : const Color(0xFFEAF0F8);
     final acc = _activeTradingAccount;

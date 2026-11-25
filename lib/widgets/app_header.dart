@@ -127,7 +127,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
             alignment: Alignment.center,
             children: [
               Icon(icon, size: 20),
-              if (overlay != null) overlay,
+              ?overlay,
             ],
           ),
         ),
@@ -1564,7 +1564,7 @@ class _NotificationCenterBottomSheetState extends State<NotificationCenterBottom
                                         } else if (action.contains('trading')) {
                                           destination = 'Trading Accounts';
                                         }
-                                        if (destination != null && mounted) {
+                                        if (destination != null && context.mounted) {
                                           Navigator.of(context).pop();
                                           widget.onSelectPage?.call(destination);
                                         }

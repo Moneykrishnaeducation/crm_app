@@ -1,8 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 import '../app_notifications.dart';
 import '../services/auth_api.dart';
-import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -24,8 +22,6 @@ const _profileTextSecondary = _profileMuted;
 const _profileBlueDark = Color(0xFF174A8B);
 const _profileBlueLight = Color(0xFFEAF2FC);
 const _profileGoldLight = Color(0xFFFFF7E3);
-const _profileGreenLight = Color(0xFFEAF2FC);
-const _profileGreenBorder = Color(0xFFD3E2F8);
 const _profileShadow = [
   BoxShadow(
     color: Color(0x0D10264A),
@@ -1275,25 +1271,6 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
 
   Widget _profileInitial() => Center(child: Text(_name.isNotEmpty ? _name[0].toUpperCase() : 'U',
     style: const TextStyle(color: Colors.white, fontSize: 31, fontWeight: FontWeight.w800)));
-
-  Widget _profileHeaderAction({required IconData icon, required String label, required VoidCallback onTap}) {
-    return Material(
-      color: Colors.white.withValues(alpha: .16),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: Colors.white, size: 13),
-            const SizedBox(width: 6),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
-          ]),
-        ),
-      ),
-    );
-  }
 
   Widget _buildMobileSectionNavigation() {
     final compact = MediaQuery.sizeOf(context).width < 380;

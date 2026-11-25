@@ -27,92 +27,148 @@ class BrokerDashboardPage extends StatefulWidget {
 
 class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
   int _selectedMarketTabIndex = 0;
+  bool _loadingDetails = false;
+  String? _detailsError;
+  int _openPositionCount = 0;
+  double _openPositionPnl = 0;
+  List<double> _realizedPerformance = const [];
+
+  double _number(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse((value ?? '').toString().replaceAll(',', '').replaceAll(RegExp(r'[^0-9.+-]'), '')) ?? 0;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDashboardDetails());
+  }
+
+  @override
+  void didUpdateWidget(covariant BrokerDashboardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.accounts != widget.accounts) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadDashboardDetails());
+    }
+  }
+
+  Future<void> _loadDashboardDetails() async {
+    final accounts = widget.accounts;
+    if (accounts.isEmpty) {
+      if (mounted) setState(() {
+        _openPositionCount = 0;
+        _openPositionPnl = 0;
+        _realizedPerformance = const [];
+        _loadingDetails = false;
+      });
+      return;
+    }
+    setState(() { _loadingDetails = true; _detailsError = null; });
+    try {
+      final results = await Future.wait(accounts.map((account) async {
+        final values = await Future.wait([
+          AuthApi.instance.getOpenPositions(account.login).then<dynamic>((v) => v).catchError((_) => <Map<String, dynamic>>[]),
+          AuthApi.instance.getTradingAccountHistory(account.login, pageSize: 100).then<dynamic>((v) => v).catchError((_) => <String, dynamic>{}),
+        ]);
+        final positions = values[0] as List<Map<String, dynamic>>;
+        final history = values[1] as Map<String, dynamic>;
+        final raw = history['transactions'];
+        final data = raw is Map ? raw.cast<String, dynamic>() : <String, dynamic>{};
+        final rows = data['results'] ?? data['transactions'] ?? raw;
+        final trades = rows is List ? rows.whereType<Map>().map((row) => row.cast<String, dynamic>()).toList() : <Map<String, dynamic>>[];
+        final profits = trades.map((row) => _number(row['profit'] ?? row['pnl'] ?? row['closed_profit'] ?? row['commission'])).toList();
+        return (positions: positions, profits: profits);
+      }));
+      if (!mounted) return;
+      final allPositions = results.expand((item) => item.positions).toList();
+      final daily = <String, double>{};
+      for (final result in results) {
+        for (var i = 0; i < result.profits.length; i++) {
+          final key = i.toString().padLeft(4, '0');
+          daily[key] = (daily[key] ?? 0) + result.profits[i];
+        }
+      }
+      var cumulative = 0.0;
+      final series = daily.keys.toList()..sort();
+      final points = <double>[];
+      for (final key in series) {
+        cumulative += daily[key]!;
+        points.add(cumulative);
+      }
+      setState(() {
+        _openPositionCount = allPositions.length;
+        _openPositionPnl = allPositions.fold<double>(0, (sum, row) => sum + _number(row['profit'] ?? row['pnl'] ?? row['floating_pnl']));
+        _realizedPerformance = points.length > 40 ? points.sublist(points.length - 40) : points;
+        _loadingDetails = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() { _loadingDetails = false; _detailsError = 'Some account activity could not be refreshed.'; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final marketItems = _getDashboardMarketItemsForTab(_selectedMarketTabIndex);
-    final quickTradeItem = marketItems.isNotEmpty
-        ? marketItems.first
-        : _allDashboardMarketItems.first;
-
+    final quickTradeItem = marketItems.isNotEmpty ? marketItems.first : _allDashboardMarketItems.first;
+    final accounts = widget.accounts;
+    final balance = accounts.fold<double>(0, (sum, account) => sum + _number(account.balance));
+    final equity = accounts.fold<double>(0, (sum, account) => sum + _number(account.equity));
+    final pnl = accounts.fold<double>(0, (sum, account) => sum + (account.floatingPnl ?? (_number(account.equity) - _number(account.balance))));
+    final margin = accounts.fold<double>(0, (sum, account) => sum + account.margin);
+    final freeMargin = accounts.fold<double>(0, (sum, account) => sum + account.freeMargin);
+    final currency = accounts.isEmpty ? 'USD' : accounts.map((a) => a.currency).toSet().length == 1 ? accounts.first.currency : 'Mixed currencies';
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 680),
-          child: SingleChildScrollView(
-            controller: widget.scrollController,
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 112),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  _dashboardGreeting(),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.7,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Your trading portfolio at a glance',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 13,
-                  ),
-                ),
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: RefreshIndicator(
+            onRefresh: () async { await _loadDashboardDetails(); },
+            child: SingleChildScrollView(
+              controller: widget.scrollController,
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 112),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Row(children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(_dashboardGreeting(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 25, fontWeight: FontWeight.w800, letterSpacing: -.7)),
+                    const SizedBox(height: 5),
+                    Text('Your combined trading portfolio', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+                  ])),
+                  IconButton(onPressed: _loadDashboardDetails, tooltip: 'Refresh dashboard', icon: const Icon(LucideIcons.refreshCw)),
+                ]),
                 const SizedBox(height: 18),
                 _PortfolioSummaryCard(
-                  account: widget.accounts.isEmpty ? null : widget.accounts.first,
-                  visible: widget.balanceVisible,
-                  onToggle: widget.onToggleBalance,
+                  balance: balance, equity: equity, pnl: pnl, margin: margin,
+                  freeMargin: freeMargin, currency: currency,
+                  accountCount: accounts.length,
+                  visible: widget.balanceVisible, onToggle: widget.onToggleBalance,
                 ),
-                const SizedBox(height: 16),
-                const _PortfolioPerformance(),
+                const SizedBox(height: 14),
+                _DashboardPerformanceCard(values: _realizedPerformance, loading: _loadingDetails, error: _detailsError),
+                const SizedBox(height: 14),
+                _DashboardPositionSummary(count: _openPositionCount, pnl: _openPositionPnl, loading: _loadingDetails, currency: currency, error: _detailsError),
                 const SizedBox(height: 22),
-                _DashboardSectionHeading(
-                  title: 'Quick actions',
-                  subtitle: 'Manage your trading funds',
-                ),
+                _DashboardSectionHeading(title: 'Quick actions', subtitle: 'Manage your trading funds'),
                 const SizedBox(height: 10),
-                _QuickActionsRow(
-                  onSelectPage: widget.onSelectPage,
-                  onOpenReport: widget.onOpenReport,
-                ),
+                _QuickActionsRow(onSelectPage: widget.onSelectPage, onOpenReport: widget.onOpenReport),
                 const SizedBox(height: 20),
-                _DashboardSectionHeading(
-                  title: 'Explore',
-                  subtitle: 'Tools and opportunities',
-                ),
+                _DashboardSectionHeading(title: 'Explore', subtitle: 'Tools and opportunities'),
                 const SizedBox(height: 10),
-                _DualFeatureCards(
-                  onSelectPage: widget.onSelectPage,
-                  quickTradeItem: quickTradeItem,
-                ),
+                _DualFeatureCards(onSelectPage: widget.onSelectPage, quickTradeItem: quickTradeItem),
                 const SizedBox(height: 14),
                 const _MarketInsightsBanner(),
                 const SizedBox(height: 24),
-                _MarketsSection(
-                  onSelectPage: widget.onSelectPage,
-                  selectedTabIndex: _selectedMarketTabIndex,
-                  onTabSelected: (index) {
-                    setState(() {
-                      _selectedMarketTabIndex = index;
-                    });
-                  },
-                ),
-              ],
+                _MarketsSection(onSelectPage: widget.onSelectPage, selectedTabIndex: _selectedMarketTabIndex, onTabSelected: (index) => setState(() => _selectedMarketTabIndex = index)),
+              ]),
             ),
           ),
         ),
       ),
     );
   }
+
   String _dashboardGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good morning';
@@ -122,208 +178,130 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
 }
 
 class _PortfolioSummaryCard extends StatelessWidget {
-  const _PortfolioSummaryCard({
-    required this.account,
-    required this.visible,
-    required this.onToggle,
-  });
-
-  final BrokerAccount? account;
+  const _PortfolioSummaryCard({required this.balance, required this.equity, required this.pnl, required this.margin, required this.freeMargin, required this.currency, required this.accountCount, required this.visible, required this.onToggle});
+  final double balance, equity, pnl, margin, freeMargin;
+  final String currency;
+  final int accountCount;
   final bool visible;
   final VoidCallback onToggle;
 
-  double _amount(String value) => double.tryParse(value.replaceAll(RegExp(r'[^0-9.+-]'), '')) ?? 0;
   String _money(double value) {
-    final currency = account?.currency ?? 'USD';
     final prefix = currency.toUpperCase() == 'USD' ? '\$' : '$currency ';
     return '$prefix${value.abs().toStringAsFixed(2)}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final balance = account == null ? 0.0 : _amount(account!.balance);
-    final equity = account == null ? 0.0 : _amount(account!.equity);
-    final pnl = account?.floatingPnl ?? equity - balance;
+    final theme = Theme.of(context);
+    final pnlColor = pnl >= 0 ? const Color(0xFF70E2B0) : const Color(0xFFFFA4A4);
     return Container(
-      padding: const EdgeInsets.fromLTRB(17, 16, 17, 17),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF102B63), Color(0xFF174F9F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x220A1D45),
-            blurRadius: 16,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'PORTFOLIO SUMMARY',
-                style: TextStyle(
-                  color: Color(0xFFBBD1F4),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-                ),
-                child: Text(
-                  '${account?.currency ?? 'USD'}  ·  LIVE ACCOUNT',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.35,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Total balance',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: onToggle,
-                      borderRadius: BorderRadius.circular(18),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          visible ? LucideIcons.eye : LucideIcons.eyeOff,
-                          color: Colors.white.withValues(alpha: 0.9),
-                          size: 15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  visible ? _money(balance) : '••••••••',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.6,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  account?.login ?? 'No trading account connected',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.68),
-                    fontSize: 9,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 70,
-            margin: const EdgeInsets.symmetric(horizontal: 14),
-            color: Colors.white.withValues(alpha: 0.22),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      LucideIcons.trendingUp,
-                      color: Color(0xFF65E6B0),
-                      size: 14,
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        'Floating P&L',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.88),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  visible ? '${pnl >= 0 ? '+' : '-'}${_money(pnl)}' : '••••••',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: pnl >= 0 ? const Color(0xFF65E6B0) : const Color(0xFFFFA4A4),
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.6,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  account == null ? 'No trading account connected' : 'Equity ${visible ? _money(equity) : '••••••'}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.68),
-                    fontSize: 9,
-                  ),
-                ),
-              ],
-            ),
-          ),
-            ],
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), gradient: const LinearGradient(colors: [Color(0xFF10264B), Color(0xFF1D559B)], begin: Alignment.topLeft, end: Alignment.bottomRight), boxShadow: const [BoxShadow(color: Color(0x220A1D45), blurRadius: 18, offset: Offset(0, 7))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          const Expanded(child: Text('TOTAL TRADING PORTFOLIO', style: TextStyle(color: Color(0xFFBBD1F4), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.1))),
+          IconButton(onPressed: onToggle, visualDensity: VisualDensity.compact, icon: Icon(visible ? LucideIcons.eye : LucideIcons.eyeOff, color: Colors.white, size: 18)),
+        ]),
+        const SizedBox(height: 5),
+        Text(visible ? _money(balance) : '••••••••', style: GoogleFonts.inter(color: Colors.white, fontSize: 29, fontWeight: FontWeight.w800, letterSpacing: -.8)),
+        const SizedBox(height: 4),
+        Text('$accountCount trading accounts · combined balance', style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 10)),
+        const SizedBox(height: 17),
+        Row(children: [
+          Expanded(child: _PortfolioMetric(label: 'Total equity', value: visible ? _money(equity) : '••••••', color: Colors.white)),
+          Expanded(child: _PortfolioMetric(label: 'Total floating P&L', value: visible ? '${pnl >= 0 ? '+' : '-'}${_money(pnl)}' : '••••••', color: pnlColor)),
+        ]),
+        const SizedBox(height: 14),
+        Container(height: 1, color: Colors.white.withValues(alpha: .18)),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: _PortfolioMetric(label: 'Used margin', value: visible ? _money(margin) : '••••', color: Colors.white)),
+          Expanded(child: _PortfolioMetric(label: 'Free margin', value: visible ? _money(freeMargin) : '••••', color: Colors.white)),
+        ]),
+      ]),
     );
   }
 }
 
-class _PortfolioPerformance extends StatelessWidget {
-  const _PortfolioPerformance();
+class _PortfolioMetric extends StatelessWidget {
+  const _PortfolioMetric({required this.label, required this.value, required this.color});
+  final String label, value;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(label, style: TextStyle(color: Colors.white.withValues(alpha: .68), fontSize: 10, fontWeight: FontWeight.w600)),
+    const SizedBox(height: 5),
+    Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w800)),
+  ]);
+}
+
+class _DashboardPositionSummary extends StatelessWidget {
+  const _DashboardPositionSummary({required this.count, required this.pnl, required this.loading, required this.currency, required this.error});
+  final int count;
+  final double pnl;
+  final bool loading;
+  final String currency;
+  final String? error;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: theme.dividerColor.withValues(alpha: .6))), child: Row(children: [Container(width: 38, height: 38, decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(12)), child: Icon(LucideIcons.chartNoAxesCombined, color: theme.colorScheme.primary, size: 19)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Portfolio performance', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text('Historical equity chart will appear when verified account history is available.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10))]))]));
+    final prefix = currency == 'USD' ? '\$' : '$currency ';
+    final money = '$prefix${pnl.abs().toStringAsFixed(2)}';
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: theme.dividerColor.withValues(alpha: .6))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Open positions', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        if (loading) const LinearProgressIndicator(minHeight: 2) else Row(children: [
+          Expanded(child: _PositionStat(label: 'Active trades', value: '$count', icon: LucideIcons.layers)),
+          Expanded(child: _PositionStat(label: 'Open P&L', value: '${pnl >= 0 ? '+' : '-'}$money', icon: LucideIcons.trendingUp, positive: pnl >= 0)),
+        ]),
+        if (error != null) Padding(padding: const EdgeInsets.only(top: 7), child: Text(error!, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10))),
+      ]),
+    );
+  }
+}
+
+class _PositionStat extends StatelessWidget {
+  const _PositionStat({required this.label, required this.value, required this.icon, this.positive = true});
+  final String label, value;
+  final IconData icon;
+  final bool positive;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    Icon(icon, size: 15, color: positive ? const Color(0xFF169B68) : const Color(0xFFD34B4B)),
+    const SizedBox(width: 7),
+    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
+      const SizedBox(height: 3),
+      Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w800)),
+    ])),
+  ]);
+}
+
+class _DashboardPerformanceCard extends StatelessWidget {
+  const _DashboardPerformanceCard({required this.values, required this.loading, required this.error});
+  final List<double> values;
+  final bool loading;
+  final String? error;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: theme.dividerColor.withValues(alpha: .6))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Realized trading performance', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text('Cumulative closed-trade P&L from account history', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10)),
+        const SizedBox(height: 12),
+        if (loading) const LinearProgressIndicator(minHeight: 2)
+        else if (values.length < 2) Text(error ?? 'Not enough closed-trade history to draw a trend yet.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11))
+        else SizedBox(height: 112, child: CustomPaint(size: Size.infinite, painter: _PortfolioLinePainter(values: values, lineColor: color, fillColor: color.withValues(alpha: .10)))),
+      ]),
+    );
   }
 }
 

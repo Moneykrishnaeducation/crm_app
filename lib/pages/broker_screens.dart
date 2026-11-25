@@ -76,7 +76,7 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
         final data = raw is Map ? raw.cast<String, dynamic>() : <String, dynamic>{};
         final rows = data['results'] ?? data['transactions'] ?? raw;
         final trades = rows is List ? rows.whereType<Map>().map((row) => row.cast<String, dynamic>()).toList() : <Map<String, dynamic>>[];
-        final profits = trades.map((row) => _number(row['profit'] ?? row['pnl'] ?? row['closed_profit'] ?? row['commission'])).toList();
+        final profits = trades.map((row) => _number(row['profit'] ?? row['pnl'] ?? row['closed_profit'])).toList();
         return (positions: positions, profits: profits);
       }));
       if (!mounted) return;
@@ -116,7 +116,7 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
     final equity = accounts.fold<double>(0, (sum, account) => sum + _number(account.equity));
     final pnl = accounts.fold<double>(0, (sum, account) => sum + (account.floatingPnl ?? (_number(account.equity) - _number(account.balance))));
     final margin = accounts.fold<double>(0, (sum, account) => sum + account.margin);
-    final freeMargin = accounts.fold<double>(0, (sum, account) => sum + account.freeMargin);
+    final freeMargin = accounts.fold<double>(0, (sum, account) => sum + (account.freeMargin > 0 ? account.freeMargin : (_number(account.equity) - account.margin)));
     final currency = accounts.isEmpty ? 'USD' : accounts.map((a) => a.currency).toSet().length == 1 ? accounts.first.currency : 'Mixed currencies';
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -329,23 +329,6 @@ class _PortfolioLinePainter extends CustomPainter {
   }
   @override
   bool shouldRepaint(covariant _PortfolioLinePainter old) => old.values != values || old.lineColor != lineColor || old.fillColor != fillColor;
-}
-
-class _PositionStat extends StatelessWidget {
-  const _PositionStat({required this.label, required this.value, required this.icon, this.positive = true});
-  final String label, value;
-  final IconData icon;
-  final bool positive;
-  @override
-  Widget build(BuildContext context) => Row(children: [
-    Icon(icon, size: 15, color: positive ? const Color(0xFF169B68) : const Color(0xFFD34B4B)),
-    const SizedBox(width: 7),
-    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
-      const SizedBox(height: 3),
-      Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w800)),
-    ])),
-  ]);
 }
 
 class _DashboardSectionHeading extends StatelessWidget {

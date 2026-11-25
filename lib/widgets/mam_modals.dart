@@ -62,14 +62,14 @@ class MamManagerProfileData {
     required this.name,
     required this.login,
     this.isLive = true,
-    this.accountBalance = 37769.98,
-    this.currentEquity = 11663.10,
-    this.performanceFee = 25.0,
+    this.accountBalance = 0.0,
+    this.currentEquity = 0.0,
+    this.performanceFee = 0.0,
     this.historicalGrowth = 0.00,
-    this.riskProfile = 'Medium',
-    this.trackRecordDays = 1454,
-    this.execution = 'Direct STP',
-    this.isVerified = true,
+    this.riskProfile = 'Unknown',
+    this.trackRecordDays = 0,
+    this.execution = '',
+    this.isVerified = false,
   });
 
   final String name;
@@ -86,32 +86,32 @@ class MamManagerProfileData {
 
   factory MamManagerProfileData.fromPool(dynamic pool) {
     try {
-      final name = (pool.name as String?) ?? 'Apex Global Pool';
-      final rawLogin = (pool.id as String?) ?? '2100572979';
+      final name = (pool.name as String?) ?? '';
+      final rawLogin = (pool.id as String?) ?? '';
       final cleanLogin = rawLogin.replaceAll(RegExp(r'[^0-9]'), '');
-      final login = cleanLogin.isEmpty ? '2100572979' : cleanLogin;
-      final fee = (pool.performanceFee as num?)?.toDouble() ?? 25.0;
-      final risk = (pool.riskScore?.toString()) ?? 'Medium';
-      final aum = (pool.totalAum as num?)?.toDouble() ?? 37769.98;
+      final login = cleanLogin;
+      final fee = (pool.performanceFee as num?)?.toDouble() ?? 0.0;
+      final risk = (pool.riskScore?.toString()) ?? 'Unknown';
+      final aum = (pool.totalAum as num?)?.toDouble() ?? 0.0;
       final roi = (pool.monthlyRoi as num?)?.toDouble() ?? 0.00;
 
       return MamManagerProfileData(
         name: name,
         login: login,
         isLive: true,
-        accountBalance: aum > 0 ? aum : 37769.98,
-        currentEquity: aum > 0 ? (aum * 0.31) : 11663.10,
+        accountBalance: aum,
+        currentEquity: 0.0,
         performanceFee: fee,
         historicalGrowth: roi,
         riskProfile: risk,
-        trackRecordDays: 1454,
-        execution: 'Direct STP',
-        isVerified: true,
+        trackRecordDays: 0,
+        execution: '',
+        isVerified: false,
       );
     } catch (_) {
       return const MamManagerProfileData(
-        name: 'Alpha Manager',
-        login: '2100572979',
+        name: '',
+        login: '',
       );
     }
   }
@@ -121,14 +121,14 @@ class MamManagerProfileData {
       name: master.name,
       login: master.login,
       isLive: master.status.toLowerCase() == 'active',
-      accountBalance: master.balance > 0 ? master.balance : 37769.98,
-      currentEquity: master.balance > 0 ? master.balance : 11663.10,
+      accountBalance: master.balance,
+      currentEquity: 0.0,
       performanceFee: master.profitShare,
       historicalGrowth: master.monthlyGain,
       riskProfile: master.risk,
-      trackRecordDays: 1454,
-      execution: 'Direct STP',
-      isVerified: true,
+      trackRecordDays: 0,
+      execution: '',
+      isVerified: false,
     );
   }
 }
@@ -148,7 +148,7 @@ class EstablishMasterMamSheet extends StatefulWidget {
 
 class _EstablishMasterMamSheetState extends State<EstablishMasterMamSheet> {
   final _strategyNameController = TextEditingController(
-    text: 'Apex Global Alpha Pool',
+    text: '',
   );
   final _profitShareController = TextEditingController(text: '20');
 

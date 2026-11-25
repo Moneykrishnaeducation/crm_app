@@ -16,11 +16,17 @@ class LoginPage extends StatefulWidget {
     this.onLogin,
     this.initialSignUp = false,
     this.biometricSignIn,
+    @visibleForTesting this.credentialLogin,
   });
 
   final VoidCallback? onLogin;
   final bool initialSignUp;
   final BiometricSignIn? biometricSignIn;
+  final Future<Map<String, dynamic>> Function({
+    required String identifier,
+    required String password,
+    required bool rememberMe,
+  })? credentialLogin;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -115,12 +121,18 @@ class _LoginPageState extends State<LoginPage> {
           await _biometricService.isAvailable(
             platform: Theme.of(context).platform,
           );
+      final hasStoredCredentials =
+          available &&
+          (AuthApi.instance.hasToken ||
+              await _biometricService.hasStoredCredentials());
       if (!mounted) return;
       setState(() {
         _biometricEnabled = enabled;
         _biometricAvailable = available;
       });
-      if (enabled && available) await _signInWithBiometrics();
+      if (enabled && available && hasStoredCredentials) {
+        await _signInWithBiometrics();
+      }
     } on PlatformException {
       if (mounted) {
         setState(() {
@@ -146,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _signInWithBiometrics() async {
-    if (_biometricBusy) return;
+    if (_biometricBusy || _loginBusy) return;
     HapticFeedback.mediumImpact();
 
     if (!_biometricEnabled || !_biometricAvailable) {
@@ -160,9 +172,12 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    if (!AuthApi.instance.hasToken) {
+    final credentials = await _biometricService.readCredentials();
+    if (!mounted) return;
+    final hasActiveToken = AuthApi.instance.hasToken;
+    if (!hasActiveToken && credentials == null) {
       showAppMessage(
-        'Please sign in with your email and password first to enable biometric authentication.',
+        'Please sign in once with your email and password to enable biometric re-login.',
       );
       return;
     }
@@ -173,28 +188,45 @@ class _LoginPageState extends State<LoginPage> {
         localizedReason: 'Sign in to your VTIndex account',
       );
       if (!mounted) return;
-      if (authenticated) {
+      if (!authenticated) {
+        showAppMessage(
+          'Biometric sign-in was canceled. Use your login ID and password instead.',
+        );
+        return;
+      }
+
+      if (hasActiveToken) {
         try {
           await AuthApi.instance.restoreSession();
           await AuthApi.instance.getProfile();
           if (!mounted) return;
           HapticFeedback.selectionClick();
           widget.onLogin?.call();
+          return;
         } on AuthApiException catch (e) {
-          showAppMessage('Session expired: ${e.message}. Please log in again.');
+          if (credentials == null) {
+            showAppMessage('Session expired: ${e.message}. Please log in again.');
+            return;
+          }
+          // Fall through to re-authenticate using stored biometric credentials.
         } catch (_) {
           if (AuthApi.instance.hasToken) {
             HapticFeedback.selectionClick();
             widget.onLogin?.call();
-          } else {
+            return;
+          }
+          if (credentials == null) {
             showAppMessage('Session expired. Please log in with your credentials.');
+            return;
           }
         }
-      } else {
-        showAppMessage(
-          'Biometric sign-in was canceled. Use your login ID and password instead.',
-        );
       }
+
+      await _authenticateWithCredentials(
+        identifier: credentials!.identifier,
+        password: credentials.password,
+        fromBiometric: true,
+      );
     } on PlatformException {
       if (mounted) {
         showAppMessage(
@@ -253,17 +285,39 @@ class _LoginPageState extends State<LoginPage> {
     unawaited(_saveRememberedLogin());
     setState(() => _loginBusy = true);
     try {
-      // Fetch the public GeeTest configuration before login. The backend only
-      // exposes the public site ID here; secret validation remains server-side.
-      var response = await AuthApi.instance.login(
+      await _authenticateWithCredentials(
         identifier: email,
         password: password,
-        rememberMe: _rememberMe,
+        fromBiometric: false,
       );
+    } finally {
+      if (mounted) setState(() => _loginBusy = false);
+    }
+  }
+
+  Future<void> _authenticateWithCredentials({
+    required String identifier,
+    required String password,
+    required bool fromBiometric,
+  }) async {
+    try {
+      // Fetch the public GeeTest configuration before login. The backend only
+      // exposes the public site ID here; secret validation remains server-side.
+      var response = widget.credentialLogin != null
+          ? await widget.credentialLogin!(
+              identifier: identifier,
+              password: password,
+              rememberMe: _rememberMe,
+            )
+          : await AuthApi.instance.login(
+              identifier: identifier,
+              password: password,
+              rememberMe: _rememberMe,
+            );
       if (_requiresLoginOtp(response)) {
-        final otp = await _requestLoginOtp(email);
+        final otp = await _requestLoginOtp(identifier);
         if (otp == null || !mounted) return;
-        response = await AuthApi.instance.verifyOtp(email: email, otp: otp);
+        response = await AuthApi.instance.verifyOtp(email: identifier, otp: otp);
       }
       if (_requiresLoginOtp(response)) {
         throw const AuthApiException(
@@ -283,17 +337,36 @@ class _LoginPageState extends State<LoginPage> {
           response['access_token'] != null ||
           response['token'] != null ||
           AuthApi.instance.hasToken;
-      if (!await AuthApi.instance.isAuthenticated()) {
+      final skipRemoteStatusCheck =
+          widget.credentialLogin != null &&
+          response['authenticated'] == true &&
+          hasToken;
+      if (!skipRemoteStatusCheck && !await AuthApi.instance.isAuthenticated()) {
         if (!hasToken) {
           throw const AuthApiException(
             'The server did not confirm an authenticated session.',
           );
         }
       }
+      unawaited(
+        _biometricService.rememberSessionCredentials(
+          identifier: identifier,
+          password: password,
+        ),
+      );
       if (!mounted) return;
       HapticFeedback.selectionClick();
       widget.onLogin?.call();
     } on AuthApiException catch (error) {
+      if (fromBiometric &&
+          (error.statusCode == 400 || error.statusCode == 401)) {
+        // Stored password is no longer accepted by the server; clear it so the
+        // user can sign in once with their updated credentials.
+        await _biometricService.clearCredentials();
+        if (mounted && _emailController.text.trim().isEmpty) {
+          _emailController.text = identifier;
+        }
+      }
       if (mounted) showAppMessage(error.message);
     } catch (error) {
       if (mounted) {
@@ -301,8 +374,6 @@ class _LoginPageState extends State<LoginPage> {
           'Could not connect to the login server. Check the API host and try again.',
         );
       }
-    } finally {
-      if (mounted) setState(() => _loginBusy = false);
     }
   }
 

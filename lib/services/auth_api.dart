@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../biometric_sign_in.dart';
 import 'auth_http_client.dart';
 
 typedef _RawKeyPairData = ({
@@ -1147,6 +1148,7 @@ class AuthApi {
       _cookies.clear();
       _accessToken = null;
       _pushToken = null;
+      BiometricSignIn.instance.clearSessionCredentials();
       try {
         final preferences = await SharedPreferences.getInstance();
         await preferences.remove(_accessTokenStorageKey);

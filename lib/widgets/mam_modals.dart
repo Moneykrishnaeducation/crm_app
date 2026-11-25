@@ -137,7 +137,7 @@ class MamManagerProfileData {
       historicalGrowth: master.monthlyGain,
       riskProfile: master.risk,
       trackRecordDays: 0,
-      execution: master.execution,
+      execution: 'Unknown',
       isVerified: false,
     );
   }

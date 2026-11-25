@@ -1342,8 +1342,9 @@ class _MamManagerPageState extends State<MamManagerPage> {
             .toList();
         _isLoading = false;
       });
-    } catch (error) {
+    } catch (error, stackTrace) {
       debugPrint('Could not load MAM accounts: $error');
+      debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
       setState(() {
         _masters = [];

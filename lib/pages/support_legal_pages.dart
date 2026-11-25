@@ -8,33 +8,53 @@ class BrokerTicketsPage extends StatefulWidget {
 
 class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
   String _filter = 'All';
+  List<Map<String, dynamic>> _tickets = [];
+  bool _loading = true;
+  String? _loadError;
 
-  static const List<Map<String, String>> _mockTickets = [
-    {'id': 'TKT-2026-1048', 'subject': 'Deposit not reflected in trading account', 'department': 'Deposit & Payout', 'status': 'Open', 'priority': 'High', 'updated': 'Today, 10:42 AM'},
-    {'id': 'TKT-2026-1036', 'subject': 'Unable to access MT5 trading platform', 'department': 'Trading & MT5', 'status': 'In-progress', 'priority': 'Medium', 'updated': 'Today, 09:15 AM'},
-    {'id': 'TKT-2026-1019', 'subject': 'Request to update profile information', 'department': 'Account & KYC', 'status': 'In-progress', 'priority': 'Low', 'updated': 'Yesterday, 04:30 PM'},
-    {'id': 'TKT-2026-0987', 'subject': 'Withdrawal status clarification', 'department': 'Deposit & Payout', 'status': 'Closed', 'priority': 'Medium', 'updated': '18 Nov 2026'},
-    {'id': 'TKT-2026-0962', 'subject': 'Partner commission statement query', 'department': 'Partnership / IB', 'status': 'Open', 'priority': 'Low', 'updated': '17 Nov 2026'},
-  ];
+  @override
+  void initState() { super.initState(); _loadTickets(); }
 
-  List<Map<String, String>> get _visibleTickets => _filter == 'All'
-      ? _mockTickets
-      : _mockTickets.where((ticket) => ticket['status'] == _filter).toList();
-
-  void _openTicketDetails(Map<String, String> ticket) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => _MockTicketDetailsPage(ticket: ticket),
-    ));
+  Future<void> _loadTickets() async {
+    if (mounted) setState(() { _loading = true; _loadError = null; });
+    try {
+      final rows = await AuthApi.instance.getSupportTickets();
+      if (!mounted) return;
+      setState(() { _tickets = rows; _loading = false; });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() { _loadError = error.toString(); _loading = false; });
+    }
   }
 
-  Widget _ticketCard(Map<String, String> ticket, ThemeData theme) {
+  String _ticketStatus(Map<String, dynamic> ticket) => (ticket['status'] ?? 'open').toString().toLowerCase();
+  String _ticketSubject(Map<String, dynamic> ticket) => (ticket['subject'] ?? 'Support request').toString().replaceFirst(RegExp(r'^\\[[^\\]]+\\]\\s*'), '');
+  String _ticketDepartment(Map<String, dynamic> ticket) {
+    final match = RegExp(r'^\\[([^\\]]+)\\]').firstMatch((ticket['subject'] ?? '').toString());
+    return match?.group(1) ?? 'General Support';
+  }
+  List<Map<String, dynamic>> get _visibleTickets => _filter == 'All' ? _tickets : _tickets.where((t) => _ticketStatus(t) == _filter.toLowerCase()).toList();
+
+  void _openTicketDetails(Map<String, dynamic> ticket) async {
+    final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => _LiveTicketDetailsPage(ticket: ticket)));
+    if (changed == true && mounted) _loadTickets();
+  }
+
+  Future<void> _openRequestForm() async {
+    final created = await showModalBottomSheet<bool>(context: context, isScrollControlled: true, useSafeArea: true, backgroundColor: Colors.transparent, builder: (_) => const _LiveTicketRequestSheet());
+    if (created == true && mounted) {
+      await _loadTickets();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Support ticket created successfully.')));
+    }
+  }
+
+  Color _ticketStatusColor(String status) => status == 'closed' ? const Color(0xFF249B72) : status == 'pending' ? const Color(0xFF3989D6) : const Color(0xFFE39A24);
+
+  Widget _ticketCard(Map<String, dynamic> ticket, ThemeData theme) {
     final scheme = theme.colorScheme;
-    final status = ticket['status']!;
-    final statusColor = status == 'Open' ? const Color(0xFFE39A24)
-        : status == 'In-progress' ? const Color(0xFF3989D6) : const Color(0xFF249B72);
-    final priority = ticket['priority']!;
-    final priorityColor = priority == 'High' ? const Color(0xFFE15B5B)
-        : priority == 'Medium' ? const Color(0xFFE39A24) : scheme.onSurfaceVariant;
+    final status = _ticketStatus(ticket);
+    final statusColor = _ticketStatusColor(status);
+    final ticketId = (ticket['id'] ?? '').toString();
     return InkWell(
       onTap: () => _openTicketDetails(ticket),
       borderRadius: BorderRadius.circular(16),
@@ -44,21 +64,19 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
           border: Border.all(color: theme.dividerColor.withValues(alpha: .8))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text(ticket['id']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .45))),
+            Expanded(child: Text('TICKET #$ticketId', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .45))),
             Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(color: statusColor.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
-              child: Text(status, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900))),
+              child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900))),
           ]),
           const SizedBox(height: 9),
-          Text(ticket['subject']!, style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w800, height: 1.35)),
+          Text(_ticketSubject(ticket), style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w800, height: 1.35)),
           const SizedBox(height: 9),
           Row(children: [
             Icon(LucideIcons.folder, size: 12, color: scheme.onSurfaceVariant),
             const SizedBox(width: 5),
-            Expanded(child: Text(ticket['department']!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
-            Container(width: 5, height: 5, decoration: BoxDecoration(color: priorityColor, shape: BoxShape.circle)),
-            const SizedBox(width: 5),
-            Text('${priority} priority', style: TextStyle(color: priorityColor, fontSize: 9, fontWeight: FontWeight.w700)),
+            Expanded(child: Text(_ticketDepartment(ticket), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
+
           ]),
           const SizedBox(height: 11),
           Divider(height: 1, color: theme.dividerColor.withValues(alpha: .65)),
@@ -66,7 +84,7 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
           Row(children: [
             Icon(LucideIcons.clock3, size: 12, color: scheme.onSurfaceVariant),
             const SizedBox(width: 5),
-            Expanded(child: Text('Updated ${ticket['updated']}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
+            Expanded(child: Text('Updated ${ticket['updated_at'] ?? ticket['created_at']}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 9))),
             Icon(LucideIcons.chevronRight, size: 16, color: scheme.onSurfaceVariant),
           ]),
         ]),
@@ -78,12 +96,10 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
     final submitted = await showModalBottomSheet<bool>(
       context: context, isScrollControlled: true, useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _TicketRequestSheet(),
+      builder: (_) => const _LiveTicketRequestSheet(),
     );
     if (!mounted || submitted != true) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ticket submission is not connected yet.')),
-    );
+    await _loadTickets();
   }
 
   @override
@@ -95,7 +111,7 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
     final border = theme.dividerColor.withValues(alpha: dark ? .72 : .85);
     final surface = scheme.surface;
     const gold = Color(0xFFFFC533);
-    const filters = ['All', 'Open', 'In-progress', 'Closed'];
+    const filters = ['All', 'Open', 'Pending', 'Closed'];
 
     return Container(
       color: theme.scaffoldBackgroundColor,
@@ -168,9 +184,9 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
           const SizedBox(height: 12),
           Row(children: [
             for (final item in [
-              ('Open', _mockTickets.where((t) => t['status'] == 'Open').length, const Color(0xFFE39A24)),
-              ('In progress', _mockTickets.where((t) => t['status'] == 'In-progress').length, const Color(0xFF3989D6)),
-              ('Closed', _mockTickets.where((t) => t['status'] == 'Closed').length, const Color(0xFF249B72)),
+              ('Open', _tickets.where((t) => _ticketStatus(t) == 'open').length, const Color(0xFFE39A24)),
+              ('Pending', _tickets.where((t) => _ticketStatus(t) == 'pending').length, const Color(0xFF3989D6)),
+              ('Closed', _tickets.where((t) => _ticketStatus(t) == 'closed').length, const Color(0xFF249B72)),
             ])
               Expanded(child: Container(
                 margin: const EdgeInsets.only(right: 7), padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
@@ -208,18 +224,18 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
             ]),
           ),
           const SizedBox(height: 13),
-          if (_visibleTickets.isEmpty)
+          if (_loading)
+            const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
+          else if (_loadError != null)
+            Center(child: Column(children: [Text('Could not load tickets: $_loadError'), TextButton(onPressed: _loadTickets, child: const Text('Retry'))]))
+          else if (_visibleTickets.isEmpty)
             Container(padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)),
               child: Center(child: Text('No tickets in this status.', style: TextStyle(color: muted, fontSize: 11))))
           else
             for (final ticket in _visibleTickets) _ticketCard(ticket, theme),
           const SizedBox(height: 12),
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(LucideIcons.info, color: muted, size: 13),
-            const SizedBox(width: 7),
-            Expanded(child: Text('Ticket creation is currently a UI preview; requests are not sent to the support system.', style: TextStyle(color: muted, fontSize: 9, height: 1.45))),
-          ]),
+
         ],
       ),
     );

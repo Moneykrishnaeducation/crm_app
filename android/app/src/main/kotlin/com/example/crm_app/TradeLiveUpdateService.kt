@@ -204,15 +204,41 @@ class TradeLiveUpdateService : Service() {
                     ?.let { setRequestProperty("Host", it) }
             }
             val code = connection.responseCode
-            if (code !in 200..299) {
-                val errorBody = try {
-                    (connection.errorStream ?: connection.inputStream)
-                        .bufferedReader().use { it.readText() }
-                } catch (_: Exception) { "" }
-                throw IllegalStateException("HTTP $code: ${errorBody.take(240)}")
+            val responseStream = if (code in 200..299) {
+                connection.inputStream
+            } else {
+                connection.errorStream ?: connection.inputStream
             }
-            val encryptedPayload = connection.inputStream.bufferedReader().use { it.readText() }
-            val payload = decryptResponse(JSONObject(encryptedPayload), responseKeyPair)
+            val responseBody = responseStream.bufferedReader().use { it.readText() }
+            if (responseBody.isBlank()) {
+                throw IllegalStateException("HTTP $code: empty response body")
+            }
+
+            // API error responses are encrypted by the same middleware as successful
+            // responses. Decrypt before extracting diagnostics; never disable encryption.
+            val payload = try {
+                decryptResponse(JSONObject(responseBody), responseKeyPair)
+            } catch (decryptError: Exception) {
+                if (code in 200..299) throw decryptError
+                throw IllegalStateException(
+                    "HTTP $code: encrypted error response could not be decrypted",
+                    decryptError
+                )
+            }
+
+            if (code !in 200..299) {
+                val message = payload.optString("message")
+                    .ifBlank { payload.optString("detail") }
+                    .ifBlank { payload.optString("error") }
+                    .ifBlank { "Request failed" }
+                val technical = payload.optString("technical_details")
+                val details = payload.opt("details")?.toString().orEmpty()
+                val diagnostic = listOf(message, technical, details)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" | ")
+                throw IllegalStateException("HTTP $code: $diagnostic")
+            }
+
             return findPositions(payload)
         } finally {
             connection?.disconnect()

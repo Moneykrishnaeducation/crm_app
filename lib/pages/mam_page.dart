@@ -1792,6 +1792,11 @@ class MamPageState extends State<MamPage> {
     }
   }
 
+  double _apiDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0.0;
+  }
+
   MamMasterAccount _mamMasterFromApi(Map<String, dynamic> account) {
     final login = (account['account_id'] ?? '').toString();
     final risk = (account['risk_level'] ?? 'medium').toString();
@@ -1799,9 +1804,9 @@ class MamPageState extends State<MamPage> {
     return MamMasterAccount(
       name: (account['account_name'] ?? 'MAM Account $login').toString(),
       login: login,
-      profitShare: (account['profit_sharing_percentage'] as num?)?.toDouble() ?? 0,
+      profitShare: _apiDouble(account['profit_sharing_percentage']),
       leverage: '1:${account['leverage'] ?? 100}',
-      balance: (account['balance'] as num?)?.toDouble() ?? 0,
+      balance: _apiDouble(account['balance']),
       status: (account['status'] ?? 'Active').toString().toLowerCase() == 'active'
           ? 'Active'
           : 'Paused',
@@ -1809,7 +1814,7 @@ class MamPageState extends State<MamPage> {
       payout: payout[0].toUpperCase() + payout.substring(1),
       allocationMethod: 'Lot Proportional',
       investorsCount: 0,
-      totalAum: (account['balance'] as num?)?.toDouble() ?? 0,
+      totalAum: _apiDouble(account['balance']),
       monthlyGain: 0,
     );
   }

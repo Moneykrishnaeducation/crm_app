@@ -1137,6 +1137,7 @@ class AuthApi {
       _request(
         'POST',
         'mam-accounts/create/',
+        encryptProfileBody: true,
         body: {
           'account_name': accountName.trim(),
           'account_type': 'mam',

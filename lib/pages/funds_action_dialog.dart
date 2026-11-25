@@ -112,11 +112,14 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
         accounts.insert(0, {
           'id': id,
           'label': label,
-          'tier': 'LIVE',
-          'available': 10000.00,
-          'equity': 10000.00,
-          'margin': 0.00,
-          'leverage': '1:500',
+          'tier': (widget.accountLabel ?? '').toLowerCase().contains('master')
+              ? 'MAM MASTER'
+              : 'LIVE',
+          // The account is supplied by the caller; do not fabricate its balance.
+          'available': 0.0,
+          'equity': 0.0,
+          'margin': 0.0,
+          'leverage': '—',
         });
         _selectedAccountIndex = 0;
       }
@@ -158,12 +161,36 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             'leverage': item['leverage'] != null ? '1:${item['leverage']}' : '1:500',
           });
         }
-        if (parsed.isNotEmpty) {
+        // Keep an explicitly requested account (for example, a MAM master
+        // account) in the selector even when it is not returned by the regular
+        // MT5 trading-accounts endpoint.
+        if (widget.accountId != null &&
+            !parsed.any((account) => account['id'] == widget.accountId)) {
+          parsed.insert(0, {
+            'id': widget.accountId!,
+            'label': widget.accountLabel ?? 'Account · ${widget.accountId}',
+            'tier': (widget.accountLabel ?? '').toLowerCase().contains('master')
+                ? 'MAM MASTER'
+                : 'LIVE',
+            // Balance/equity are unknown until the relevant account API returns them.
+            'available': 0.0,
+            'equity': 0.0,
+            'margin': 0.0,
+            'leverage': '—',
+          });
+        }
+
+        if (parsed.isNotEmpty && mounted) {
           setState(() {
             _tradingAccounts = parsed;
             if (widget.accountId != null) {
-              final idx = _tradingAccounts.indexWhere((a) => a['id'] == widget.accountId);
+              final idx = _tradingAccounts.indexWhere(
+                (account) => account['id']?.toString() == widget.accountId,
+              );
               if (idx != -1) _selectedAccountIndex = idx;
+            } else {
+              _selectedAccountIndex = _selectedAccountIndex
+                  .clamp(0, _tradingAccounts.length - 1);
             }
           });
         }

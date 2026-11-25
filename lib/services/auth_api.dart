@@ -528,6 +528,9 @@ class AuthApi {
     return grouped;
   }
 
+  Future<Map<String, dynamic>> changeSupportTicketStatus(int ticketId, String status) =>
+      _request('POST', 'tickets/$ticketId/change-status/', body: <String, dynamic>{'status': status});
+
   Future<Map<String, dynamic>> getSupportTicket(int ticketId) =>
       _request('GET', 'tickets/$ticketId/');
 

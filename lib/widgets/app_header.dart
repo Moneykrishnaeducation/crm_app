@@ -12,7 +12,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final ValueChanged<String>? onSelectPage;
 
   @override
-  Size get preferredSize => const Size.fromHeight(58);
+  Size get preferredSize => const Size.fromHeight(64);
 
   bool get _isPrimaryTab => onBack == null;
   bool get _usesBrandHeader => _isPrimaryTab;
@@ -22,7 +22,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AppBar(
-      toolbarHeight: 58,
+      toolbarHeight: 64,
       backgroundColor: Theme.of(context).appBarTheme.backgroundColor ??
           (isDark ? const Color(0xFF101D31) : Colors.white),
       surfaceTintColor: Colors.transparent,
@@ -66,7 +66,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
     return Stack(
       alignment: Alignment.centerLeft,
       children: [
-        // Accessible candidate for automated test assertions
+        // Keep the active tab title available to accessibility and UI tests.
         SizedBox(
           width: 0,
           height: 0,
@@ -75,12 +75,11 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
             style: const TextStyle(fontSize: 0, color: Colors.transparent),
           ),
         ),
-        // Clean crisp logo without any text beneath
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 5),
           child: Image.asset(
             'assets/images/vtindex_logo.png',
-            height: 32,
+            height: 36,
             fit: BoxFit.contain,
             alignment: Alignment.centerLeft,
             semanticLabel: 'VTIndex',
@@ -103,77 +102,115 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  List<Widget> _buildPrimaryBrandActions(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return [
-      IconButton(
-        visualDensity: VisualDensity.compact,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-        icon: Icon(LucideIcons.search, size: 20, color: onSurface),
-        tooltip: 'Search',
-        onPressed: () => _showSearchSheet(context),
-      ),
-      IconButton(
-        visualDensity: VisualDensity.compact,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-        tooltip: 'Notifications',
-        onPressed: () => _showNotificationsSheet(context),
-        icon: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Icon(LucideIcons.bell, size: 20, color: onSurface),
-            ValueListenableBuilder<int>(
-              valueListenable: AppNotificationCenter.instance.unreadCountNotifier,
-              builder: (context, unread, _) {
-                if (unread <= 0) return const SizedBox.shrink();
-                final badgeLabel = unread >= 3 ? '99+' : '$unread';
-                return Positioned(
-                  right: -6,
-                  top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDC2626),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
-                    child: Center(
-                      child: Text(
-                        badgeLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.w800,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+  Widget _headerAction({
+    required BuildContext context,
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? iconColor,
+    Widget? overlay,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final border = theme.dividerColor.withValues(alpha: isDark ? 0.55 : 0.72);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(13),
+            child: Ink(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: isDark ? 0.48 : 0.68,
+                ),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: border, width: 0.8),
+              ),
+              child: Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(icon, size: 18, color: iconColor ?? theme.colorScheme.onSurface),
+                    if (overlay != null) overlay,
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
         ),
       ),
-      IconButton(
-        visualDensity: VisualDensity.compact,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-        icon: Icon(LucideIcons.headset, size: 20, color: onSurface),
+    );
+  }
+
+  List<Widget> _buildPrimaryBrandActions(BuildContext context) {
+    return [
+      _headerAction(
+        context: context,
+        tooltip: 'Search',
+        icon: LucideIcons.search,
+        onPressed: () => _showSearchSheet(context),
+      ),
+      _headerAction(
+        context: context,
+        tooltip: 'Notifications',
+        icon: LucideIcons.bell,
+        onPressed: () => _showNotificationsSheet(context),
+        overlay: ValueListenableBuilder<int>(
+          valueListenable: AppNotificationCenter.instance.unreadCountNotifier,
+          builder: (context, unread, _) {
+            if (unread <= 0) return const SizedBox.shrink();
+            return Positioned(
+              right: -9,
+              top: -9,
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDC2626),
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(
+                    color: Theme.of(context).appBarTheme.backgroundColor ??
+                        Theme.of(context).scaffoldBackgroundColor,
+                    width: 1.4,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    unread > 99 ? '99+' : '$unread',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      _headerAction(
+        context: context,
         tooltip: 'Customer Support',
+        icon: LucideIcons.headset,
         onPressed: () => _showSupportDialog(context),
       ),
-      IconButton(
-        visualDensity: VisualDensity.compact,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-        icon: Icon(LucideIcons.logOut, size: 19, color: onSurface),
+      _headerAction(
+        context: context,
         tooltip: 'Log out',
+        icon: LucideIcons.logOut,
+        iconColor: const Color(0xFFDC5555),
         onPressed: () => _showLogoutSheet(context),
       ),
-      const SizedBox(width: 8),
+      const SizedBox(width: 7),
     ];
   }
 

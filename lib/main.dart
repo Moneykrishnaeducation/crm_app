@@ -448,6 +448,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   void _addAccount(BrokerAccount account) {
+    if (!mounted) return;
     setState(() => _accounts.insert(0, account));
   }
 
@@ -667,6 +668,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final List<BrokerAccount> _demoAccounts = <BrokerAccount>[];
 
   void _addDemoAccount(BrokerAccount account) {
+    if (!mounted) return;
     setState(() => _demoAccounts.insert(0, account));
     showAppMessage('Demo account ${account.login} created successfully.');
   }
@@ -913,6 +915,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             onBack: _handleBack,
             onSelectPage: _selectPage,
             onTransferCompleted: (fromLogin, toLogin, amount) {
+              if (!mounted) return;
               setState(() {
                 final fromIdx = _accounts.indexWhere(
                   (a) => a.login == fromLogin,
@@ -1075,6 +1078,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             accounts: _accounts,
             selectedAccountLogin: _selectedAccount?.login,
             onAccountChanged: (login) {
+              if (!mounted) return;
               setState(() {
                 final acc = _accounts.firstWhere(
                   (a) => a.login == login,

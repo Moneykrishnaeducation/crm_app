@@ -541,7 +541,7 @@ class _MoreProfileCardState extends State<_MoreProfileCard> {
               child: _profileImage != null
                   ? ClipOval(
                       child: Image(
-                        image: _profileImage!,
+                        image: ResizeImage(_profileImage!, width: 144, height: 144),
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,

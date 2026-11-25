@@ -80,6 +80,7 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
           child: Image.asset(
             'assets/images/vtindex_logo.png',
             height: 36,
+            cacheHeight: 108,
             fit: BoxFit.contain,
             alignment: Alignment.centerLeft,
             semanticLabel: 'VTIndex',

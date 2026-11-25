@@ -379,8 +379,12 @@ class AuthApi {
         : <String, dynamic>{'data': responsePayload};
     final apiCode = data['code'];
     final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
-    final hasErrorMessage =
-        data['error'] is String && (data['error'] as String).isNotEmpty;
+    final errorVal = data['error'] ?? data['errors'];
+    final hasErrorMessage = errorVal != null &&
+        errorVal != false &&
+        (errorVal is! String || errorVal.isNotEmpty) &&
+        (errorVal is! List || errorVal.isNotEmpty) &&
+        (errorVal is! Map || errorVal.isNotEmpty);
     if (response.statusCode < 200 ||
         response.statusCode >= 300 ||
         hasApiError ||
@@ -524,10 +528,22 @@ class AuthApi {
   }
 
   String _messageFrom(Map<String, dynamic> data) {
-    for (final key in const ['message', 'error', 'detail']) {
+    for (final key in const ['message', 'error', 'errors', 'detail', 'non_field_errors']) {
       final value = data[key];
       if (value is String && value.isNotEmpty) return value;
-      if (value is List && value.isNotEmpty) return value.join(' ');
+      if (value is List && value.isNotEmpty) return value.map((e) => e.toString()).join(' ');
+      if (value is Map && value.isNotEmpty) {
+        final messages = <String>[];
+        for (final entry in value.entries) {
+          final v = entry.value;
+          if (v is List) {
+            messages.add('${entry.key}: ${v.join(', ')}');
+          } else if (v != null) {
+            messages.add('${entry.key}: $v');
+          }
+        }
+        if (messages.isNotEmpty) return messages.join('; ');
+      }
     }
     return 'The request failed. Please try again.';
   }

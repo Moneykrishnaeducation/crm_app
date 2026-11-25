@@ -215,7 +215,7 @@ class _ReferenceAccountCard extends StatelessWidget {
               gradient: const LinearGradient(colors: [Color(0xFF1B4E82), Color(0xFF102B4B)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(14)),
               child: Image.network('https://image.vtindex.com/Logo-img.png', fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/vtindex_logo_img.png', fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/vtindex_logo_img.png', fit: BoxFit.contain, cacheWidth: 120, cacheHeight: 120,
                   errorBuilder: (context, error, stackTrace) => const Icon(LucideIcons.chartNoAxesColumnIncreasing, color: Color(0xFF39B5FF)))),
             ),
             const SizedBox(width: 11),
@@ -311,6 +311,15 @@ class _PortfolioLinePainter extends CustomPainter {
   final Color lineColor;
   final Color fillColor;
 
+  static final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _linePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.8
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+  static final Path _linePath = Path();
+  static final Path _fillPath = Path();
+
   @override
   void paint(Canvas canvas, Size size) {
     if (values.length < 2 || size.width <= 0 || size.height <= 0) return;
@@ -324,7 +333,8 @@ class _PortfolioLinePainter extends CustomPainter {
 
     final range = maxValue - minValue;
     final safeRange = range == 0 ? 1.0 : range;
-    final linePath = Path();
+    _linePath.reset();
+    _fillPath.reset();
     var lastX = 0.0;
 
     for (var index = 0; index < values.length; index++) {
@@ -333,30 +343,24 @@ class _PortfolioLinePainter extends CustomPainter {
       final y = size.height - (normalized * (size.height * 0.78)) -
           (size.height * 0.11);
       if (index == 0) {
-        linePath.moveTo(x, y);
+        _linePath.moveTo(x, y);
       } else {
-        linePath.lineTo(x, y);
+        _linePath.lineTo(x, y);
       }
       lastX = x;
     }
 
-    final fillPath = Path.from(linePath)
+    _fillPath.addPath(_linePath, Offset.zero);
+    _fillPath
       ..lineTo(lastX, size.height)
       ..lineTo(0, size.height)
       ..close();
 
-    final fillPaint = Paint()
-      ..color = fillColor
-      ..style = PaintingStyle.fill;
-    final linePaint = Paint()
-      ..color = lineColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+    _fillPaint.color = fillColor;
+    _linePaint.color = lineColor;
 
-    canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(linePath, linePaint);
+    canvas.drawPath(_fillPath, _fillPaint);
+    canvas.drawPath(_linePath, _linePaint);
   }
 
   @override
@@ -394,6 +398,8 @@ class _AccountLogoBadge extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => Image.asset(
           'assets/images/vtindex_logo_img.png',
           fit: BoxFit.contain,
+          cacheWidth: 120,
+          cacheHeight: 120,
           errorBuilder: (context, error, stackTrace) => const Icon(
             LucideIcons.chartNoAxesColumnIncreasing,
             color: Color(0xFF39B5FF),
@@ -728,7 +734,10 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
     _fetchTradingGroups();
   }
 
+  bool _groupsLoadFailed = false;
+
   Future<void> _fetchTradingGroups() async {
+    if (mounted) setState(() => _groupsLoadFailed = false);
     try {
       final res = await AuthApi.instance.getTradingGroups(type: 'real');
       if (!mounted) return;
@@ -736,6 +745,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
       if (groups.isNotEmpty) {
         setState(() {
           _tradeGroups = groups;
+          _groupsLoadFailed = false;
           final defaultGroup = groups.firstWhere(
             (g) => g['is_default'] == true,
             orElse: () => groups.first,
@@ -746,7 +756,11 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
           _group = (alias != null && alias.isNotEmpty) ? alias : (name ?? 'Standard');
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        setState(() => _groupsLoadFailed = true);
+      }
+    }
   }
 
   @override
@@ -864,6 +878,30 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
                     },
                   )),
                 ),
+                if (_groupsLoadFailed && _tradeGroups.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Unable to load live groups.',
+                          style: TextStyle(color: cs.error, fontSize: 11),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: _fetchTradingGroups,
+                          child: Text(
+                            'Retry',
+                            style: TextStyle(
+                              color: cs.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 14),
                 _fieldLabel('Leverage'),
                 const SizedBox(height: 7),

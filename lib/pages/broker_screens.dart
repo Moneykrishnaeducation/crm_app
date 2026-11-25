@@ -317,6 +317,17 @@ class _DashboardPortfolioLinePainter extends CustomPainter {
   final List<double> values;
   final Color lineColor;
   final Color fillColor;
+
+  static final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _linePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.4
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+  static final Paint _circlePaint = Paint()..style = PaintingStyle.fill;
+  static final Path _path = Path();
+  static final Path _areaPath = Path();
+
   @override
   void paint(Canvas canvas, Size size) {
     if (values.length < 2 || size.isEmpty) return;
@@ -324,15 +335,24 @@ class _DashboardPortfolioLinePainter extends CustomPainter {
     final maxValue = values.reduce((a, b) => a > b ? a : b);
     final range = (maxValue - minValue).abs() < .001 ? 1.0 : maxValue - minValue;
     final points = List<Offset>.generate(values.length, (i) => Offset(size.width * i / (values.length - 1), size.height - 7 - ((values[i] - minValue) / range) * (size.height - 18)));
-    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    _path.reset();
+    _areaPath.reset();
+    _path.moveTo(points.first.dx, points.first.dy);
     for (var i = 1; i < points.length; i++) {
       final prev = points[i - 1], current = points[i], mid = (prev.dx + current.dx) / 2;
-      path.cubicTo(mid, prev.dy, mid, current.dy, current.dx, current.dy);
+      _path.cubicTo(mid, prev.dy, mid, current.dy, current.dx, current.dy);
     }
-    final area = Path.from(path)..lineTo(size.width, size.height)..lineTo(0, size.height)..close();
-    canvas.drawPath(area, Paint()..color = fillColor);
-    canvas.drawPath(path, Paint()..color = lineColor..style = PaintingStyle.stroke..strokeWidth = 2.4..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
-    canvas.drawCircle(points.last, 3.5, Paint()..color = lineColor);
+    _areaPath.addPath(_path, Offset.zero);
+    _areaPath
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    _fillPaint.color = fillColor;
+    _linePaint.color = lineColor;
+    _circlePaint.color = lineColor;
+    canvas.drawPath(_areaPath, _fillPaint);
+    canvas.drawPath(_path, _linePaint);
+    canvas.drawCircle(points.last, 3.5, _circlePaint);
   }
   @override
   bool shouldRepaint(covariant _DashboardPortfolioLinePainter old) => old.values != values || old.lineColor != lineColor || old.fillColor != fillColor;

@@ -268,3 +268,14 @@ flowchart TD
 
     P0 --> P1 --> P2
 ```
+
+---
+
+## 6. Remediation Execution Status
+
+| Phase | Priority | Scope | Status | Verification & Git Reference |
+|:---:|:---:|---|:---:|---|
+| **Phase 1** | **P0** | Withdrawal exception handling, live tickets, biometric token binding, debug-gated localhost, native RSA caching | **COMPLETED** | Verified via `flutter analyze` & unit tests (`a4b4881`) |
+| **Phase 2** | **P1** | Virtualized `BrokerTransactionsPage` slivers, static `TextPainter` cache, network security config cleartext lockdown, session RSA rotation | **COMPLETED** | Verified via `flutter analyze` & `activity_page_test.dart` (`e4b1830`) |
+| **Phase 3** | **P2** | Reusable Canvas `Paint`/`Path` caches, downsampled `cacheWidth`/`cacheHeight` image decodes, DRF error map parsing, async `mounted` guards, and trading group retry UI | **COMPLETED** | Verified via `flutter analyze` (0 issues) & full regression suite |
+

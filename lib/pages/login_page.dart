@@ -733,9 +733,13 @@ class _LoginPageState extends State<LoginPage> {
               child: Image.asset(
                 'assets/images/vtindex_app_icon_source.png',
                 fit: BoxFit.contain,
+                cacheWidth: 144,
+                cacheHeight: 144,
                 errorBuilder: (context, error, stackTrace) => Image.asset(
                   'assets/images/vtindex_logo_img.png',
                   fit: BoxFit.contain,
+                  cacheWidth: 144,
+                  cacheHeight: 144,
                 ),
               ),
             ),

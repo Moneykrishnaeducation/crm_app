@@ -286,6 +286,8 @@ class MamPageState extends State<MamPage> {
   late List<MamInvestorAccount> _investorAccounts;
   late List<AvailableMamPool> _availablePools;
   final Set<String> _mamStatusUpdating = <String>{};
+  bool _isLoadingMamAccounts = true;
+  String? _mamAccountsError;
 
   static const Color _brandBlue = Color(0xFF2563EB);
   static const Color _brandGold = Color(0xFFF59E0B);
@@ -295,72 +297,8 @@ class MamPageState extends State<MamPage> {
     super.initState();
     _tab = widget.initialTab.clamp(0, 2);
 
-    _masters = [
-      MamMasterAccount(
-        name: 'Devo-Testmam',
-        login: '2141715173',
-        profitShare: 40.0,
-        leverage: '1:500',
-        balance: 0.00,
-        status: 'Active',
-        risk: 'Medium',
-        payout: 'Weekly',
-        allocationMethod: 'Lot Proportional',
-        investorsCount: 12,
-        totalAum: 482500.0,
-        monthlyGain: 14.8,
-        server: 'VTindex-MT5',
-        tradingPlatform: 'MetaTrader 5 (MT5)',
-        algoTrading: 'Manual',
-        pendingRelease: 4.03,
-        releasedPayout: 0.00,
-        pendingWallet: 0.00,
-        totalSettled: 0.00,
-        tradesProcessed: 0,
-      ),
-      MamMasterAccount(
-        name: 'Alpha Quant Alpha-1',
-        login: '8849102',
-        profitShare: 20.0,
-        leverage: '1:500',
-        balance: 45200.00,
-        status: 'Active',
-        risk: 'Moderate',
-        payout: 'Monthly',
-        allocationMethod: 'Equity Proportional',
-        investorsCount: 48,
-        totalAum: 482500.0,
-        monthlyGain: 14.8,
-      ),
-      MamMasterAccount(
-        name: 'Prime Trend Rider',
-        login: '8850231',
-        profitShare: 25.0,
-        leverage: '1:200',
-        balance: 18500.00,
-        status: 'Active',
-        risk: 'Low-Risk',
-        payout: 'Bi-Weekly',
-        allocationMethod: 'Lot Proportional',
-        investorsCount: 64,
-        totalAum: 620400.0,
-        monthlyGain: 11.2,
-      ),
-      MamMasterAccount(
-        name: 'Apex Scalper High-Freq',
-        login: '8839014',
-        profitShare: 30.0,
-        leverage: '1:500',
-        balance: 8900.00,
-        status: 'Paused',
-        risk: 'Aggressive',
-        payout: 'Weekly',
-        allocationMethod: 'Equity Ratio',
-        investorsCount: 19,
-        totalAum: 115000.0,
-        monthlyGain: 26.5,
-      ),
-    ];
+    // Master accounts are loaded from the authenticated backend API.
+    _masters = [];
 
     _investments = [
       MamInvestmentSubscription(
@@ -922,13 +860,49 @@ class MamPageState extends State<MamPage> {
       const SizedBox(height: 14),
       _buildManagerSearchAndFilters(),
       const SizedBox(height: 12),
-      if (filtered.isEmpty)
+      if (_isLoadingMamAccounts && _masters.isEmpty)
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 28),
+          alignment: Alignment.center,
+          child: const CircularProgressIndicator(),
+        )
+      else if (_mamAccountsError != null && _masters.isEmpty)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _c.border),
+          ),
+          child: Column(
+            children: [
+              Text(_mamAccountsError!, textAlign: TextAlign.center,
+                  style: TextStyle(color: _c.muted, fontSize: 12)),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: _loadMamAccounts,
+                icon: const Icon(LucideIcons.refreshCw, size: 15),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        )
+      else if (filtered.isEmpty)
         _buildEmptyManagerSearch()
       else
         for (final master in filtered) ...[
           _buildMasterNodeCard(master),
           const SizedBox(height: 10),
         ],
+      if (_isLoadingMamAccounts && _masters.isNotEmpty)
+        const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Center(child: SizedBox(
+            width: 18, height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )),
+        ),
     ];
   }
 
@@ -1832,17 +1806,43 @@ class MamPageState extends State<MamPage> {
   }
 
   Future<void> _loadMamAccounts() async {
+    if (mounted) {
+      setState(() {
+        _isLoadingMamAccounts = true;
+        _mamAccountsError = null;
+      });
+    }
+
     try {
       final accounts = await AuthApi.instance.getUserMamAccounts();
+      final masters = await Future.wait(accounts.map((account) async {
+        final master = _mamMasterFromApi(account);
+        try {
+          final investors = await AuthApi.instance.getMamInvestors(master.login);
+          master.investorsCount = investors.length;
+        } catch (error) {
+          debugPrint('Could not load investors for MAM ${master.login}: $error');
+        }
+        return master;
+      }));
+
       if (!mounted) return;
       setState(() {
-        _masters = accounts.map(_mamMasterFromApi).toList();
+        _masters = masters;
+        _isLoadingMamAccounts = false;
+        _mamAccountsError = null;
       });
-    } catch (error) {
+    } catch (error, stackTrace) {
       debugPrint('Could not load MAM accounts: $error');
-      if (mounted) showAppMessage(
-        error is AuthApiException ? error.message : 'Could not load MAM accounts.',
-      );
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() {
+        _masters = [];
+        _isLoadingMamAccounts = false;
+        _mamAccountsError = error is AuthApiException
+            ? error.message
+            : 'Could not load MAM accounts.';
+      });
     }
   }
 
@@ -1851,28 +1851,49 @@ class MamPageState extends State<MamPage> {
     return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 
+  bool _apiBool(dynamic value, {bool fallback = false}) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (['true', '1', 'yes', 'enabled', 'active'].contains(normalized)) return true;
+      if (['false', '0', 'no', 'disabled', 'paused', 'inactive'].contains(normalized)) return false;
+    }
+    return fallback;
+  }
+
   MamMasterAccount _mamMasterFromApi(Map<String, dynamic> account) {
     final login = (account['account_id'] ?? '').toString();
-    final risk = (account['risk_level'] ?? 'medium').toString();
-    final payout = (account['payout_frequency'] ?? 'weekly').toString();
+    final rawRisk = (account['risk_level'] ?? '').toString().trim();
+    final rawPayout = (account['payout_frequency'] ?? '').toString().trim();
+    final leverageValue = account['leverage']?.toString() ?? '';
+    final balance = _apiDouble(account['balance']);
+    final isTradingEnabled = _apiBool(
+      account['is_trading_enabled'] ?? account['is_enabled'],
+      fallback: (account['status'] ?? '').toString().toLowerCase() == 'active',
+    );
+
     return MamMasterAccount(
       name: (account['account_name'] ?? 'MAM Account $login').toString(),
       login: login,
       profitShare: _apiDouble(account['profit_sharing_percentage']),
-      leverage: '1:${account['leverage'] ?? 100}',
-      balance: _apiDouble(account['balance']),
-      status: _apiBool(
-        account['is_trading_enabled'] ?? account['is_enabled'],
-        fallback: (account['status'] ?? 'Active').toString().toLowerCase() == 'active',
-      )
-          ? 'Active'
-          : 'Paused',
-      risk: risk[0].toUpperCase() + risk.substring(1),
-      payout: payout[0].toUpperCase() + payout.substring(1),
-      allocationMethod: 'Lot Proportional',
+      leverage: leverageValue.isEmpty ? '—' : '1:$leverageValue',
+      balance: balance,
+      status: isTradingEnabled ? 'Active' : 'Paused',
+      risk: rawRisk.isEmpty ? 'Unknown' : rawRisk[0].toUpperCase() + rawRisk.substring(1),
+      payout: rawPayout.isEmpty ? 'Unknown' : rawPayout[0].toUpperCase() + rawPayout.substring(1),
+      allocationMethod: (account['group_name'] ?? 'MT5 Master').toString(),
       investorsCount: 0,
-      totalAum: _apiDouble(account['balance']),
-      monthlyGain: 0,
+      totalAum: balance,
+      monthlyGain: 0.0,
+      server: (account['server'] ?? '').toString(),
+      tradingPlatform: 'MetaTrader 5 (MT5)',
+      algoTrading: _apiBool(account['is_algo_enabled']) ? 'Enabled' : 'Disabled',
+      pendingRelease: _apiDouble(account['pending_release']),
+      releasedPayout: _apiDouble(account['released_payout']),
+      pendingWallet: _apiDouble(account['pending_wallet']),
+      totalSettled: _apiDouble(account['total_settled']),
+      tradesProcessed: _apiDouble(account['trades_processed']).toInt(),
     );
   }
 
@@ -3552,14 +3573,8 @@ class MamPageState extends State<MamPage> {
       withdrawal: false,
       accountId: master.login,
       accountLabel: '${master.name} · Master #${master.login}',
-      onCompleted: (amt) {
-        setState(() {
-          master.balance += amt;
-          master.totalAum += amt;
-        });
-        showAppMessage(
-          'Deposited \$${amt.toStringAsFixed(2)} to Master Node #${master.login}',
-        );
+      onCompleted: (_) {
+        _loadMamAccounts();
       },
     );
   }
@@ -3570,14 +3585,8 @@ class MamPageState extends State<MamPage> {
       withdrawal: true,
       accountId: master.login,
       accountLabel: '${master.name} · Master #${master.login}',
-      onCompleted: (amt) {
-        setState(() {
-          master.balance = (master.balance - amt).clamp(0.0, double.infinity);
-          master.totalAum = (master.totalAum - amt).clamp(0.0, double.infinity);
-        });
-        showAppMessage(
-          'Withdrew \$${amt.toStringAsFixed(2)} from Master Node #${master.login}',
-        );
+      onCompleted: (_) {
+        _loadMamAccounts();
       },
     );
   }

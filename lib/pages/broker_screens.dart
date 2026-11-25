@@ -76,16 +76,20 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
         final data = raw is Map ? raw.cast<String, dynamic>() : <String, dynamic>{};
         final rows = data['results'] ?? data['transactions'] ?? raw;
         final trades = rows is List ? rows.whereType<Map>().map((row) => row.cast<String, dynamic>()).toList() : <Map<String, dynamic>>[];
-        final profits = trades.map((row) => _number(row['profit'] ?? row['pnl'] ?? row['closed_profit'])).toList();
+        final profits = trades.map((row) {
+          final rawDate = row['close_time'] ?? row['closed_at'] ?? row['created_at'] ?? row['time'] ?? row['date'];
+          final parsedDate = rawDate == null ? null : DateTime.tryParse(rawDate.toString());
+          return (date: parsedDate == null ? null : parsedDate.toUtc().toIso8601String().substring(0, 10), value: _number(row['profit'] ?? row['pnl'] ?? row['closed_profit']));
+        }).where((item) => item.date != null).toList();
         return (positions: positions, profits: profits);
       }));
       if (!mounted) return;
       final allPositions = results.expand((item) => item.positions).toList();
       final daily = <String, double>{};
       for (final result in results) {
-        for (var i = 0; i < result.profits.length; i++) {
-          final key = i.toString().padLeft(4, '0');
-          daily[key] = (daily[key] ?? 0) + result.profits[i];
+        for (final trade in result.profits) {
+          final key = trade.date!;
+          daily[key] = (daily[key] ?? 0) + trade.value;
         }
       }
       var cumulative = 0.0;

@@ -24,7 +24,7 @@ class AuthApi {
   static const _localHost = 'client.localhost:8000';
   static const _useLocalhostEnv = bool.fromEnvironment(
     'USE_LOCALHOST',
-    defaultValue: bool.fromEnvironment('USE_LOCAL_API', defaultValue: false),
+    defaultValue: !bool.fromEnvironment('USE_PRODUCTION_API', defaultValue: false),
   );
   static const _apiPrefix = String.fromEnvironment(
     'API_PREFIX',
@@ -108,8 +108,7 @@ class AuthApi {
   }
 
   bool _isLocalUri(Uri uri) {
-    return _useLocalhost ||
-        uri.host == '10.0.2.2' ||
+    return uri.host == '10.0.2.2' ||
         uri.host == '127.0.0.1' ||
         uri.host == 'localhost' ||
         uri.host == 'client.localhost';

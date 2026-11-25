@@ -1170,6 +1170,20 @@ class AuthApi {
     throw const AuthApiException('Unexpected MAM accounts response format.');
   }
 
+  /// Enable or disable trading on a MAM master account in MT5.
+  Future<Map<String, dynamic>> setMamTradingEnabled({
+    required String mamId,
+    required bool enabled,
+  }) =>
+      _request(
+        'POST',
+        'toggle-mam-status/${Uri.encodeComponent(mamId)}/',
+        body: {
+          'mam_id': mamId,
+          'enable_trading': enabled,
+        },
+      );
+
   /// Live USD to INR exchange rate
   Future<double> getUsdInrRate() async {
     try {

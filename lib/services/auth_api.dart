@@ -1179,7 +1179,6 @@ class AuthApi {
         'POST',
         'toggle-mam-status/${Uri.encodeComponent(mamId)}/',
         body: {
-          'mam_id': mamId,
           'enable_trading': enabled,
         },
       );

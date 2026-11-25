@@ -587,6 +587,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       floatingPnl: item['is_active'] == false || item['is_enabled'] == false
           ? null
           : profit == null ? equity - balance : _accountNumber(profit),
+      margin: _accountNumber(item['margin'] ?? item['used_margin'] ?? item['usedMargin']),
+      freeMargin: _accountNumber(item['free_margin'] ?? item['freeMargin']),
+      marginLevel: _accountNumber(item['margin_level'] ?? item['marginLevel']),
+      credit: _accountNumber(item['credit']),
+      groupName: group,
+      isMt5Connected: item['is_mt5_connected'] == true || item['mt5_connected'] == true,
     );
   }
 

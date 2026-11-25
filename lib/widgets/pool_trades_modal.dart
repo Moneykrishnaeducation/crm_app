@@ -179,13 +179,11 @@ class _PoolTradesModalState extends State<PoolTradesModal>
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
-    final maxHeight = mq.size.height * 0.88;
-
-    final wideLayout = mq.size.width >= 760;
+    final maxHeight = mq.size.height * 0.94;
 
     return Center(
       child: Container(
-      width: wideLayout ? mq.size.width - 64 : mq.size.width,
+      width: mq.size.width,
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: _bg,
@@ -375,9 +373,7 @@ class _PoolTradesModalState extends State<PoolTradesModal>
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final cardWidth = wideLayout
-                    ? (constraints.maxWidth - 24) / 4
-                    : (constraints.maxWidth - 8) / 2;
+                final cardWidth = (constraints.maxWidth - 8) / 2;
                 return Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -460,9 +456,7 @@ class _PoolTradesModalState extends State<PoolTradesModal>
                       )
                     : _positions.isEmpty
                         ? _buildEmptyState()
-                        : wideLayout
-                            ? _buildDesktopPositionsTable()
-                            : ListView.separated(
+                        : ListView.separated(
                                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
                                 itemCount: _positions.length,
                                 separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -474,136 +468,6 @@ class _PoolTradesModalState extends State<PoolTradesModal>
         ],
       ),
       ),
-    );
-  }
-
-  Widget _buildDesktopPositionsTable() {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 1040),
-                child: DataTable(
-                  headingRowHeight: 42,
-                  dataRowMinHeight: 48,
-                  dataRowMaxHeight: 56,
-                  horizontalMargin: 12,
-                  columnSpacing: 22,
-                  headingRowColor: WidgetStatePropertyAll(_subBg),
-                  border: TableBorder(
-                    horizontalInside: BorderSide(color: _border),
-                    bottom: BorderSide(color: _border),
-                  ),
-                  columns: const [
-                    DataColumn(label: Text('TICKET')),
-                    DataColumn(label: Text('SYMBOL')),
-                    DataColumn(label: Text('TYPE')),
-                    DataColumn(label: Text('VOLUME')),
-                    DataColumn(label: Text('OPEN PRICE')),
-                    DataColumn(label: Text('CURRENT PRICE')),
-                    DataColumn(label: Text('FLOATING P/L')),
-                    DataColumn(label: Text('SWAP')),
-                    DataColumn(label: Text('OPEN TIME')),
-                    DataColumn(label: Text('COMMENT')),
-                  ],
-                  rows: _positions.map((position) {
-                    final sideColor = position.isBuy ? _blue : _rose;
-                    final pnlColor = position.isProfit ? _green : _rose;
-                    return DataRow(
-                      cells: [
-                        DataCell(Text('#${position.ticket}', style: GoogleFonts.jetBrainsMono(
-                          color: _text, fontSize: 11, fontWeight: FontWeight.w700,
-                        ))),
-                        DataCell(Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: _blue.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(7),
-                            border: Border.all(color: _blue.withValues(alpha: 0.25)),
-                          ),
-                          child: Text(position.symbol, style: GoogleFonts.inter(
-                            color: _blue, fontSize: 11, fontWeight: FontWeight.w800,
-                          )),
-                        )),
-                        DataCell(Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: sideColor.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: sideColor.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(position.type.toUpperCase(), style: GoogleFonts.inter(
-                            color: sideColor, fontSize: 10, fontWeight: FontWeight.w800,
-                          )),
-                        )),
-                        DataCell(Text(position.volume, style: GoogleFonts.jetBrainsMono(
-                          color: _text, fontSize: 11, fontWeight: FontWeight.w700,
-                        ))),
-                        DataCell(Text(position.openPrice, style: GoogleFonts.jetBrainsMono(
-                          color: _text, fontSize: 11,
-                        ))),
-                        DataCell(Text(position.currentPrice, style: GoogleFonts.jetBrainsMono(
-                          color: _blue, fontSize: 11, fontWeight: FontWeight.w700,
-                        ))),
-                        DataCell(Text(
-                          '\$${position.profit >= 0 ? '+' : ''}${position.profit.toStringAsFixed(2)}',
-                          style: GoogleFonts.jetBrainsMono(
-                            color: pnlColor, fontSize: 11, fontWeight: FontWeight.w800,
-                          ),
-                        )),
-                        DataCell(Text(position.swap, style: GoogleFonts.jetBrainsMono(
-                          color: _text, fontSize: 11,
-                        ))),
-                        DataCell(Text(position.openTime, style: GoogleFonts.jetBrainsMono(
-                          color: _muted, fontSize: 10,
-                        ))),
-                        DataCell(Text(position.comment.isEmpty ? '—' : position.comment,
-                          style: GoogleFonts.inter(color: _muted, fontSize: 10))),
-                      ],
-                    );
-                  }).toList(growable: false),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
-          decoration: BoxDecoration(
-            color: _subBg,
-            border: Border(top: BorderSide(color: _border)),
-          ),
-          child: Row(
-            children: [
-              Text(
-                'Showing ${_positions.length} active ${_positions.length == 1 ? 'position' : 'positions'}',
-                style: GoogleFonts.inter(color: _muted, fontSize: 11, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '•  Total Volume: ${_totalVolume.toStringAsFixed(2)} Lots',
-                style: GoogleFonts.jetBrainsMono(color: _blue, fontSize: 11, fontWeight: FontWeight.w700),
-              ),
-              const Spacer(),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF1D4DB7),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(104, 40),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text('Close Panel'),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

@@ -371,7 +371,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     unawaited(AppNotificationCenter.instance.refreshFromBackend());
     unawaited(AppNotificationCenter.instance.resumePositionMonitoring());
     _notificationRefreshTimer = Timer.periodic(
-      const Duration(seconds: 60),
+      const Duration(seconds: 90),
       (_) => unawaited(AppNotificationCenter.instance.refreshFromBackend()),
     );
   }
@@ -479,9 +479,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
+      _notificationRefreshTimer?.cancel();
+      _notificationRefreshTimer = Timer.periodic(
+        const Duration(seconds: 90),
+        (_) => unawaited(AppNotificationCenter.instance.refreshFromBackend()),
+      );
       unawaited(AppNotificationCenter.instance.refreshFromBackend());
       unawaited(AppNotificationCenter.instance.resumePositionMonitoring());
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _notificationRefreshTimer?.cancel();
+      _notificationRefreshTimer = null;
       unawaited(AppNotificationCenter.instance.pausePositionMonitoring());
     }
   }
@@ -1096,15 +1103,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     required Widget child,
   }) {
     final active = activeIndex == index;
-    return IgnorePointer(
-      ignoring: !active,
-      child: ExcludeSemantics(
-        excluding: !active,
-        child: AnimatedOpacity(
-          opacity: active ? 1 : 0,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          child: child,
+    return Offstage(
+      offstage: !active,
+      child: TickerMode(
+        enabled: active,
+        child: IgnorePointer(
+          ignoring: !active,
+          child: ExcludeSemantics(
+            excluding: !active,
+            child: AnimatedOpacity(
+              opacity: active ? 1 : 0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              child: child,
+            ),
+          ),
         ),
       ),
     );

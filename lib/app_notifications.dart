@@ -316,7 +316,7 @@ class AppNotificationCenter {
       if (!_portfolioNativeServiceActive) {
         _portfolioMonitorTimer?.cancel();
         _portfolioMonitorTimer = Timer.periodic(
-          const Duration(seconds: 15),
+          const Duration(seconds: 45),
           (_) => _refreshPortfolioPositions(revision: revision),
         );
       }
@@ -347,9 +347,8 @@ class AppNotificationCenter {
   }
 
   Future<void> pausePositionMonitoring() async {
-    if (!_portfolioMonitorEnabled || _portfolioNativeServiceActive ||
-        defaultTargetPlatform != TargetPlatform.android) return;
-    await startPortfolioMonitoring();
+    _portfolioMonitorTimer?.cancel();
+    _portfolioMonitorTimer = null;
   }
 
   Future<void> resumePositionMonitoring() async {

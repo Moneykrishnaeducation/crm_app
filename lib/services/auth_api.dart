@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 
 import 'package:asn1lib/asn1lib.dart';
@@ -11,6 +12,86 @@ import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_http_client.dart';
+
+typedef _RawKeyPairData = ({
+  String publicKey,
+  String keyId,
+  BigInt modulus,
+  BigInt privateExponent,
+  BigInt? p,
+  BigInt? q,
+});
+
+_RawKeyPairData _generateSessionKeyPairInIsolate() {
+  final random = Random.secure();
+  final secureRandom = FortunaRandom()
+    ..seed(KeyParameter(Uint8List.fromList(
+      List<int>.generate(32, (_) => random.nextInt(256)),
+    )));
+  final generator = RSAKeyGenerator()
+    ..init(ParametersWithRandom(
+      RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64),
+      secureRandom,
+    ));
+  final pair = generator.generateKeyPair();
+  final publicKey = pair.publicKey;
+  final privateKey = pair.privateKey;
+  final keyIdBytes = List<int>.generate(12, (_) => random.nextInt(256));
+  final keyId = base64Url.encode(keyIdBytes).replaceAll('=', '');
+
+  List<int> derLength(int length) {
+    if (length < 0x80) return <int>[length];
+    final bytes = <int>[];
+    var remaining = length;
+    while (remaining > 0) {
+      bytes.insert(0, remaining & 0xff);
+      remaining >>= 8;
+    }
+    return <int>[0x80 | bytes.length, ...bytes];
+  }
+
+  List<int> derValue(int tag, List<int> value) => <int>[
+    tag,
+    ...derLength(value.length),
+    ...value,
+  ];
+
+  List<int> unsignedBigIntBytes(BigInt value) {
+    var hex = value.toRadixString(16);
+    if (hex.length.isOdd) hex = '0$hex';
+    final bytes = <int>[
+      for (var offset = 0; offset < hex.length; offset += 2)
+        int.parse(hex.substring(offset, offset + 2), radix: 16),
+    ];
+    if (bytes.isEmpty) return <int>[0];
+    if ((bytes.first & 0x80) != 0) bytes.insert(0, 0);
+    return bytes;
+  }
+
+  final rsaPublicKey = derValue(0x30, <int>[
+    ...derValue(0x02, unsignedBigIntBytes(publicKey.modulus!)),
+    ...derValue(0x02, unsignedBigIntBytes(publicKey.exponent!)),
+  ]);
+  final rsaEncryptionAlgorithm = derValue(0x30, <int>[
+    ...derValue(0x06, <int>[
+      0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01,
+    ]),
+    ...derValue(0x05, const <int>[]),
+  ]);
+  final subjectPublicKeyInfo = derValue(0x30, <int>[
+    ...rsaEncryptionAlgorithm,
+    ...derValue(0x03, <int>[0, ...rsaPublicKey]),
+  ]);
+
+  return (
+    publicKey: base64Encode(subjectPublicKeyInfo),
+    keyId: keyId,
+    modulus: privateKey.modulus!,
+    privateExponent: privateKey.privateExponent!,
+    p: privateKey.p,
+    q: privateKey.q,
+  );
+}
 
 /// API access for the client authentication endpoints.
 /// Override API_BASE_URL with --dart-define for a different environment.
@@ -48,6 +129,8 @@ class AuthApi {
   static const _accessTokenStorageKey = 'vtindex_client_access_token';
   Future<void>? _restoreFuture;
   final Map<String, dynamic> _responseEncryptionPrivateKeys = <String, dynamic>{};
+  ({String publicKey, String keyId, RSAPrivateKey privateKey})? _cachedSessionKeyPair;
+  Future<({String publicKey, String keyId, RSAPrivateKey privateKey})>? _generatingSessionKeyPair;
 
   bool get hasToken =>
       (_accessToken != null && _accessToken!.isNotEmpty) ||
@@ -60,6 +143,9 @@ class AuthApi {
   }
 
   Future<void> _restoreStoredSession() async {
+    // Warm up the session encryption key in the background isolate early so
+    // network requests never freeze the main thread.
+    unawaited(_getOrCreateResponseEncryptionKeyPair());
     try {
       final preferences = await SharedPreferences.getInstance();
       _accessToken ??= preferences.getString(_accessTokenStorageKey);
@@ -169,7 +255,7 @@ class AuthApi {
   }) async {
     await restoreSession();
     final headers = _headers;
-    final responseKeyPair = _createResponseEncryptionKeyPair();
+    final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
     headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
 
     Map<String, dynamic>? wireBody = body;
@@ -179,7 +265,7 @@ class AuthApi {
       final keyId = _findString(requestKey, const ['key_id']);
       final pem = _findString(requestKey, const ['public_key']);
       if (keyId == null || pem == null) {
-        _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+        _cleanupResponseKeyPair(responseKeyPair.keyId);
         throw const AuthApiException(
           'The server did not provide a profile encryption key.',
         );
@@ -253,11 +339,11 @@ class AuthApi {
             'AuthApi: Switched active API host to ${_useLocalhost ? _localHost : _productionHost}',
           );
         } catch (_) {
-          _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+          _cleanupResponseKeyPair(responseKeyPair.keyId);
           rethrow;
         }
       } else {
-        _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+        _cleanupResponseKeyPair(responseKeyPair.keyId);
         rethrow;
       }
     }
@@ -268,7 +354,7 @@ class AuthApi {
           ? <String, dynamic>{}
           : jsonDecode(response.body);
     } on FormatException {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
       throw AuthApiException(
         'The server returned an invalid response.',
         statusCode: response.statusCode,
@@ -281,7 +367,7 @@ class AuthApi {
         responseKeyPair.keyId,
       );
     } else {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
     }
     final data = responsePayload is Map<String, dynamic>
         ? responsePayload
@@ -303,77 +389,49 @@ class AuthApi {
     return data;
   }
 
-  ({String publicKey, String keyId}) _createResponseEncryptionKeyPair() {
-    final random = Random.secure();
-    final secureRandom = FortunaRandom()
-      ..seed(KeyParameter(Uint8List.fromList(
-        List<int>.generate(32, (_) => random.nextInt(256)),
-      )));
-    final generator = RSAKeyGenerator()
-      ..init(ParametersWithRandom(
-        RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64),
-        secureRandom,
-      ));
-    final pair = generator.generateKeyPair();
-    final publicKey = pair.publicKey;
-    final privateKey = pair.privateKey;
-    final keyId = base64Url.encode(_randomBytes(12)).replaceAll('=', '');
-    _responseEncryptionPrivateKeys[keyId] = privateKey;
-
-    // Build DER SubjectPublicKeyInfo explicitly. This avoids ASN.1 library
-    // bit-string encoding differences and matches cryptography.load_der_public_key.
-    List<int> derLength(int length) {
-      if (length < 0x80) return <int>[length];
-      final bytes = <int>[];
-      var remaining = length;
-      while (remaining > 0) {
-        bytes.insert(0, remaining & 0xff);
-        remaining >>= 8;
-      }
-      return <int>[0x80 | bytes.length, ...bytes];
+  Future<({String publicKey, String keyId})> _getOrCreateResponseEncryptionKeyPair() async {
+    final cached = _cachedSessionKeyPair;
+    if (cached != null) {
+      return (publicKey: cached.publicKey, keyId: cached.keyId);
+    }
+    final inProgress = _generatingSessionKeyPair;
+    if (inProgress != null) {
+      final pair = await inProgress;
+      return (publicKey: pair.publicKey, keyId: pair.keyId);
     }
 
-    List<int> derValue(int tag, List<int> value) => <int>[
-      tag,
-      ...derLength(value.length),
-      ...value,
-    ];
+    final future = Isolate.run(_generateSessionKeyPairInIsolate);
+    _generatingSessionKeyPair = future.then((data) {
+      final pair = (
+        publicKey: data.publicKey,
+        keyId: data.keyId,
+        privateKey: RSAPrivateKey(data.modulus, data.privateExponent, data.p, data.q),
+      );
+      _cachedSessionKeyPair = pair;
+      return pair;
+    });
 
-    List<int> unsignedBigIntBytes(BigInt value) {
-      var hex = value.toRadixString(16);
-      if (hex.length.isOdd) hex = '0$hex';
-      final bytes = <int>[
-        for (var offset = 0; offset < hex.length; offset += 2)
-          int.parse(hex.substring(offset, offset + 2), radix: 16),
-      ];
-      if (bytes.isEmpty) return <int>[0];
-      if ((bytes.first & 0x80) != 0) bytes.insert(0, 0);
-      return bytes;
+    try {
+      final pair = await _generatingSessionKeyPair!;
+      return (publicKey: pair.publicKey, keyId: pair.keyId);
+    } finally {
+      _generatingSessionKeyPair = null;
     }
+  }
 
-    final rsaPublicKey = derValue(0x30, <int>[
-      ...derValue(0x02, unsignedBigIntBytes(publicKey.modulus!)),
-      ...derValue(0x02, unsignedBigIntBytes(publicKey.exponent!)),
-    ]);
-    final rsaEncryptionAlgorithm = derValue(0x30, <int>[
-      ...derValue(0x06, <int>[
-        0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01,
-      ]),
-      ...derValue(0x05, const <int>[]),
-    ]);
-    final subjectPublicKeyInfo = derValue(0x30, <int>[
-      ...rsaEncryptionAlgorithm,
-      ...derValue(0x03, <int>[0, ...rsaPublicKey]),
-    ]);
-
-    return (
-      publicKey: base64Encode(subjectPublicKeyInfo),
-      keyId: keyId,
-    );
+  void _cleanupResponseKeyPair(String keyId) {
+    if (_cachedSessionKeyPair?.keyId != keyId) {
+      _responseEncryptionPrivateKeys.remove(keyId);
+    }
   }
 
   dynamic _decryptResponseEnvelope(Map<String, dynamic> envelope, String keyId) {
-    final privateKey = _responseEncryptionPrivateKeys.remove(keyId);
+    RSAPrivateKey? privateKey;
+    if (_cachedSessionKeyPair?.keyId == keyId) {
+      privateKey = _cachedSessionKeyPair!.privateKey;
+    } else {
+      privateKey = _responseEncryptionPrivateKeys.remove(keyId);
+    }
     if (privateKey is! RSAPrivateKey) {
       throw const AuthApiException('The encrypted server response could not be opened.');
     }
@@ -574,7 +632,7 @@ class AuthApi {
     List<int>? fileBytes,
   }) async {
     await restoreSession();
-    final keyPair = _createResponseEncryptionKeyPair();
+    final keyPair = await _getOrCreateResponseEncryptionKeyPair();
     final request = http.MultipartRequest(method, _uri(path))
       ..headers.addAll(_headers)
       ..headers['X-Response-Encryption-Key'] = keyPair.publicKey
@@ -591,14 +649,14 @@ class AuthApi {
     try {
       decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
     } on FormatException {
-      _responseEncryptionPrivateKeys.remove(keyPair.keyId);
+      _cleanupResponseKeyPair(keyPair.keyId);
       throw AuthApiException('The server returned an invalid response.', statusCode: response.statusCode);
     }
     dynamic payload = decoded;
     if (decoded is Map && decoded['encrypted'] == true) {
       payload = _decryptResponseEnvelope(decoded.cast<String, dynamic>(), keyPair.keyId);
     } else {
-      _responseEncryptionPrivateKeys.remove(keyPair.keyId);
+      _cleanupResponseKeyPair(keyPair.keyId);
     }
     final data = payload is Map<String, dynamic> ? payload : <String, dynamic>{'data': payload};
     if (response.statusCode < 200 || response.statusCode >= 300 || data['error'] is String) {
@@ -1010,6 +1068,7 @@ class AuthApi {
       }
       return await _request('GET', 'logout/');
     } finally {
+      _cachedSessionKeyPair = null;
       _cookies.clear();
       _accessToken = null;
       try {
@@ -1499,7 +1558,7 @@ class AuthApi {
 
     await restoreSession();
     final headers = _headers;
-    final responseKeyPair = _createResponseEncryptionKeyPair();
+    final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
     headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
 
     final request = http.MultipartRequest(
@@ -1526,7 +1585,7 @@ class AuthApi {
     try {
       decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
     } on FormatException {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
       throw AuthApiException(
         'The server returned an invalid PAMM deposit response.',
         statusCode: response.statusCode,
@@ -1540,7 +1599,7 @@ class AuthApi {
         responseKeyPair.keyId,
       );
     } else {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
     }
     final data = payload is Map<String, dynamic>
         ? payload
@@ -1722,7 +1781,7 @@ class AuthApi {
   }) async {
     await restoreSession();
     final headers = _headers;
-    final responseKeyPair = _createResponseEncryptionKeyPair();
+    final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
     headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
 
     final request = http.MultipartRequest('POST', _uri('manual-deposit/'));
@@ -1753,7 +1812,7 @@ class AuthApi {
           ? <String, dynamic>{}
           : jsonDecode(response.body);
     } on FormatException {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
       if (isSuccessfulStatus) {
         // The server has already accepted the deposit. Its response body is
         // informational only for this endpoint, so do not report a false
@@ -1793,7 +1852,7 @@ class AuthApi {
         };
       }
     } else {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
     }
 
     final data = responsePayload is Map<String, dynamic>
@@ -1971,7 +2030,7 @@ class AuthApi {
   }) async {
     await restoreSession();
     final headers = _headers;
-    final responseKeyPair = _createResponseEncryptionKeyPair();
+    final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
     headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
 
     final request = http.MultipartRequest('POST', _uri(endpoint));
@@ -1990,7 +2049,7 @@ class AuthApi {
           ? <String, dynamic>{}
           : jsonDecode(response.body);
     } on FormatException {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
       throw AuthApiException(
         'The server returned an invalid upload response.',
         statusCode: response.statusCode,
@@ -2004,7 +2063,7 @@ class AuthApi {
         responseKeyPair.keyId,
       );
     } else {
-      _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+      _cleanupResponseKeyPair(responseKeyPair.keyId);
     }
 
     final data = payload is Map<String, dynamic>

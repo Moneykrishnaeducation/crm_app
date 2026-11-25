@@ -285,6 +285,7 @@ class MamPageState extends State<MamPage> {
   late List<MamInvestmentSubscription> _investments;
   late List<MamInvestorAccount> _investorAccounts;
   late List<AvailableMamPool> _availablePools;
+  final Set<String> _mamStatusUpdating = <String>{};
 
   static const Color _brandBlue = Color(0xFF2563EB);
   static const Color _brandGold = Color(0xFFF59E0B);
@@ -1612,12 +1613,20 @@ class MamPageState extends State<MamPage> {
                           child: SizedBox(
                             height: 44,
                             child: OutlinedButton.icon(
-                              onPressed: () => _toggleMasterStatus(master),
-                              icon: Icon(
-                                isActive ? LucideIcons.pause : LucideIcons.play,
-                                size: 14,
-                                color: isActive ? _c.gold : _c.green,
-                              ),
+                              onPressed: _mamStatusUpdating.contains(master.login)
+                                  ? null
+                                  : () => _toggleMasterStatus(master),
+                              icon: _mamStatusUpdating.contains(master.login)
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : Icon(
+                                      isActive ? LucideIcons.pause : LucideIcons.play,
+                                      size: 14,
+                                      color: isActive ? _c.gold : _c.green,
+                                    ),
                               label: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
@@ -1762,11 +1771,58 @@ class MamPageState extends State<MamPage> {
     );
   }
 
-  void _toggleMasterStatus(MamMasterAccount master) {
-    setState(() {
-      master.status = master.status == 'Active' ? 'Paused' : 'Active';
-    });
-    showAppMessage('Master Account ${master.login} marked as ${master.status}');
+  bool _apiBool(dynamic value, {bool fallback = false}) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (['true', '1', 'yes', 'enabled', 'active'].contains(normalized)) {
+        return true;
+      }
+      if (['false', '0', 'no', 'disabled', 'paused', 'inactive'].contains(normalized)) {
+        return false;
+      }
+    }
+    return fallback;
+  }
+
+  Future<void> _toggleMasterStatus(MamMasterAccount master) async {
+    final mamId = master.login.trim();
+    if (mamId.isEmpty || _mamStatusUpdating.contains(mamId)) return;
+
+    final enableTrading = master.status != 'Active';
+    setState(() => _mamStatusUpdating.add(mamId));
+
+    try {
+      final response = await AuthApi.instance.setMamTradingEnabled(
+        mamId: mamId,
+        enabled: enableTrading,
+      );
+      if (!mounted) return;
+
+      final confirmed = _apiBool(
+        response['is_trading_enabled'],
+        fallback: _apiBool(response['is_enabled'], fallback: enableTrading),
+      );
+      setState(() {
+        master.status = confirmed ? 'Active' : 'Paused';
+      });
+      showAppMessage(
+        (response['message'] ?? 'MAM trading ${confirmed ? 'resumed' : 'paused'} successfully.')
+            .toString(),
+      );
+    } catch (error) {
+      debugPrint('Could not update MAM trading status for $mamId: $error');
+      if (mounted) {
+        showAppMessage(
+          error is AuthApiException
+              ? error.message
+              : 'Could not ${enableTrading ? 'resume' : 'pause'} this MAM node. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _mamStatusUpdating.remove(mamId));
+    }
   }
 
   void _openMasterDetails(MamMasterAccount master) {
@@ -1805,7 +1861,10 @@ class MamPageState extends State<MamPage> {
       profitShare: _apiDouble(account['profit_sharing_percentage']),
       leverage: '1:${account['leverage'] ?? 100}',
       balance: _apiDouble(account['balance']),
-      status: (account['status'] ?? 'Active').toString().toLowerCase() == 'active'
+      status: _apiBool(
+        account['is_trading_enabled'] ?? account['is_enabled'],
+        fallback: (account['status'] ?? 'Active').toString().toLowerCase() == 'active',
+      )
           ? 'Active'
           : 'Paused',
       risk: risk[0].toUpperCase() + risk.substring(1),

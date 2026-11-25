@@ -19,10 +19,28 @@ class AuthApi {
 
   static final AuthApi instance = AuthApi._();
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const _productionHost = 'client.hi5trader.com';
+  static const _productionBaseUrl = 'https://client.hi5trader.com';
+  static const _localHost = 'client.localhost:8000';
+  static const _useLocalhostEnv = bool.fromEnvironment(
+    'USE_LOCALHOST',
+    defaultValue: bool.fromEnvironment('USE_LOCAL_API', defaultValue: false),
+  );
   static const _apiPrefix = String.fromEnvironment(
     'API_PREFIX',
     defaultValue: '/client/api/',
   );
+
+  bool _useLocalhost = _useLocalhostEnv;
+
+  bool get isUsingLocalhost => _useLocalhost;
+
+  void setUseLocalhost(bool useLocal) {
+    _useLocalhost = useLocal;
+  }
+
+  Uri get baseUri => _baseUri;
+  String get activeHost => _baseUri.host;
 
   final http.Client _client = createAuthHttpClient();
   final Map<String, String> _cookies = <String, String>{};
@@ -57,18 +75,21 @@ class AuthApi {
     await preferences.setString(_accessTokenStorageKey, token);
   }
 
-  Uri get _baseUri {
-    if (_configuredBaseUrl.isNotEmpty) {
-      final configured = Uri.parse(_configuredBaseUrl);
-      var path = configured.path;
-      if (path.endsWith('/client') || path.endsWith('/client/')) {
-        path = '${path.replaceFirst(RegExp(r'/$'), '')}/api/';
-      } else if (!path.endsWith('/api') && !path.endsWith('/api/')) {
-        final prefix = _apiPrefix.startsWith('/') ? _apiPrefix : '/$_apiPrefix';
-        path = '${path == '/' ? '' : path}$prefix';
-      }
-      return configured.replace(path: path.endsWith('/') ? path : '$path/');
+  static Uri _normalizeBaseUrl(String raw) {
+    final configured = Uri.parse(raw);
+    var path = configured.path;
+    if (path.endsWith('/client') || path.endsWith('/client/')) {
+      path = '${path.replaceFirst(RegExp(r'/$'), '')}/api/';
+    } else if (!path.endsWith('/api') && !path.endsWith('/api/')) {
+      final prefix = _apiPrefix.startsWith('/') ? _apiPrefix : '/$_apiPrefix';
+      path = '${path == '/' ? '' : path}$prefix';
     }
+    return configured.replace(path: path.endsWith('/') ? path : '$path/');
+  }
+
+  Uri get _productionBaseUri => _normalizeBaseUrl(_productionBaseUrl);
+
+  Uri get _localBaseUri {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return Uri.parse('http://10.0.2.2:8000$_apiPrefix');
     }
@@ -76,13 +97,34 @@ class AuthApi {
     return Uri.parse('http://client.localhost:8000$_apiPrefix');
   }
 
-  Map<String, String> get _headers {
+  Uri get _baseUri {
+    if (_configuredBaseUrl.isNotEmpty) {
+      return _normalizeBaseUrl(_configuredBaseUrl);
+    }
+    if (_useLocalhost) {
+      return _localBaseUri;
+    }
+    return _productionBaseUri;
+  }
+
+  bool _isLocalUri(Uri uri) {
+    return _useLocalhost ||
+        uri.host == '10.0.2.2' ||
+        uri.host == '127.0.0.1' ||
+        uri.host == 'localhost' ||
+        uri.host == 'client.localhost';
+  }
+
+  Map<String, String> get _headers => _headersForUri(_baseUri);
+
+  Map<String, String> _headersForUri(Uri uri) {
     final headers = <String, String>{'Accept': 'application/json'};
-    if (!kIsWeb && _configuredBaseUrl.isEmpty &&
+    final isLocal = _isLocalUri(uri);
+    if (!kIsWeb && isLocal &&
         (defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS)) {
       // Local development host override only. Production uses the configured API host.
-      headers['Host'] = 'client.localhost:8000';
+      headers['Host'] = _localHost;
     }
     if (_cookies.isNotEmpty) {
       headers['Cookie'] = _cookies.entries
@@ -93,16 +135,30 @@ class AuthApi {
     return headers;
   }
 
-  Uri _uri(String path) {
+  Uri _uri(String path, {Uri? base}) {
     final cleanPath = path.startsWith('/api/')
         ? path.substring(5)
         : (path.startsWith('/') ? path.substring(1) : path);
-    return _baseUri.resolve(cleanPath);
+    return (base ?? _baseUri).resolve(cleanPath);
   }
 
-  Uri _rootApiUri(String path) {
+  Uri _rootApiUri(String path, {Uri? base}) {
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return _baseUri.replace(path: '/api/').resolve(cleanPath);
+    return (base ?? _baseUri).replace(path: '/api/').resolve(cleanPath);
+  }
+
+  bool _isNetworkConnectionError(Object error) {
+    if (error is TimeoutException) return true;
+    if (error is http.ClientException) return true;
+    final msg = error.toString().toLowerCase();
+    return msg.contains('socketexception') ||
+        msg.contains('connection refused') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('network is unreachable') ||
+        msg.contains('connection closed') ||
+        msg.contains('connection reset') ||
+        msg.contains('handshake') ||
+        msg.contains('clientexception');
   }
 
   Future<Map<String, dynamic>> _request(
@@ -159,15 +215,53 @@ class AuthApi {
       headers['Content-Type'] = 'application/json';
     }
 
-    final request = http.Request(
-      method,
-      useRootApi ? _rootApiUri(path) : _uri(path),
-    )..headers.addAll(headers);
-    if (wireBody != null) request.body = jsonEncode(wireBody);
-    final streamed = await _client
-        .send(request)
-        .timeout(const Duration(seconds: 25));
-    final response = await http.Response.fromStream(streamed);
+    http.Response response;
+    try {
+      final request = http.Request(
+        method,
+        useRootApi ? _rootApiUri(path) : _uri(path),
+      )..headers.addAll(headers);
+      if (wireBody != null) request.body = jsonEncode(wireBody);
+      final streamed = await _client
+          .send(request)
+          .timeout(const Duration(seconds: 25));
+      response = await http.Response.fromStream(streamed);
+    } catch (error) {
+      if (_configuredBaseUrl.isEmpty && _isNetworkConnectionError(error)) {
+        final fallbackUri = _useLocalhost ? _productionBaseUri : _localBaseUri;
+        try {
+          final fallbackHeaders = _headersForUri(fallbackUri);
+          fallbackHeaders['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
+          if (headers.containsKey('X-Request-Encryption-Key-Id')) {
+            fallbackHeaders['X-Request-Encryption-Key-Id'] = headers['X-Request-Encryption-Key-Id']!;
+            fallbackHeaders['Content-Type'] = headers['Content-Type']!;
+          } else if (body != null) {
+            fallbackHeaders['Content-Type'] = 'application/json';
+          }
+          final fallbackRequest = http.Request(
+            method,
+            useRootApi
+                ? _rootApiUri(path, base: fallbackUri)
+                : _uri(path, base: fallbackUri),
+          )..headers.addAll(fallbackHeaders);
+          if (wireBody != null) fallbackRequest.body = jsonEncode(wireBody);
+          final streamed = await _client
+              .send(fallbackRequest)
+              .timeout(const Duration(seconds: 15));
+          response = await http.Response.fromStream(streamed);
+          _useLocalhost = !_useLocalhost;
+          debugPrint(
+            'AuthApi: Switched active API host to ${_useLocalhost ? _localHost : _productionHost}',
+          );
+        } catch (_) {
+          _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+          rethrow;
+        }
+      } else {
+        _responseEncryptionPrivateKeys.remove(responseKeyPair.keyId);
+        rethrow;
+      }
+    }
     _captureSession(response);
     dynamic decoded;
     try {
@@ -1320,7 +1414,7 @@ class AuthApi {
         if (rate is num && rate > 0) return rate.toDouble();
       } catch (_) {}
     }
-    return 0.0;
+    return 83.5;
   }
 
   /// Fetch PAMM account lists from the root /api/pamm routes used by the web client.

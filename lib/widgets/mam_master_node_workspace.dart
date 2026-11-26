@@ -161,11 +161,33 @@ class MamMasterNodeWorkspace extends StatefulWidget {
 
 class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   late MamMasterAccount _master;
+  bool _profitSummaryLoading = false;
+  bool _settlementInProgress = false;
 
   @override
   void initState() {
     super.initState();
     _master = widget.master;
+    _loadProfitSummary();
+  }
+
+  Future<void> _loadProfitSummary() async {
+    if (_profitSummaryLoading) return;
+    _profitSummaryLoading = true;
+    try {
+      final data = await AuthApi.instance.getMamProfitSummary();
+      if (!mounted) return;
+      setState(() {
+        _master.pendingWallet = double.tryParse(data['pending_amount']?.toString() ?? '') ?? 0.0;
+        _master.totalSettled = double.tryParse(data['total_settled']?.toString() ?? '') ?? 0.0;
+        _master.tradesProcessed = int.tryParse(data['trade_count']?.toString() ?? '') ?? 0;
+      });
+      widget.onUpdate?.call(_master);
+    } catch (error) {
+      debugPrint('Could not load MAM profit summary: $error');
+    } finally {
+      _profitSummaryLoading = false;
+    }
   }
 
   void _notifyUpdate() {
@@ -229,150 +251,157 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   }
 
   void _openSecuritySettingsSheet(MamWorkspaceColors c) {
-    bool obscureInvestor = true;
-    final investorPwdCtrl = TextEditingController(text: 'ReadOnly*Inv#99');
-    final authKeyCtrl = TextEditingController(text: 'VTX-MT5-SEC-991204');
-
+    final passwordController = TextEditingController();
+    bool obscurePassword = true;
+    bool saving = false;
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Container(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: c.card,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                border: Border.all(color: c.border),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: c.muted.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Master Security & Settings',
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                          onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Manage investor read-only keys and MT5 credentials.',
-                      style: TextStyle(fontSize: 12, color: c.muted),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Investor Read-Only Password
-                    Text(
-                      'INVESTOR READ-ONLY PASSWORD',
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: c.muted),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: investorPwdCtrl,
-                      obscureText: obscureInvestor,
-                      style: GoogleFonts.inter(fontSize: 14, color: c.text),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: c.subCard,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            obscureInvestor ? LucideIcons.eyeOff : LucideIcons.eye,
-                            size: 18,
-                            color: c.muted,
-                          ),
-                          onPressed: () => setModalState(() => obscureInvestor = !obscureInvestor),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: c.border),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // MT5 Auth Token
-                    Text(
-                      'MT5 SERVER AUTH TOKEN',
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: c.muted),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: authKeyCtrl,
-                      readOnly: true,
-                      style: GoogleFonts.inter(fontSize: 13, color: c.text),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: c.subCard,
-                        suffixIcon: IconButton(
-                          icon: Icon(LucideIcons.copy, size: 18, color: c.blue),
-                          onPressed: () => _copyToClipboard(authKeyCtrl.text, 'MT5 Auth Token'),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: c.border),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          showAppMessage('Investor Security & Keys updated successfully');
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: c.navy,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          'Save Credentials & Sync MT5',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                  ],
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: BoxDecoration(color: c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: c.border)),
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: c.muted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 16),
+                Row(children: [
+                  Expanded(child: Text('Update Investor Password',
+                    style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: c.text))),
+                  IconButton(onPressed: () => Navigator.pop(ctx),
+                    icon: Icon(LucideIcons.x, color: c.muted)),
+                ]),
+                Text('Set a new MT5 investor (read-only) password for master account #${_master.login}.',
+                  style: TextStyle(fontSize: 12, color: c.muted)),
+                const SizedBox(height: 16),
+                Text('NEW INVESTOR PASSWORD',
+                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: c.muted)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: passwordController, obscureText: obscurePassword,
+                  enableSuggestions: false, autocorrect: false,
+                  style: GoogleFonts.inter(fontSize: 14, color: c.text),
+                  decoration: InputDecoration(
+                    hintText: 'Minimum 8 characters', filled: true, fillColor: c.subCard,
+                    suffixIcon: IconButton(
+                      icon: Icon(obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                        size: 18, color: c.muted),
+                      onPressed: () => setModalState(() => obscurePassword = !obscurePassword)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: c.border)),
+                  ),
                 ),
+                const SizedBox(height: 16),
+                SizedBox(width: double.infinity, height: 48,
+                  child: FilledButton(
+                    onPressed: saving ? null : () async {
+                      final password = passwordController.text.trim();
+                      if (password.length < 8) {
+                        showAppMessage('Password must be at least 8 characters long.');
+                        return;
+                      }
+                      setModalState(() => saving = true);
+                      try {
+                        final response = await AuthApi.instance.updateTradingAccountPassword(
+                          accountId: _master.login, newPassword: password);
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        showAppMessage(response['message']?.toString() ??
+                          'Investor password updated successfully.');
+                      } catch (error) {
+                        setModalState(() => saving = false);
+                        showAppMessage(error is AuthApiException ? error.message :
+                          'Could not update the MT5 investor password.');
+                      }
+                    },
+                    style: FilledButton.styleFrom(backgroundColor: c.navy, foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    child: saving
+                      ? const SizedBox(width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Update MT5 Password', style: TextStyle(fontWeight: FontWeight.w700)),
+                  )),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).whenComplete(passwordController.dispose);
+  }
+
+  void _openRiskSettingsSheet(MamWorkspaceColors c) {
+    const allowed = ['50', '100', '200', '300', '400', '500'];
+    final current = _master.leverage.replaceAll('1:', '').trim();
+    String selected = allowed.contains(current) ? current : '500';
+    bool saving = false;
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: BoxDecoration(color: c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: c.border)),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: c.muted.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(child: Text('Risk & Leverage Configuration',
+                  style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: c.text))),
+                IconButton(onPressed: () => Navigator.pop(ctx),
+                  icon: Icon(LucideIcons.x, color: c.muted)),
+              ]),
+              Text('Master account #${_master.login} · Current leverage 1:${current.isEmpty ? '—' : current}',
+                style: TextStyle(color: c.muted, fontSize: 12)),
+              const SizedBox(height: 16),
+              Text('SELECT LEVERAGE',
+                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: c.muted)),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selected,
+                decoration: InputDecoration(filled: true, fillColor: c.subCard,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                items: allowed.map((value) => DropdownMenuItem(value: value, child: Text('1:$value'))).toList(),
+                onChanged: saving ? null : (value) {
+                  if (value != null) setModalState(() => selected = value);
+                },
               ),
-            );
-          },
-        );
-      },
+              const SizedBox(height: 16),
+              SizedBox(width: double.infinity, height: 48,
+                child: FilledButton(
+                  onPressed: saving ? null : () async {
+                    setModalState(() => saving = true);
+                    try {
+                      final response = await AuthApi.instance.updateTradingAccountLeverage(
+                        accountId: _master.login, leverage: selected);
+                      if (!ctx.mounted) return;
+                      setState(() => _master.leverage = '1:$selected');
+                      _notifyUpdate();
+                      Navigator.pop(ctx);
+                      showAppMessage(response['message']?.toString() ?? 'Leverage updated successfully.');
+                    } catch (error) {
+                      setModalState(() => saving = false);
+                      showAppMessage(error is AuthApiException ? error.message : 'Could not update MT5 leverage.');
+                    }
+                  },
+                  style: FilledButton.styleFrom(backgroundColor: c.blue, foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: saving
+                    ? const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Save Leverage', style: TextStyle(fontWeight: FontWeight.w700)),
+                )),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1776,8 +1805,24 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Adjust risk parameters and trade limits according to your strategy.',
+                  'Current master leverage: ${_master.leverage}. Update the leverage supported by your MT5 account.',
                   style: TextStyle(fontSize: 11.5, color: c.muted, height: 1.3),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 42,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openRiskSettingsSheet(c),
+                    icon: const Icon(LucideIcons.slidersHorizontal, size: 15),
+                    label: const Text('Configure Leverage',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: c.blue,
+                      side: BorderSide(color: c.blue.withValues(alpha: 0.3)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
                 ),
               ],
             ),

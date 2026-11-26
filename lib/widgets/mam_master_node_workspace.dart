@@ -221,7 +221,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         enabled: !wasActive,
       );
       if (!mounted) return;
-      HapticFeedback.lightImpact();
+      HapticFeedback.heavyImpact();
       setState(() {
         _master.status = !wasActive ? 'Active' : 'Paused';
       });

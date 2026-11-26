@@ -171,6 +171,15 @@ class AvailableMamPool {
     required this.minDeposit,
     required this.pairs,
     required this.isVerified,
+    this.managerName = '',
+    this.leverage = '',
+    this.balance = 0,
+    this.equity = 0,
+    this.accountAge = '',
+    this.totalProfit = 0,
+    this.totalDeposits = 0,
+    this.totalWithdrawals = 0,
+    this.profitSharingPercentage = 0,
   });
 
   final String id;
@@ -186,6 +195,15 @@ class AvailableMamPool {
   final double minDeposit;
   final List<String> pairs;
   final bool isVerified;
+  final String managerName;
+  final String leverage;
+  final double balance;
+  final double equity;
+  final String accountAge;
+  final double totalProfit;
+  final double totalDeposits;
+  final double totalWithdrawals;
+  final double profitSharingPercentage;
 }
 
 // -----------------------------------------------------------------------------
@@ -276,6 +294,11 @@ class MamPageState extends State<MamPage> {
   late List<MamInvestmentSubscription> _investments;
   late List<MamInvestorAccount> _investorAccounts;
   late List<AvailableMamPool> _availablePools;
+  bool _availableLoading = false;
+  String? _availableError;
+  int _availableTotal = 0;
+  int _availablePage = 1;
+  static const int _availablePageSize = 10;
   final Set<String> _mamStatusUpdating = <String>{};
   bool _isLoadingMamAccounts = true;
   String? _mamAccountsError;
@@ -341,70 +364,10 @@ class MamPageState extends State<MamPage> {
       ),
     ];
 
-    _availablePools = [
-      AvailableMamPool(
-        id: 'pool_1',
-        name: 'Alpha Quant Alpha-1',
-        traderHandle: '@quant_master',
-        winRate: 78.4,
-        monthlyRoi: 14.8,
-        maxDrawdown: 6.2,
-        copiersCount: 48,
-        totalAum: 482500.0,
-        riskScore: 'Low',
-        performanceFee: 20.0,
-        minDeposit: 500.0,
-        pairs: ['EURUSD', 'GBPUSD', 'USDJPY'],
-        isVerified: true,
-      ),
-      AvailableMamPool(
-        id: 'pool_2',
-        name: 'Prime Trend Rider',
-        traderHandle: '@trend_prime',
-        winRate: 71.9,
-        monthlyRoi: 11.2,
-        maxDrawdown: 4.8,
-        copiersCount: 64,
-        totalAum: 620400.0,
-        riskScore: 'Low',
-        performanceFee: 25.0,
-        minDeposit: 250.0,
-        pairs: ['XAUUSD', 'US30', 'EURUSD'],
-        isVerified: true,
-      ),
-      AvailableMamPool(
-        id: 'pool_3',
-        name: 'Apex Scalper High-Freq',
-        traderHandle: '@apex_trader',
-        winRate: 84.1,
-        monthlyRoi: 26.5,
-        maxDrawdown: 14.2,
-        copiersCount: 19,
-        totalAum: 115000.0,
-        riskScore: 'High',
-        performanceFee: 30.0,
-        minDeposit: 1000.0,
-        pairs: ['BTCUSD', 'ETHUSD', 'NAS100'],
-        isVerified: true,
-      ),
-      AvailableMamPool(
-        id: 'pool_4',
-        name: 'Titan Gold Algorithmic',
-        traderHandle: '@gold_bot_algo',
-        winRate: 76.5,
-        monthlyRoi: 18.3,
-        maxDrawdown: 8.9,
-        copiersCount: 92,
-        totalAum: 890000.0,
-        riskScore: 'Medium',
-        performanceFee: 22.0,
-        minDeposit: 500.0,
-        pairs: ['XAUUSD', 'XAGUSD'],
-        isVerified: true,
-      ),
-    ];
+    _availablePools = [];
 
     _loadMamAccounts();
+    if (_tab == 2) _loadAvailableManagers();
     _managerSearchController.addListener(() {
       _managerSearchDebounce?.cancel();
       _managerSearchDebounce = Timer(const Duration(milliseconds: 250), () {
@@ -419,9 +382,11 @@ class MamPageState extends State<MamPage> {
       _availableSearchDebounce?.cancel();
       _availableSearchDebounce = Timer(const Duration(milliseconds: 250), () {
         if (mounted) {
-          setState(
-            () => _availableSearchQuery = _availableSearchController.text.trim(),
-          );
+          setState(() {
+            _availableSearchQuery = _availableSearchController.text.trim();
+            _availablePage = 1;
+          });
+          if (_tab == 2) _loadAvailableManagers();
         }
       });
     });
@@ -455,14 +420,10 @@ class MamPageState extends State<MamPage> {
   int get _totalInvestorsCount =>
       _masters.fold(0, (acc, m) => acc + m.investorsCount);
 
-  // Tab 2 computed
-  double get _avgMonthlyRoi => _availablePools.isEmpty
+  // Tab 2 metric derived from backend-provided profit-share values.
+  double get _avgProfitShare => _availablePools.isEmpty
       ? 0.0
-      : _availablePools.fold(0.0, (acc, p) => acc + p.monthlyRoi) /
-            _availablePools.length;
-  double get _avgWinRate => _availablePools.isEmpty
-      ? 0.0
-      : _availablePools.fold(0.0, (acc, p) => acc + p.winRate) /
+      : _availablePools.fold(0.0, (acc, p) => acc + p.profitSharingPercentage) /
             _availablePools.length;
 
   String _formatCurrency(double val) {
@@ -742,7 +703,11 @@ class MamPageState extends State<MamPage> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () { HapticFeedback.selectionClick(); setState(() => _tab = i); },
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _tab = i);
+                    if (i == 2) _loadAvailableManagers();
+                  },
                   borderRadius: BorderRadius.circular(9),
                   splashColor: _brandBlue.withValues(alpha: 0.15),
                   highlightColor: _brandBlue.withValues(alpha: 0.08),
@@ -2218,77 +2183,155 @@ class MamPageState extends State<MamPage> {
     );
   }
 
+
+  double _availableNumber(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final cleaned = value.replaceAll(',', '').replaceAll(RegExp(r'[^0-9.\\-]'), '');
+      return double.tryParse(cleaned) ?? 0;
+    }
+    return 0;
+  }
+
+  String _availableText(dynamic value) => value?.toString().trim() ?? '';
+
+  Future<void> _loadAvailableManagers() async {
+    if (_availableLoading) return;
+    setState(() {
+      _availableLoading = true;
+      _availableError = null;
+    });
+    try {
+      final response = await AuthApi.instance.getAvailableMamManagers(
+        page: _availablePage,
+        pageSize: _availablePageSize,
+        search: _availableSearchQuery,
+      );
+      final raw = response['results'] is List
+          ? response['results'] as List
+          : response['data'] is List ? response['data'] as List : <dynamic>[];
+      final managers = raw.whereType<Map>().map((entry) {
+        final item = entry.cast<String, dynamic>();
+        final id = _availableText(item['accountId'] ?? item['mam_account_id'] ?? item['id']);
+        final riskValue = _availableText(item['risk_level'] ?? item['riskLevel']);
+        final risk = riskValue.isEmpty ? '' :
+            riskValue[0].toUpperCase() + riskValue.substring(1).toLowerCase();
+        final leverageValue = _availableText(item['leverage'] ?? item['package_leverage']);
+        final profitShare = _availableNumber(item['profit_sharing_percentage'] ?? item['profit_sharing'] ?? item['profitShare']);
+        return AvailableMamPool(
+          id: id,
+          name: _availableText(item['name'] ?? item['account_name']),
+          traderHandle: _availableText(item['manager_name']),
+          winRate: 0,
+          monthlyRoi: 0,
+          maxDrawdown: 0,
+          copiersCount: 0,
+          totalAum: _availableNumber(item['current_equity'] ?? item['equity']),
+          riskScore: risk,
+          performanceFee: profitShare,
+          minDeposit: 0,
+          pairs: const [],
+          isVerified: false,
+          managerName: _availableText(item['manager_name']),
+          leverage: leverageValue.isEmpty ? '' : (leverageValue.startsWith('1:') ? leverageValue : '1:' + leverageValue),
+          balance: _availableNumber(item['current_balance'] ?? item['balance']),
+          equity: _availableNumber(item['current_equity'] ?? item['equity']),
+          accountAge: _availableText(item['account_age'] ?? item['accountAge']),
+          totalProfit: _availableNumber(item['total_profit']),
+          totalDeposits: _availableNumber(item['total_deposits']),
+          totalWithdrawals: _availableNumber(item['total_withdrawals']),
+          profitSharingPercentage: profitShare,
+        );
+      }).where((manager) => manager.id.isNotEmpty).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _availablePools = managers;
+        _availableTotal = _availableNumber(response['count']).toInt();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _availableError = error is AuthApiException ? error.message :
+            'Could not load available MAM managers. Please try again.';
+        _availablePools = [];
+        _availableTotal = 0;
+      });
+    } finally {
+      if (mounted) setState(() => _availableLoading = false);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // TAB 2: MAM AVAILABLE
   // ---------------------------------------------------------------------------
   List<Widget> _buildAvailableTab() {
-    final q = _availableSearchQuery.toLowerCase();
-    final filtered = _availablePools.where((p) {
-      bool filterMatch = true;
-      if (_availableFilter == 'Low Risk') filterMatch = p.riskScore == 'Low';
-      if (_availableFilter == 'Medium Risk') {
-        filterMatch = p.riskScore == 'Medium';
-      }
-      if (_availableFilter == 'High ROI') filterMatch = p.monthlyRoi >= 15.0;
-      if (_availableFilter == 'Top Win Rate') filterMatch = p.winRate >= 75.0;
-
-      final qMatch =
-          q.isEmpty ||
-          p.name.toLowerCase().contains(q) ||
-          p.traderHandle.toLowerCase().contains(q) ||
-          p.pairs.any((pair) => pair.toLowerCase().contains(q));
-
-      return filterMatch && qMatch;
+    final filtered = _availablePools.where((pool) {
+      if (_availableFilter == 'Low Risk') return pool.riskScore.toLowerCase() == 'low';
+      if (_availableFilter == 'Medium Risk') return pool.riskScore.toLowerCase() == 'medium';
+      if (_availableFilter == 'High Risk') return pool.riskScore.toLowerCase() == 'high';
+      return true;
     }).toList();
-
     return [
       _buildAvailableSummaryMetrics(),
       const SizedBox(height: 14),
       _buildAvailableSearchAndFilters(),
       const SizedBox(height: 12),
-      if (filtered.isEmpty)
+      if (_availableLoading && _availablePools.isEmpty)
+        const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Center(child: CircularProgressIndicator()))
+      else if (_availableError != null)
+        _buildAvailableError()
+      else if (filtered.isEmpty)
         _buildEmptyAvailableSearch()
       else
-        for (final pool in filtered) ...[
-          _buildAvailablePoolCard(pool),
+        for (final manager in filtered) ...[
+          _buildAvailablePoolCard(manager),
           const SizedBox(height: 10),
         ],
+      if (_availableTotal > _availablePageSize) _buildAvailablePagination(),
     ];
   }
 
   Widget _buildAvailableSummaryMetrics() {
-    return Row(
-      children: [
-        Expanded(
-          child: _metricCard(
-            label: 'AVAILABLE POOLS',
-            value: '${_availablePools.length}',
-            subtext: 'Audited strategies',
-            icon: LucideIcons.layers,
-            accent: _c.blue,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _metricCard(
-            label: 'AVG 30D ROI',
-            value: '+${_avgMonthlyRoi.toStringAsFixed(1)}%',
-            subtext: 'Across active pools',
-            icon: LucideIcons.trendingUp,
-            accent: _c.green,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _metricCard(
-            label: 'AVG WIN RATE',
-            value: '${_avgWinRate.toStringAsFixed(1)}%',
-            subtext: 'Trade accuracy',
-            icon: LucideIcons.award,
-            accent: _c.gold,
-          ),
-        ),
-      ],
+    return Row(children: [
+      Expanded(child: _metricCard(
+        label: 'AVAILABLE MANAGERS', value: '$_availableTotal',
+        subtext: 'Active MAM accounts', icon: LucideIcons.users, accent: _c.blue)),
+      const SizedBox(width: 8),
+      Expanded(child: _metricCard(
+        label: 'AVG PROFIT SHARE', value: '${_avgProfitShare.toStringAsFixed(1)}%',
+        subtext: 'Returned by backend', icon: LucideIcons.percent, accent: _c.green)),
+    ]);
+  }
+
+  Widget _buildAvailableError() => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(color: _c.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: _c.border)),
+    child: Column(children: [
+      Icon(LucideIcons.wifiOff, color: _c.red, size: 28),
+      const SizedBox(height: 8),
+      Text(_availableError!, textAlign: TextAlign.center, style: TextStyle(color: _c.text, fontSize: 12)),
+      const SizedBox(height: 10),
+      OutlinedButton.icon(onPressed: _availableLoading ? null : _loadAvailableManagers,
+        icon: const Icon(LucideIcons.refreshCw, size: 15), label: const Text('Retry')),
+    ]),
+  );
+
+  Widget _buildAvailablePagination() {
+    final pages = (_availableTotal / _availablePageSize).ceil();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text('Page $_availablePage of $pages', style: TextStyle(color: _c.muted, fontSize: 11)),
+        Row(children: [
+          IconButton(onPressed: _availablePage > 1 && !_availableLoading ? () {
+            setState(() => _availablePage--); _loadAvailableManagers();
+          } : null, icon: const Icon(LucideIcons.chevronLeft)),
+          IconButton(onPressed: _availablePage < pages && !_availableLoading ? () {
+            setState(() => _availablePage++); _loadAvailableManagers();
+          } : null, icon: const Icon(LucideIcons.chevronRight)),
+        ]),
+      ]),
     );
   }
 
@@ -2297,8 +2340,7 @@ class MamPageState extends State<MamPage> {
       'All Pools',
       'Low Risk',
       'Medium Risk',
-      'High ROI',
-      'Top Win Rate',
+      'High Risk',
     ];
 
     return Column(
@@ -2314,7 +2356,7 @@ class MamPageState extends State<MamPage> {
             controller: _availableSearchController,
             style: GoogleFonts.inter(color: _c.text, fontSize: 13),
             decoration: InputDecoration(
-              hintText: 'Search pool name, trader, or pairs...',
+              hintText: 'Search manager, account name or login ID...',
               hintStyle: GoogleFonts.inter(color: _c.muted, fontSize: 12),
               prefixIcon: Icon(LucideIcons.search, color: _c.muted, size: 17),
               suffixIcon: _availableSearchQuery.isNotEmpty
@@ -2409,305 +2451,71 @@ class MamPageState extends State<MamPage> {
     );
   }
 
-  Widget _buildAvailablePoolCard(AvailableMamPool pool) {
-    Color riskColor = _c.green;
-    String riskLabel = 'Low Risk';
-    int riskLevel = 1;
-    if (pool.riskScore == 'Medium') {
-      riskColor = _c.gold;
-      riskLabel = 'Med Risk';
-      riskLevel = 2;
-    } else if (pool.riskScore == 'High') {
-      riskColor = _c.red;
-      riskLabel = 'High Risk';
-      riskLevel = 3;
-    }
-
-    return RepaintBoundary(
-      child: InkWell(
-        onTap: () { HapticFeedback.lightImpact(); _openManagerProfileModal(pool); },
-        borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _c.card,
-              _c.isDark ? const Color(0xFF131F33) : const Color(0xFFFBFDFF),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _c.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: _c.isDark ? 0.25 : 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(13),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row: Avatar with Gradient Border & Verified Badge, Name, Risk Badge
-            Row(
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _brandBlue.withValues(alpha: 0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(2),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _c.card,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          pool.name
-                              .substring(0, pool.name.length >= 2 ? 2 : 1)
-                              .toUpperCase(),
-                          style: GoogleFonts.inter(
-                            color: _brandBlue,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (pool.isVerified)
-                      Positioned(
-                        right: -1,
-                        bottom: -1,
-                        child: Container(
-                          padding: const EdgeInsets.all(1.5),
-                          decoration: BoxDecoration(
-                            color: _c.card,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF2563EB),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              LucideIcons.check,
-                              size: 8,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              pool.name,
-                              style: GoogleFonts.inter(
-                                color: _c.text,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (pool.isVerified) ...[
-                            const SizedBox(width: 4),
-                            Icon(
-                              LucideIcons.badgeCheck,
-                              color: _c.blue,
-                              size: 14,
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${pool.traderHandle} • ${pool.copiersCount} investors • AUM ${_formatCurrency(pool.totalAum)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: _c.muted, fontSize: 10.5),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3.5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: riskColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: riskColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _RiskMeter(level: riskLevel),
-                      const SizedBox(width: 5),
-                      Text(
-                        riskLabel,
-                        style: GoogleFonts.inter(
-                          color: riskColor,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 11),
-
-            // 2x2 Grid of Key Stats
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _c.subCard,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _c.subBorder),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _microStat(
-                          'Monthly ROI',
-                          '+${pool.monthlyRoi.toStringAsFixed(1)}%',
-                          valueColor: _c.green,
-                          icon: LucideIcons.trendingUp,
-                        ),
-                      ),
-                      Container(width: 1, height: 28, color: _c.subBorder),
-                      Expanded(
-                        child: _microStat(
-                          'Win Rate',
-                          '${pool.winRate.toStringAsFixed(1)}%',
-                          icon: LucideIcons.award,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Divider(height: 12, thickness: 1, color: _c.subBorder),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _microStat(
-                          'Max Drawdown',
-                          '${pool.maxDrawdown.toStringAsFixed(1)}%',
-                          valueColor: _c.red,
-                          icon: LucideIcons.shieldAlert,
-                        ),
-                      ),
-                      Container(width: 1, height: 28, color: _c.subBorder),
-                      Expanded(
-                        child: _microStat(
-                          'Perf Fee / Min Dep',
-                          '${pool.performanceFee.toStringAsFixed(0)}% • \$${pool.minDeposit.toStringAsFixed(2)}',
-                          icon: LucideIcons.percent,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+  Widget _buildAvailablePoolCard(AvailableMamPool manager) {
+    final risk = manager.riskScore;
+    final riskColor = risk.toLowerCase() == 'low' ? _c.green :
+        risk.toLowerCase() == 'high' ? _c.red : _c.gold;
+    final initial = manager.name.isEmpty ? 'M' : manager.name.substring(0, 1).toUpperCase();
+    Widget metric(String label, String value, {Color? color}) => Expanded(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label.toUpperCase(), style: TextStyle(color: _c.muted, fontSize: 9, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(color: color ?? _c.text, fontSize: 12, fontWeight: FontWeight.w800)),
+      ]),
+    );
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(color: _c.card, borderRadius: BorderRadius.circular(15), border: Border.all(color: _c.border)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(width: 40, height: 40, alignment: Alignment.center,
+            decoration: BoxDecoration(color: _c.blueLight, shape: BoxShape.circle, border: Border.all(color: _c.blueBorder)),
+            child: Text(initial, style: GoogleFonts.inter(color: _c.blue, fontWeight: FontWeight.w800))),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(manager.name.isEmpty ? 'MAM Manager' : manager.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(color: _c.text, fontSize: 13, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            Text([if (manager.managerName.isNotEmpty) manager.managerName, 'Login #${manager.id}'].join(' • '),
+              maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _c.muted, fontSize: 10.5)),
+          ])),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: risk.isEmpty ? _c.subCard : riskColor.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(7), border: Border.all(color: risk.isEmpty ? _c.border : riskColor.withValues(alpha: .3))),
+            child: Text(risk.isEmpty ? 'Risk N/A' : '$risk Risk',
+              style: TextStyle(color: risk.isEmpty ? _c.muted : riskColor, fontSize: 10, fontWeight: FontWeight.w700))),
+        ]),
+        const SizedBox(height: 13),
+        Container(padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(11), border: Border.all(color: _c.subBorder)),
+          child: Column(children: [
+            Row(children: [
+              metric('Balance', _formatCurrency(manager.balance)),
+              const SizedBox(width: 10),
+              metric('Equity', _formatCurrency(manager.equity)),
+              const SizedBox(width: 10),
+              metric('Profit Share', '${manager.profitSharingPercentage.toStringAsFixed(2)}%', color: _c.blue),
+            ]),
             const SizedBox(height: 10),
-
-            // Traded Pairs Chips & Action Button
-            Row(
-              children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: [
-                      for (final p in pool.pairs)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _c.subCard,
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(color: _c.subBorder),
-                          ),
-                          child: Text(
-                            p,
-                            style: GoogleFonts.inter(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w600,
-                              color: _c.muted,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: 44,
-                  child: FilledButton.icon(
-                    onPressed: () => _openInvestModal(pool),
-                    icon: const Icon(LucideIcons.plus, size: 15),
-                    label: Text(
-                      'Invest in Pool',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _brandBlue,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(120, 44),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            Divider(height: 1, color: _c.subBorder),
+            const SizedBox(height: 10),
+            Row(children: [
+              metric('Leverage', manager.leverage.isEmpty ? '—' : manager.leverage),
+              const SizedBox(width: 10),
+              metric('Account Age', manager.accountAge.isEmpty ? '—' : manager.accountAge),
+              const SizedBox(width: 10),
+              metric('Total Profit', _formatCurrency(manager.totalProfit), color: manager.totalProfit >= 0 ? _c.green : _c.red),
+            ]),
+          ]),
         ),
-      ),
-    ));
+        if (manager.totalDeposits != 0 || manager.totalWithdrawals != 0) ...[
+          const SizedBox(height: 9),
+          Text('Deposits ${_formatCurrency(manager.totalDeposits)}  •  Withdrawals ${_formatCurrency(manager.totalWithdrawals)}',
+            style: TextStyle(color: _c.muted, fontSize: 10.5)),
+        ],
+      ]),
+    );
   }
 
   void _openManagerProfileModal(AvailableMamPool pool) {

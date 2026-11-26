@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_notifications.dart';
 
@@ -741,7 +742,7 @@ class MamPageState extends State<MamPage> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => setState(() => _tab = i),
+                  onTap: () { HapticFeedback.selectionClick(); setState(() => _tab = i); },
                   borderRadius: BorderRadius.circular(9),
                   splashColor: _brandBlue.withValues(alpha: 0.15),
                   highlightColor: _brandBlue.withValues(alpha: 0.08),
@@ -1183,7 +1184,7 @@ class MamPageState extends State<MamPage> {
               suffixIcon: _managerSearchQuery.isNotEmpty
                   ? IconButton(
                       icon: Icon(LucideIcons.x, color: _c.muted, size: 16),
-                      onPressed: () => _managerSearchController.clear(),
+                      onPressed: () { HapticFeedback.lightImpact(); _managerSearchController.clear(); },
                       constraints: const BoxConstraints(
                         minWidth: 44,
                         minHeight: 44,
@@ -1206,7 +1207,7 @@ class MamPageState extends State<MamPage> {
               final f = filters[index];
               final isSelected = _managerStatusFilter == f;
               return InkWell(
-                onTap: () => setState(() => _managerStatusFilter = f),
+                onTap: () { HapticFeedback.selectionClick(); setState(() => _managerStatusFilter = f); },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 36),
@@ -1293,7 +1294,7 @@ class MamPageState extends State<MamPage> {
 
     return RepaintBoundary(
       child: InkWell(
-        onTap: () => _openMasterDetails(master),
+        onTap: () { HapticFeedback.lightImpact(); _openMasterDetails(master); },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
@@ -1498,7 +1499,7 @@ class MamPageState extends State<MamPage> {
                           child: SizedBox(
                             height: 44,
                             child: FilledButton.icon(
-                              onPressed: () => _depositToMaster(master),
+                              onPressed: () { HapticFeedback.mediumImpact(); _depositToMaster(master); },
                               icon: const Icon(LucideIcons.plusCircle, size: 14),
                               label: FittedBox(
                                 fit: BoxFit.scaleDown,
@@ -1532,7 +1533,7 @@ class MamPageState extends State<MamPage> {
                           child: SizedBox(
                             height: 44,
                             child: FilledButton.icon(
-                              onPressed: () => _withdrawFromMaster(master),
+                              onPressed: () { HapticFeedback.mediumImpact(); _withdrawFromMaster(master); },
                               icon: Icon(
                                 LucideIcons.arrowUpRight,
                                 size: 14,
@@ -1577,7 +1578,7 @@ class MamPageState extends State<MamPage> {
                             child: OutlinedButton.icon(
                               onPressed: _mamStatusUpdating.contains(master.login)
                                   ? null
-                                  : () => _toggleMasterStatus(master),
+                                  : () { HapticFeedback.mediumImpact(); _toggleMasterStatus(master); },
                               icon: _mamStatusUpdating.contains(master.login)
                                   ? const SizedBox(
                                       width: 14,
@@ -1622,7 +1623,7 @@ class MamPageState extends State<MamPage> {
                           child: SizedBox(
                             height: 44,
                             child: FilledButton.icon(
-                              onPressed: () => _openMasterDetails(master),
+                              onPressed: () { HapticFeedback.lightImpact(); _openMasterDetails(master); },
                               icon: const Icon(
                                 LucideIcons.settings2,
                                 size: 14,
@@ -2002,7 +2003,7 @@ class MamPageState extends State<MamPage> {
 
     return RepaintBoundary(
       child: InkWell(
-        onTap: () => _openInvestorAccountDetails(account.accountId),
+        onTap: () { HapticFeedback.lightImpact(); _openInvestorAccountDetails(account.accountId); },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(13),
@@ -2340,7 +2341,7 @@ class MamPageState extends State<MamPage> {
               final f = filters[index];
               final isSelected = _availableFilter == f;
               return InkWell(
-                onTap: () => setState(() => _availableFilter = f),
+                onTap: () { HapticFeedback.selectionClick(); setState(() => _availableFilter = f); },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 36),
@@ -2422,7 +2423,7 @@ class MamPageState extends State<MamPage> {
 
     return RepaintBoundary(
       child: InkWell(
-        onTap: () => _openManagerProfileModal(pool),
+        onTap: () { HapticFeedback.lightImpact(); _openManagerProfileModal(pool); },
         borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
@@ -2976,7 +2977,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: InkWell(
-                      onTap: () => _addQuickAmount(delta),
+                      onTap: () { HapticFeedback.selectionClick(); _addQuickAmount(delta); },
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         constraints: const BoxConstraints(minHeight: 32),
@@ -3620,7 +3621,7 @@ class _CreateMamMasterSheetState extends State<_CreateMamMasterSheet> {
               divisions: 9,
               activeColor: c.blue,
               inactiveColor: c.border,
-              onChanged: (val) => setState(() => _profitShare = val),
+              onChanged: (val) { HapticFeedback.selectionClick(); setState(() => _profitShare = val); },
             ),
             const SizedBox(height: 14),
 

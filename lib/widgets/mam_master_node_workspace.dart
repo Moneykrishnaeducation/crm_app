@@ -635,16 +635,10 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           final credit = number(investor, ['credit']);
           final profit = number(investor, ['profit', 'floating_profit']);
           final status = field(investor, ['status', 'account_status', 'trading_status']);
-          final server = field(investor, ['server', 'mt5_server']);
           final leverage = field(investor, ['leverage']);
           final group = field(investor, ['group_name', 'group', 'trade_group']);
-          final currency = field(investor, ['currency'], fallback: 'USD');
           final country = field(investor, ['country']);
           final created = field(investor, ['created_at', 'created', 'reg_date']);
-          final allocation = field(investor, [
-            'allocation_percentage', 'allocation_percent', 'share_percentage',
-            'profit_sharing_percentage'
-          ]);
           final rawCopy = investor['manager_allow_copy'] ??
               investor['manage_allow_copy'] ??
               investor['investor_allow_copy'];
@@ -860,10 +854,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                         detailLine('Credit', money(credit)),
                         detailLine('Leverage', leverage == '—' ? '—' : '1:$leverage'),
                         detailLine('Trading Group', group),
-                        detailLine('MT5 Server', server),
-                        detailLine('Currency', currency),
                         detailLine('Country', country),
-                        detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
                         detailLine('Created', created),
                       ],
                     ],

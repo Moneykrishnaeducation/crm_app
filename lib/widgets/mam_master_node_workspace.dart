@@ -710,7 +710,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                     Expanded(child: _investorMetric(c, 'EQUITY', money(equity))),
                     const SizedBox(width: 8),
                     Expanded(child: _investorMetric(c, 'FLOATING P/L',
-                      '\${profit >= 0 ? '+' : '-'}\\$\${profit.abs().toStringAsFixed(2)}',
+                      '${'$'}{profit >= 0 ? '+' : '-'}\${'$'}{profit.abs().toStringAsFixed(2)}',
                       valueColor: profit >= 0 ? c.green : c.red)),
                   ]),
                   const SizedBox(height: 10),

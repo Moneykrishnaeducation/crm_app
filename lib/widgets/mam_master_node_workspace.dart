@@ -935,7 +935,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                         Text(
                           _pendingReleaseValue == null
                               ? 'Not available'
-                              : r'
+                              : r'$' + _pendingReleaseValue!.toStringAsFixed(2),
                           style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.text),
                         ),
                       ],

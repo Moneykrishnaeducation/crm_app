@@ -1556,6 +1556,24 @@ class AuthApi {
         },
       );
 
+  /// Fetch active MAM managers visible to the authenticated user.
+  /// Supports server-side search and pagination through Django.
+  Future<Map<String, dynamic>> getAvailableMamManagers({
+    int page = 1,
+    int pageSize = 10,
+    String search = '',
+  }) {
+    final query = <String, String>{
+      'page': page.toString(),
+      'page_size': pageSize.toString(),
+      if (search.trim().isNotEmpty) 'search': search.trim(),
+    };
+    return _request(
+      'GET',
+      'available-mam-managers/?${Uri(queryParameters: query).query}',
+    );
+  }
+
   /// Fetch the authenticated user's MAM master accounts.
   Future<List<Map<String, dynamic>>> getUserMamAccounts() async {
     final dynamic response = await _request('GET', 'user-mam-accounts/');

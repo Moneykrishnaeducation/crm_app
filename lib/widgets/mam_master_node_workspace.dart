@@ -653,6 +653,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 rawCopy?.toString().toLowerCase(),
               );
           bool copyUpdating = false;
+          bool expanded = false;
 
           return StatefulBuilder(
             builder: (tileContext, setTileState) {
@@ -709,317 +710,165 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: c.subBorder),
                 ),
-                child: Theme(
-                data: Theme.of(ctx).copyWith(
-                  dividerColor: Colors.transparent,
-                  splashColor: c.blue.withValues(alpha: 0.05),
-                  highlightColor: Colors.transparent,
-                ),
-                child: ExpansionTile(
-                key: PageStorageKey('mam-investor-$accountId'),
-                tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                initiallyExpanded: false,
-                leading: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: c.greenLight,
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Icon(LucideIcons.userRound, color: c.green, size: 18),
-                ),
-                title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 5, right: 2),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('MT5 Account #$accountId',
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 7),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 5,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.only(left: 8, right: 4, top: 2, bottom: 2),
-                            decoration: BoxDecoration(
-                              color: copyEnabled
-                                  ? c.greenLight.withValues(alpha: 0.55)
-                                  : c.blueLight.withValues(alpha: 0.65),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: copyEnabled
-                                    ? c.green.withValues(alpha: 0.22)
-                                    : c.subBorder),
+                      InkWell(
+                        onTap: () => setTileState(() => expanded = !expanded),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: c.greenLight,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(LucideIcons.userRound, color: c.green, size: 19),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 6, height: 6,
-                                  decoration: BoxDecoration(
-                                    color: copyEnabled ? c.green : c.muted,
-                                    shape: BoxShape.circle),
+                            const SizedBox(width: 11),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                                  const SizedBox(height: 4),
+                                  Text('MT5 Account #$accountId',
+                                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+                              size: 18,
+                              color: c.muted,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 11),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 42,
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: copyEnabled
+                                    ? c.greenLight.withValues(alpha: 0.55)
+                                    : c.subCard,
+                                borderRadius: BorderRadius.circular(11),
+                                border: Border.all(
+                                  color: copyEnabled
+                                      ? c.green.withValues(alpha: 0.28)
+                                      : c.subBorder,
                                 ),
-                                const SizedBox(width: 5),
-                                Text('COPY',
-                                  style: GoogleFonts.inter(
-                                    color: copyEnabled ? c.green : c.muted,
-                                    fontSize: 9, fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.35)),
-                                const SizedBox(width: 2),
-                                if (copyUpdating)
-                                  const SizedBox(
-                                    width: 22, height: 22,
-                                    child: Padding(
-                                      padding: EdgeInsets.all(5),
-                                      child: CircularProgressIndicator(strokeWidth: 1.8),
-                                    ),
-                                  )
-                                else
-                                  Transform.scale(
-                                    scale: 0.78,
-                                    child: Switch.adaptive(
-                                      value: copyEnabled,
-                                      activeColor: c.green,
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      onChanged: changeCopy,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      color: copyEnabled ? c.green : c.muted,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
-                              ],
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      copyEnabled ? 'COPY ON' : 'COPY OFF',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        color: copyEnabled ? c.green : c.muted,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.35,
+                                      ),
+                                    ),
+                                  ),
+                                  if (copyUpdating)
+                                    const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  else
+                                    Transform.scale(
+                                      scale: 0.82,
+                                      child: Switch.adaptive(
+                                        value: copyEnabled,
+                                        activeColor: c.green,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        onChanged: changeCopy,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                          OutlinedButton.icon(
-                            onPressed: openPositions,
-                            icon: Icon(LucideIcons.activity, size: 13, color: c.blue),
-                            label: Text('Live Positions',
-                              style: GoogleFonts.inter(
-                                color: c.blue, fontSize: 10, fontWeight: FontWeight.w800)),
-                            style: OutlinedButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              minimumSize: const Size(0, 30),
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                              side: BorderSide(color: c.blue.withValues(alpha: 0.25)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(9)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: SizedBox(
+                              height: 42,
+                              child: OutlinedButton.icon(
+                                onPressed: openPositions,
+                                icon: const Icon(LucideIcons.activity, size: 15),
+                                label: Text(
+                                  'Live Positions',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10, fontWeight: FontWeight.w800),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: c.blue,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  side: BorderSide(color: c.blue.withValues(alpha: 0.28)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(11)),
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
+                      if (expanded) ...[
+                        const SizedBox(height: 12),
+                        Container(height: 1, color: c.subBorder),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(child: _investorMetric(c, 'BALANCE', money(balance))),
+                          const SizedBox(width: 8),
+                          Expanded(child: _investorMetric(c, 'EQUITY', money(equity))),
+                          const SizedBox(width: 8),
+                          Expanded(child: _investorMetric(c, 'FLOATING P/L',
+                            '${profit >= 0 ? '+' : '-'}\\$${profit.abs().toStringAsFixed(2)}',
+                            valueColor: profit >= 0 ? c.green : c.red)),
+                        ]),
+                        const SizedBox(height: 10),
+                        detailLine('Email', email),
+                        detailLine('Credit', money(credit)),
+                        detailLine('Leverage', leverage == '—' ? '—' : '1:$leverage'),
+                        detailLine('Trading Group', group),
+                        detailLine('MT5 Server', server),
+                        detailLine('Currency', currency),
+                        detailLine('Country', country),
+                        detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
+                        detailLine('Created', created),
+                      ],
                     ],
                   ),
-                ),
-                trailing: Padding(
-                  padding: const EdgeInsets.only(left: 2),
-                  child: Icon(LucideIcons.chevronDown, size: 17, color: c.muted),
-                ),
-                children: [
-                  Container(height: 1, color: c.subBorder),
-                  const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(child: _investorMetric(c, 'BALANCE', money(balance))),
-                    const SizedBox(width: 8),
-                    Expanded(child: _investorMetric(c, 'EQUITY', money(equity))),
-                    const SizedBox(width: 8),
-                    Expanded(child: _investorMetric(c, 'FLOATING P/L',
-                      '${profit >= 0 ? '+' : '-'}\$${profit.abs().toStringAsFixed(2)}',
-                      valueColor: profit >= 0 ? c.green : c.red)),
-                  ]),
-                  const SizedBox(height: 10),
-                  detailLine('Email', email),
-                  detailLine('Credit', money(credit)),
-                  detailLine('Leverage', leverage == '—' ? '—' : '1:$leverage'),
-                  detailLine('Trading Group', group),
-                  detailLine('MT5 Server', server),
-                  detailLine('Currency', currency),
-                  detailLine('Country', country),
-                  detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
-                  detailLine('Created', created),
-                  ],
-                ),
-                ),
-              ),
-            ),
-          );
-            },
-          );
-        }
-
-        return Container(
-          height: screenHeight * 0.92,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: c.border),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: c.muted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 14),
-            Row(children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Investor Pool & Allocations',
-                  style: GoogleFonts.inter(color: c.text, fontSize: 17, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 3),
-                Text('Master #${_master.login} · Connected investor account details',
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: c.muted, fontSize: 11)),
-              ])),
-              IconButton(onPressed: () => Navigator.pop(ctx),
-                icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44)),
-            ]),
-            const SizedBox(height: 10),
-            Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: investorsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(LucideIcons.alertCircle, color: c.red, size: 28),
-                    const SizedBox(height: 8),
-                    Text('Could not load investor accounts',
-                      style: TextStyle(color: c.text, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text(snapshot.error.toString(), textAlign: TextAlign.center,
-                      style: TextStyle(color: c.muted, fontSize: 10)),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () { Navigator.pop(ctx); _openManageInvestorsSheet(c); },
-                      icon: const Icon(LucideIcons.refreshCw, size: 14),
-                      label: const Text('Retry')),
-                  ]));
-                }
-
-                final investors = snapshot.data ?? const <Map<String, dynamic>>[];
-                final totalBalance = investors.fold<double>(0,
-                  (sum, item) => sum + number(item, ['balance']));
-                final totalEquity = investors.fold<double>(0,
-                  (sum, item) => sum + number(item, ['equity', 'balance']));
-                final totalProfit = investors.fold<double>(0,
-                  (sum, item) => sum + number(item, ['profit', 'floating_profit']));
-                final activeCount = investors.where((item) {
-                  final copyState = item['manager_allow_copy'] ??
-                      item['manage_allow_copy'] ??
-                      item['investor_allow_copy'];
-                  return copyState == true ||
-                      ['true', '1', 'yes', 'enabled', 'active'].contains(
-                        copyState?.toString().toLowerCase(),
-                      );
-                }).length;
-
-                return Column(children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: c.subCard,
-                      borderRadius: BorderRadius.circular(12), border: Border.all(color: c.subBorder)),
-                    child: Column(children: [
-                      Row(children: [
-                        Expanded(child: _investorMetric(c, 'TOTAL INVESTORS', '${investors.length}')),
-                        Expanded(child: _investorMetric(c, 'ACTIVE MIRRORS', '$activeCount')),
-                      ]),
-                      const SizedBox(height: 10),
-                      Row(children: [
-                        Expanded(child: _investorMetric(c, 'POOLED BALANCE', money(totalBalance))),
-                        Expanded(child: _investorMetric(c, 'TOTAL EQUITY', money(totalEquity))),
-                      ]),
-                      const SizedBox(height: 10),
-                      Row(children: [
-                        Expanded(child: _investorMetric(c, 'AGGREGATE FLOATING P/L',
-                          '${totalProfit >= 0 ? '+' : '-'}\$ ${totalProfit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
-                          valueColor: totalProfit >= 0 ? c.green : c.red)),
-                        Expanded(child: _investorMetric(c, 'ALLOCATION METHOD', _master.allocationMethod)),
-                      ]),
-                    ]),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(children: [
-                    Text('CONNECTED INVESTOR ACCOUNTS',
-                      style: GoogleFonts.inter(color: c.muted, fontSize: 10,
-                        fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                    const Spacer(),
-                    Text('${investors.length} accounts',
-                      style: TextStyle(color: c.muted, fontSize: 10)),
-                  ]),
-                  const SizedBox(height: 8),
-                  Expanded(child: investors.isEmpty
-                    ? Center(child: Text('No investor accounts are connected to this MAM node.',
-                        textAlign: TextAlign.center, style: TextStyle(color: c.muted, fontSize: 12)))
-                    : ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: investors.length,
-                        itemBuilder: (context, index) => investorCard(investors[index], index))),
-                ]);
-              },
-            )),
-          ]),
-        );
-      },
-    );
-  }
-
-  Widget _investorMetric(MamWorkspaceColors c, String label, String value,
-      {Color? valueColor}) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: c.muted, fontSize: 9, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 3),
-      Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(color: valueColor ?? c.text, fontSize: 12, fontWeight: FontWeight.w800)),
-    ]);
-  }
-
-  void _triggerSettlementDialog(MamWorkspaceColors c) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: c.card,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Row(
-            children: [
-              Icon(LucideIcons.zap, color: c.blue, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                'Trigger Settlement',
-                style: GoogleFonts.inter(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: c.text,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Execute weekly performance fee distribution for node #${_master.login}.',
-                style: TextStyle(color: c.muted, fontSize: 13),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: c.subCard,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: c.subBorder),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ),ween,
                       children: [
                         Text('Accrued Gross Profit', style: TextStyle(fontSize: 12, color: c.muted)),
                         Text('\$810.00', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.text)),

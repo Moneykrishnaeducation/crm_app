@@ -175,7 +175,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     if (_profitSummaryLoading) return;
     _profitSummaryLoading = true;
     try {
-      final data = await AuthApi.instance.getMamProfitSummary();
+      final data = await AuthApi.instance.getMamProfitSummary(mamAccountId: _master.login);
       if (!mounted) return;
       setState(() {
         _master.pendingWallet = double.tryParse(data['pending_amount']?.toString() ?? '') ?? 0.0;

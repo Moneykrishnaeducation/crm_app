@@ -650,14 +650,12 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
 
           return Container(
             margin: const EdgeInsets.only(bottom: 9),
-            decoration: BoxDecoration(
-              color: c.subCard,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: c.subBorder),
-            ),
             child: Material(
               color: c.subCard,
-              borderRadius: BorderRadius.circular(14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(color: c.subBorder),
+              ),
               clipBehavior: Clip.antiAlias,
               child: Theme(
                 data: Theme.of(ctx).copyWith(

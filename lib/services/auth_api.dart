@@ -818,8 +818,7 @@ class AuthApi {
   }) =>
       _request(
         'GET',
-        '${isManager ? 'open-positions' : 'get-trading-positions'}/${Uri.encodeComponent(accountId)}/',
-        useRootApi: true,
+        'open-positions/${Uri.encodeComponent(accountId)}/',
       );
 
   Future<List<Map<String, dynamic>>> getClosedPositions(
@@ -1511,7 +1510,7 @@ class AuthApi {
   Future<Map<String, dynamic>> toggleMamInvestorCopy(String accountId) =>
       _request(
         'POST',
-        'mam/investors/${Uri.encodeComponent(accountId)}/toggle-copy',
+        'toggle-investor-copy/${Uri.encodeComponent(accountId)}/',
       );
 
   /// Fetch investor trading accounts linked to a MAM master account.

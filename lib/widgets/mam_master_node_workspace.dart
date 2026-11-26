@@ -186,7 +186,11 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     } catch (error) {
       debugPrint('Could not load MAM profit summary: $error');
     } finally {
-      _profitSummaryLoading = false;
+      if (mounted) {
+        setState(() => _profitSummaryLoading = false);
+      } else {
+        _profitSummaryLoading = false;
+      }
     }
   }
 

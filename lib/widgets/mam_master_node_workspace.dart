@@ -1919,7 +1919,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _profitSummaryLoading ? 'Loading…' : '\${_master.pendingWallet.toStringAsFixed(2)}',
+                        _profitSummaryLoading ? 'Loading…' : '\$${_master.pendingWallet.toStringAsFixed(2)}',
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -1948,7 +1948,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _profitSummaryLoading ? 'Loading…' : '\${_master.totalSettled.toStringAsFixed(2)}',
+                        _profitSummaryLoading ? 'Loading…' : '\$${_master.totalSettled.toStringAsFixed(2)}',
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,

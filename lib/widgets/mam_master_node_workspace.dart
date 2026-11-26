@@ -34,7 +34,6 @@ class MamMasterAccount {
     this.totalSettled = 0.00,
     this.tradesProcessed = 0,
     this.profitShareAvailable = true,
-    this.balanceAvailable = true,
   });
 
   String name;
@@ -58,7 +57,6 @@ class MamMasterAccount {
   double totalSettled;
   int tradesProcessed;
   bool profitShareAvailable;
-  bool balanceAvailable;
 }
 
 // -----------------------------------------------------------------------------
@@ -933,9 +931,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       children: [
                         Text('Pending wallet balance', style: TextStyle(fontSize: 12, color: c.muted)),
                         Text(
-                          _pendingReleaseValue == null
-                              ? 'Not available'
-                              : r'$' + _pendingReleaseValue!.toStringAsFixed(2),
+                          '\$${_master.pendingWallet.toStringAsFixed(2)}',
                           style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.text),
                         ),
                       ],
@@ -960,7 +956,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               child: Text('Cancel', style: TextStyle(color: c.muted)),
             ),
             FilledButton(
-              onPressed: _settlementInProgress || _pendingReleaseValue == null ? null : () async {
+              onPressed: _settlementInProgress ? null : () async {
                 setState(() => _settlementInProgress = true);
                 try {
                   final response = await AuthApi.instance.triggerMamProfitSettlement(
@@ -1126,18 +1122,16 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           const SizedBox(height: 16),
 
           // NET AVAILABLE BALANCE DISPLAY
-          if (_master.balanceAvailable) ...[
-            Text(
-              'NET AVAILABLE BALANCE',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: c.muted,
-                letterSpacing: 0.6,
-              ),
+          Text(
+            'NET AVAILABLE BALANCE',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: c.muted,
+              letterSpacing: 0.6,
             ),
-            const SizedBox(height: 4),
-          ],
+          ),
+          const SizedBox(height: 4),
 
           // Responsive Balance & Action Controls Layout
           LayoutBuilder(
@@ -1149,22 +1143,20 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Large Balance Display
-                  if (_master.balanceAvailable) ...[
-                    FittedBox(
-                      alignment: Alignment.centerLeft,
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        r'$' + _master.balance.toStringAsFixed(2) + ' USD',
-                        style: GoogleFonts.inter(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w900,
-                          color: c.text,
-                          letterSpacing: -0.5,
-                        ),
+                  FittedBox(
+                    alignment: Alignment.centerLeft,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '\$${_master.balance.toStringAsFixed(2)} USD',
+                      style: GoogleFonts.inter(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: c.text,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
+                  ),
+                  const SizedBox(height: 16),
 
                   if (isMobile) ...[
                     // Row 1 (Primary Financial Actions)
@@ -1694,22 +1686,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   // 3. CARD 1: MASTER SPECIFICATIONS
   // ---------------------------------------------------------------------------
   Widget _buildSpecificationsCard(MamWorkspaceColors c) {
-    final rows = <({String label, String value, bool copyable})>[
-      if (_master.name.trim().isNotEmpty)
-        (label: 'Account Name', value: _master.name, copyable: false),
-      (label: 'Master Login ID', value: _master.login, copyable: true),
-      if (_master.server.trim().isNotEmpty)
-        (label: 'Server', value: _master.server, copyable: true),
-      if (_master.payout.trim().isNotEmpty)
-        (label: 'Payout Cycle', value: _master.payout.toLowerCase(), copyable: false),
-      if (_master.algoTrading.trim().isNotEmpty)
-        (label: 'Algo Trading', value: _master.algoTrading, copyable: false),
-      if (_master.leverage.trim().isNotEmpty && _master.leverage != '—')
-        (label: 'Current Leverage', value: _master.leverage, copyable: false),
-    ];
-
-    if (rows.isEmpty) return const SizedBox.shrink();
-
     return Container(
       decoration: BoxDecoration(
         color: c.card,
@@ -1737,7 +1713,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       ),
                     ),
                     Text(
-                      'MAM master account details',
+                      'MetaTrader 5 node specifications',
                       style: TextStyle(fontSize: 11, color: c.muted),
                     ),
                   ],
@@ -1748,8 +1724,14 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           const SizedBox(height: 12),
           Divider(height: 1, color: c.border),
           const SizedBox(height: 8),
-          for (final row in rows)
-            _specRow(c, row.label, row.value, copyable: row.copyable),
+
+          _specRow(c, 'Account Name', _master.name),
+          _specRow(c, 'Master Login ID', _master.login, copyable: true),
+          _specRow(c, 'Trading Platform', _master.tradingPlatform),
+          _specRow(c, 'Server', _master.server, copyable: true),
+          _specRow(c, 'Payout Cycle', _master.payout.toLowerCase()),
+          _specRow(c, 'Algo Trading', _master.algoTrading),
+          _specRow(c, 'Current Leverage', _master.leverage),
         ],
       ),
     );
@@ -1932,6 +1914,4 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   }
 
 
-
 }
-

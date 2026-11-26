@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 // ============================================================================
 // DESIGN TOKENS & STYLING
@@ -177,5 +178,38 @@ class PartnershipGlassPanel extends StatelessWidget {
       );
     }
     return content;
+  }
+}
+
+/// Theme-aware skeleton shimmer wrapper tuned to [PartnershipColors].
+class PartnershipSkeletonizer extends StatelessWidget {
+  const PartnershipSkeletonizer({
+    super.key,
+    required this.colors,
+    required this.enabled,
+    required this.child,
+  });
+
+  final PartnershipColors colors;
+  final bool enabled;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final effect = colors.isDark
+        ? const ShimmerEffect(
+            baseColor: Color(0xFF152955),
+            highlightColor: Color(0xFF234284),
+          )
+        : const ShimmerEffect(
+            baseColor: Color(0xFFE4ECF7),
+            highlightColor: Color(0xFFF6F9FF),
+          );
+    return Skeletonizer(
+      enabled: enabled,
+      effect: effect,
+      enableSwitchAnimation: true,
+      child: child,
+    );
   }
 }

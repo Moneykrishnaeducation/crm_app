@@ -25,12 +25,19 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
   bool _loading = true;
   List<IbClient> _clients = [];
   final Set<String> _expandedIds = {};
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _fetchTree();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchTree() async {
@@ -116,15 +123,47 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     return list;
   }
 
+  Set<String> _collectExpandableIds(List<IbClient> list) {
+    final ids = <String>{};
+    for (final c in list) {
+      if (c.clients.isNotEmpty) {
+        ids.add(c.id);
+        ids.addAll(_collectExpandableIds(c.clients));
+      }
+    }
+    return ids;
+  }
+
+  List<({IbClient client, int depth})> _buildDemoPlaceholders() {
+    final demo = IbClient.demoTree();
+    final items = <({IbClient client, int depth})>[];
+    if (demo.isNotEmpty) {
+      items.add((client: demo[0], depth: 0));
+      if (demo[0].clients.isNotEmpty) {
+        items.add((client: demo[0].clients.first, depth: 1));
+      }
+      if (demo.length > 1) {
+        items.add((client: demo[1], depth: 0));
+      }
+      while (items.length < 4) {
+        items.add((client: demo[items.length % demo.length], depth: 0));
+      }
+    }
+    return items.take(4).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = PartnershipColors.of(context);
-    final totalNetwork = _countAll(_clients);
-    final direct = _clients.length;
-    final subTier = math.max(0, totalNetwork - direct);
-    final depth = _maxDepth(_clients, 1);
+    final totalNetwork = _loading ? 24 : _countAll(_clients);
+    final direct = _loading ? 14 : _clients.length;
+    final subTier = _loading ? 10 : math.max(0, totalNetwork - direct);
+    final depth = _loading ? 3 : _maxDepth(_clients, 1);
     final filtered = _filterClients(_clients, _searchQuery.trim().toLowerCase());
     final visibleClients = _flattenTree(filtered, 0);
+    final expandableIds = _collectExpandableIds(filtered);
+    final hasAnyChildren = expandableIds.isNotEmpty;
+    final allExpanded = hasAnyChildren && expandableIds.every(_expandedIds.contains);
     final isWide = MediaQuery.sizeOf(context).width > 720;
 
     return Scaffold(
@@ -141,7 +180,12 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
             tooltip: 'Add Client',
           ),
           IconButton(
-            onPressed: _fetchTree,
+            onPressed: _loading
+                ? null
+                : () {
+                    AppHaptics.lightImpact();
+                    _fetchTree();
+                  },
             icon: const Icon(LucideIcons.refreshCw, size: 18),
             tooltip: 'Refresh',
           ),
@@ -149,102 +193,210 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       ),
       body: PartnershipBackdrop(
         colors: colors,
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    // Search Input
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: colors.card,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(LucideIcons.search, size: 16, color: colors.muted),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              style: TextStyle(color: colors.text, fontSize: 13),
-                              decoration: InputDecoration(
-                                hintText: 'Search client by name, email, code or account...',
-                                hintStyle: TextStyle(color: colors.muted, fontSize: 12),
-                                border: InputBorder.none,
+        child: RefreshIndicator(
+          color: colors.blue,
+          backgroundColor: colors.card,
+          onRefresh: () {
+            AppHaptics.lightImpact();
+            return _fetchTree();
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      // Search Input
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: colors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(LucideIcons.search, size: 16, color: colors.muted),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                style: TextStyle(color: colors.text, fontSize: 13),
+                                decoration: InputDecoration(
+                                  hintText: 'Search client by name, email, code or account...',
+                                  hintStyle: TextStyle(color: colors.muted, fontSize: 12),
+                                  border: InputBorder.none,
+                                ),
+                                onChanged: (val) => setState(() => _searchQuery = val),
                               ),
-                              onChanged: (val) => setState(() => _searchQuery = val),
                             ),
-                          ),
-                          if (_searchQuery.isNotEmpty)
-                            IconButton(
-                              icon: const Icon(LucideIcons.x, size: 14),
-                              onPressed: () => setState(() => _searchQuery = ''),
+                            if (_searchQuery.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(LucideIcons.x, size: 14),
+                                tooltip: 'Clear search',
+                                onPressed: () {
+                                  AppHaptics.selectionClick();
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      // Network stat badges
+                      PartnershipSkeletonizer(
+                        colors: colors,
+                        enabled: _loading,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                _treeStatChip(colors, 'TOTAL NETWORK', '$totalNetwork', LucideIcons.users, colors.gold),
+                                const SizedBox(width: 8),
+                                _treeStatChip(colors, 'DIRECT (L1)', '$direct', LucideIcons.user, colors.blue),
+                              ],
                             ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _treeStatChip(colors, 'SUB-TIER (L2+)', '$subTier', LucideIcons.network, colors.green),
+                                const SizedBox(width: 8),
+                                _treeStatChip(colors, 'MAX DEPTH', 'L$depth', LucideIcons.gitBranch, const Color(0xFFA855F7)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_loading)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 116),
+                  sliver: SliverToBoxAdapter(
+                    child: PartnershipSkeletonizer(
+                      colors: colors,
+                      enabled: true,
+                      child: Column(
+                        children: [
+                          for (final item in _buildDemoPlaceholders())
+                            _buildClientNode(item.client, colors, item.depth, isWide),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    // Network stat badges
-                    Row(
-                      children: [
-                        _treeStatChip(colors, 'TOTAL NETWORK', '$totalNetwork', LucideIcons.users, colors.gold),
-                        const SizedBox(width: 8),
-                        _treeStatChip(colors, 'DIRECT (L1)', '$direct', LucideIcons.user, colors.blue),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _treeStatChip(colors, 'SUB-TIER (L2+)', '$subTier', LucideIcons.network, colors.green),
-                        const SizedBox(width: 8),
-                        _treeStatChip(colors, 'MAX DEPTH', 'L$depth', LucideIcons.gitBranch, const Color(0xFFA855F7)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_loading)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 40),
-                  child: Center(child: CircularProgressIndicator(color: colors.blue)),
-                ),
-              )
-            else if (visibleClients.isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 40),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(LucideIcons.users, size: 40, color: colors.muted),
-                        const SizedBox(height: 10),
-                        Text(
-                          'No clients found in this network',
-                          style: TextStyle(color: colors.muted, fontSize: 13, fontWeight: FontWeight.w700),
-                        ),
-                      ],
+                  ),
+                )
+              else if (visibleClients.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(LucideIcons.users, size: 40, color: colors.muted),
+                          const SizedBox(height: 10),
+                          Text(
+                            'No clients found in this network',
+                            style: TextStyle(color: colors.muted, fontSize: 13, fontWeight: FontWeight.w700),
+                          ),
+                          if (_searchQuery.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                AppHaptics.selectionClick();
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: colors.border),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: Icon(LucideIcons.x, size: 13, color: colors.text),
+                              label: Text(
+                                'Clear search',
+                                style: TextStyle(color: colors.text, fontSize: 12, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
+                )
+              else ...[
+                if (hasAnyChildren)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    sliver: SliverToBoxAdapter(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${visibleClients.length} ${visibleClients.length == 1 ? 'client' : 'clients'} shown',
+                            style: TextStyle(color: colors.muted, fontSize: 11, fontWeight: FontWeight.w700),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              AppHaptics.selectionClick();
+                              setState(() {
+                                if (allExpanded) {
+                                  _expandedIds.removeAll(expandableIds);
+                                } else {
+                                  _expandedIds.addAll(expandableIds);
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: colors.card,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: colors.border),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    allExpanded ? LucideIcons.chevronsDownUp : LucideIcons.chevronsUpDown,
+                                    size: 13,
+                                    color: colors.blue,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    allExpanded ? 'Collapse all' : 'Expand all',
+                                    style: TextStyle(
+                                      color: colors.text,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 116),
+                  sliver: SliverList.builder(
+                    itemCount: visibleClients.length,
+                    itemBuilder: (context, index) {
+                      final item = visibleClients[index];
+                      return _buildClientNode(item.client, colors, item.depth, isWide);
+                    },
+                  ),
                 ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 116),
-                sliver: SliverList.builder(
-                  itemCount: visibleClients.length,
-                  itemBuilder: (context, index) {
-                    final item = visibleClients[index];
-                    return _buildClientNode(item.client, colors, item.depth, isWide);
-                  },
-                ),
-              ),
-          ],
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -393,7 +545,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
             if (client.referralCode.isNotEmpty)
               InkWell(
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  AppHaptics.lightImpact();
                   Clipboard.setData(ClipboardData(text: client.referralCode));
                   showAppMessage('Referral code copied: ${client.referralCode}', type: AppFeedbackType.success);
                 },
@@ -509,11 +661,14 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
         else
           // Request IB Button
           OutlinedButton.icon(
-            onPressed: () => showConfirmIbModal(
-              context,
-              client,
-              onIbChanged: _fetchTree,
-            ),
+            onPressed: () {
+              AppHaptics.selectionClick();
+              showConfirmIbModal(
+                context,
+                client,
+                onIbChanged: _fetchTree,
+              );
+            },
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               minimumSize: Size.zero,
@@ -531,11 +686,14 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       ],
       // Accounts button
       OutlinedButton.icon(
-        onPressed: () => showClientAccountsModal(
-          context,
-          client,
-          onIbChanged: _fetchTree,
-        ),
+        onPressed: () {
+          AppHaptics.selectionClick();
+          showClientAccountsModal(
+            context,
+            client,
+            onIbChanged: _fetchTree,
+          );
+        },
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           minimumSize: Size.zero,
@@ -567,6 +725,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       if (hasChildren)
         OutlinedButton.icon(
           onPressed: () {
+            AppHaptics.selectionClick();
             setState(() {
               if (isExpanded) {
                 _expandedIds.remove(client.id);
@@ -672,6 +831,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
   }
 
   void _showAddClientModal() {
+    AppHaptics.lightImpact();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

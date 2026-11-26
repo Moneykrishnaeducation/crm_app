@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../../app_notifications.dart';
@@ -89,16 +88,20 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
   }
 
   Future<void> _submitWithdrawal() async {
+    FocusScope.of(context).unfocus();
     final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
     if (_selectedAccountId == null || _selectedAccountId!.isEmpty) {
+      AppHaptics.lightImpact();
       showAppMessage('Please select a destination MT5 trading account.');
       return;
     }
     if (amt <= 0 || amt > _availableBalance) {
+      AppHaptics.lightImpact();
       showAppMessage('Please enter a valid withdrawal amount up to \$${_availableBalance.toStringAsFixed(2)}');
       return;
     }
 
+    AppHaptics.mediumImpact();
     setState(() => _submitting = true);
     try {
       await AuthApi.instance.requestIbWithdrawal(
@@ -111,6 +114,7 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
       _commentController.clear();
       await _loadData();
     } catch (e) {
+      AppHaptics.lightImpact();
       showAppMessage('Withdrawal failed: $e');
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -122,6 +126,9 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
     final colors = PartnershipColors.of(context);
     final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
     final remaining = math.max(0.0, _availableBalance - amt);
+    final exceedsBalance = !_loading && amt > _availableBalance;
+    final hasAccount = _selectedAccountId != null && _selectedAccountId!.isNotEmpty;
+    final canSubmit = !_loading && !_submitting && hasAccount && amt > 0 && !exceedsBalance;
 
     return Scaffold(
       backgroundColor: colors.canvas,
@@ -130,182 +137,230 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
         foregroundColor: colors.text,
         elevation: 0,
         title: const Text('Commission Withdrawal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        actions: [
+          IconButton(
+            onPressed: _loading
+                ? null
+                : () {
+                    AppHaptics.lightImpact();
+                    _loadData();
+                  },
+            icon: const Icon(LucideIcons.refreshCw, size: 18),
+            tooltip: 'Refresh',
+          ),
+        ],
       ),
-      body: PartnershipBackdrop(
-        colors: colors,
-        child: _loading
-            ? Center(child: CircularProgressIndicator(color: colors.blue))
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
-                children: [
-                  // Balance Banner
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [colors.blue, const Color(0xFF1E3A8A)]),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Available for Withdrawal',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: PartnershipBackdrop(
+          colors: colors,
+          child: RefreshIndicator(
+            color: colors.blue,
+            backgroundColor: colors.card,
+            onRefresh: _loadData,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
+              children: [
+                PartnershipSkeletonizer(
+                  colors: colors,
+                  enabled: _loading,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Balance Banner
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [colors.blue, const Color(0xFF1E3A8A)]),
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '\$${_availableBalance.toStringAsFixed(2)} USD',
-                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Available for Withdrawal',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '\$${_availableBalance.toStringAsFixed(2)} USD',
+                              style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Remaining after transfer: \$${remaining.toStringAsFixed(2)}',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 11),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Remaining after transfer: \$${remaining.toStringAsFixed(2)}',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 11),
+                      ),
+                      const SizedBox(height: 18),
+                      // Destination Account Selector
+                      Text(
+                        'SELECT MT5 DESTINATION ACCOUNT',
+                        style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: colors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.border),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _tradingAccounts.any((a) => (a['account_id'] ?? '').toString() == _selectedAccountId)
+                                ? _selectedAccountId
+                                : null,
+                            isExpanded: true,
+                            dropdownColor: colors.card,
+                            iconEnabledColor: colors.blue,
+                            hint: Text(
+                              _tradingAccounts.isEmpty ? 'No MT5 accounts found' : 'Select Destination Account',
+                              style: TextStyle(color: colors.muted, fontSize: 13),
+                            ),
+                            style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w700),
+                            items: _tradingAccounts.map((a) {
+                              final id = (a['account_id'] ?? '').toString();
+                              final type = (a['account_type'] ?? 'Standard').toString();
+                              final bal = (a['balance'] ?? '0.00').toString();
+                              return DropdownMenuItem(
+                                value: id,
+                                child: Text('$id ($type) · Bal: \$$bal', overflow: TextOverflow.ellipsis),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                AppHaptics.selectionClick();
+                                setState(() => _selectedAccountId = val);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      // Amount Input
+                      Text(
+                        'WITHDRAWAL AMOUNT (USD)',
+                        style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: colors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: exceedsBalance ? colors.red : colors.border),
+                        ),
+                        child: TextField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: TextStyle(color: colors.text, fontSize: 15, fontWeight: FontWeight.w800),
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            hintStyle: TextStyle(color: colors.muted),
+                            border: InputBorder.none,
+                            prefixText: '\$ ',
+                            prefixStyle: TextStyle(color: colors.blue, fontSize: 15, fontWeight: FontWeight.w800),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      if (exceedsBalance) ...[
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Text(
+                            'Exceeds available balance (\$${_availableBalance.toStringAsFixed(2)})',
+                            style: TextStyle(
+                              color: colors.red,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  // Destination Account Selector
-                  Text(
-                    'SELECT MT5 DESTINATION ACCOUNT',
-                    style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: colors.card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _tradingAccounts.any((a) => (a['account_id'] ?? '').toString() == _selectedAccountId)
-                            ? _selectedAccountId
-                            : null,
-                        isExpanded: true,
-                        dropdownColor: colors.card,
-                        iconEnabledColor: colors.blue,
-                        hint: Text(
-                          _tradingAccounts.isEmpty ? 'No MT5 accounts found' : 'Select Destination Account',
-                          style: TextStyle(color: colors.muted, fontSize: 13),
+                      const SizedBox(height: 10),
+                      // Percentage Presets
+                      Row(
+                        children: [
+                          _percentBtn(colors, '25%', (_loading || _availableBalance <= 0) ? null : () => _setPercent(0.25)),
+                          const SizedBox(width: 8),
+                          _percentBtn(colors, '50%', (_loading || _availableBalance <= 0) ? null : () => _setPercent(0.50)),
+                          const SizedBox(width: 8),
+                          _percentBtn(colors, '75%', (_loading || _availableBalance <= 0) ? null : () => _setPercent(0.75)),
+                          const SizedBox(width: 8),
+                          _percentBtn(colors, '100% (Max)', (_loading || _availableBalance <= 0) ? null : () => _setPercent(1.0)),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      // Comment
+                      Text(
+                        'TRANSFER COMMENT (OPTIONAL)',
+                        style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: colors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.border),
                         ),
-                        style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w700),
-                        items: _tradingAccounts.map((a) {
-                          final id = (a['account_id'] ?? '').toString();
-                          final type = (a['account_type'] ?? 'Standard').toString();
-                          final bal = (a['balance'] ?? '0.00').toString();
-                          return DropdownMenuItem(
-                            value: id,
-                            child: Text('$id ($type) · Bal: \$$bal', overflow: TextOverflow.ellipsis),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedAccountId = val);
-                        },
+                        child: TextField(
+                          controller: _commentController,
+                          style: TextStyle(color: colors.text, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Weekly commission withdrawal',
+                            hintStyle: TextStyle(color: colors.muted, fontSize: 12),
+                            border: InputBorder.none,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  // Amount Input
-                  Text(
-                    'WITHDRAWAL AMOUNT (USD)',
-                    style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: colors.card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: TextField(
-                      controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(color: colors.text, fontSize: 15, fontWeight: FontWeight.w800),
-                      decoration: InputDecoration(
-                        hintText: '0.00',
-                        hintStyle: TextStyle(color: colors.muted),
-                        border: InputBorder.none,
-                        prefixText: '\$ ',
-                        prefixStyle: TextStyle(color: colors.blue, fontSize: 15, fontWeight: FontWeight.w800),
+                      const SizedBox(height: 24),
+                      // Submit Button
+                      FilledButton.icon(
+                        onPressed: canSubmit ? _submitWithdrawal : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.blue,
+                          minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(LucideIcons.arrowUpRight, size: 18),
+                        label: Text(
+                          _submitting ? 'Transferring...' : 'Transfer to MT5 Account',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                        ),
                       ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Percentage Presets
-                  Row(
-                    children: [
-                      _percentBtn(colors, '25%', () => _setPercent(0.25)),
-                      const SizedBox(width: 8),
-                      _percentBtn(colors, '50%', () => _setPercent(0.50)),
-                      const SizedBox(width: 8),
-                      _percentBtn(colors, '75%', () => _setPercent(0.75)),
-                      const SizedBox(width: 8),
-                      _percentBtn(colors, '100% (Max)', () => _setPercent(1.0)),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  // Comment
-                  Text(
-                    'TRANSFER COMMENT (OPTIONAL)',
-                    style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: colors.card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: TextField(
-                      controller: _commentController,
-                      style: TextStyle(color: colors.text, fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Weekly commission withdrawal',
-                        hintStyle: TextStyle(color: colors.muted, fontSize: 12),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Submit Button
-                  FilledButton.icon(
-                    onPressed: _submitting ? null : _submitWithdrawal,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.blue,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    icon: _submitting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(LucideIcons.arrowUpRight, size: 18),
-                    label: Text(
-                      _submitting ? 'Transferring...' : 'Transfer to MT5 Account',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _percentBtn(PartnershipColors colors, String label, VoidCallback onTap) {
+  Widget _percentBtn(PartnershipColors colors, String label, VoidCallback? onTap) {
     return Expanded(
       child: OutlinedButton(
-        onPressed: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
+        onPressed: onTap == null
+            ? null
+            : () {
+                AppHaptics.selectionClick();
+                onTap();
+              },
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: colors.border),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
@@ -313,7 +368,15 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(label, maxLines: 1, style: TextStyle(color: colors.text, fontSize: 11, fontWeight: FontWeight.w700)),
+          child: Text(
+            label,
+            maxLines: 1,
+            style: TextStyle(
+              color: onTap == null ? colors.muted : colors.text,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ),
     );

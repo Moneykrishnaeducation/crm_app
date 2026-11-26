@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_haptics.dart';
 import 'partnership_theme.dart';
 
 // ============================================================================
@@ -73,6 +74,7 @@ class _IbFaqSectionState extends State<IbFaqSection> {
                 child: ExpansionTile(
                   initiallyExpanded: isOpen,
                   onExpansionChanged: (expanded) {
+                    AppHaptics.selectionClick();
                     setState(() {
                       if (expanded) {
                         _openFaqs.add(idx);

@@ -7,7 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import 'app_haptics.dart';
 import 'services/auth_api.dart';
+
+export 'app_haptics.dart';
 
 final GlobalKey<ScaffoldMessengerState> appScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
@@ -21,16 +24,16 @@ void showAppMessage(
 }) {
   switch (type) {
     case AppFeedbackType.error:
-      HapticFeedback.heavyImpact();
+      unawaited(AppHaptics.heavyImpact());
       break;
     case AppFeedbackType.success:
-      HapticFeedback.lightImpact();
+      unawaited(AppHaptics.lightImpact());
       break;
     case AppFeedbackType.warning:
-      HapticFeedback.mediumImpact();
+      unawaited(AppHaptics.mediumImpact());
       break;
     case AppFeedbackType.info:
-      HapticFeedback.selectionClick();
+      unawaited(AppHaptics.selectionClick());
       break;
   }
 

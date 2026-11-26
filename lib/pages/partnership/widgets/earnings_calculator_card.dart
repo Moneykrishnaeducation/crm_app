@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../../app_haptics.dart';
 import 'partnership_theme.dart';
 
 // ============================================================================
@@ -97,7 +98,13 @@ class _EarningsCalculatorCardState extends State<EarningsCalculatorCard> {
               min: 1,
               max: 150,
               divisions: 149,
-              onChanged: (val) => setState(() => _calcTraders = val.round()),
+              onChanged: (val) {
+                final next = val.round();
+                if (next != _calcTraders) {
+                  AppHaptics.selectionClick();
+                  setState(() => _calcTraders = next);
+                }
+              },
             ),
           ),
           const SizedBox(height: 12),
@@ -128,7 +135,13 @@ class _EarningsCalculatorCardState extends State<EarningsCalculatorCard> {
               min: 1,
               max: 50,
               divisions: 49,
-              onChanged: (val) => setState(() => _calcLotsPerTrader = val.round()),
+              onChanged: (val) {
+                final next = val.round();
+                if (next != _calcLotsPerTrader) {
+                  AppHaptics.selectionClick();
+                  setState(() => _calcLotsPerTrader = next);
+                }
+              },
             ),
           ),
           const SizedBox(height: 16),

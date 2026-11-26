@@ -42,10 +42,17 @@ class _ClientRegistrationDialogState extends State<ClientRegistrationDialog> {
     final phone = _phoneController.text.trim();
 
     if (name.isEmpty || email.isEmpty || phone.isEmpty) {
+      AppHaptics.lightImpact();
       showAppMessage('Please fill all required fields.');
       return;
     }
+    if (!email.contains('@')) {
+      AppHaptics.lightImpact();
+      showAppMessage('Please enter a valid email address.');
+      return;
+    }
 
+    AppHaptics.mediumImpact();
     setState(() => _loading = true);
     try {
       await AuthApi.instance.addIbClient(
@@ -56,8 +63,8 @@ class _ClientRegistrationDialogState extends State<ClientRegistrationDialog> {
         country: _countryController.text.trim().isNotEmpty ? _countryController.text.trim() : null,
         referralCode: _codeController.text.trim().isNotEmpty ? _codeController.text.trim() : null,
       );
-      showAppMessage('Client registered successfully!');
-      if (mounted) Navigator.pop(context);
+      showAppMessage('Client registered successfully!', type: AppFeedbackType.success);
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       showAppMessage('Failed to register client: $e');
     } finally {
@@ -97,15 +104,53 @@ class _ClientRegistrationDialogState extends State<ClientRegistrationDialog> {
                 ],
               ),
               const SizedBox(height: 14),
-              _field('Full Name *', _nameController, 'e.g. John Doe', colors),
+              _field(
+                'Full Name *',
+                _nameController,
+                'e.g. John Doe',
+                colors,
+                keyboardType: TextInputType.name,
+                textInputAction: TextInputAction.next,
+              ),
               const SizedBox(height: 10),
-              _field('Email Address *', _emailController, 'e.g. john@example.com', colors),
+              _field(
+                'Email Address *',
+                _emailController,
+                'e.g. john@example.com',
+                colors,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+              ),
               const SizedBox(height: 10),
-              _field('Phone Number *', _phoneController, 'e.g. +91 9876543210', colors),
+              _field(
+                'Phone Number *',
+                _phoneController,
+                'e.g. +91 9876543210',
+                colors,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+              ),
               const SizedBox(height: 10),
-              _field('Country', _countryController, 'e.g. India', colors),
+              _field(
+                'Country',
+                _countryController,
+                'e.g. India',
+                colors,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.next,
+              ),
               const SizedBox(height: 10),
-              _field('Referral Code', _codeController, 'Optional referral code', colors),
+              _field(
+                'Referral Code',
+                _codeController,
+                'Optional referral code',
+                colors,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) {
+                  if (!_loading) _submit();
+                },
+              ),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _loading ? null : _submit,
@@ -126,7 +171,15 @@ class _ClientRegistrationDialogState extends State<ClientRegistrationDialog> {
     );
   }
 
-  Widget _field(String label, TextEditingController ctrl, String hint, PartnershipColors colors) {
+  Widget _field(
+    String label,
+    TextEditingController ctrl,
+    String hint,
+    PartnershipColors colors, {
+    TextInputType? keyboardType,
+    TextInputAction textInputAction = TextInputAction.next,
+    ValueChanged<String>? onSubmitted,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -141,6 +194,9 @@ class _ClientRegistrationDialogState extends State<ClientRegistrationDialog> {
           ),
           child: TextField(
             controller: ctrl,
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            onSubmitted: onSubmitted,
             style: TextStyle(color: colors.text, fontSize: 13),
             decoration: InputDecoration(
               hintText: hint,

@@ -97,6 +97,7 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
 
                       return InkWell(
                         onTap: () {
+                          AppHaptics.selectionClick();
                           final cId = (item['client_id'] ?? '').toString();
                           final matched = widget.clientTree
                               .where((c) => c.id == cId || c.name.toLowerCase() == name.toLowerCase())
@@ -176,66 +177,105 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
                   )
                 : Column(
                     children: widget.referralLinks.map((link) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colors.subCard,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colors.subBorder),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
+                      final copyText = link.referralCode.isNotEmpty
+                          ? link.referralCode
+                          : link.effectiveUrl;
+                      final copyLabel = link.referralCode.isNotEmpty
+                          ? 'Code ${link.referralCode} copied!'
+                          : 'Referral link copied!';
+                      return InkWell(
+                        onTap: () {
+                          AppHaptics.selectionClick();
+                          showReferralQrModal(context, link);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colors.subCard,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.subBorder),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(color: link.color, shape: BoxShape.circle),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            link.profileName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800),
+                                          ),
+                                          Text(
+                                            link.referralCode.isNotEmpty
+                                                ? 'Code: ${link.referralCode}${link.clientsCount > 0 ? ' · ${link.clientsCount} clients' : ''}'
+                                                : link.effectiveUrl,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(color: colors.muted, fontSize: 10.5, fontFamily: 'monospace'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(color: link.color, shape: BoxShape.circle),
+                                  IconButton(
+                                    tooltip: 'Show QR',
+                                    onPressed: () {
+                                      AppHaptics.selectionClick();
+                                      showReferralQrModal(context, link);
+                                    },
+                                    padding: const EdgeInsets.all(6),
+                                    constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: colors.card,
+                                      side: BorderSide(color: colors.border),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: Icon(LucideIcons.qrCode, size: 13, color: colors.text),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          link.profileName,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800),
-                                        ),
-                                        Text(
-                                          'Code: ${link.referralCode}',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(color: colors.muted, fontSize: 10.5, fontFamily: 'monospace'),
-                                        ),
-                                      ],
+                                  const SizedBox(width: 6),
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      AppHaptics.lightImpact();
+                                      Clipboard.setData(ClipboardData(text: copyText));
+                                      showAppMessage(copyLabel, type: AppFeedbackType.success);
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      side: BorderSide(color: colors.border),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: const Icon(LucideIcons.copy, size: 11),
+                                    label: Text(
+                                      'Copy',
+                                      style: TextStyle(fontSize: 10, color: colors.text),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                Clipboard.setData(ClipboardData(text: link.referralCode));
-                                showAppMessage('Code ${link.referralCode} copied!', type: AppFeedbackType.success);
-                              },
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                side: BorderSide(color: colors.border),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              icon: const Icon(LucideIcons.copy, size: 11),
-                              label: Text('Copy', style: TextStyle(fontSize: 10, color: colors.text)),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     }).toList(),
@@ -247,7 +287,10 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
 
   Widget _togglePill(PartnershipColors colors, String label, bool active, VoidCallback onTap) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        AppHaptics.selectionClick();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(7),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),

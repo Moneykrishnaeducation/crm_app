@@ -131,7 +131,12 @@ void showConfirmIbModal(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: submitting ? null : () => Navigator.pop(dialogContext),
+                      onPressed: submitting
+                          ? null
+                          : () {
+                              AppHaptics.selectionClick();
+                              Navigator.pop(dialogContext);
+                            },
                       child: Text('Cancel', style: TextStyle(color: colors.muted, fontWeight: FontWeight.w700)),
                     ),
                     const SizedBox(width: 10),
@@ -139,6 +144,7 @@ void showConfirmIbModal(
                       onPressed: submitting
                           ? null
                           : () async {
+                              AppHaptics.mediumImpact();
                               setDialogState(() => submitting = true);
                               try {
                                 await AuthApi.instance.requestClientIb(client.id);
@@ -218,7 +224,10 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
                     style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(sheetContext),
+                    onPressed: () {
+                      AppHaptics.selectionClick();
+                      Navigator.pop(sheetContext);
+                    },
                     icon: Icon(LucideIcons.x, color: colors.muted, size: 20),
                   ),
                 ],
@@ -255,7 +264,7 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        HapticFeedback.lightImpact();
+                        AppHaptics.lightImpact();
                         Clipboard.setData(ClipboardData(text: url));
                         showAppMessage('Referral link copied!', type: AppFeedbackType.success);
                       },
@@ -272,6 +281,7 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: () async {
+                        AppHaptics.lightImpact();
                         final shareUri = Uri.parse(
                           'https://wa.me/?text=${Uri.encodeComponent('Join my VT Index partner network: $url')}',
                         );
@@ -406,6 +416,7 @@ void showIbTermsModal(
                     const SizedBox(height: 16),
                     InkWell(
                       onTap: () {
+                        AppHaptics.selectionClick();
                         setSheetState(() => agreed = !agreed);
                         onAgreedChanged(agreed);
                       },
@@ -415,6 +426,7 @@ void showIbTermsModal(
                             value: agreed,
                             activeColor: colors.blue,
                             onChanged: (val) {
+                              AppHaptics.selectionClick();
                               setSheetState(() => agreed = val ?? false);
                               onAgreedChanged(agreed);
                             },
@@ -436,6 +448,7 @@ void showIbTermsModal(
                         onPressed: (!agreed || submitting)
                             ? null
                             : () async {
+                                AppHaptics.mediumImpact();
                                 setSheetState(() => submitting = true);
                                 Navigator.pop(sheetContext);
                                 await onSubmit();

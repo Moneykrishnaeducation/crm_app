@@ -30,6 +30,7 @@ class BrokerPartnershipPage extends StatefulWidget {
 }
 
 class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
+  bool _initialLoading = true;
   bool _loading = true;
   bool _isIbApproved = false;
   String _ibStatus = ''; // 'pending', 'rejected', 'approved', ''
@@ -47,7 +48,9 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
   }
 
   Future<void> _loadAllData() async {
-    setState(() => _loading = true);
+    if (mounted && !_loading) {
+      setState(() => _loading = true);
+    }
     try {
       // 1. Fetch user's IB status first to avoid unauthorized 403 Forbidden queries
       Map<String, dynamic> statusRes = {};
@@ -68,6 +71,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
             _isIbApproved = false;
             _ibStatus = ibStatus;
             _loading = false;
+            _initialLoading = false;
           });
         }
         return;
@@ -99,6 +103,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
             _isIbApproved = false;
             _ibStatus = ibStatus.isNotEmpty ? ibStatus : 'none';
             _loading = false;
+            _initialLoading = false;
           });
         }
         return;
@@ -112,30 +117,11 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
       // Parse Dashboard Data
       final dbData = IbDashboardData.fromJson(statsRes);
 
-      // Parse Referral Links
-      final parsedLinks = <IbReferralLink>[];
-      final rawLinks = linksRes['referral_links'] ??
-          (linksRes['links'] is List ? linksRes['links'] : null);
-      if (rawLinks is List && rawLinks.isNotEmpty) {
-        for (var i = 0; i < rawLinks.length; i++) {
-          if (rawLinks[i] is Map) {
-            parsedLinks.add(
-              IbReferralLink.fromJson(rawLinks[i].cast<String, dynamic>(), index: i),
-            );
-          }
-        }
-      } else {
-        final legacyLink =
-            linksRes['referral_link'] ?? linksRes['link'] ?? statsRes['referralLink'];
-        if (legacyLink != null && legacyLink.toString().isNotEmpty) {
-          parsedLinks.add(IbReferralLink(
-            profileName: 'Default Profile',
-            referralLink: legacyLink.toString(),
-            referralCode: (linksRes['referral_code'] ?? '').toString(),
-            isPrimary: true,
-          ));
-        }
-      }
+      // Parse Referral Links across all supported response formats
+      final parsedLinks = IbReferralLink.listFromResponse(
+        linksRes,
+        statsResponse: statsRes,
+      );
 
       // Parse Commission Transactions
       final parsedTxns = <IbCommissionTxn>[];
@@ -164,10 +150,16 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
           _commissionTxns = parsedTxns;
           _clientTree = parsedClients;
           _loading = false;
+          _initialLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _initialLoading = false;
+        });
+      }
     }
   }
 
@@ -190,14 +182,21 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
   Widget build(BuildContext context) {
     final colors = PartnershipColors.of(context);
 
-    if (_loading) {
-      return Scaffold(
-        backgroundColor: colors.canvas,
-        body: PartnershipBackdrop(
-          colors: colors,
-          child: Center(
-            child: CircularProgressIndicator(color: colors.blue),
-          ),
+    if (_initialLoading) {
+      return PartnershipSkeletonizer(
+        colors: colors,
+        enabled: true,
+        child: PartnershipDashboardView(
+          dashboardData: IbDashboardData.demo(),
+          referralLinks: IbReferralLink.demoList(),
+          clientTree: IbClient.demoTree(),
+          commissionTxns: const [],
+          loading: true,
+          demoPreviewMode: false,
+          onBack: widget.onBack,
+          onRefresh: _loadAllData,
+          onExitDemoMode: _exitDemoPreviewMode,
+          onIbChanged: () {},
         ),
       );
     }

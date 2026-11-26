@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../../app_haptics.dart';
 import '../models/partnership_models.dart';
 import 'partnership_modals.dart';
 import 'partnership_theme.dart';
@@ -184,6 +185,7 @@ void showClientAccountsModal(
                     else
                       OutlinedButton.icon(
                         onPressed: () {
+                          AppHaptics.selectionClick();
                           Navigator.pop(sheetContext);
                           showConfirmIbModal(context, client, onIbChanged: onIbChanged);
                         },
@@ -282,11 +284,14 @@ void showClientAccountsModal(
                                     ),
                                     const SizedBox(width: 8),
                                     FilledButton.tonalIcon(
-                                      onPressed: () => showAccountDetailModal(
-                                        sheetContext,
-                                        acc,
-                                        clientName: client.name,
-                                      ),
+                                      onPressed: () {
+                                        AppHaptics.selectionClick();
+                                        showAccountDetailModal(
+                                          sheetContext,
+                                          acc,
+                                          clientName: client.name,
+                                        );
+                                      },
                                       style: FilledButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         minimumSize: Size.zero,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../../app_haptics.dart';
 import '../../../services/auth_api.dart';
 import 'earnings_calculator_card.dart';
 import 'ib_faq_section.dart';
@@ -39,6 +40,7 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
   bool _agreedToTerms = true;
 
   Future<void> _submitIbApplication() async {
+    AppHaptics.mediumImpact();
     setState(() => _submittingApplication = true);
     try {
       await AuthApi.instance.submitIbApplication();
@@ -82,6 +84,7 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
   }
 
   void _openTermsModal() {
+    AppHaptics.selectionClick();
     showIbTermsModal(
       context,
       initialAgreed: _agreedToTerms,
@@ -216,7 +219,10 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
         ),
         const SizedBox(width: 6),
         IconButton(
-          onPressed: widget.onRefresh,
+          onPressed: () {
+            AppHaptics.lightImpact();
+            widget.onRefresh();
+          },
           tooltip: 'Refresh Status',
           icon: Icon(LucideIcons.refreshCw, color: colors.muted, size: 18),
         ),
@@ -299,7 +305,10 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
               runSpacing: 10,
               children: [
                 ElevatedButton.icon(
-                  onPressed: widget.onRefresh,
+                  onPressed: () {
+                    AppHaptics.lightImpact();
+                    widget.onRefresh();
+                  },
                   icon: const Icon(LucideIcons.refreshCw, size: 14),
                   label: const Text('Check Approval Status'),
                   style: ElevatedButton.styleFrom(
@@ -311,7 +320,10 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
                   ),
                 ),
                 OutlinedButton.icon(
-                  onPressed: widget.onEnterDemoMode,
+                  onPressed: () {
+                    AppHaptics.lightImpact();
+                    widget.onEnterDemoMode();
+                  },
                   icon: const Icon(LucideIcons.sparkles, size: 14),
                   label: const Text('Preview Command Center'),
                   style: OutlinedButton.styleFrom(
@@ -411,7 +423,10 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: widget.onEnterDemoMode,
+                onPressed: () {
+                  AppHaptics.lightImpact();
+                  widget.onEnterDemoMode();
+                },
                 icon: const Icon(LucideIcons.sparkles, size: 14),
                 label: const Text('Preview Command Center'),
                 style: OutlinedButton.styleFrom(

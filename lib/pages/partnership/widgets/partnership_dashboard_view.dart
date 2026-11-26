@@ -2,7 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../app_notifications.dart';
 import '../models/partnership_models.dart';
 import '../pages/broker_client_tree_page.dart';
 import '../pages/broker_commission_ledger_page.dart';
@@ -49,6 +51,7 @@ class PartnershipDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = PartnershipColors.of(context);
+    final isSkeleton = Skeletonizer.maybeOf(context)?.enabled ?? false;
 
     return Scaffold(
       backgroundColor: colors.canvas,
@@ -73,6 +76,7 @@ class PartnershipDashboardView extends StatelessWidget {
                   colors: colors,
                   dashboardData: dashboardData,
                   referralLinks: referralLinks,
+                  loading: loading && isSkeleton,
                 ),
                 const SizedBox(height: 16),
                 LeaderboardCard(
@@ -112,7 +116,10 @@ class PartnershipDashboardView extends StatelessWidget {
             ),
           ),
           InkWell(
-            onTap: onExitDemoMode,
+            onTap: () {
+              AppHaptics.lightImpact();
+              onExitDemoMode();
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
@@ -173,7 +180,10 @@ class PartnershipDashboardView extends StatelessWidget {
         ),
         IconButton(
           tooltip: 'Refresh',
-          onPressed: onRefresh,
+          onPressed: () {
+            AppHaptics.lightImpact();
+            onRefresh();
+          },
           icon: loading
               ? SizedBox(
                   width: 16,
@@ -214,11 +224,15 @@ class PartnershipDashboardView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Container(
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.14),
@@ -237,61 +251,81 @@ class PartnershipDashboardView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Flexible(
-                        child: Text(
-                          'PAYOUT READY',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
+                      const Text(
+                        'PAYOUT READY',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      if (referralLinks.isNotEmpty) {
-                        showReferralQrModal(context, referralLinks[0]);
-                      }
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        AppHaptics.lightImpact();
+                        if (referralLinks.isNotEmpty) {
+                          showReferralQrModal(context, referralLinks[0]);
+                        } else if (dashboardData.referralLink.isNotEmpty) {
+                          final uri = Uri.tryParse(dashboardData.referralLink);
+                          final referralCode = uri?.queryParameters['ref'] ??
+                              uri?.queryParameters['code'] ??
+                              '';
+                          showReferralQrModal(
+                            context,
+                            IbReferralLink(
+                              profileName: 'Partner Referral',
+                              referralLink: dashboardData.referralLink,
+                              referralCode: referralCode,
+                              isPrimary: true,
+                            ),
+                          );
+                        } else {
+                          showAppMessage(
+                            'No active referral link available yet. Pull down to refresh or open Referral Studio.',
+                          );
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(LucideIcons.qrCode, size: 13),
+                      label: const Text('Instant QR', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
                     ),
-                    icon: const Icon(LucideIcons.qrCode, size: 13),
-                    label: const Text('Instant QR', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+                    FilledButton.icon(
+                      onPressed: () async {
+                        AppHaptics.lightImpact();
+                        await Navigator.of(context).push<void>(
+                          MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+                        );
+                        onIbChanged();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(LucideIcons.wallet, size: 13),
+                      label: const Text('Withdraw', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
                     ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    icon: const Icon(LucideIcons.wallet, size: 13),
-                    label: const Text('Withdraw', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           // Available Balance display
@@ -340,7 +374,7 @@ class PartnershipDashboardView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
+              Flexible(
                 child: Row(
                   children: [
                     const Icon(LucideIcons.zap, size: 14, color: Color(0xFFF5C438)),
@@ -356,9 +390,14 @@ class PartnershipDashboardView extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '${dashboardData.currentMonthVolume.toStringAsFixed(2)} Lots (30D)',
-                style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w800),
+              Flexible(
+                child: Text(
+                  '${dashboardData.currentMonthVolume.toStringAsFixed(2)} Lots (30D)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w800),
+                ),
               ),
             ],
           ),
@@ -376,13 +415,23 @@ class PartnershipDashboardView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'All-Time: ${dashboardData.totalVolume.toStringAsFixed(2)} Lots',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 10),
+              Flexible(
+                child: Text(
+                  'All-Time: ${dashboardData.totalVolume.toStringAsFixed(2)} Lots',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 10),
+                ),
               ),
-              Text(
-                'Ratio: $direct Direct / $sub Sub-IB',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 10, fontWeight: FontWeight.w700),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Ratio: $direct Direct / $sub Sub-IB',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 10, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
@@ -505,9 +554,12 @@ class PartnershipDashboardView extends StatelessWidget {
           icon: LucideIcons.users,
           label: 'Client Network Hierarchy',
           subtitle: 'View multi-level downline tiers, accounts, and client details',
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const BrokerClientTreePage()),
-          ),
+          onTap: () async {
+            await Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const BrokerClientTreePage()),
+            );
+            onIbChanged();
+          },
         ),
         const SizedBox(height: 8),
         _shortcutItem(
@@ -525,9 +577,12 @@ class PartnershipDashboardView extends StatelessWidget {
           icon: LucideIcons.wallet,
           label: 'Commission Payout & Withdrawal',
           subtitle: 'Instant internal transfer of available commission to live MT5 accounts',
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
-          ),
+          onTap: () async {
+            await Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+            );
+            onIbChanged();
+          },
         ),
         const SizedBox(height: 8),
         _shortcutItem(
@@ -552,7 +607,10 @@ class PartnershipDashboardView extends StatelessWidget {
   }) {
     return PartnershipGlassPanel(
       colors: colors,
-      onTap: onTap,
+      onTap: () {
+        AppHaptics.selectionClick();
+        onTap();
+      },
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       radius: 14,
       child: Row(

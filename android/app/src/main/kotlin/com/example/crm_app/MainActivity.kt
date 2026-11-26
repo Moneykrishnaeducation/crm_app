@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.app.PendingIntent
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.Display
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
@@ -19,6 +22,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private val LIVE_CHANNEL = "com.vtindex.crm/live_updates"
     private val DISPLAY_CHANNEL = "com.vtindex.crm/display_mode"
+    private val HAPTICS_CHANNEL = "com.vtindex.crm/haptics"
     private val LIVE_CHANNEL_ID = "vt_live_updates_channel"
 
     override fun onResume() {
@@ -58,6 +62,18 @@ class MainActivity : FlutterFragmentActivity() {
                 "setDeviceDefault" -> {
                     val applied = resetToDefaultDisplayMode()
                     result.success(applied)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Tactile vibration channel backed by Android Vibrator service
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, HAPTICS_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "vibrate" -> {
+                    val durationMs = (call.argument<Number>("durationMs")?.toLong() ?: 18L).coerceIn(5L, 120L)
+                    val amplitude = (call.argument<Number>("amplitude")?.toInt() ?: 140).coerceIn(1, 255)
+                    result.success(triggerHapticPulse(durationMs, amplitude))
                 }
                 else -> result.notImplemented()
             }
@@ -379,6 +395,35 @@ class MainActivity : FlutterFragmentActivity() {
             NotificationManagerCompat.from(this).cancel(id)
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun triggerHapticPulse(durationMs: Long, amplitude: Int): Boolean {
+        return try {
+            val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                manager?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+            if (vibrator == null || !vibrator.hasVibrator()) {
+                return false
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val effectiveAmplitude = if (vibrator.hasAmplitudeControl()) {
+                    amplitude
+                } else {
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                }
+                vibrator.vibrate(VibrationEffect.createOneShot(durationMs, effectiveAmplitude))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(durationMs)
+            }
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 }

@@ -275,6 +275,21 @@ class IbReferralLink {
   final int clientsCount;
   final Color color;
 
+  String get effectiveUrl => referralLink.isNotEmpty
+      ? referralLink
+      : (referralCode.isNotEmpty
+          ? 'https://client.vtindex.com/?ref=$referralCode'
+          : 'https://client.vtindex.com/');
+
+  static const List<Color> _palette = [
+    Color(0xFF3B82F6), // Blue
+    Color(0xFFF59E0B), // Amber
+    Color(0xFF10B981), // Emerald
+    Color(0xFFA855F7), // Purple
+    Color(0xFF06B6D4), // Cyan
+    Color(0xFFEC4899), // Pink
+  ];
+
   static List<IbReferralLink> demoList() => [
         IbReferralLink(
           profileName: 'Standard Rebate (Direct)',
@@ -294,24 +309,193 @@ class IbReferralLink {
       ];
 
   factory IbReferralLink.fromJson(Map<String, dynamic> json, {int index = 0}) {
-    const linkColors = [
-      Color(0xFF3B82F6), // Blue
-      Color(0xFFF59E0B), // Amber
-      Color(0xFF10B981), // Emerald
-      Color(0xFFA855F7), // Purple
-      Color(0xFF06B6D4), // Cyan
-      Color(0xFFEC4899), // Pink
-    ];
+    final profileRaw = json['profile'];
+    final profileFromMap = profileRaw is Map
+        ? (profileRaw['profile_name'] ?? profileRaw['name'] ?? profileRaw['title'])
+        : (profileRaw is String ? profileRaw : null);
+    final rawName = json['profile_name'] ??
+        json['commission_profile_name'] ??
+        json['profile_title'] ??
+        json['name'] ??
+        json['title'] ??
+        json['label'] ??
+        profileFromMap;
+    final profileName = (rawName != null && rawName.toString().trim().isNotEmpty)
+        ? rawName.toString().trim()
+        : (index == 0 ? 'Default Profile' : 'Profile ${index + 1}');
+
+    final rawLink = json['referral_link'] ??
+        json['link'] ??
+        json['url'] ??
+        json['share_url'] ??
+        json['link_url'] ??
+        json['invite_link'];
+    final referralLink = rawLink is String ? rawLink.trim() : '';
+
+    final rawCode = json['referral_code'] ??
+        json['code'] ??
+        json['ref_code'] ??
+        json['referralCode'];
+    var referralCode = rawCode != null ? rawCode.toString().trim() : '';
+    if (referralCode.isEmpty && referralLink.isNotEmpty) {
+      final parsedUri = Uri.tryParse(referralLink);
+      final queryCode =
+          parsedUri?.queryParameters['ref'] ?? parsedUri?.queryParameters['code'];
+      if (queryCode != null && queryCode.trim().isNotEmpty) {
+        referralCode = queryCode.trim();
+      }
+    }
+
+    final rawCount =
+        json['clients_count'] ?? json['client_count'] ?? json['total_clients'];
+    final clientsCount = rawCount is num
+        ? rawCount.toInt()
+        : (int.tryParse((rawCount ?? '').toString()) ?? 0);
 
     return IbReferralLink(
-      profileName: (json['profile_name'] ?? json['name'] ?? 'Default Profile').toString(),
-      referralLink: (json['referral_link'] ?? json['link'] ?? json['url'] ?? '').toString(),
-      referralCode: (json['referral_code'] ?? json['code'] ?? '').toString(),
-      isPrimary: json['is_primary'] == true,
+      profileName: profileName,
+      referralLink: referralLink,
+      referralCode: referralCode,
+      isPrimary: json['is_primary'] == true || json['primary'] == true,
       isLegacy: json['is_legacy'] == true,
-      clientsCount: (json['clients_count'] is num) ? (json['clients_count'] as num).toInt() : 0,
-      color: linkColors[index % linkColors.length],
+      clientsCount: clientsCount,
+      color: _palette[index % _palette.length],
     );
+  }
+
+  /// Parses referral links across all supported backend envelope formats
+  /// (top-level or nested `data`/`result` lists, single link maps, legacy
+  /// string fields, or fallback stats payloads).
+  static List<IbReferralLink> listFromResponse(
+    Map<String, dynamic> response, {
+    Map<String, dynamic>? statsResponse,
+  }) {
+    final parsed = <IbReferralLink>[];
+    final seen = <String>{};
+
+    void addCandidate(IbReferralLink item) {
+      if (item.referralLink.isEmpty && item.referralCode.isEmpty) return;
+      final normalizedUrl = item.effectiveUrl.toLowerCase();
+      final normalizedCode = item.referralCode.toLowerCase();
+      final key = '$normalizedUrl|$normalizedCode';
+      if (seen.add(key)) {
+        parsed.add(
+          IbReferralLink(
+            profileName: item.profileName,
+            referralLink: item.referralLink.isNotEmpty
+                ? item.referralLink
+                : item.effectiveUrl,
+            referralCode: item.referralCode,
+            isPrimary: item.isPrimary,
+            isLegacy: item.isLegacy,
+            clientsCount: item.clientsCount,
+            color: _palette[(parsed.length) % _palette.length],
+          ),
+        );
+      }
+    }
+
+    void extractFromMap(Map<String, dynamic> map) {
+      final containers = <Map<String, dynamic>>[
+        map,
+        for (final key in const ['data', 'result', 'payload'])
+          if (map[key] is Map) (map[key] as Map).cast<String, dynamic>(),
+      ];
+
+      for (final container in containers) {
+        for (final listKey in const [
+          'referral_links',
+          'links',
+          'results',
+          'data',
+          'profiles',
+          'profile_links',
+          'items',
+        ]) {
+          final rawList = container[listKey];
+          if (rawList is List && rawList.isNotEmpty) {
+            for (var i = 0; i < rawList.length; i++) {
+              final entry = rawList[i];
+              if (entry is Map) {
+                addCandidate(
+                  IbReferralLink.fromJson(entry.cast<String, dynamic>(), index: parsed.length),
+                );
+              } else if (entry is String && entry.trim().isNotEmpty) {
+                addCandidate(
+                  IbReferralLink.fromJson(
+                    <String, dynamic>{'referral_link': entry.trim()},
+                    index: parsed.length,
+                  ),
+                );
+              }
+            }
+          }
+        }
+
+        if (container['referral_link'] is Map) {
+          addCandidate(
+            IbReferralLink.fromJson(
+              (container['referral_link'] as Map).cast<String, dynamic>(),
+              index: parsed.length,
+            ),
+          );
+        }
+
+        if (container.containsKey('referral_link') ||
+            container.containsKey('link') ||
+            container.containsKey('url') ||
+            container.containsKey('referralLink') ||
+            container.containsKey('referral_code') ||
+            container.containsKey('code')) {
+          final rawLink = container['referral_link'] ??
+              container['referralLink'] ??
+              container['link'] ??
+              container['url'];
+          final linkStr = rawLink is String ? rawLink.trim() : '';
+          final codeStr = (container['referral_code'] ?? container['code'] ?? '')
+              .toString()
+              .trim();
+          if (linkStr.isNotEmpty || codeStr.isNotEmpty) {
+            addCandidate(
+              IbReferralLink.fromJson(<String, dynamic>{
+                'profile_name': container['profile_name'] ??
+                    container['commission_profile_name'] ??
+                    'Default Profile',
+                'referral_link': linkStr,
+                'referral_code': codeStr,
+                'is_primary': container['is_primary'] ?? true,
+              }, index: parsed.length),
+            );
+          }
+        }
+      }
+    }
+
+    extractFromMap(response);
+
+    if (statsResponse != null) {
+      final rawStatsLinks = statsResponse['earnings_per_link'];
+      if (rawStatsLinks is List) {
+        for (final entry in rawStatsLinks.whereType<Map>()) {
+          addCandidate(
+            IbReferralLink.fromJson(entry.cast<String, dynamic>(), index: parsed.length),
+          );
+        }
+      }
+      final fallbackLink =
+          statsResponse['referralLink'] ?? statsResponse['referral_link'];
+      if (fallbackLink is String && fallbackLink.trim().isNotEmpty) {
+        addCandidate(
+          IbReferralLink.fromJson(<String, dynamic>{
+            'profile_name': 'Default Profile',
+            'referral_link': fallbackLink.trim(),
+            'is_primary': parsed.isEmpty,
+          }, index: parsed.length),
+        );
+      }
+    }
+
+    return parsed;
   }
 }
 

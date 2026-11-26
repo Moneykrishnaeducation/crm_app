@@ -1507,6 +1507,13 @@ class AuthApi {
         },
       );
 
+  /// Toggle MT5 copy-trading permission for one investor linked to the user's MAM.
+  Future<Map<String, dynamic>> toggleMamInvestorCopy(String accountId) =>
+      _request(
+        'POST',
+        'mam/investors/${Uri.encodeComponent(accountId)}/toggle-copy',
+      );
+
   /// Fetch investor trading accounts linked to a MAM master account.
   Future<List<Map<String, dynamic>>> getMamInvestors(String mamId) async {
     final dynamic response = await _request(

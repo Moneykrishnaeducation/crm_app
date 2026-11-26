@@ -788,7 +788,10 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 final activeCount = investors.where((item) {
                   final state = field(item, ['status', 'account_status', 'trading_status'],
                     fallback: 'Active').toLowerCase();
-                  return state.contains('active') || state == 'enabled';
+                  return state.contains('active') ||
+                      state.contains('running') ||
+                      state == 'enabled' ||
+                      state == 'true';
                 }).length;
 
                 return Column(children: [

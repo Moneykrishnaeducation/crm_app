@@ -28,7 +28,7 @@ class MamMasterAccount {
     this.server = 'VTindex-MT5',
     this.tradingPlatform = 'MetaTrader 5 (MT5)',
     this.algoTrading = 'Manual',
-    this.pendingRelease = 4.03,
+    this.pendingRelease = 0.00,
     this.releasedPayout = 0.00,
     this.pendingWallet = 0.00,
     this.totalSettled = 0.00,
@@ -163,6 +163,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   late MamMasterAccount _master;
   bool _profitSummaryLoading = false;
   bool _settlementInProgress = false;
+  bool _statusUpdating = false;
 
   @override
   void initState() {
@@ -178,8 +179,12 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       final data = await AuthApi.instance.getMamProfitSummary(mamAccountId: _master.login);
       if (!mounted) return;
       setState(() {
-        _master.pendingWallet = double.tryParse(data['pending_amount']?.toString() ?? '') ?? 0.0;
-        _master.totalSettled = double.tryParse(data['total_settled']?.toString() ?? '') ?? 0.0;
+        final pending = double.tryParse(data['pending_amount']?.toString() ?? '') ?? 0.0;
+        final settled = double.tryParse(data['total_settled']?.toString() ?? '') ?? 0.0;
+        _master.pendingWallet = pending;
+        _master.pendingRelease = pending;
+        _master.totalSettled = settled;
+        _master.releasedPayout = settled;
         _master.tradesProcessed = int.tryParse(data['trade_count']?.toString() ?? '') ?? 0;
       });
       widget.onUpdate?.call(_master);
@@ -204,17 +209,34 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     showAppMessage('$label copied to clipboard');
   }
 
-  void _toggleNodeStatus() {
+  Future<void> _toggleNodeStatus() async {
+    if (_statusUpdating) return;
     final wasActive = _master.status == 'Active';
-    setState(() {
-      _master.status = wasActive ? 'Paused' : 'Active';
-    });
-    _notifyUpdate();
-    showAppMessage(
-      wasActive
-          ? 'Master Node #${_master.login} Paused'
-          : 'Master Node #${_master.login} Activated successfully',
-    );
+    setState(() => _statusUpdating = true);
+    try {
+      final response = await AuthApi.instance.setMamTradingEnabled(
+        mamId: _master.login,
+        enabled: !wasActive,
+      );
+      if (!mounted) return;
+      setState(() {
+        _master.status = !wasActive ? 'Active' : 'Paused';
+      });
+      widget.onUpdate?.call(_master);
+      showAppMessage(
+        response['message']?.toString() ??
+            (!wasActive ? 'Master node resumed successfully.' : 'Master node paused successfully.'),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      showAppMessage(
+        error is AuthApiException
+            ? error.message
+            : 'Could not update the MAM master trading status.',
+      );
+    } finally {
+      if (mounted) setState(() => _statusUpdating = false);
+    }
   }
 
   void _toggleMasterStatus() => _toggleNodeStatus();
@@ -228,12 +250,9 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       withdrawal: false,
       accountId: _master.login,
       accountLabel: '${_master.name} · Master #${_master.login}',
-      onCompleted: (amt) {
-        setState(() {
-          _master.balance += amt;
-        });
-        widget.onUpdate?.call(_master);
-      },
+      // Deposit requests are pending until backend/payment confirmation. Do not
+      // optimistically add the requested amount to the MT5 balance.
+
     );
   }
 
@@ -245,12 +264,9 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       withdrawal: true,
       accountId: _master.login,
       accountLabel: '${_master.name} · Master #${_master.login}',
-      onCompleted: (amt) {
-        setState(() {
-          _master.balance = (_master.balance - amt).clamp(0.0, double.infinity);
-        });
-        widget.onUpdate?.call(_master);
-      },
+      // Withdrawal requests are pending approval. Keep the MT5 balance unchanged
+      // until the backend confirms the actual debit.
+
     );
   }
 
@@ -1228,14 +1244,14 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           SizedBox(
                             height: 36,
                             child: OutlinedButton.icon(
-                              onPressed: _toggleMasterStatus,
+                              onPressed: _statusUpdating ? null : _toggleMasterStatus,
                               icon: Icon(
                                 isActive ? LucideIcons.pause : LucideIcons.play,
                                 size: 13,
                                 color: isActive ? c.gold : c.green,
                               ),
                               label: Text(
-                                isActive ? 'Pause' : 'Resume',
+                                _statusUpdating ? 'Updating…' : (isActive ? 'Pause' : 'Resume'),
                                 style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,

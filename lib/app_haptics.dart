@@ -31,6 +31,12 @@ abstract final class AppHaptics {
     fallback: HapticFeedback.heavyImpact,
   );
 
+  static Future<void> vibrate() => _trigger(
+    durationMs: 55,
+    amplitude: 255,
+    fallback: HapticFeedback.vibrate,
+  );
+
   static Future<void> _trigger({
     required int durationMs,
     required int amplitude,

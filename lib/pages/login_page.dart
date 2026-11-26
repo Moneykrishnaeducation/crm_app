@@ -159,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _signInWithBiometrics() async {
     if (_biometricBusy || _loginBusy) return;
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
 
     if (!_biometricEnabled || !_biometricAvailable) {
       if (!_biometricEnabled) {
@@ -200,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
           await AuthApi.instance.restoreSession();
           await AuthApi.instance.getProfile();
           if (!mounted) return;
-          HapticFeedback.selectionClick();
+          AppHaptics.selectionClick();
           widget.onLogin?.call();
           return;
         } on AuthApiException catch (e) {
@@ -276,7 +276,7 @@ class _LoginPageState extends State<LoginPage> {
       _loginPasswordError = null;
     });
 
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionClick();
     unawaited(_saveRememberedLogin());
     setState(() => _loginBusy = true);
     try {
@@ -350,7 +350,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
       if (!mounted) return;
-      HapticFeedback.selectionClick();
+      AppHaptics.selectionClick();
       widget.onLogin?.call();
     } on AuthApiException catch (error) {
       if (fromBiometric &&

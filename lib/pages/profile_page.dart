@@ -1293,7 +1293,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             Expanded(
               child: GestureDetector(
                 onTap: () {
-                  HapticFeedback.selectionClick();
+                  AppHaptics.selectionClick();
                   setState(() => _selectedTabIndex = i);
                 },
                 child: AnimatedContainer(

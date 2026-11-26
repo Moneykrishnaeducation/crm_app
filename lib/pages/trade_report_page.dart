@@ -282,7 +282,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }
 
   Future<void> _selectDateRange() async {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF131D2E) : Colors.white;
     final cardBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
@@ -460,7 +460,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }) {
     return InkWell(
       onTap: () {
-        HapticFeedback.lightImpact();
+        AppHaptics.lightImpact();
         Navigator.pop(ctx, key);
       },
       borderRadius: BorderRadius.circular(12),
@@ -588,7 +588,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                             ? const Icon(LucideIcons.check, color: Color(0xFF2563EB), size: 20)
                             : null,
                         onTap: () {
-                          HapticFeedback.lightImpact();
+                          AppHaptics.lightImpact();
                           if (acc.login != _selectedLogin) {
                             setState(() {
                               _selectedLogin = acc.login;
@@ -616,7 +616,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
   }
 
   void _handleBack() {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     if (widget.onBack != null) {
       widget.onBack!();
     } else {
@@ -664,7 +664,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
         color: const Color(0xFF3B82F6),
         backgroundColor: cardBg,
         onRefresh: () async {
-          HapticFeedback.lightImpact();
+          AppHaptics.lightImpact();
           await _loadTrades();
         },
         child: SingleChildScrollView(
@@ -872,7 +872,7 @@ class _TradeReportPageState extends State<TradeReportPage> {
                   // Account selector pill
                   InkWell(
                     onTap: () {
-                      HapticFeedback.lightImpact();
+                      AppHaptics.lightImpact();
                       _showAccountPicker(context);
                     },
                     borderRadius: BorderRadius.circular(16),

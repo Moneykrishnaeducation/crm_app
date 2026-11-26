@@ -5051,7 +5051,7 @@ class BrokerBottomNavigation extends StatelessWidget {
   final ValueChanged<String> onSelect;
 
   void _showQuickActions(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -5457,7 +5457,7 @@ class _CenterQuickActionButtonState extends State<_CenterQuickActionButton> {
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
           onTap: () {
-            HapticFeedback.mediumImpact();
+            AppHaptics.mediumImpact();
             widget.onTap();
           },
           child: AnimatedScale(
@@ -5556,7 +5556,7 @@ class _QuickActionRowState extends State<_QuickActionRow> {
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
           onTap: () {
-            HapticFeedback.lightImpact();
+            AppHaptics.lightImpact();
             widget.onTap();
           },
           child: AnimatedScale(
@@ -5726,7 +5726,7 @@ class _BrokerNavItem extends StatelessWidget {
             message: label,
             child: InkWell(
               onTap: () {
-                HapticFeedback.selectionClick();
+                AppHaptics.selectionClick();
                 onTap();
               },
               borderRadius: BorderRadius.circular(14),

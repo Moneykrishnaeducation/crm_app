@@ -205,14 +205,14 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   }
 
   void _copyToClipboard(String text, String label) {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     Clipboard.setData(ClipboardData(text: text));
     showAppMessage('$label copied to clipboard', type: AppFeedbackType.success);
   }
 
   Future<void> _toggleNodeStatus() async {
     if (_statusUpdating) return;
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionClick();
     final wasActive = _master.status == 'Active';
     setState(() => _statusUpdating = true);
     try {
@@ -221,7 +221,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         enabled: !wasActive,
       );
       if (!mounted) return;
-      HapticFeedback.heavyImpact();
+      AppHaptics.heavyImpact();
       setState(() {
         _master.status = !wasActive ? 'Active' : 'Paused';
       });
@@ -233,7 +233,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       );
     } catch (error) {
       if (!mounted) return;
-      HapticFeedback.heavyImpact();
+      AppHaptics.heavyImpact();
       showAppMessage(
         error is AuthApiException
             ? error.message
@@ -927,7 +927,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 ),
                 FilledButton(
                   onPressed: (!inProgress && hasPending) ? () async {
-                    HapticFeedback.mediumImpact();
+                    AppHaptics.mediumImpact();
                     setDialogState(() => inProgress = true);
                     setState(() => _settlementInProgress = true);
                     try {
@@ -936,9 +936,9 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       );
                       if (!ctx.mounted) return;
                       Navigator.pop(ctx);
-                      HapticFeedback.lightImpact();
+                      AppHaptics.lightImpact();
                       await _loadProfitSummary();
-                      HapticFeedback.heavyImpact();
+                      AppHaptics.heavyImpact();
                       showAppMessage(
                         response['message']?.toString() ??
                         response['detail']?.toString() ??
@@ -948,7 +948,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                     } catch (error) {
                       if (ctx.mounted) {
                         setDialogState(() => inProgress = false);
-                        HapticFeedback.heavyImpact();
+                        AppHaptics.heavyImpact();
                         showAppMessage(
                           error is AuthApiException
                             ? error.message
@@ -1080,7 +1080,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 ),
               ),
               InkWell(
-                onTap: () { HapticFeedback.selectionClick(); _copyToClipboard(_master.login, 'Master Login ID'); },
+                onTap: () { AppHaptics.selectionClick(); _copyToClipboard(_master.login, 'Master Login ID'); },
                 borderRadius: BorderRadius.circular(6),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -1150,7 +1150,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 46,
                             child: FilledButton.icon(
-                              onPressed: () { HapticFeedback.lightImpact(); _openQuickFundSheet(c); },
+                              onPressed: () { AppHaptics.lightImpact(); _openQuickFundSheet(c); },
                               icon: const Icon(LucideIcons.plus, size: 16),
                               label: FittedBox(
                                 fit: BoxFit.scaleDown,
@@ -1184,7 +1184,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 46,
                             child: OutlinedButton.icon(
-                              onPressed: () { HapticFeedback.lightImpact(); _openWithdrawSheet(c); },
+                              onPressed: () { AppHaptics.lightImpact(); _openWithdrawSheet(c); },
                               icon: Icon(
                                 LucideIcons.arrowUpRight,
                                 size: 16,
@@ -1271,7 +1271,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           SizedBox(
                             height: 36,
                             child: OutlinedButton.icon(
-                              onPressed: _statusUpdating ? null : () { HapticFeedback.mediumImpact(); _toggleMasterStatus(); },
+                              onPressed: _statusUpdating ? null : () { AppHaptics.mediumImpact(); _toggleMasterStatus(); },
                               icon: _statusUpdating
                                   ? const SizedBox(
                                       width: 13,
@@ -1317,7 +1317,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 42,
                             child: OutlinedButton.icon(
-                              onPressed: () { HapticFeedback.lightImpact(); _openPerformanceSheet(c); },
+                              onPressed: () { AppHaptics.lightImpact(); _openPerformanceSheet(c); },
                               icon: Icon(
                                 LucideIcons.barChart2,
                                 size: 15,
@@ -1353,7 +1353,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 42,
                             child: OutlinedButton.icon(
-                              onPressed: () { HapticFeedback.lightImpact(); _openManageInvestorsSheet(c); },
+                              onPressed: () { AppHaptics.lightImpact(); _openManageInvestorsSheet(c); },
                               icon: Icon(
                                 LucideIcons.users,
                                 size: 15,
@@ -1746,7 +1746,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               if (copyable) ...[
                 const SizedBox(width: 6),
                 InkWell(
-                  onTap: () { HapticFeedback.selectionClick(); _copyToClipboard(value, label); },
+                  onTap: () { AppHaptics.selectionClick(); _copyToClipboard(value, label); },
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
                     padding: const EdgeInsets.all(2),
@@ -1832,7 +1832,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   width: double.infinity,
                   height: 44,
                   child: FilledButton.icon(
-                    onPressed: () { HapticFeedback.mediumImpact(); _openSecuritySettingsSheet(c); },
+                    onPressed: () { AppHaptics.mediumImpact(); _openSecuritySettingsSheet(c); },
                     icon: const Icon(LucideIcons.keyRound, size: 15),
                     label: Text(
                       'Master Security & Settings',
@@ -1880,7 +1880,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   width: double.infinity,
                   height: 42,
                   child: OutlinedButton.icon(
-                    onPressed: () { HapticFeedback.mediumImpact(); _openRiskSettingsSheet(c); },
+                    onPressed: () { AppHaptics.mediumImpact(); _openRiskSettingsSheet(c); },
                     icon: const Icon(LucideIcons.slidersHorizontal, size: 15),
                     label: const Text('Configure Leverage',
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
@@ -1939,7 +1939,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               SizedBox(
                 height: 44,
                 child: FilledButton.icon(
-                  onPressed: _settlementInProgress ? null : () { HapticFeedback.mediumImpact(); _triggerSettlementDialog(c); },
+                  onPressed: _settlementInProgress ? null : () { AppHaptics.mediumImpact(); _triggerSettlementDialog(c); },
                   icon: const Icon(LucideIcons.zap, size: 14),
                   label: Text(
                     'Trigger Settlement',

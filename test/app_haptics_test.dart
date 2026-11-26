@@ -28,13 +28,15 @@ void main() {
     await AppHaptics.lightImpact();
     await AppHaptics.mediumImpact();
     await AppHaptics.heavyImpact();
+    await AppHaptics.vibrate();
 
-    expect(calls.length, 4);
+    expect(calls.length, 5);
     expect(calls[0].method, 'vibrate');
     expect(calls[0].arguments, {'durationMs': 14, 'amplitude': 90});
     expect(calls[1].arguments, {'durationMs': 22, 'amplitude': 140});
     expect(calls[2].arguments, {'durationMs': 36, 'amplitude': 200});
     expect(calls[3].arguments, {'durationMs': 55, 'amplitude': 255});
+    expect(calls[4].arguments, {'durationMs': 55, 'amplitude': 255});
   });
 
   test('AppHaptics falls back cleanly when native channel is unavailable', () async {

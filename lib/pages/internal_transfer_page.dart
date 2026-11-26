@@ -173,7 +173,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   }
 
   void _setAmount(double amount) {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     _amountController.text = amount.toStringAsFixed(2);
     _amountController.selection = TextSelection.fromPosition(
       TextPosition(offset: _amountController.text.length),
@@ -182,7 +182,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   }
 
   void _swapAccounts() {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     setState(() {
       final temp = _source;
       _source = _destination;
@@ -802,7 +802,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   }
 
   void _showAccountPickerModal(BuildContext context, {required bool isSource}) {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
@@ -866,7 +866,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                         child: InkWell(
                           borderRadius: BorderRadius.circular(14),
                           onTap: () {
-                            HapticFeedback.selectionClick();
+                            AppHaptics.selectionClick();
                             Navigator.pop(sheetContext);
                             setState(() {
                               if (isSource) {
@@ -1384,7 +1384,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
     final toLogin = _destination;
 
     setState(() => _isProcessing = true);
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
 
     try {
       final response = await AuthApi.instance.createInternalTransfer(

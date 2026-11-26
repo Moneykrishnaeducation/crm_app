@@ -272,7 +272,7 @@ class _MoreProfileCardState extends State<_MoreProfileCard> {
           ),
           child: InkWell(
             onTap: () {
-              HapticFeedback.lightImpact();
+              AppHaptics.lightImpact();
               widget.onTap();
             },
             borderRadius: BorderRadius.circular(22),

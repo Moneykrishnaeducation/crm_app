@@ -198,7 +198,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _toggleBiometric(bool value) async {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
     if (value) {
       try {
@@ -908,7 +908,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _confirmRemoveDevice({int? deviceId}) async {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1095,7 +1095,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _confirmRevokeAllDevices() async {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1199,7 +1199,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       ),
     );
     if (confirmed == true && mounted) {
-      HapticFeedback.mediumImpact();
+      AppHaptics.mediumImpact();
       try {
         await AuthApi.instance.revokeTrustedDevice();
         if (!mounted) return;
@@ -1439,7 +1439,7 @@ class _VerifySecurityPasswordModalState
                       ),
                       IconButton(
                         onPressed: () {
-                          HapticFeedback.lightImpact();
+                          AppHaptics.lightImpact();
                           Navigator.of(context).pop(false);
                         },
                         icon: Icon(LucideIcons.x, color: _mutedColor, size: 20),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'app_notifications.dart';
 import 'push_messaging.dart';
+export 'app_haptics.dart';
 export 'app_notifications.dart';
 import 'biometric_sign_in.dart';
 

@@ -643,6 +643,7 @@ class _AccountCredentialsPanel extends StatelessWidget {
         alignment: Alignment.centerRight,
         child: TextButton.icon(
           onPressed: () {
+            AppHaptics.lightImpact();
             Clipboard.setData(ClipboardData(
               text: 'Account number: $accountNumber\n'
                   'Master password: $masterPassword\n'
@@ -674,7 +675,7 @@ class _AccountCredentialsPanel extends StatelessWidget {
         IconButton(
           tooltip: 'Copy $label',
           onPressed: () {
-            HapticFeedback.lightImpact();
+            AppHaptics.lightImpact();
             Clipboard.setData(ClipboardData(text: value));
             showAppMessage('$label copied to clipboard.', type: AppFeedbackType.success);
           },
@@ -2336,7 +2337,7 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
         IconButton(
           tooltip: 'Copy $label',
           onPressed: () {
-            HapticFeedback.lightImpact();
+            AppHaptics.lightImpact();
             Clipboard.setData(ClipboardData(text: value));
             showAppMessage('$label copied to clipboard.', type: AppFeedbackType.success);
           },
@@ -2525,7 +2526,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     );
     if (confirmed != true || !mounted) return;
 
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
     setState(() => _closingTickets.add(ticket));
     try {
       final result = await AuthApi.instance.closePosition(
@@ -2538,14 +2539,14 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
           (result['message'] ?? 'MT5 could not close this position.').toString(),
         );
       }
-      HapticFeedback.lightImpact();
+      AppHaptics.lightImpact();
       showAppMessage((result['message'] ?? 'Position closed successfully.').toString(), type: AppFeedbackType.success);
       await _loadAccountData();
     } on AuthApiException catch (error) {
-      HapticFeedback.heavyImpact();
+      AppHaptics.heavyImpact();
       if (mounted) showAppMessage(error.message, type: AppFeedbackType.error);
     } catch (_) {
-      HapticFeedback.heavyImpact();
+      AppHaptics.heavyImpact();
       if (mounted) showAppMessage('Unable to close this position. Refresh and check its status before retrying.', type: AppFeedbackType.error);
     } finally {
       if (mounted) setState(() => _closingTickets.remove(ticket));

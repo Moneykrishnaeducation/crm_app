@@ -1127,10 +1127,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               ),
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
               children: [
-                // 1. Navigation & Header
-                _buildHeader(c),
-                const SizedBox(height: 12),
-
                 // 2. Hero Balance & Action Card
                 _buildHeroBalanceCard(c),
                 const SizedBox(height: 14),
@@ -1150,70 +1146,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           ),
         ),
       ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // 1. NAVIGATION & HEADER
-  // ---------------------------------------------------------------------------
-  Widget _buildHeader(MamWorkspaceColors c) {
-    final isActive = _master.status == 'Active';
-    final statusColor = isActive ? c.green : c.red;
-    final statusBg = isActive ? c.greenLight : c.redLight;
-    final statusBorder = isActive ? c.greenBorder : c.redBorder;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        // Right-side Status Badge
-        Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: statusBg,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: statusBorder),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Node Status:',
-                style: GoogleFonts.inter(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: c.muted,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: statusColor.withValues(alpha: 0.6),
-                      blurRadius: 4,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                isActive ? 'Active' : 'Disabled / Paused',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: statusColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

@@ -732,14 +732,95 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
                 subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 3),
-                  child: Text('MT5 Account #$accountId · ${status == '—' ? 'LINKED' : status.toUpperCase()}',
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
+                  padding: const EdgeInsets.only(top: 5, right: 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('MT5 Account #$accountId',
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 5,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.only(left: 8, right: 4, top: 2, bottom: 2),
+                            decoration: BoxDecoration(
+                              color: copyEnabled
+                                  ? c.greenLight.withValues(alpha: 0.55)
+                                  : c.blueLight.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: copyEnabled
+                                    ? c.green.withValues(alpha: 0.22)
+                                    : c.subBorder),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6, height: 6,
+                                  decoration: BoxDecoration(
+                                    color: copyEnabled ? c.green : c.muted,
+                                    shape: BoxShape.circle),
+                                ),
+                                const SizedBox(width: 5),
+                                Text('COPY',
+                                  style: GoogleFonts.inter(
+                                    color: copyEnabled ? c.green : c.muted,
+                                    fontSize: 9, fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.35)),
+                                const SizedBox(width: 2),
+                                if (copyUpdating)
+                                  const SizedBox(
+                                    width: 22, height: 22,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(5),
+                                      child: CircularProgressIndicator(strokeWidth: 1.8),
+                                    ),
+                                  )
+                                else
+                                  Transform.scale(
+                                    scale: 0.78,
+                                    child: Switch.adaptive(
+                                      value: copyEnabled,
+                                      activeColor: c.green,
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      onChanged: changeCopy,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: openPositions,
+                            icon: Icon(LucideIcons.activity, size: 13, color: c.blue),
+                            label: Text('Live Positions',
+                              style: GoogleFonts.inter(
+                                color: c.blue, fontSize: 10, fontWeight: FontWeight.w800)),
+                            style: OutlinedButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              minimumSize: const Size(0, 30),
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                              side: BorderSide(color: c.blue.withValues(alpha: 0.25)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(9)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+                trailing: Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Icon(LucideIcons.chevronDown, size: 17, color: c.muted),
+                ),
+                children: [
                     if (copyUpdating)
                       const SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2))
@@ -783,24 +864,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   detailLine('Country', country),
                   detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
                   detailLine('Created', created),
-                  const SizedBox(height: 12),
-                  detailLine('Copy Trading', copyEnabled ? 'Enabled' : 'Paused'),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: FilledButton.icon(
-                      onPressed: openPositions,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: c.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-                      ),
-                      icon: const Icon(LucideIcons.activity, size: 16),
-                      label: const Text('Live Position Monitor',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                    ),
-                  ),
                   ],
                 ),
                 ),

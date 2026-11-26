@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/services/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,6 +31,32 @@ class PammPool {
   final String server;
   final String manager;
   String status;
+
+  /// Placeholder items used by [PammSkeletonizer] while lists load.
+  static List<PammPool> skeletonSamples() => [
+        PammPool(
+          'Alpha Quant Growth Pool',
+          '8402190',
+          '1:500',
+          125400.00,
+          20,
+          id: 'skel-1',
+          managerBalance: 15000.00,
+          pnl: 4280.50,
+          manager: 'Alexander Mercer',
+        ),
+        PammPool(
+          'Steady FX Institutional',
+          '8402245',
+          '1:200',
+          89200.00,
+          25,
+          id: 'skel-2',
+          managerBalance: 10000.00,
+          pnl: 1940.00,
+          manager: 'Elena Rostova',
+        ),
+      ];
 }
 
 class PammInvestment {
@@ -58,6 +85,34 @@ class PammInvestment {
   final double share;
   final double managerProfitShare;
   final String joinedOn;
+
+  /// Placeholder items used by [PammSkeletonizer] while investments load.
+  static List<PammInvestment> skeletonSamples() => [
+        PammInvestment(
+          '8402190',
+          'Alpha Quant Growth Pool',
+          'Alexander Mercer',
+          12450.00,
+          2450.00,
+          10000.00,
+          14.50,
+          id: 'skel-inv-1',
+          pammId: 'skel-1',
+          managerProfitShare: 490.00,
+        ),
+        PammInvestment(
+          '8402245',
+          'Steady FX Institutional',
+          'Elena Rostova',
+          6820.00,
+          820.00,
+          6000.00,
+          8.25,
+          id: 'skel-inv-2',
+          pammId: 'skel-2',
+          managerProfitShare: 164.00,
+        ),
+      ];
 }
 
 abstract final class PammColors {
@@ -271,6 +326,7 @@ String generatePammPassword() {
 String formatPammMoney(double value) => '\$${value.toStringAsFixed(2)}';
 
 Future<void> copyPammValue(BuildContext context, String value) async {
+  AppHaptics.lightImpact();
   await Clipboard.setData(ClipboardData(text: value));
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(

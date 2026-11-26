@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/services/auth_api.dart';
 import 'package:flutter/material.dart';
@@ -166,19 +167,23 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
   }
 
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     final value = double.tryParse(_amount.text.trim().replaceAll(',', ''));
     if (value == null || !value.isFinite || value <= 0) {
+      AppHaptics.lightImpact();
       setState(
         () => _errorMessage = 'Enter a valid amount greater than zero.',
       );
       return;
     }
     if (value > widget.availableBalance) {
+      AppHaptics.lightImpact();
       setState(
         () => _errorMessage = 'Amount exceeds your available balance.',
       );
       return;
     }
+    AppHaptics.mediumImpact();
     setState(() {
       _submitting = true;
       _errorMessage = null;
@@ -193,6 +198,7 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
+      AppHaptics.lightImpact();
       setState(() {
         _submitting = false;
         _errorMessage = error is AuthApiException
@@ -217,12 +223,16 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
         ? '$currency wallet ending ${eligibility.wallet.length > 4 ? eligibility.wallet.substring(eligibility.wallet.length - 4) : eligibility.wallet}'
         : '${eligibility.bankName} ending ${eligibility.bankAccount.length > 4 ? eligibility.bankAccount.substring(eligibility.bankAccount.length - 4) : eligibility.bankAccount}';
 
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final maxHeight =
+        (screenHeight - keyboardBottom).clamp(240.0, screenHeight * .9);
+
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardBottom),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: 620,
-          maxHeight: MediaQuery.sizeOf(context).height * .9,
+          maxHeight: maxHeight,
         ),
         decoration: BoxDecoration(
           color: card,
@@ -261,7 +271,11 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        AppHaptics.lightImpact();
+                        FocusScope.of(context).unfocus();
+                        Navigator.pop(context);
+                      },
                       tooltip: 'Close',
                       icon: Icon(Icons.close, color: muted),
                     ),
@@ -327,20 +341,27 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
+                        runSpacing: 6,
                         children: [
                           if (eligibility.hasCrypto)
                             ChoiceChip(
                               label: Text('$currency wallet'),
                               selected: _method == 'usdt',
-                              onSelected: (_) =>
-                                  setState(() => _method = 'usdt'),
+                              onSelected: (_) {
+                                AppHaptics.selectionClick();
+                                FocusScope.of(context).unfocus();
+                                setState(() => _method = 'usdt');
+                              },
                             ),
                           if (eligibility.hasBank)
                             ChoiceChip(
                               label: const Text('Bank transfer'),
                               selected: _method == 'bank',
-                              onSelected: (_) =>
-                                  setState(() => _method = 'bank'),
+                              onSelected: (_) {
+                                AppHaptics.selectionClick();
+                                FocusScope.of(context).unfocus();
+                                setState(() => _method = 'bank');
+                              },
                             ),
                         ],
                       ),
@@ -360,6 +381,7 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
+                        onChanged: (_) => setState(() => _errorMessage = null),
                         style: TextStyle(
                           color: text,
                           fontSize: 16,
@@ -380,6 +402,35 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                           ),
                         ),
                       ),
+                      if (widget.availableBalance > 0) ...[
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: const [
+                            (label: '25%', factor: 0.25),
+                            (label: '50%', factor: 0.50),
+                            (label: '75%', factor: 0.75),
+                            (label: '100%', factor: 1.00),
+                          ].map((preset) {
+                            final presetText =
+                                (widget.availableBalance * preset.factor)
+                                    .toStringAsFixed(2);
+                            return ChoiceChip(
+                              label: Text(preset.label),
+                              selected: _amount.text.trim() == presetText,
+                              onSelected: (_) {
+                                AppHaptics.selectionClick();
+                                FocusScope.of(context).unfocus();
+                                setState(() {
+                                  _amount.text = presetText;
+                                  _errorMessage = null;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 10),
                         Text(

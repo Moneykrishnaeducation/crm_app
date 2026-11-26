@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_dialogs.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_shared_widgets.dart';
@@ -86,15 +87,21 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      AppHaptics.lightImpact();
+      return;
+    }
     final pammId = int.tryParse(widget.pool.id);
     if (pammId == null) {
+      AppHaptics.lightImpact();
       showPammMessage(
         context,
         'This pool is missing its account identifier. Refresh the list and try again.',
       );
       return;
     }
+    AppHaptics.mediumImpact();
     setState(() => _joining = true);
     try {
       final response = await AuthApi.instance.investInPamm(
@@ -122,6 +129,7 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
       });
     } catch (error) {
       if (mounted) {
+        AppHaptics.lightImpact();
         setState(() => _joining = false);
         showPammMessage(
           context,
@@ -154,6 +162,9 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
           ),
         );
 
+    final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+
     return Dialog(
       alignment: Alignment.bottomCenter,
       backgroundColor: card,
@@ -165,7 +176,8 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 520,
-          maxHeight: MediaQuery.sizeOf(context).height * .9,
+          maxHeight: (screenHeight - keyboardBottom)
+              .clamp(240.0, screenHeight * .9),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -213,7 +225,12 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      AppHaptics.lightImpact();
+                      FocusScope.of(context).unfocus();
+                      Navigator.pop(context);
+                    },
+                    tooltip: 'Close',
                     icon: Icon(Icons.close, color: muted, size: 18),
                   ),
                 ],
@@ -284,27 +301,29 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                                     ),
                                   ),
                                   const SizedBox(width: 9),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Pool details',
-                                        style: TextStyle(
-                                          color: text,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Pool details',
+                                          style: TextStyle(
+                                            color: text,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        'Review the manager settings before joining',
-                                        style: TextStyle(
-                                          color: muted,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w400,
+                                        Text(
+                                          'Review the manager settings before joining',
+                                          style: TextStyle(
+                                            color: muted,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w400,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -452,7 +471,11 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        AppHaptics.lightImpact();
+                        FocusScope.of(context).unfocus();
+                        Navigator.pop(context);
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: text,
                         side: BorderSide(color: border),

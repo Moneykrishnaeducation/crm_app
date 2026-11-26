@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_detail_components.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +106,10 @@ class PammManagedDetailView extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: onLoadConnectedInvestors,
+                  onPressed: () {
+                    AppHaptics.lightImpact();
+                    onLoadConnectedInvestors();
+                  },
                   icon: const Icon(Icons.people_outline, size: 17),
                   label: const Text('Connected investor list'),
                   style: FilledButton.styleFrom(
@@ -119,7 +123,12 @@ class PammManagedDetailView extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: togglingPammId == pool.id ? null : onTogglePool,
+                  onPressed: togglingPammId == pool.id
+                      ? null
+                      : () {
+                          AppHaptics.mediumImpact();
+                          onTogglePool();
+                        },
                   icon: togglingPammId == pool.id
                       ? const SizedBox(
                           width: 17,
@@ -158,7 +167,10 @@ class PammManagedDetailView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   IconButton(
-                    onPressed: onBack,
+                    onPressed: () {
+                      AppHaptics.lightImpact();
+                      onBack();
+                    },
                     tooltip: 'Back to managed pools',
                     icon: Icon(Icons.arrow_back, color: text),
                   ),
@@ -325,12 +337,16 @@ class _ManagedHeroCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'MT5 login  ${pool.login}',
-                style: TextStyle(
-                  color: muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  'MT5 login  ${pool.login}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               IconButton(
@@ -351,6 +367,8 @@ class _ManagedHeroCard extends StatelessWidget {
                   children: [
                     Text(
                       pool.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: text,
                         fontSize: 21,
@@ -400,7 +418,12 @@ class _ManagedHeroCard extends StatelessWidget {
             runSpacing: 7,
             children: [
               FilledButton.icon(
-                onPressed: pool.status == 'Open' ? onDeposit : null,
+                onPressed: pool.status == 'Open'
+                    ? () {
+                        AppHaptics.lightImpact();
+                        onDeposit();
+                      }
+                    : null,
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('Deposit funds'),
                 style: FilledButton.styleFrom(
@@ -413,7 +436,10 @@ class _ManagedHeroCard extends StatelessWidget {
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: onWithdraw,
+                onPressed: () {
+                  AppHaptics.lightImpact();
+                  onWithdraw();
+                },
                 icon: const Icon(Icons.remove, size: 16),
                 label: const Text('Withdraw funds'),
                 style: OutlinedButton.styleFrom(
@@ -426,7 +452,12 @@ class _ManagedHeroCard extends StatelessWidget {
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: syncing ? null : onSyncEquity,
+                onPressed: syncing
+                    ? null
+                    : () {
+                        AppHaptics.mediumImpact();
+                        onSyncEquity();
+                      },
                 icon: syncing
                     ? const SizedBox(
                         width: 16,

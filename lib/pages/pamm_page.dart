@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_detail_views.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_dialogs.dart';
@@ -175,6 +176,7 @@ class _PammPageState extends State<PammPage> {
       return;
     }
     setState(() => _syncingPammId = pool.id);
+    AppHaptics.mediumImpact();
     try {
       await AuthApi.instance.syncPammEquity(pammId);
       await _loadPammLists(lists: const [0]);
@@ -219,11 +221,17 @@ class _PammPageState extends State<PammPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () {
+              AppHaptics.selectionClick();
+              Navigator.pop(dialogContext, false);
+            },
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () {
+              AppHaptics.mediumImpact();
+              Navigator.pop(dialogContext, true);
+            },
             child: Text(nextEnabled ? 'Open pool' : 'Close pool'),
           ),
         ],
@@ -342,6 +350,7 @@ class _PammPageState extends State<PammPage> {
           _tab = 2;
           _query = '';
           _search.clear();
+          _selectedFilter = 'All Investments';
         });
       },
     );
@@ -439,6 +448,9 @@ class _PammPageState extends State<PammPage> {
                                       _tab = i;
                                       _query = '';
                                       _search.clear();
+                                      _selectedFilter = i == 2
+                                          ? 'All Investments'
+                                          : 'All Pools';
                                     });
                                     _loadPammLists(lists: [i]);
                                   },
@@ -450,6 +462,9 @@ class _PammPageState extends State<PammPage> {
                                     children: [
                                       PammManagedTabView(
                                         managed: _managed,
+                                        loading: _loadingPammLists,
+                                        onRefresh: () =>
+                                            _loadPammLists(lists: const [0]),
                                         query: _query,
                                         selectedFilter: _selectedFilter,
                                         searchController: _search,
@@ -477,6 +492,9 @@ class _PammPageState extends State<PammPage> {
                                       ),
                                       PammAvailableTabView(
                                         available: _available,
+                                        loading: _loadingPammLists,
+                                        onRefresh: () =>
+                                            _loadPammLists(lists: const [1]),
                                         query: _query,
                                         selectedFilter: _selectedFilter,
                                         searchController: _search,
@@ -494,6 +512,9 @@ class _PammPageState extends State<PammPage> {
                                         investments: _investments,
                                         managedCount: _managed.length,
                                         isManagedTab: _tab == 0,
+                                        loading: _loadingPammLists,
+                                        onRefresh: () =>
+                                            _loadPammLists(lists: const [2]),
                                         query: _query,
                                         selectedFilter: _selectedFilter,
                                         searchController: _search,

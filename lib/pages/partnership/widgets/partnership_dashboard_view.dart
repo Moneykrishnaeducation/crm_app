@@ -223,111 +223,73 @@ class PartnershipDashboardView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row
+          // Header Actions Row
           SizedBox(
             width: double.infinity,
             child: Wrap(
               spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.spaceBetween,
+              runSpacing: 6,
+              alignment: WrapAlignment.end,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
-                          shape: BoxShape.circle,
+                OutlinedButton.icon(
+                  onPressed: () {
+                    AppHaptics.lightImpact();
+                    if (referralLinks.isNotEmpty) {
+                      showReferralQrModal(context, referralLinks[0]);
+                    } else if (dashboardData.referralLink.isNotEmpty) {
+                      final uri = Uri.tryParse(dashboardData.referralLink);
+                      final referralCode = uri?.queryParameters['ref'] ??
+                          uri?.queryParameters['code'] ??
+                          '';
+                      showReferralQrModal(
+                        context,
+                        IbReferralLink(
+                          profileName: 'Partner Referral',
+                          referralLink: dashboardData.referralLink,
+                          referralCode: referralCode,
+                          isPrimary: true,
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'PAYOUT READY',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
+                      );
+                    } else {
+                      showAppMessage(
+                        'No active referral link available yet. Pull down to refresh or open Referral Studio.',
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
+                  icon: const Icon(LucideIcons.qrCode, size: 13),
+                  label: const Text('Instant QR', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
                 ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        AppHaptics.lightImpact();
-                        if (referralLinks.isNotEmpty) {
-                          showReferralQrModal(context, referralLinks[0]);
-                        } else if (dashboardData.referralLink.isNotEmpty) {
-                          final uri = Uri.tryParse(dashboardData.referralLink);
-                          final referralCode = uri?.queryParameters['ref'] ??
-                              uri?.queryParameters['code'] ??
-                              '';
-                          showReferralQrModal(
-                            context,
-                            IbReferralLink(
-                              profileName: 'Partner Referral',
-                              referralLink: dashboardData.referralLink,
-                              referralCode: referralCode,
-                              isPrimary: true,
-                            ),
-                          );
-                        } else {
-                          showAppMessage(
-                            'No active referral link available yet. Pull down to refresh or open Referral Studio.',
-                          );
-                        }
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(LucideIcons.qrCode, size: 13),
-                      label: const Text('Instant QR', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
-                    ),
-                    FilledButton.icon(
-                      onPressed: () async {
-                        AppHaptics.lightImpact();
-                        await Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
-                        );
-                        onIbChanged();
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(LucideIcons.wallet, size: 13),
-                      label: const Text('Withdraw', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
-                    ),
-                  ],
+                FilledButton.icon(
+                  onPressed: () async {
+                    AppHaptics.lightImpact();
+                    await Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+                    );
+                    onIbChanged();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(LucideIcons.wallet, size: 13),
+                  label: const Text('Withdraw', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           // Available Balance display
           Text(
             'Liquid Available Balance',

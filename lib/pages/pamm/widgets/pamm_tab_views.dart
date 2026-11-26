@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_pool_cards.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_shared_widgets.dart';
@@ -9,42 +10,66 @@ abstract class _PammTabPage extends StatelessWidget {
     super.key,
     required this.children,
     required this.storageKey,
+    this.onRefresh,
   });
 
   final List<Widget> children;
   final String storageKey;
+  final Future<void> Function()? onRefresh;
 
   @override
-  Widget build(BuildContext context) => ListView.builder(
-        key: PageStorageKey<String>(storageKey),
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-        itemCount: children.length,
-        itemBuilder: (context, index) => children[index],
-      );
+  Widget build(BuildContext context) {
+    final listView = ListView.builder(
+      key: PageStorageKey<String>(storageKey),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+      itemCount: children.length,
+      itemBuilder: (context, index) => children[index],
+    );
+    if (onRefresh == null) return listView;
+    return RefreshIndicator(
+      color: PammColors.blue,
+      onRefresh: () {
+        AppHaptics.selectionClick();
+        return onRefresh!();
+      },
+      child: listView,
+    );
+  }
 }
 
 class PammManagedTabPage extends _PammTabPage {
-  const PammManagedTabPage({super.key, required super.children})
-      : super(storageKey: 'pamm-managed-tab');
+  const PammManagedTabPage({
+    super.key,
+    required super.children,
+    super.onRefresh,
+  }) : super(storageKey: 'pamm-managed-tab');
 }
 
 class PammAvailableTabPage extends _PammTabPage {
-  const PammAvailableTabPage({super.key, required super.children})
-      : super(storageKey: 'pamm-available-tab');
+  const PammAvailableTabPage({
+    super.key,
+    required super.children,
+    super.onRefresh,
+  }) : super(storageKey: 'pamm-available-tab');
 }
 
 class PammInvestmentsTabPage extends _PammTabPage {
-  const PammInvestmentsTabPage({super.key, required super.children})
-      : super(storageKey: 'pamm-investments-tab');
+  const PammInvestmentsTabPage({
+    super.key,
+    required super.children,
+    super.onRefresh,
+  }) : super(storageKey: 'pamm-investments-tab');
 }
 
 class PammManagedTabView extends StatelessWidget {
   const PammManagedTabView({
     super.key,
     required this.managed,
+    this.loading = false,
+    this.onRefresh,
     required this.query,
     required this.selectedFilter,
     required this.searchController,
@@ -57,6 +82,8 @@ class PammManagedTabView extends StatelessWidget {
   });
 
   final List<PammPool> managed;
+  final bool loading;
+  final Future<void> Function()? onRefresh;
   final String query;
   final String selectedFilter;
   final TextEditingController searchController;
@@ -77,8 +104,14 @@ class PammManagedTabView extends StatelessWidget {
               pool.login.contains(normalizedQuery),
         )
         .toList();
+    final showSkeleton = loading && managed.isEmpty;
+    final skeletonPools = PammPool.skeletonSamples();
+    final metricSource = showSkeleton ? skeletonPools : managed;
+    final hasActiveFilters = query.trim().isNotEmpty ||
+        (selectedFilter.isNotEmpty && selectedFilter != 'All Pools');
 
     return PammManagedTabPage(
+      onRefresh: onRefresh,
       children: [
         PammFeatureBanner(
           icon: LucideIcons.layers,
@@ -90,34 +123,43 @@ class PammManagedTabView extends StatelessWidget {
           onAction: onCreatePool,
         ),
         const SizedBox(height: 12),
-        PammMetricGrid(
-          cards: [
-            PammMetricCard(
-              label: 'MANAGED EQUITY',
-              value: formatPammMoney(
-                managed.fold<double>(0, (total, pool) => total + pool.equity),
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammMetricGrid(
+            cards: [
+              PammMetricCard(
+                label: 'MANAGED EQUITY',
+                value: formatPammMoney(
+                  metricSource.fold<double>(
+                    0,
+                    (total, pool) => total + pool.equity,
+                  ),
+                ),
+                subtext: 'Combined pool equity',
+                icon: LucideIcons.wallet,
+                accent: PammColors.blue,
               ),
-              subtext: 'Combined pool equity',
-              icon: LucideIcons.wallet,
-              accent: PammColors.blue,
-            ),
-            PammMetricCard(
-              label: 'MANAGED POOLS',
-              value: '${managed.length}',
-              subtext: 'Your active pools',
-              icon: LucideIcons.layers,
-              accent: PammColors.green,
-            ),
-            PammMetricCard(
-              label: 'PROFIT / LOSS',
-              value: formatPammMoney(
-                managed.fold<double>(0, (total, pool) => total + pool.pnl),
+              PammMetricCard(
+                label: 'MANAGED POOLS',
+                value: '${metricSource.length}',
+                subtext: 'Your active pools',
+                icon: LucideIcons.layers,
+                accent: PammColors.green,
               ),
-              subtext: 'Pool performance',
-              icon: LucideIcons.trendingUp,
-              accent: PammColors.gold,
-            ),
-          ],
+              PammMetricCard(
+                label: 'PROFIT / LOSS',
+                value: formatPammMoney(
+                  metricSource.fold<double>(
+                    0,
+                    (total, pool) => total + pool.pnl,
+                  ),
+                ),
+                subtext: 'Pool performance',
+                icon: LucideIcons.trendingUp,
+                accent: PammColors.gold,
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
         PammSearchAndFilters(
@@ -131,12 +173,42 @@ class PammManagedTabView extends StatelessWidget {
           onSelectFilter: onSelectFilter,
         ),
         const SizedBox(height: 12),
-        PammSectionHeader(title: 'Managed PAMM Pools', count: pools.length),
+        PammSectionHeader(
+          title: 'Managed PAMM Pools',
+          count: showSkeleton ? skeletonPools.length : pools.length,
+        ),
         const SizedBox(height: 10),
-        if (pools.isEmpty)
-          const PammEmptyState(
+        if (showSkeleton)
+          IgnorePointer(
+            child: PammSkeletonizer(
+              enabled: true,
+              child: Column(
+                children: [
+                  for (final pool in skeletonPools) ...[
+                    PammPoolCard(
+                      pool: pool,
+                      managed: true,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
+          )
+        else if (pools.isEmpty)
+          PammEmptyState(
             title: 'No Managed Pools Found',
-            message: 'Try changing your search or create a new PAMM pool.',
+            message: managed.isNotEmpty || hasActiveFilters
+                ? 'No managed pools match your current search or filters.'
+                : 'Try changing your search or create a new PAMM pool.',
+            actionLabel:
+                managed.isNotEmpty || hasActiveFilters ? 'Reset filters' : null,
+            onAction: managed.isNotEmpty || hasActiveFilters
+                ? () {
+                    onClearQuery();
+                    onSelectFilter('All Pools');
+                  }
+                : null,
           )
         else
           for (final pool in pools) ...[
@@ -157,6 +229,8 @@ class PammAvailableTabView extends StatelessWidget {
   const PammAvailableTabView({
     super.key,
     required this.available,
+    this.loading = false,
+    this.onRefresh,
     required this.query,
     required this.selectedFilter,
     required this.searchController,
@@ -167,6 +241,8 @@ class PammAvailableTabView extends StatelessWidget {
   });
 
   final List<PammPool> available;
+  final bool loading;
+  final Future<void> Function()? onRefresh;
   final String query;
   final String selectedFilter;
   final TextEditingController searchController;
@@ -178,48 +254,63 @@ class PammAvailableTabView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalizedQuery = query.toLowerCase();
-    final rows = available
+    var rows = available
         .where(
           (pool) =>
               pool.name.toLowerCase().contains(normalizedQuery) ||
               pool.login.contains(normalizedQuery),
         )
         .toList();
-    final totalEquity = available.fold<double>(
+    // Filter to pools with profit share configured and sort lowest fee first.
+    if (selectedFilter == 'Profit Share') {
+      rows = rows.where((pool) => pool.share > 0).toList()
+        ..sort((a, b) => a.share.compareTo(b.share));
+    }
+
+    final showSkeleton = loading && available.isEmpty;
+    final skeletonPools = PammPool.skeletonSamples();
+    final metricSource = showSkeleton ? skeletonPools : available;
+    final totalEquity = metricSource.fold<double>(
       0,
       (value, pool) => value + pool.equity,
     );
-    final averageProfitShare = available.isEmpty
+    final averageProfitShare = metricSource.isEmpty
         ? '0%'
-        : '${(available.fold<double>(0, (value, pool) => value + pool.share) / available.length).toStringAsFixed(1)}%';
+        : '${(metricSource.fold<double>(0, (value, pool) => value + pool.share) / metricSource.length).toStringAsFixed(1)}%';
+    final hasActiveFilters = query.trim().isNotEmpty ||
+        (selectedFilter.isNotEmpty && selectedFilter != 'All Pools');
 
     return PammAvailableTabPage(
+      onRefresh: onRefresh,
       children: [
         const SizedBox(height: 12),
-        PammMetricGrid(
-          cards: [
-            PammMetricCard(
-              label: 'AVAILABLE POOLS',
-              value: '${available.length}',
-              subtext: 'Open for investment',
-              icon: LucideIcons.layers,
-              accent: PammColors.blue,
-            ),
-            PammMetricCard(
-              label: 'TOTAL POOL EQUITY',
-              value: formatPammMoney(totalEquity),
-              subtext: 'Across listed pools',
-              icon: LucideIcons.wallet,
-              accent: PammColors.green,
-            ),
-            PammMetricCard(
-              label: 'AVG. PROFIT SHARE',
-              value: averageProfitShare,
-              subtext: 'Pool allocation',
-              icon: LucideIcons.chartNoAxesCombined,
-              accent: PammColors.gold,
-            ),
-          ],
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammMetricGrid(
+            cards: [
+              PammMetricCard(
+                label: 'AVAILABLE POOLS',
+                value: '${metricSource.length}',
+                subtext: 'Open for investment',
+                icon: LucideIcons.layers,
+                accent: PammColors.blue,
+              ),
+              PammMetricCard(
+                label: 'TOTAL POOL EQUITY',
+                value: formatPammMoney(totalEquity),
+                subtext: 'Across listed pools',
+                icon: LucideIcons.wallet,
+                accent: PammColors.green,
+              ),
+              PammMetricCard(
+                label: 'AVG. PROFIT SHARE',
+                value: averageProfitShare,
+                subtext: 'Pool allocation',
+                icon: LucideIcons.chartNoAxesCombined,
+                accent: PammColors.gold,
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
         PammSearchAndFilters(
@@ -233,12 +324,43 @@ class PammAvailableTabView extends StatelessWidget {
           onSelectFilter: onSelectFilter,
         ),
         const SizedBox(height: 12),
-        PammSectionHeader(title: 'Explore Investment Pools', count: rows.length),
+        PammSectionHeader(
+          title: 'Explore Investment Pools',
+          count: showSkeleton ? skeletonPools.length : rows.length,
+        ),
         const SizedBox(height: 10),
-        if (rows.isEmpty)
-          const PammEmptyState(
+        if (showSkeleton)
+          IgnorePointer(
+            child: PammSkeletonizer(
+              enabled: true,
+              child: Column(
+                children: [
+                  for (final pool in skeletonPools) ...[
+                    PammPoolCard(
+                      pool: pool,
+                      managed: false,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
+          )
+        else if (rows.isEmpty)
+          PammEmptyState(
             title: 'No Investment Pools Found',
-            message: 'Try another search to discover available pools.',
+            message: available.isNotEmpty || hasActiveFilters
+                ? 'No available pools match your current search or filters.'
+                : 'Try another search to discover available pools.',
+            actionLabel: available.isNotEmpty || hasActiveFilters
+                ? 'Reset filters'
+                : null,
+            onAction: available.isNotEmpty || hasActiveFilters
+                ? () {
+                    onClearQuery();
+                    onSelectFilter('All Pools');
+                  }
+                : null,
           )
         else
           for (final pool in rows) ...[
@@ -260,6 +382,8 @@ class PammInvestmentsTabView extends StatelessWidget {
     required this.investments,
     required this.managedCount,
     required this.isManagedTab,
+    this.loading = false,
+    this.onRefresh,
     required this.query,
     required this.selectedFilter,
     required this.searchController,
@@ -273,6 +397,8 @@ class PammInvestmentsTabView extends StatelessWidget {
   final List<PammInvestment> investments;
   final int managedCount;
   final bool isManagedTab;
+  final bool loading;
+  final Future<void> Function()? onRefresh;
   final String query;
   final String selectedFilter;
   final TextEditingController searchController;
@@ -293,50 +419,67 @@ class PammInvestmentsTabView extends StatelessWidget {
               investment.manager.toLowerCase().contains(normalizedQuery),
         )
         .toList();
-    final invested = investments.fold<double>(
+    final showSkeleton = loading && investments.isEmpty;
+    final skeletonInvestments = PammInvestment.skeletonSamples();
+    final metricSource = showSkeleton ? skeletonInvestments : investments;
+
+    final invested = metricSource.fold<double>(
       0,
       (total, investment) => total + investment.deposit,
     );
-    final value = investments.fold<double>(
+    final value = metricSource.fold<double>(
       0,
       (total, investment) => total + investment.value,
     );
-    final pnl = investments.fold<double>(
+    final pnl = metricSource.fold<double>(
       0,
       (total, investment) => total + investment.pnl,
     );
+    final hasActiveFilters = query.trim().isNotEmpty ||
+        (selectedFilter.isNotEmpty &&
+            selectedFilter != 'All Investments' &&
+            selectedFilter != 'All Pools');
 
     return PammInvestmentsTabPage(
+      onRefresh: onRefresh,
       children: [
-        PammSnapshotCard(
-          isManagedTab: isManagedTab,
-          managedCount: managedCount,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammSnapshotCard(
+            isManagedTab: isManagedTab,
+            managedCount: managedCount,
+            totalEquity: value,
+            totalPnl: pnl,
+          ),
         ),
         const SizedBox(height: 12),
-        PammMetricGrid(
-          cards: [
-            PammMetricCard(
-              label: 'INVESTED CAPITAL',
-              value: formatPammMoney(invested),
-              subtext: 'Initial deposits',
-              icon: LucideIcons.wallet,
-              accent: PammColors.blue,
-            ),
-            PammMetricCard(
-              label: 'CURRENT VALUE',
-              value: formatPammMoney(value),
-              subtext: 'Portfolio value',
-              icon: LucideIcons.chartNoAxesCombined,
-              accent: PammColors.green,
-            ),
-            PammMetricCard(
-              label: 'NET PROFIT / LOSS',
-              value: formatPammMoney(pnl),
-              subtext: 'Unrealized result',
-              icon: LucideIcons.trendingUp,
-              accent: PammColors.gold,
-            ),
-          ],
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammMetricGrid(
+            cards: [
+              PammMetricCard(
+                label: 'INVESTED CAPITAL',
+                value: formatPammMoney(invested),
+                subtext: 'Initial deposits',
+                icon: LucideIcons.wallet,
+                accent: PammColors.blue,
+              ),
+              PammMetricCard(
+                label: 'CURRENT VALUE',
+                value: formatPammMoney(value),
+                subtext: 'Portfolio value',
+                icon: LucideIcons.chartNoAxesCombined,
+                accent: PammColors.green,
+              ),
+              PammMetricCard(
+                label: 'NET PROFIT / LOSS',
+                value: formatPammMoney(pnl),
+                subtext: 'Unrealized result',
+                icon: LucideIcons.trendingUp,
+                accent: PammColors.gold,
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
         PammSearchAndFilters(
@@ -352,13 +495,42 @@ class PammInvestmentsTabView extends StatelessWidget {
         const SizedBox(height: 12),
         PammSectionHeader(
           title: 'My Portfolio Investments',
-          count: rows.length,
+          count: showSkeleton ? skeletonInvestments.length : rows.length,
         ),
         const SizedBox(height: 10),
-        if (rows.isEmpty)
-          const PammEmptyState(
+        if (showSkeleton)
+          IgnorePointer(
+            child: PammSkeletonizer(
+              enabled: true,
+              child: Column(
+                children: [
+                  for (final investment in skeletonInvestments) ...[
+                    PammInvestmentCard(
+                      item: investment,
+                      onDetails: () {},
+                      onDeposit: () {},
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
+          )
+        else if (rows.isEmpty)
+          PammEmptyState(
             title: 'No Investments Found',
-            message: 'Your PAMM investments will appear here.',
+            message: investments.isNotEmpty || hasActiveFilters
+                ? 'No investments match your current search or filters.'
+                : 'Your PAMM investments will appear here.',
+            actionLabel: investments.isNotEmpty || hasActiveFilters
+                ? 'Reset filters'
+                : null,
+            onAction: investments.isNotEmpty || hasActiveFilters
+                ? () {
+                    onClearQuery();
+                    onSelectFilter('All Investments');
+                  }
+                : null,
           )
         else
           for (final investment in rows) ...[

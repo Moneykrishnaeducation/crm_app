@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:flutter/material.dart';
 
@@ -46,26 +47,31 @@ Future<void> showPammCreatedCredentialsDialog(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(accountName, style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          credentialLine('MT5 login', login),
-          if (masterPassword != null)
-            credentialLine('Master password', masterPassword),
-          credentialLine('Investor password', investorPassword),
-          const SizedBox(height: 8),
-          Text(
-            'Save these credentials securely. You may not be able to view them again.',
-            style: TextStyle(color: muted, fontSize: 12),
-          ),
-        ],
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(accountName, style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            credentialLine('MT5 login', login),
+            if (masterPassword != null)
+              credentialLine('Master password', masterPassword),
+            credentialLine('Investor password', investorPassword),
+            const SizedBox(height: 8),
+            Text(
+              'Save these credentials securely. You may not be able to view them again.',
+              style: TextStyle(color: muted, fontSize: 12),
+            ),
+          ],
+        ),
       ),
       actions: [
         FilledButton(
-          onPressed: () => Navigator.pop(dialogContext),
+          onPressed: () {
+            AppHaptics.lightImpact();
+            Navigator.pop(dialogContext);
+          },
           child: const Text('Done'),
         ),
       ],

@@ -1,38 +1,82 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 export 'package:crm_app/pages/pamm/widgets/pamm_detail_components.dart';
 export 'package:crm_app/pages/pamm/widgets/pamm_top_bar.dart';
+
+/// Theme-aware skeleton shimmer wrapper tuned to [PammColors].
+class PammSkeletonizer extends StatelessWidget {
+  const PammSkeletonizer({
+    super.key,
+    required this.enabled,
+    required this.child,
+  });
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = PammColors.isDark(context);
+    final effect = dark
+        ? const ShimmerEffect(
+            baseColor: Color(0xFF152955),
+            highlightColor: Color(0xFF234284),
+          )
+        : const ShimmerEffect(
+            baseColor: Color(0xFFE4ECF7),
+            highlightColor: Color(0xFFF6F9FF),
+          );
+    return Skeletonizer(
+      enabled: enabled,
+      effect: effect,
+      enableSwitchAnimation: true,
+      child: child,
+    );
+  }
+}
 
 class PammSnapshotCard extends StatelessWidget {
   const PammSnapshotCard({
     super.key,
     required this.isManagedTab,
     required this.managedCount,
+    this.totalEquity,
+    this.totalPnl,
   });
 
   final bool isManagedTab;
   final int managedCount;
+  final double? totalEquity;
+  final double? totalPnl;
 
   @override
   Widget build(BuildContext context) {
+    final equityText = formatPammMoney(totalEquity ?? 0);
+    final pnlValue = totalPnl ?? 0;
+    final pnlPrefix = pnlValue >= 0 ? '+' : '-';
+    final pnlText = '$pnlPrefix\$${pnlValue.abs().toStringAsFixed(2)}';
     return PammMetricGrid(
       cards: [
         PammMetricCard(
           label: isManagedTab ? 'POOL EQUITY' : 'INVESTED EQUITY',
-          value: r'$0.00',
+          value: equityText,
           subtext: 'Combined capital',
           icon: LucideIcons.wallet,
           accent: PammColors.blue,
         ),
         PammMetricCard(
           label: isManagedTab ? 'MANAGED POOLS' : 'NET PROFIT / LOSS',
-          value: isManagedTab ? '$managedCount' : '+\$0.00',
+          value: isManagedTab ? '$managedCount' : pnlText,
           subtext: isManagedTab ? 'Accepting deposits' : 'Active allocations',
           icon: LucideIcons.trendingUp,
-          accent: PammColors.green,
+          accent: !isManagedTab && pnlValue < 0
+              ? PammColors.rose
+              : PammColors.green,
         ),
         const PammMetricCard(
           label: 'ALLOCATION',
@@ -213,7 +257,10 @@ class PammFeatureBanner extends StatelessWidget {
               width: double.infinity,
               height: 44,
               child: FilledButton.icon(
-                onPressed: onAction,
+                onPressed: () {
+                  AppHaptics.lightImpact();
+                  onAction();
+                },
                 icon: const Icon(LucideIcons.arrowRight, size: 15),
                 label: Text(
                   actionLabel,
@@ -376,6 +423,8 @@ class PammSearchAndFilters extends StatelessWidget {
           child: TextField(
             controller: controller,
             onChanged: onQueryChanged,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
             style: GoogleFonts.poppins(color: text, fontSize: 12.5),
             decoration: InputDecoration(
               hintText: hint,
@@ -384,7 +433,10 @@ class PammSearchAndFilters extends StatelessWidget {
               suffixIcon: query.isNotEmpty
                   ? IconButton(
                       icon: Icon(LucideIcons.x, color: muted, size: 16),
-                      onPressed: onClearQuery,
+                      onPressed: () {
+                        AppHaptics.selectionClick();
+                        onClearQuery();
+                      },
                     )
                   : null,
               border: InputBorder.none,
@@ -404,7 +456,10 @@ class PammSearchAndFilters extends StatelessWidget {
                 final f = filters[i];
                 final isSelected = selectedFilter == f;
                 return InkWell(
-                  onTap: () => onSelectFilter(f),
+                  onTap: () {
+                    AppHaptics.selectionClick();
+                    onSelectFilter(f);
+                  },
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
                     constraints: const BoxConstraints(minHeight: 40),
@@ -511,10 +566,14 @@ class PammEmptyState extends StatelessWidget {
     super.key,
     required this.title,
     required this.message,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String title;
   final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -536,6 +595,7 @@ class PammEmptyState extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             title,
+            textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               color: text,
               fontSize: 14,
@@ -548,6 +608,30 @@ class PammEmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(color: muted, fontSize: 11),
           ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: () {
+                AppHaptics.selectionClick();
+                onAction!();
+              },
+              icon: const Icon(LucideIcons.rotateCcw, size: 15),
+              label: Text(
+                actionLabel!,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: PammColors.blue,
+                side: BorderSide(color: PammColors.blue.withValues(alpha: 0.45)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

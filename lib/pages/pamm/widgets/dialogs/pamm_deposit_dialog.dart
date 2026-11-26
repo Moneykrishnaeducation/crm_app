@@ -95,6 +95,8 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
   }
 
   Future<void> _selectPaymentMethod(int index) async {
+    AppHaptics.selectionClick();
+    FocusScope.of(context).unfocus();
     setState(() => _method = index);
     try {
       final response = index == 0
@@ -121,16 +123,20 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
   }
 
   Future<void> _pickProof() async {
+    AppHaptics.selectionClick();
+    FocusScope.of(context).unfocus();
     try {
       final selected = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 90,
       );
       if (selected != null && mounted) {
+        AppHaptics.lightImpact();
         setState(() => _proof = selected);
       }
     } catch (_) {
       if (mounted) {
+        AppHaptics.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Unable to open the image picker. Please try again.'),
@@ -141,8 +147,10 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
   }
 
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     final value = double.tryParse(_amount.text.trim());
     if (value == null || !value.isFinite || value < 10) {
+      AppHaptics.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(r'Enter a valid deposit amount of at least $10.00.'),
@@ -151,12 +159,14 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
       return;
     }
     if (_proof == null) {
+      AppHaptics.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please upload your payment proof.')),
       );
       return;
     }
     if (_method == 1 && _manualCurrency == 'INR' && _usdInrRate <= 0) {
+      AppHaptics.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -166,6 +176,7 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
       );
       return;
     }
+    AppHaptics.mediumImpact();
     setState(() => _submitting = true);
     try {
       final selectedProof = _proof!;
@@ -183,6 +194,7 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
+      AppHaptics.lightImpact();
       setState(() => _submitting = false);
       final message = error is AuthApiException
           ? error.message
@@ -247,12 +259,15 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                     color: selected ? Colors.white : modalText,
                   ),
                   const SizedBox(width: 7),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: selected ? Colors.white : modalText,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected ? Colors.white : modalText,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -260,6 +275,7 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
               const SizedBox(height: 5),
               Text(
                 subtitle,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: selected
                       ? Colors.white.withValues(alpha: .85)
@@ -295,8 +311,10 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
+    final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
     final compact = screen.width < 600;
-    final maxHeight = screen.height * .94;
+    final maxHeight =
+        (screen.height - keyboardBottom).clamp(240.0, screen.height * .94);
     final isDark = PammColors.isDark(context);
     final modalText = isDark ? Colors.white : const Color(0xFF091836);
     final modalMuted =
@@ -310,6 +328,11 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
     final bankAccount = _bankDetails?['account_number']?.toString() ?? '';
     final bankName =
         _bankDetails?['bank_name']?.toString() ?? 'saved bank account';
+    final isInrManual = _method == 1 && _manualCurrency == 'INR';
+    final quickAmounts = isInrManual
+        ? const [1000, 5000, 10000, 25000]
+        : const [50, 100, 500, 1000];
+    final currencySymbol = isInrManual ? '₹' : r'$';
 
     Widget sectionLabel(String text) => Padding(
           padding: const EdgeInsets.only(bottom: 9),
@@ -330,13 +353,19 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context).maybePop(),
+            onTap: () {
+              AppHaptics.lightImpact();
+              FocusScope.of(context).unfocus();
+              Navigator.of(context).maybePop();
+            },
           ),
         ),
         Align(
           alignment: Alignment.bottomCenter,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 780, maxHeight: maxHeight),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: keyboardBottom),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 780, maxHeight: maxHeight),
             child: Container(
               margin: EdgeInsets.zero,
               decoration: BoxDecoration(
@@ -412,7 +441,11 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                 ),
                                 IconButton(
                                   tooltip: 'Close',
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: () {
+                                    AppHaptics.lightImpact();
+                                    FocusScope.of(context).unfocus();
+                                    Navigator.pop(context);
+                                  },
                                   icon: const Icon(Icons.close_rounded, color: Colors.white, size: 19),
                                 ),
                               ],
@@ -577,14 +610,19 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                           if (_method == 1) ...[
                             Wrap(
                               spacing: 8,
+                              runSpacing: 6,
                               children: [
                                 for (final currency in const ['INR', 'USD'])
                                   ChoiceChip(
                                     label: Text(currency),
                                     selected: _manualCurrency == currency,
-                                    onSelected: (_) => setState(
-                                      () => _manualCurrency = currency,
-                                    ),
+                                    onSelected: (_) {
+                                      AppHaptics.selectionClick();
+                                      FocusScope.of(context).unfocus();
+                                      setState(
+                                        () => _manualCurrency = currency,
+                                      );
+                                    },
                                   ),
                               ],
                             ),
@@ -595,6 +633,7 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
+                            onChanged: (_) => setState(() {}),
                             style: TextStyle(
                               color: modalText,
                               fontSize: 15,
@@ -607,11 +646,14 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                               ),
-                              prefixIcon: const Padding(
-                                padding: EdgeInsets.only(left: 14, right: 10),
+                              prefixIcon: Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 14, right: 10),
                                 child: Icon(
-                                  Icons.attach_money_rounded,
-                                  color: Color(0xFF1D348A),
+                                  isInrManual
+                                      ? Icons.currency_rupee_rounded
+                                      : Icons.attach_money_rounded,
+                                  color: const Color(0xFF1D348A),
                                   size: 20,
                                 ),
                               ),
@@ -635,6 +677,23 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                 ),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: quickAmounts.map((amount) {
+                              final amountText = '$amount';
+                              return ChoiceChip(
+                                label: Text('$currencySymbol$amountText'),
+                                selected: _amount.text.trim() == amountText,
+                                onSelected: (_) {
+                                  AppHaptics.selectionClick();
+                                  FocusScope.of(context).unfocus();
+                                  setState(() => _amount.text = amountText);
+                                },
+                              );
+                            }).toList(),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -775,6 +834,7 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                 ],
               ),
             ),
+          ),
           ),
         ),
       ],

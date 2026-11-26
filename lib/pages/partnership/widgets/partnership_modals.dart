@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app_notifications.dart';
 import '../../../services/auth_api.dart';
@@ -13,6 +13,36 @@ import 'vtindex_qr_view.dart';
 export 'account_detail_sheet.dart';
 export 'client_accounts_sheet.dart';
 export 'client_registration_dialog.dart';
+
+/// Opens the native platform share sheet for a partner referral link.
+Future<void> shareReferralLink(
+  BuildContext context, {
+  required String url,
+  String? profileName,
+}) async {
+  AppHaptics.lightImpact();
+  final box = context.findRenderObject() as RenderBox?;
+  final shareOrigin =
+      box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+  final title = profileName != null && profileName.trim().isNotEmpty
+      ? 'VT Index Partner Referral — ${profileName.trim()}'
+      : 'VT Index Partner Referral';
+  try {
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'Join my VT Index partner network: $url',
+        subject: title,
+        sharePositionOrigin: shareOrigin,
+      ),
+    );
+  } catch (_) {
+    await Clipboard.setData(ClipboardData(text: url));
+    showAppMessage(
+      'Unable to open share sheet. Referral link copied instead.',
+      type: AppFeedbackType.info,
+    );
+  }
+}
 
 // ============================================================================
 // MODALS & DIALOGS
@@ -219,9 +249,13 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Referral QR & Link',
-                    style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800),
+                  Expanded(
+                    child: Text(
+                      'Referral QR & Link',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: colors.text, fontSize: 17, fontWeight: FontWeight.w800),
+                    ),
                   ),
                   IconButton(
                     onPressed: () {
@@ -279,21 +313,21 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        AppHaptics.lightImpact();
-                        final shareUri = Uri.parse(
-                          'https://wa.me/?text=${Uri.encodeComponent('Join my VT Index partner network: $url')}',
-                        );
-                        await launchUrl(shareUri, mode: LaunchMode.externalApplication);
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Builder(
+                      builder: (buttonContext) => FilledButton.icon(
+                        onPressed: () => shareReferralLink(
+                          buttonContext,
+                          url: url,
+                          profileName: link.profileName,
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(LucideIcons.share2, size: 15),
+                        label: const Text('Share', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                       ),
-                      icon: const Icon(LucideIcons.share2, size: 15),
-                      label: const Text('Share', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                     ),
                   ),
                 ],

@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -92,6 +93,8 @@ class PammTopBar extends StatelessWidget {
                   children: [
                     Text(
                       'PAMM Portfolio',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         color: text,
                         fontSize: 18,
@@ -172,7 +175,10 @@ class PammTopBar extends StatelessWidget {
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () => onSelectTab(i),
+                              onTap: () {
+                                AppHaptics.selectionClick();
+                                onSelectTab(i);
+                              },
                               borderRadius: BorderRadius.circular(11),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
@@ -233,6 +239,8 @@ class PammTopBar extends StatelessWidget {
                                           ),
                                           Text(
                                             '${counts[i]} ${counts[i] == 1 ? 'item' : 'items'}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: GoogleFonts.poppins(
                                               color: tab == i
                                                   ? Colors.white
@@ -324,7 +332,12 @@ class PammTopBar extends StatelessWidget {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: loading ? null : onRetry,
+                  onPressed: loading
+                      ? null
+                      : () {
+                          AppHaptics.lightImpact();
+                          onRetry();
+                        },
                   icon: const Icon(Icons.refresh, size: 16),
                   label: const Text('Retry'),
                 ),

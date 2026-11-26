@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:flutter/material.dart';
 
@@ -167,7 +168,10 @@ class PammDetailAction extends StatelessWidget {
     return Material(
       color: card,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          AppHaptics.lightImpact();
+          onTap();
+        },
         borderRadius: BorderRadius.circular(11),
         child: Container(
           padding: const EdgeInsets.all(11),

@@ -1,3 +1,4 @@
+import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_detail_views.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_shared_widgets.dart';
@@ -131,32 +132,46 @@ class PammAvailableDetailView extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: onBack,
-                    icon: const Icon(Icons.arrow_back, size: 15),
-                    label: const Text('Back to investments'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: text,
-                      side: BorderSide(color: border),
-                      textStyle: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+              child: SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        AppHaptics.lightImpact();
+                        onBack();
+                      },
+                      icon: const Icon(Icons.arrow_back, size: 15),
+                      label: const Text('Back to investments'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: text,
+                        side: BorderSide(color: border),
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Pool status  ',
-                    style: TextStyle(
-                      color: muted,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Pool status  ',
+                          style: TextStyle(
+                            color: muted,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        PammStatusPill(status: status),
+                      ],
                     ),
-                  ),
-                  PammStatusPill(status: status),
-                ],
+                  ],
+                ),
               ),
             ),
             Expanded(
@@ -330,12 +345,16 @@ class _InvestorHeroCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'MT5 login  ${pool.login}',
-                style: TextStyle(
-                  color: muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  'MT5 login  ${pool.login}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               IconButton(
@@ -356,6 +375,8 @@ class _InvestorHeroCard extends StatelessWidget {
                   children: [
                     Text(
                       investment?.name ?? pool.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: text,
                         fontSize: 20,
@@ -422,7 +443,12 @@ class _InvestorHeroCard extends StatelessWidget {
             children: [
               if (investment == null)
                 FilledButton.icon(
-                  onPressed: status == 'Closed' ? null : onJoin,
+                  onPressed: status == 'Closed'
+                      ? null
+                      : () {
+                          AppHaptics.lightImpact();
+                          onJoin();
+                        },
                   icon: const Icon(Icons.trending_up, size: 16),
                   label: const Text('Invest Now'),
                   style: FilledButton.styleFrom(
@@ -436,7 +462,12 @@ class _InvestorHeroCard extends StatelessWidget {
                 )
               else ...[
                 FilledButton.icon(
-                  onPressed: status == 'Closed' ? null : onDeposit,
+                  onPressed: status == 'Closed'
+                      ? null
+                      : () {
+                          AppHaptics.lightImpact();
+                          onDeposit();
+                        },
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Deposit funds'),
                   style: FilledButton.styleFrom(
@@ -449,7 +480,10 @@ class _InvestorHeroCard extends StatelessWidget {
                   ),
                 ),
                 OutlinedButton.icon(
-                  onPressed: onWithdraw,
+                  onPressed: () {
+                    AppHaptics.lightImpact();
+                    onWithdraw();
+                  },
                   icon: const Icon(Icons.remove, size: 16),
                   label: const Text('Withdraw funds'),
                   style: OutlinedButton.styleFrom(

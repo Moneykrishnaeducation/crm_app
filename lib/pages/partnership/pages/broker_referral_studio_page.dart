@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app_notifications.dart';
 import '../../../services/auth_api.dart';
 import '../models/partnership_models.dart';
+import '../widgets/partnership_modals.dart';
 import '../widgets/partnership_theme.dart';
 import '../widgets/vtindex_qr_view.dart';
 
@@ -285,10 +286,35 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: Builder(
+                              builder: (shareContext) => FilledButton.icon(
+                                onPressed: _loading
+                                    ? null
+                                    : () => shareReferralLink(
+                                          shareContext,
+                                          url: url,
+                                          profileName: link.profileName,
+                                        ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: colors.blue,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(LucideIcons.share2, size: 15),
+                                label: const Text(
+                                  'Share Link',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 20),
-                          // Social Share
+                          // Social & System Share
                           Text(
-                            'SHARE VIA MESSENGER',
+                            'SHARE VIA',
                             style: TextStyle(color: colors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
                           ),
                           const SizedBox(height: 10),
@@ -309,6 +335,18 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                                 final uri = Uri(scheme: 'mailto', queryParameters: {'subject': 'Join VT Index', 'body': url});
                                 _launchShareUri(uri);
                               }),
+                              Builder(
+                                builder: (moreContext) => _socialBtn(
+                                  'More',
+                                  LucideIcons.share2,
+                                  colors.gold,
+                                  () => shareReferralLink(
+                                    moreContext,
+                                    url: url,
+                                    profileName: link.profileName,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 22),
@@ -421,21 +459,47 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    OutlinedButton.icon(
-                                      onPressed: () {
-                                        AppHaptics.lightImpact();
-                                        Clipboard.setData(ClipboardData(text: itemUrl));
-                                        showAppMessage('Referral link copied!', type: AppFeedbackType.success);
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        side: BorderSide(color: colors.border),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                      ),
-                                      icon: const Icon(LucideIcons.copy, size: 11),
-                                      label: Text('Copy', style: TextStyle(fontSize: 10.5, color: colors.text)),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Builder(
+                                          builder: (itemShareContext) => IconButton(
+                                            tooltip: 'Share',
+                                            onPressed: _loading
+                                                ? null
+                                                : () => shareReferralLink(
+                                                      itemShareContext,
+                                                      url: itemUrl,
+                                                      profileName: item.profileName,
+                                                    ),
+                                            padding: const EdgeInsets.all(6),
+                                            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                            style: IconButton.styleFrom(
+                                              backgroundColor: colors.card,
+                                              side: BorderSide(color: colors.border),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            icon: Icon(LucideIcons.share2, size: 12, color: colors.text),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        OutlinedButton.icon(
+                                          onPressed: () {
+                                            AppHaptics.lightImpact();
+                                            Clipboard.setData(ClipboardData(text: itemUrl));
+                                            showAppMessage('Referral link copied!', type: AppFeedbackType.success);
+                                          },
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            side: BorderSide(color: colors.border),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          icon: const Icon(LucideIcons.copy, size: 11),
+                                          label: Text('Copy', style: TextStyle(fontSize: 10.5, color: colors.text)),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),

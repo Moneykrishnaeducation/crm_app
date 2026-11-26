@@ -628,7 +628,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         Widget investorCard(Map<String, dynamic> investor, int index) {
           final accountId = field(investor, ['account_id', 'investor_account_id', 'login']);
           final name = field(investor, ['account_name', 'username', 'name'],
-              fallback: 'Investor ${index + 1}'),
+              fallback: 'Investor ${index + 1}');
           final email = field(investor, ['email', 'user_email']);
           final balance = number(investor, ['balance']);
           final equity = number(investor, ['equity', 'balance']);

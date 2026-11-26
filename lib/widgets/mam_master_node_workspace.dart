@@ -821,28 +821,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   child: Icon(LucideIcons.chevronDown, size: 17, color: c.muted),
                 ),
                 children: [
-                    if (copyUpdating)
-                      const SizedBox(width: 20, height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    else
-                      Switch.adaptive(
-                        value: copyEnabled,
-                        activeColor: c.green,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        onChanged: changeCopy,
-                      ),
-                    IconButton(
-                      tooltip: 'Live Position Monitor',
-                      visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 36),
-                      padding: EdgeInsets.zero,
-                      onPressed: openPositions,
-                      icon: Icon(LucideIcons.activity, size: 17, color: c.blue),
-                    ),
-                    Icon(LucideIcons.chevronDown, size: 16, color: c.muted),
-                  ],
-                ),
-                children: [
                   Container(height: 1, color: c.subBorder),
                   const SizedBox(height: 10),
                   Row(children: [

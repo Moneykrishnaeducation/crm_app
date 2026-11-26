@@ -32,6 +32,7 @@ class _MamInvestorLivePositionsPageState
   bool loading = true;
   String? error;
   Timer? poller;
+  bool fetching = false;
   DateTime? lastUpdated;
 
   bool get dark => Theme.of(context).brightness == Brightness.dark;
@@ -62,6 +63,8 @@ class _MamInvestorLivePositionsPageState
   }
 
   Future<void> loadPositions({bool silent = false}) async {
+    if (fetching) return;
+    fetching = true;
     if (!silent && mounted) {
       setState(() {
         loading = true;
@@ -102,14 +105,16 @@ class _MamInvestorLivePositionsPageState
         );
       }).toList(growable: false);
 
-      if (!mounted) return;
+      if (!mounted) { fetching = false; return; }
       setState(() {
         positions = loaded;
         loading = false;
         error = null;
         lastUpdated = DateTime.now();
       });
+      fetching = false;
     } catch (e) {
+      fetching = false;
       if (!mounted) return;
       setState(() {
         loading = false;
@@ -155,7 +160,7 @@ class _MamInvestorLivePositionsPageState
           children: [
             Text('Live Position Monitor',
               style: GoogleFonts.inter(color: textColor, fontSize: 16, fontWeight: FontWeight.w800)),
-            Text('Investor #' + widget.accountId,
+            Text(widget.accountName + ' · #' + widget.accountId,
               style: GoogleFonts.inter(color: muted, fontSize: 10)),
           ],
         ),

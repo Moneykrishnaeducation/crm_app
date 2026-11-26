@@ -103,6 +103,19 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     return res;
   }
 
+  List<({IbClient client, int depth})> _flattenTree(List<IbClient> clients, int depth) {
+    final list = <({IbClient client, int depth})>[];
+    for (final client in clients) {
+      list.add((client: client, depth: depth));
+      final hasChildren = client.clients.isNotEmpty;
+      final isExpanded = _expandedIds.contains(client.id);
+      if (hasChildren && isExpanded) {
+        list.addAll(_flattenTree(client.clients, depth + 1));
+      }
+    }
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = PartnershipColors.of(context);
@@ -111,6 +124,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     final subTier = math.max(0, totalNetwork - direct);
     final depth = _maxDepth(_clients, 1);
     final filtered = _filterClients(_clients, _searchQuery.trim().toLowerCase());
+    final visibleClients = _flattenTree(filtered, 0);
+    final isWide = MediaQuery.sizeOf(context).width > 720;
 
     return Scaffold(
       backgroundColor: colors.canvas,
@@ -134,81 +149,101 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
       ),
       body: PartnershipBackdrop(
         colors: colors,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 116),
-          children: [
-            // Search Input
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: colors.card,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(LucideIcons.search, size: 16, color: colors.muted),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      style: TextStyle(color: colors.text, fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: 'Search client by name, email, code or account...',
-                        hintStyle: TextStyle(color: colors.muted, fontSize: 12),
-                        border: InputBorder.none,
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    // Search Input
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: colors.card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: colors.border),
                       ),
-                      onChanged: (val) => setState(() => _searchQuery = val),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.search, size: 16, color: colors.muted),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              style: TextStyle(color: colors.text, fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText: 'Search client by name, email, code or account...',
+                                hintStyle: TextStyle(color: colors.muted, fontSize: 12),
+                                border: InputBorder.none,
+                              ),
+                              onChanged: (val) => setState(() => _searchQuery = val),
+                            ),
+                          ),
+                          if (_searchQuery.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(LucideIcons.x, size: 14),
+                              onPressed: () => setState(() => _searchQuery = ''),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (_searchQuery.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(LucideIcons.x, size: 14),
-                      onPressed: () => setState(() => _searchQuery = ''),
+                    const SizedBox(height: 14),
+                    // Network stat badges
+                    Row(
+                      children: [
+                        _treeStatChip(colors, 'TOTAL NETWORK', '$totalNetwork', LucideIcons.users, colors.gold),
+                        const SizedBox(width: 8),
+                        _treeStatChip(colors, 'DIRECT (L1)', '$direct', LucideIcons.user, colors.blue),
+                      ],
                     ),
-                ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _treeStatChip(colors, 'SUB-TIER (L2+)', '$subTier', LucideIcons.network, colors.green),
+                        const SizedBox(width: 8),
+                        _treeStatChip(colors, 'MAX DEPTH', 'L$depth', LucideIcons.gitBranch, const Color(0xFFA855F7)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 14),
-            // Network stat badges
-            Row(
-              children: [
-                _treeStatChip(colors, 'TOTAL NETWORK', '$totalNetwork', LucideIcons.users, colors.gold),
-                const SizedBox(width: 8),
-                _treeStatChip(colors, 'DIRECT (L1)', '$direct', LucideIcons.user, colors.blue),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _treeStatChip(colors, 'SUB-TIER (L2+)', '$subTier', LucideIcons.network, colors.green),
-                const SizedBox(width: 8),
-                _treeStatChip(colors, 'MAX DEPTH', 'L$depth', LucideIcons.gitBranch, const Color(0xFFA855F7)),
-              ],
-            ),
-            const SizedBox(height: 16),
             if (_loading)
-              Padding(
-                padding: const EdgeInsets.only(top: 40),
-                child: Center(child: CircularProgressIndicator(color: colors.blue)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Center(child: CircularProgressIndicator(color: colors.blue)),
+                ),
               )
-            else if (filtered.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 40),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(LucideIcons.users, size: 40, color: colors.muted),
-                      const SizedBox(height: 10),
-                      Text(
-                        'No clients found in this network',
-                        style: TextStyle(color: colors.muted, fontSize: 13, fontWeight: FontWeight.w700),
-                      ),
-                    ],
+            else if (visibleClients.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(LucideIcons.users, size: 40, color: colors.muted),
+                        const SizedBox(height: 10),
+                        Text(
+                          'No clients found in this network',
+                          style: TextStyle(color: colors.muted, fontSize: 13, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               )
             else
-              ...filtered.map((client) => _buildClientNode(client, colors, 0)),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 116),
+                sliver: SliverList.builder(
+                  itemCount: visibleClients.length,
+                  itemBuilder: (context, index) {
+                    final item = visibleClients[index];
+                    return _buildClientNode(item.client, colors, item.depth, isWide);
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -273,7 +308,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     );
   }
 
-  Widget _buildClientNode(IbClient client, PartnershipColors colors, int depth) {
+  Widget _buildClientNode(IbClient client, PartnershipColors colors, int depth, bool isWide) {
     final theme = getIbLevelTheme(client.level, colors.isDark);
     final hasChildren = client.clients.isNotEmpty;
     final isExpanded = _expandedIds.contains(client.id);
@@ -573,11 +608,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isWide = constraints.maxWidth > 720;
-                if (isWide) {
-                  return Row(
+            child: isWide
+                ? Row(
                     children: [
                       avatarWidget,
                       const SizedBox(width: 12),
@@ -593,9 +625,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                         ],
                       ),
                     ],
-                  );
-                } else {
-                  return Column(
+                  )
+                : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
@@ -614,10 +645,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                         children: actionItems,
                       ),
                     ],
-                  );
-                }
-              },
-            ),
+                  ),
           ),
         ],
       ),
@@ -625,11 +653,8 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
 
     return Padding(
       padding: EdgeInsets.only(left: (depth * 20.0).clamp(0.0, 60.0), bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (depth > 0)
-            Row(
+      child: depth > 0
+          ? Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
@@ -641,14 +666,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                 Expanded(child: cardWidget),
               ],
             )
-          else
-            cardWidget,
-          if (hasChildren && isExpanded) ...[
-            const SizedBox(height: 10),
-            ...client.clients.map((child) => _buildClientNode(child, colors, depth + 1)),
-          ],
-        ],
-      ),
+          : cardWidget,
     );
   }
 

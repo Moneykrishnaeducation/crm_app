@@ -94,7 +94,7 @@ class TradeLiveUpdateService : Service() {
             executor = Executors.newSingleThreadScheduledExecutor()
             executor?.scheduleWithFixedDelay({ refreshPortfolio() }, 0, 45, TimeUnit.SECONDS)
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun refreshPortfolio() {
@@ -371,7 +371,7 @@ class TradeLiveUpdateService : Service() {
             .setShowWhen(chronometer)
             .setUsesChronometer(chronometer)
             .setRequestPromotedOngoing(true)
-            .setShortCriticalText(shortText.trim().take(7))
+            .setShortCriticalText(if (shortText.isNotBlank()) shortText.trim() else "VTIndex")
             .build()
     }
 

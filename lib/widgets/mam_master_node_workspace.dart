@@ -376,207 +376,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     );
   }
 
-  void _openLiveTradesSheet(MamWorkspaceColors c) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final positions = [
-          {'sym': 'EURUSD', 'type': 'BUY', 'lot': '1.00', 'open': '1.08520', 'pnl': '+\$180.00', 'pos': true},
-          {'sym': 'GBPUSD', 'type': 'SELL', 'lot': '0.50', 'open': '1.29410', 'pnl': '+\$92.50', 'pos': true},
-          {'sym': 'XAUUSD', 'type': 'BUY', 'lot': '0.20', 'open': '2650.30', 'pnl': '+\$70.00', 'pos': true},
-          {'sym': 'USDJPY', 'type': 'SELL', 'lot': '0.30', 'open': '154.200', 'pnl': '-\$24.00', 'pos': false},
-        ];
-
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: c.border),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.muted.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Live Trades & Exposure',
-                        style: GoogleFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: c.text,
-                        ),
-                      ),
-                      Text(
-                        'MT5 Node #${_master.login} • Real-time Stream',
-                        style: TextStyle(fontSize: 12, color: c.muted),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Net PnL Header Banner
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: c.greenLight,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: c.greenBorder),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(LucideIcons.trendingUp, size: 18, color: c.green),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Floating PnL',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: c.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '+\$318.50 USD',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: c.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              Text(
-                'OPEN ORDERS (${positions.length})',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: c.muted,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              ...positions.map((pos) {
-                final isBuy = pos['type'] == 'BUY';
-                final isPositive = pos['pos'] as bool;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: c.subCard,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: c.subBorder),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: isBuy ? c.blueLight : c.redLight,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              pos['type'] as String,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: isBuy ? c.blue : c.red,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                pos['sym'] as String,
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                  color: c.text,
-                                ),
-                              ),
-                              Text(
-                                '${pos['lot']} lots @ ${pos['open']}',
-                                style: TextStyle(fontSize: 11, color: c.muted),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Text(
-                        pos['pnl'] as String,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: isPositive ? c.green : c.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-              const SizedBox(height: 14),
-
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    showAppMessage('Orders list refreshed from MT5 Gateway');
-                  },
-                  icon: const Icon(LucideIcons.refreshCw, size: 16),
-                  label: const Text('Refresh Orders', style: TextStyle(fontWeight: FontWeight.w700)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: c.border),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   void _openManageInvestorsSheet(MamWorkspaceColors c) {
     final investorsFuture = AuthApi.instance.getMamInvestors(_master.login);
 
@@ -607,7 +406,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           return 0;
         }
 
-        String money(double value) => '\$' + value.toStringAsFixed(2);
+        String money(double value) => '\$${value.toStringAsFixed(2)}';
 
         Widget detailLine(String label, String value) {
           return Padding(
@@ -634,7 +433,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           final equity = number(investor, ['equity', 'balance']);
           final credit = number(investor, ['credit']);
           final profit = number(investor, ['profit', 'floating_profit']);
-          final status = field(investor, ['status', 'account_status', 'trading_status']);
           final leverage = field(investor, ['leverage']);
           final group = field(investor, ['group_name', 'group', 'trade_group']);
           final country = field(investor, ['country']);
@@ -801,7 +599,8 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                                       scale: 0.82,
                                       child: Switch.adaptive(
                                         value: copyEnabled,
-                                        activeColor: c.green,
+                                        activeTrackColor: c.green.withValues(alpha: 0.5),
+                                        activeThumbColor: c.green,
                                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         onChanged: changeCopy,
                                       ),

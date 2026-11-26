@@ -106,7 +106,7 @@ class AuthApi {
   static const _localHost = 'client.localhost:8000';
   static const _useLocalhostEnv = bool.fromEnvironment(
     'USE_LOCALHOST',
-    defaultValue: !bool.fromEnvironment('USE_PRODUCTION_API', defaultValue: false),
+    defaultValue: kDebugMode && !bool.fromEnvironment('USE_PRODUCTION_API', defaultValue: false),
   );
   static const _apiPrefix = String.fromEnvironment(
     'API_PREFIX',
@@ -409,6 +409,13 @@ class AuthApi {
         _sessionKeyUseCount++;
         return (publicKey: cached.publicKey, keyId: cached.keyId);
       }
+      // Retain the retired key in the history ring buffer so any in-flight
+      // responses can still be decrypted cleanly.
+      _responseEncryptionPrivateKeys[cached.keyId] = (
+        key: cached.privateKey,
+        retiredAt: now,
+      );
+      _purgeExpiredPrivateKeys();
       _cachedSessionKeyPair = null;
     }
     final inProgress = _generatingSessionKeyPair;
@@ -438,6 +445,16 @@ class AuthApi {
     }
   }
 
+  void _purgeExpiredPrivateKeys() {
+    final cutoff = DateTime.now().subtract(const Duration(minutes: 5));
+    _responseEncryptionPrivateKeys.removeWhere((_, value) {
+      if (value is ({RSAPrivateKey key, DateTime retiredAt})) {
+        return value.retiredAt.isBefore(cutoff);
+      }
+      return false;
+    });
+  }
+
   static Future<dynamic> _decodeJsonBody(String body) async {
     if (body.isEmpty) return <String, dynamic>{};
     if (body.length > 50000) {
@@ -448,7 +465,12 @@ class AuthApi {
 
   void _cleanupResponseKeyPair(String keyId) {
     if (_cachedSessionKeyPair?.keyId != keyId) {
-      _responseEncryptionPrivateKeys.remove(keyId);
+      final retired = _responseEncryptionPrivateKeys[keyId];
+      if (retired is ({RSAPrivateKey key, DateTime retiredAt})) {
+        if (DateTime.now().difference(retired.retiredAt).inMinutes > 5) {
+          _responseEncryptionPrivateKeys.remove(keyId);
+        }
+      }
     }
   }
 
@@ -457,7 +479,14 @@ class AuthApi {
     if (_cachedSessionKeyPair?.keyId == keyId) {
       privateKey = _cachedSessionKeyPair!.privateKey;
     } else {
-      privateKey = _responseEncryptionPrivateKeys.remove(keyId);
+      final retired = _responseEncryptionPrivateKeys[keyId];
+      if (retired is RSAPrivateKey) {
+        privateKey = retired;
+      } else if (retired is ({RSAPrivateKey key, DateTime retiredAt})) {
+        privateKey = retired.key;
+      } else {
+        privateKey = _responseEncryptionPrivateKeys.remove(keyId) as RSAPrivateKey?;
+      }
     }
     if (privateKey is! RSAPrivateKey) {
       throw const AuthApiException('The encrypted server response could not be opened.');
@@ -1510,7 +1539,7 @@ class AuthApi {
   Future<Map<String, dynamic>> toggleMamInvestorCopy(String accountId) =>
       _request(
         'POST',
-        'mam/investors/${Uri.encodeComponent(accountId)}/toggle-copy',
+        'mam/investors/${Uri.encodeComponent(accountId)}/toggle-copy/',
       );
 
   /// Fetch investor trading accounts linked to a MAM master account.

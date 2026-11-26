@@ -10,7 +10,11 @@ class BiometricSignIn {
     LocalAuthentication? localAuth,
     FlutterSecureStorage? secureStorage,
   })  : _localAuth = localAuth ?? LocalAuthentication(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+        _secureStorage = secureStorage ??
+            const FlutterSecureStorage(
+              aOptions: AndroidOptions(resetOnError: true),
+              iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+            );
 
   static final BiometricSignIn instance = BiometricSignIn();
   static const enabledPreferenceKey = 'vtindex_biometric_sign_in_enabled';

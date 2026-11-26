@@ -160,7 +160,7 @@ class _MamInvestorLivePositionsPageState
           children: [
             Text('Live Position Monitor',
               style: GoogleFonts.inter(color: textColor, fontSize: 16, fontWeight: FontWeight.w800)),
-            Text(widget.accountName + ' · #' + widget.accountId,
+            Text('${widget.accountName} · #${widget.accountId}',
               style: GoogleFonts.inter(color: muted, fontSize: 10)),
           ],
         ),
@@ -222,7 +222,7 @@ class _MamInvestorLivePositionsPageState
                                   style: GoogleFonts.inter(color: muted, fontSize: 10,
                                     fontWeight: FontWeight.w900, letterSpacing: 0.7)),
                                 const Spacer(),
-                                Text(positions.length.toString() + ' positions',
+                                Text('${positions.length} positions',
                                   style: GoogleFonts.inter(color: muted, fontSize: 10)),
                               ]),
                               const SizedBox(height: 9),
@@ -246,9 +246,9 @@ class _MamInvestorLivePositionsPageState
   Widget summaryGrid() {
     final metrics = <(String, String, Color)>[
       ('FLOATING P/L', cash(floating), floating >= 0 ? green : red),
-      ('TOTAL VOLUME', volume.toStringAsFixed(2) + ' Lots', blue),
-      ('OPEN ORDERS', positions.length.toString() + ' Positions', textColor),
-      ('ORDER TYPES', buys.toString() + ' BUY · ' + sells.toString() + ' SELL', muted),
+      ('TOTAL VOLUME', '${volume.toStringAsFixed(2)} Lots', blue),
+      ('OPEN ORDERS', '${positions.length} Positions', textColor),
+      ('ORDER TYPES', '$buys BUY · $sells SELL', muted),
     ];
     return GridView.builder(
       shrinkWrap: true,
@@ -308,11 +308,11 @@ class _MamInvestorLivePositionsPageState
               style: GoogleFonts.inter(color: pnl, fontSize: 13, fontWeight: FontWeight.w900)),
           ]),
           const SizedBox(height: 5),
-          Text('Ticket #' + position.ticket,
+          Text('Ticket #${position.ticket}',
             style: GoogleFonts.inter(color: muted, fontSize: 10)),
           const SizedBox(height: 12),
           Row(children: [
-            detail('VOLUME', position.volume + ' lots'),
+            detail('VOLUME', '${position.volume} lots'),
             detail('OPEN PRICE', position.openPrice),
             detail('CURRENT PRICE', position.currentPrice, color: blue),
           ]),

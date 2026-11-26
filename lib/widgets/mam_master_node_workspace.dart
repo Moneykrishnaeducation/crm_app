@@ -33,6 +33,7 @@ class MamMasterAccount {
     this.pendingWallet = 0.00,
     this.totalSettled = 0.00,
     this.tradesProcessed = 0,
+    this.profitShareAvailable = true,
   });
 
   String name;
@@ -55,6 +56,7 @@ class MamMasterAccount {
   double pendingWallet;
   double totalSettled;
   int tradesProcessed;
+  bool profitShareAvailable;
 }
 
 // -----------------------------------------------------------------------------
@@ -164,7 +166,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   bool _profitSummaryLoading = false;
   double? _pendingReleaseValue;
   double? _releasedPayoutValue;
-  int? _tradeCountValue;
   bool _settlementInProgress = false;
   bool _statusUpdating = false;
 
@@ -184,7 +185,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       setState(() {
         _pendingReleaseValue = _readApiDouble(data['pending_amount']);
         _releasedPayoutValue = _readApiDouble(data['total_settled']);
-        _tradeCountValue = _readApiInt(data['trade_count']);
         if (_pendingReleaseValue != null) {
           _master.pendingWallet = _pendingReleaseValue!;
           _master.pendingRelease = _pendingReleaseValue!;
@@ -192,9 +192,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         if (_releasedPayoutValue != null) {
           _master.totalSettled = _releasedPayoutValue!;
           _master.releasedPayout = _releasedPayoutValue!;
-        }
-        if (_tradeCountValue != null) {
-          _master.tradesProcessed = _tradeCountValue!;
         }
       });
       widget.onUpdate?.call(_master);
@@ -217,11 +214,24 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     return null;
   }
 
-  int? _readApiInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String && value.trim().isNotEmpty) {
-      return int.tryParse(value.trim());
+  bool? _readApiBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      switch (value.trim().toLowerCase()) {
+        case 'true':
+        case '1':
+        case 'yes':
+        case 'enabled':
+        case 'active':
+          return true;
+        case 'false':
+        case '0':
+        case 'no':
+        case 'disabled':
+        case 'inactive':
+          return false;
+      }
     }
     return null;
   }
@@ -246,8 +256,16 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         enabled: !wasActive,
       );
       if (!mounted) return;
+      final confirmedStatus = _readApiBool(
+        response['is_trading_enabled'] ?? response['is_enabled'],
+      );
+      if (confirmedStatus == null) {
+        throw const AuthApiException(
+          'The server did not confirm the updated MAM trading status.',
+        );
+      }
       setState(() {
-        _master.status = !wasActive ? 'Active' : 'Paused';
+        _master.status = confirmedStatus ? 'Active' : 'Paused';
       });
       widget.onUpdate?.call(_master);
       showAppMessage(
@@ -1544,7 +1562,79 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   Widget _buildFinancialSummary(MamWorkspaceColors c) {
     final metrics = <({String label, String value, Color color})>[
       if (_pendingReleaseValue != null)
-        (label: 'PENDING RELEASE', value: '\
+        (label: 'PENDING RELEASE', value: r'$' + _pendingReleaseValue!.toStringAsFixed(2), color: c.blue),
+      if (_releasedPayoutValue != null)
+        (label: 'RELEASED PAYOUT', value: r'$' + _releasedPayoutValue!.toStringAsFixed(2), color: c.green),
+      if (_master.profitShareAvailable)
+        (label: 'PROFIT SHARE', value: _master.profitShare.toStringAsFixed(2) + '%', color: c.text),
+      if (_master.risk.trim().isNotEmpty)
+        (label: 'RISK PROFILE', value: _master.risk, color: c.blue),
+      if (_master.leverage.trim().isNotEmpty && _master.leverage != '—')
+        (label: 'LEVERAGE', value: _master.leverage, color: c.text),
+      if (_master.payout.trim().isNotEmpty)
+        (label: 'PAYOUT FREQUENCY', value: _master.payout, color: c.text),
+    ];
+
+    if (metrics.isEmpty) {
+      if (!_profitSummaryLoading) return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: c.subCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.subBorder),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+      decoration: BoxDecoration(
+        color: c.subCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: c.subBorder),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < metrics.length; i += 2) ...[
+            if (i > 0) Divider(height: 16, thickness: 1, color: c.subBorder),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _metricCell(
+                    metrics[i].label,
+                    metrics[i].value,
+                    valueColor: metrics[i].color,
+                  ),
+                ),
+                if (i + 1 < metrics.length) ...[
+                  Container(width: 1, height: 32, color: c.subBorder),
+                  Expanded(
+                    child: _metricCell(
+                      metrics[i + 1].label,
+                      metrics[i + 1].value,
+                      valueColor: metrics[i + 1].color,
+                    ),
+                  ),
+                ] else
+                  const Expanded(child: SizedBox.shrink()),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCell(String label, String value, {required Color valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Column(

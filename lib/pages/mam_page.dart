@@ -1762,6 +1762,7 @@ class MamPageState extends State<MamPage> {
         enabled: enableTrading,
       );
       if (!mounted) return;
+      HapticFeedback.heavyImpact();
 
       final confirmed = _apiBool(
         response['is_trading_enabled'],
@@ -1775,6 +1776,7 @@ class MamPageState extends State<MamPage> {
             .toString(),
       );
     } catch (error) {
+      HapticFeedback.vibrate();
       debugPrint('Could not update MAM trading status for $mamId: $error');
       if (mounted) {
         showAppMessage(

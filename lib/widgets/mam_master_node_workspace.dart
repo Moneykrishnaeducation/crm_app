@@ -655,13 +655,17 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: c.subBorder),
             ),
-            child: Theme(
-              data: Theme.of(ctx).copyWith(
-                dividerColor: Colors.transparent,
-                splashColor: c.blue.withValues(alpha: 0.05),
-                highlightColor: Colors.transparent,
-              ),
-              child: ExpansionTile(
+            child: Material(
+              color: c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              clipBehavior: Clip.antiAlias,
+              child: Theme(
+                data: Theme.of(ctx).copyWith(
+                  dividerColor: Colors.transparent,
+                  splashColor: c.blue.withValues(alpha: 0.05),
+                  highlightColor: Colors.transparent,
+                ),
+                child: ExpansionTile(
                 key: PageStorageKey('mam-investor-$accountId'),
                 tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                 childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -723,7 +727,8 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   detailLine('Country', country),
                   detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
                   detailLine('Created', created),
-                ],
+                  ],
+                ),
               ),
             ),
           );

@@ -369,7 +369,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: c.muted)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: selected,
+                initialValue: selected,
                 decoration: InputDecoration(filled: true, fillColor: c.subCard,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
                 items: allowed.map((value) => DropdownMenuItem(value: value, child: Text('1:$value'))).toList(),

@@ -367,68 +367,74 @@ class PammConnectedPortfolioView extends StatelessWidget {
                   ),
                 )
               else
-                ...investors.map(
-                  (investment) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(13),
-                    decoration: BoxDecoration(
-                      color: card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: border),
-                    ),
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      spacing: 16,
-                      runSpacing: 10,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              investment.name,
-                              style: TextStyle(
-                                color: text,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: investors.length,
+                  itemBuilder: (context, index) {
+                    final investment = investors[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: border),
+                      ),
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        spacing: 16,
+                        runSpacing: 10,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                investment.name,
+                                style: TextStyle(
+                                  color: text,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'Investor account · MT5 ${investment.login}',
-                              style: TextStyle(
-                                color: muted,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w400,
+                              const SizedBox(height: 3),
+                              Text(
+                                'Investor account · MT5 ${investment.login}',
+                                style: TextStyle(
+                                  color: muted,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        Wrap(
-                          spacing: 22,
-                          runSpacing: 8,
-                          children: [
-                            PammPoolValue(
-                              label: 'Capital invested',
-                              value: formatPammMoney(investment.deposit),
-                            ),
-                            PammPoolValue(
-                              label: 'Current value',
-                              value: formatPammMoney(investment.value),
-                            ),
-                            PammPoolValue(
-                              label: 'Investor P/L',
-                              value: formatPammMoney(investment.pnl),
-                            ),
-                            PammPoolValue(
-                              label: 'Manager fee',
-                              value:
-                                  formatPammMoney(investment.managerProfitShare),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                            ],
+                          ),
+                          Wrap(
+                            spacing: 22,
+                            runSpacing: 8,
+                            children: [
+                              PammPoolValue(
+                                label: 'Capital invested',
+                                value: formatPammMoney(investment.deposit),
+                              ),
+                              PammPoolValue(
+                                label: 'Current value',
+                                value: formatPammMoney(investment.value),
+                              ),
+                              PammPoolValue(
+                                label: 'Investor P/L',
+                                value: formatPammMoney(investment.pnl),
+                              ),
+                              PammPoolValue(
+                                label: 'Manager fee',
+                                value:
+                                    formatPammMoney(investment.managerProfitShare),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
             ],
           ),

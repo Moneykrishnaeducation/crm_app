@@ -287,8 +287,12 @@ class _MamInvestorLivePositionsPageState
               Text(metric.$1, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(color: muted, fontSize: 9, fontWeight: FontWeight.w900)),
               const SizedBox(height: 6),
-              Text(metric.$2, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(color: metric.$3, fontSize: 14, fontWeight: FontWeight.w900)),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(metric.$2, maxLines: 1,
+                  style: GoogleFonts.inter(color: metric.$3, fontSize: 14, fontWeight: FontWeight.w900)),
+              ),
             ],
           ),
         );

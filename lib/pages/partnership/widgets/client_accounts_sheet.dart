@@ -254,26 +254,33 @@ void showClientAccountsModal(
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Icon(LucideIcons.creditCard, size: 16, color: colors.blue),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          acc.accountId,
-                                          style: TextStyle(
-                                            color: colors.text,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w900,
-                                            fontFamily: 'monospace',
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Icon(LucideIcons.creditCard, size: 16, color: colors.blue),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            acc.accountId,
+                                            style: TextStyle(
+                                              color: colors.text,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              fontFamily: 'monospace',
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${acc.accountType} · ${acc.groupAlias}',
-                                          style: TextStyle(color: colors.muted, fontSize: 11),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              '${acc.accountType} · ${acc.groupAlias}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(color: colors.muted, fontSize: 11),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
+                                    const SizedBox(width: 8),
                                     FilledButton.tonalIcon(
                                       onPressed: () => showAccountDetailModal(
                                         sheetContext,

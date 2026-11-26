@@ -15,13 +15,14 @@ abstract class _PammTabPage extends StatelessWidget {
   final String storageKey;
 
   @override
-  Widget build(BuildContext context) => ListView(
+  Widget build(BuildContext context) => ListView.builder(
         key: PageStorageKey<String>(storageKey),
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-        children: children,
+        itemCount: children.length,
+        itemBuilder: (context, index) => children[index],
       );
 }
 

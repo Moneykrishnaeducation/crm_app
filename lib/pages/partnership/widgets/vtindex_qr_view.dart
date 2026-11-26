@@ -49,6 +49,8 @@ class VtIndexQrView extends StatelessWidget {
             child: Image.asset(
               'assets/images/vtindex_logo_img.png',
               fit: BoxFit.contain,
+              cacheWidth: 120,
+              cacheHeight: 120,
             ),
           ),
         ),

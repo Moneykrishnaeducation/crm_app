@@ -304,10 +304,13 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: colors.border),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text(label, style: TextStyle(color: colors.text, fontSize: 11, fontWeight: FontWeight.w700)),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(label, maxLines: 1, style: TextStyle(color: colors.text, fontSize: 11, fontWeight: FontWeight.w700)),
+        ),
       ),
     );
   }

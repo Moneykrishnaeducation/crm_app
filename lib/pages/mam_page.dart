@@ -295,6 +295,7 @@ class MamPageState extends State<MamPage> {
   late List<MamInvestorAccount> _investorAccounts;
   late List<AvailableMamPool> _availablePools;
   bool _availableLoading = false;
+  int _availableRequestId = 0;
   String? _availableError;
   int _availableTotal = 0;
   int _availablePage = 1;
@@ -2187,7 +2188,7 @@ class MamPageState extends State<MamPage> {
   double _availableNumber(dynamic value) {
     if (value is num) return value.toDouble();
     if (value is String) {
-      final cleaned = value.replaceAll(',', '').replaceAll(RegExp(r'[^0-9.\\-]'), '');
+      final cleaned = value.replaceAll(',', '').replaceAll(RegExp(r'[^0-9.-]'), '');
       return double.tryParse(cleaned) ?? 0;
     }
     return 0;
@@ -2196,7 +2197,7 @@ class MamPageState extends State<MamPage> {
   String _availableText(dynamic value) => value?.toString().trim() ?? '';
 
   Future<void> _loadAvailableManagers() async {
-    if (_availableLoading) return;
+    final requestId = ++_availableRequestId;
     setState(() {
       _availableLoading = true;
       _availableError = null;
@@ -2244,13 +2245,13 @@ class MamPageState extends State<MamPage> {
         );
       }).where((manager) => manager.id.isNotEmpty).toList();
 
-      if (!mounted) return;
+      if (!mounted || requestId != _availableRequestId) return;
       setState(() {
         _availablePools = managers;
         _availableTotal = _availableNumber(response['count']).toInt();
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || requestId != _availableRequestId) return;
       setState(() {
         _availableError = error is AuthApiException ? error.message :
             'Could not load available MAM managers. Please try again.';
@@ -2258,7 +2259,9 @@ class MamPageState extends State<MamPage> {
         _availableTotal = 0;
       });
     } finally {
-      if (mounted) setState(() => _availableLoading = false);
+      if (mounted && requestId == _availableRequestId) {
+        setState(() => _availableLoading = false);
+      }
     }
   }
 
@@ -2299,7 +2302,7 @@ class MamPageState extends State<MamPage> {
         subtext: 'Active MAM accounts', icon: LucideIcons.users, accent: _c.blue)),
       const SizedBox(width: 8),
       Expanded(child: _metricCard(
-        label: 'AVG PROFIT SHARE', value: '${_avgProfitShare.toStringAsFixed(1)}%',
+        label: 'PAGE AVG SHARE', value: '${_avgProfitShare.toStringAsFixed(1)}%',
         subtext: 'Returned by backend', icon: LucideIcons.percent, accent: _c.green)),
     ]);
   }

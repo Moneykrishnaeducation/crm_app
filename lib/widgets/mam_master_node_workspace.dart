@@ -938,6 +938,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       Navigator.pop(ctx);
                       HapticFeedback.lightImpact();
                       await _loadProfitSummary();
+                      HapticFeedback.heavyImpact();
                       showAppMessage(
                         response['message']?.toString() ??
                         response['detail']?.toString() ??
@@ -1079,7 +1080,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 ),
               ),
               InkWell(
-                onTap: () => _copyToClipboard(_master.login, 'Master Login ID'),
+                onTap: () { HapticFeedback.selectionClick(); _copyToClipboard(_master.login, 'Master Login ID'); },
                 borderRadius: BorderRadius.circular(6),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -1149,7 +1150,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 46,
                             child: FilledButton.icon(
-                              onPressed: () => _openQuickFundSheet(c),
+                              onPressed: () { HapticFeedback.lightImpact(); _openQuickFundSheet(c); },
                               icon: const Icon(LucideIcons.plus, size: 16),
                               label: FittedBox(
                                 fit: BoxFit.scaleDown,
@@ -1183,7 +1184,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 46,
                             child: OutlinedButton.icon(
-                              onPressed: () => _openWithdrawSheet(c),
+                              onPressed: () { HapticFeedback.lightImpact(); _openWithdrawSheet(c); },
                               icon: Icon(
                                 LucideIcons.arrowUpRight,
                                 size: 16,
@@ -1270,7 +1271,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           SizedBox(
                             height: 36,
                             child: OutlinedButton.icon(
-                              onPressed: _statusUpdating ? null : _toggleMasterStatus,
+                              onPressed: _statusUpdating ? null : () { HapticFeedback.mediumImpact(); _toggleMasterStatus(); },
                               icon: _statusUpdating
                                   ? const SizedBox(
                                       width: 13,
@@ -1316,7 +1317,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 42,
                             child: OutlinedButton.icon(
-                              onPressed: () => _openPerformanceSheet(c),
+                              onPressed: () { HapticFeedback.lightImpact(); _openPerformanceSheet(c); },
                               icon: Icon(
                                 LucideIcons.barChart2,
                                 size: 15,
@@ -1352,7 +1353,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                           child: SizedBox(
                             height: 42,
                             child: OutlinedButton.icon(
-                              onPressed: () => _openManageInvestorsSheet(c),
+                              onPressed: () { HapticFeedback.lightImpact(); _openManageInvestorsSheet(c); },
                               icon: Icon(
                                 LucideIcons.users,
                                 size: 15,
@@ -1745,7 +1746,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               if (copyable) ...[
                 const SizedBox(width: 6),
                 InkWell(
-                  onTap: () => _copyToClipboard(value, label),
+                  onTap: () { HapticFeedback.selectionClick(); _copyToClipboard(value, label); },
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
                     padding: const EdgeInsets.all(2),
@@ -1831,7 +1832,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   width: double.infinity,
                   height: 44,
                   child: FilledButton.icon(
-                    onPressed: () => _openSecuritySettingsSheet(c),
+                    onPressed: () { HapticFeedback.mediumImpact(); _openSecuritySettingsSheet(c); },
                     icon: const Icon(LucideIcons.keyRound, size: 15),
                     label: Text(
                       'Master Security & Settings',
@@ -1879,7 +1880,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   width: double.infinity,
                   height: 42,
                   child: OutlinedButton.icon(
-                    onPressed: () => _openRiskSettingsSheet(c),
+                    onPressed: () { HapticFeedback.mediumImpact(); _openRiskSettingsSheet(c); },
                     icon: const Icon(LucideIcons.slidersHorizontal, size: 15),
                     label: const Text('Configure Leverage',
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
@@ -1938,7 +1939,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               SizedBox(
                 height: 44,
                 child: FilledButton.icon(
-                  onPressed: _settlementInProgress ? null : () => _triggerSettlementDialog(c),
+                  onPressed: _settlementInProgress ? null : () { HapticFeedback.mediumImpact(); _triggerSettlementDialog(c); },
                   icon: const Icon(LucideIcons.zap, size: 14),
                   label: Text(
                     'Trigger Settlement',

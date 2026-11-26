@@ -870,7 +870,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       children: [
                         Text('Pending wallet balance', style: TextStyle(fontSize: 12, color: c.muted)),
                         Text(
-                          '\${_master.pendingWallet.toStringAsFixed(2)}',
+                          '\$${_master.pendingWallet.toStringAsFixed(2)}',
                           style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.text),
                         ),
                       ],

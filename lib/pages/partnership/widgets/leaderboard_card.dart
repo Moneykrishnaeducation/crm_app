@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../../app_notifications.dart';
@@ -180,9 +179,6 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
                       final copyText = link.referralCode.isNotEmpty
                           ? link.referralCode
                           : link.effectiveUrl;
-                      final copyLabel = link.referralCode.isNotEmpty
-                          ? 'Code ${link.referralCode} copied!'
-                          : 'Referral link copied!';
                       return InkWell(
                         onTap: () {
                           AppHaptics.selectionClick();
@@ -253,23 +249,17 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
                                     icon: Icon(LucideIcons.qrCode, size: 13, color: colors.text),
                                   ),
                                   const SizedBox(width: 6),
-                                  OutlinedButton.icon(
-                                    onPressed: () {
-                                      AppHaptics.lightImpact();
-                                      Clipboard.setData(ClipboardData(text: copyText));
-                                      showAppMessage(copyLabel, type: AppFeedbackType.success);
-                                    },
-                                    style: OutlinedButton.styleFrom(
+                                  AppCopyButton.outlined(
+                                    value: copyText,
+                                    label: 'Referral link',
+                                    buttonLabel: 'Copy',
+                                    size: 11,
+                                    buttonStyle: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       minimumSize: Size.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       side: BorderSide(color: colors.border),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    icon: const Icon(LucideIcons.copy, size: 11),
-                                    label: Text(
-                                      'Copy',
-                                      style: TextStyle(fontSize: 10, color: colors.text),
                                     ),
                                   ),
                                 ],

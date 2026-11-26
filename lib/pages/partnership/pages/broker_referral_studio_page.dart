@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -244,43 +243,28 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                           Row(
                             children: [
                               Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    AppHaptics.lightImpact();
-                                    Clipboard.setData(ClipboardData(text: url));
-                                    showAppMessage('Referral link copied!', type: AppFeedbackType.success);
-                                  },
-                                  style: OutlinedButton.styleFrom(
+                                child: AppCopyButton.outlined(
+                                  value: url,
+                                  label: 'Referral link',
+                                  buttonLabel: 'Copy Link',
+                                  buttonStyle: OutlinedButton.styleFrom(
                                     side: BorderSide(color: colors.border),
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
-                                  icon: const Icon(LucideIcons.copy, size: 14),
-                                  label: Text('Copy Link', style: TextStyle(color: colors.text, fontWeight: FontWeight.w800)),
                                 ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: link.referralCode.isEmpty
-                                      ? null
-                                      : () {
-                                          AppHaptics.lightImpact();
-                                          Clipboard.setData(ClipboardData(text: link.referralCode));
-                                          showAppMessage('Referral code copied!', type: AppFeedbackType.success);
-                                        },
-                                  style: OutlinedButton.styleFrom(
+                                child: AppCopyButton.outlined(
+                                  value: link.referralCode,
+                                  label: 'Referral code',
+                                  buttonLabel: 'Copy Code',
+                                  defaultIcon: LucideIcons.code,
+                                  buttonStyle: OutlinedButton.styleFrom(
                                     side: BorderSide(color: colors.border),
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  icon: const Icon(LucideIcons.code, size: 14),
-                                  label: Text(
-                                    'Copy Code',
-                                    style: TextStyle(
-                                      color: link.referralCode.isEmpty ? colors.muted : colors.text,
-                                      fontWeight: FontWeight.w800,
-                                    ),
                                   ),
                                 ),
                               ),
@@ -483,21 +467,18 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        OutlinedButton.icon(
-                                          onPressed: () {
-                                            AppHaptics.lightImpact();
-                                            Clipboard.setData(ClipboardData(text: itemUrl));
-                                            showAppMessage('Referral link copied!', type: AppFeedbackType.success);
-                                          },
-                                          style: OutlinedButton.styleFrom(
+                                        AppCopyButton.outlined(
+                                          value: itemUrl,
+                                          label: 'Referral link',
+                                          buttonLabel: 'Copy',
+                                          size: 11,
+                                          buttonStyle: OutlinedButton.styleFrom(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                                             minimumSize: Size.zero,
                                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                             side: BorderSide(color: colors.border),
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                           ),
-                                          icon: const Icon(LucideIcons.copy, size: 11),
-                                          label: Text('Copy', style: TextStyle(fontSize: 10.5, color: colors.text)),
                                         ),
                                       ],
                                     ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../../app_notifications.dart';
@@ -532,20 +531,12 @@ class _BrokerCommissionLedgerPageState extends State<BrokerCommissionLedgerPage>
                           txn.dealTicket.isEmpty ? '—' : '#${txn.dealTicket}',
                           trailing: txn.dealTicket.isEmpty
                               ? null
-                              : InkWell(
-                                  onTap: () {
-                                    AppHaptics.lightImpact();
-                                    Clipboard.setData(ClipboardData(text: txn.dealTicket));
-                                    showAppMessage(
-                                      'Deal ticket copied: ${txn.dealTicket}',
-                                      type: AppFeedbackType.success,
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4),
-                                    child: Icon(LucideIcons.copy, size: 14, color: colors.blue),
-                                  ),
+                              : AppCopyButton(
+                                  value: txn.dealTicket,
+                                  label: 'Deal ticket',
+                                  size: 14,
+                                  padding: const EdgeInsets.all(4),
+                                  color: colors.blue,
                                 ),
                         ),
                         _detailRow(colors, 'Order Ticket', txn.orderTicket.isEmpty ? '—' : '#${txn.orderTicket}'),

@@ -296,19 +296,16 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        AppHaptics.lightImpact();
-                        Clipboard.setData(ClipboardData(text: url));
-                        showAppMessage('Referral link copied!', type: AppFeedbackType.success);
-                      },
-                      style: OutlinedButton.styleFrom(
+                    child: AppCopyButton.outlined(
+                      value: url,
+                      label: 'Referral link',
+                      buttonLabel: 'Copy link',
+                      size: 15,
+                      buttonStyle: OutlinedButton.styleFrom(
                         side: BorderSide(color: colors.border),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      icon: const Icon(LucideIcons.copy, size: 15),
-                      label: Text('Copy link', style: TextStyle(color: colors.text, fontWeight: FontWeight.w700)),
                     ),
                   ),
                   const SizedBox(width: 10),

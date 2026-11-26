@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1063,20 +1062,12 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
               ),
             ),
           ),
-          InkWell(
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: value));
-              showAppMessage('Copied $value to clipboard.');
-            },
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                LucideIcons.copy,
-                size: 13,
-                color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
-              ),
-            ),
+          AppCopyButton(
+            value: value,
+            label: label,
+            size: 13,
+            padding: const EdgeInsets.all(4),
+            color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
           ),
         ],
       );
@@ -1144,14 +1135,11 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(LucideIcons.copy, size: 14),
+                AppCopyButton(
+                  value: 'TX8nQ9xR4bH2mP7vW1kL3s9zY6V4m2Pq',
+                  label: 'TRC20 address',
+                  size: 14,
                   color: const Color(0xFF1658C9),
-                  tooltip: 'Copy address',
-                  onPressed: () {
-                    Clipboard.setData(const ClipboardData(text: 'TX8nQ9xR4bH2mP7vW1kL3s9zY6V4m2Pq'));
-                    showAppMessage('Copied TRC20 address to clipboard.');
-                  },
                 ),
               ],
             ),
@@ -2537,16 +2525,12 @@ class _DepositResponseSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                InkWell(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: refId));
-                    showAppMessage('Copied reference ID $refId');
-                  },
-                  child: Icon(
-                    LucideIcons.copy,
-                    size: 13,
-                    color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
-                  ),
+                AppCopyButton(
+                  value: refId,
+                  label: 'Reference ID',
+                  size: 13,
+                  padding: const EdgeInsets.all(2),
+                  color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
                 ),
               ],
             ),
@@ -2983,16 +2967,12 @@ class _WithdrawReceiptSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                InkWell(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: refId));
-                    showAppMessage('Copied reference ID $refId');
-                  },
-                  child: Icon(
-                    LucideIcons.copy,
-                    size: 13,
-                    color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
-                  ),
+                AppCopyButton(
+                  value: refId,
+                  label: 'Reference ID',
+                  size: 13,
+                  padding: const EdgeInsets.all(2),
+                  color: isDark ? const Color(0xFF8CCBFF) : const Color(0xFF1658C9),
                 ),
               ],
             ),

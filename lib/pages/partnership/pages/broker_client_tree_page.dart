@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../../app_notifications.dart';
@@ -543,29 +542,23 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                 style: TextStyle(color: colors.muted, fontSize: 11),
               ),
             if (client.referralCode.isNotEmpty)
-              InkWell(
-                onTap: () {
-                  AppHaptics.lightImpact();
-                  Clipboard.setData(ClipboardData(text: client.referralCode));
-                  showAppMessage('Referral code copied: ${client.referralCode}', type: AppFeedbackType.success);
-                },
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.link2, size: 11.5, color: colors.blue),
-                      const SizedBox(width: 3),
-                      Text(
-                        client.referralCode,
-                        style: TextStyle(color: colors.blue, fontSize: 11, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(width: 3),
-                      Icon(LucideIcons.copy, size: 11, color: colors.muted),
-                    ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.link2, size: 11.5, color: colors.blue),
+                  const SizedBox(width: 3),
+                  Text(
+                    client.referralCode,
+                    style: TextStyle(color: colors.blue, fontSize: 11, fontWeight: FontWeight.w700),
                   ),
-                ),
+                  AppCopyButton(
+                    value: client.referralCode,
+                    label: 'Referral code',
+                    size: 11,
+                    padding: const EdgeInsets.all(2),
+                    color: colors.muted,
+                  ),
+                ],
               ),
           ],
         ),

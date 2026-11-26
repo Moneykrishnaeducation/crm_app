@@ -641,18 +641,13 @@ class _AccountCredentialsPanel extends StatelessWidget {
       const SizedBox(height: 12),
       Align(
         alignment: Alignment.centerRight,
-        child: TextButton.icon(
-          onPressed: () {
-            AppHaptics.lightImpact();
-            Clipboard.setData(ClipboardData(
-              text: 'Account number: $accountNumber\n'
-                  'Master password: $masterPassword\n'
-                  'Investor password: $investorPassword',
-            ));
-            showAppMessage('Account credentials copied to clipboard.');
-          },
-          icon: const Icon(LucideIcons.copy, size: 14),
-          label: const Text('Copy all credentials'),
+        child: AppCopyButton(
+          buttonLabel: 'Copy all credentials',
+          label: 'Account credentials',
+          value: 'Account number: $accountNumber\n'
+              'Master password: $masterPassword\n'
+              'Investor password: $investorPassword',
+          size: 14,
         ),
       ),
     ]);
@@ -672,14 +667,11 @@ class _AccountCredentialsPanel extends StatelessWidget {
           const SizedBox(height: 5),
           SelectableText(value, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: .3)),
         ])),
-        IconButton(
-          tooltip: 'Copy $label',
-          onPressed: () {
-            AppHaptics.lightImpact();
-            Clipboard.setData(ClipboardData(text: value));
-            showAppMessage('$label copied to clipboard.', type: AppFeedbackType.success);
-          },
-          icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
+        AppCopyButton(
+          label: label,
+          value: value,
+          size: 16,
+          color: cs.primary,
         ),
       ]),
     );
@@ -2334,14 +2326,11 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
           const SizedBox(height: 5),
           SelectableText(value, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: .3)),
         ])),
-        IconButton(
-          tooltip: 'Copy $label',
-          onPressed: () {
-            AppHaptics.lightImpact();
-            Clipboard.setData(ClipboardData(text: value));
-            showAppMessage('$label copied to clipboard.', type: AppFeedbackType.success);
-          },
-          icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
+        AppCopyButton(
+          label: label,
+          value: value,
+          size: 16,
+          color: cs.primary,
         ),
       ]),
     );

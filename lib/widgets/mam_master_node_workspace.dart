@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../app_notifications.dart';
@@ -202,12 +201,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   void _notifyUpdate() {
     setState(() {});
     widget.onUpdate?.call(_master);
-  }
-
-  void _copyToClipboard(String text, String label) {
-    AppHaptics.lightImpact();
-    Clipboard.setData(ClipboardData(text: text));
-    showAppMessage('$label copied to clipboard', type: AppFeedbackType.success);
   }
 
   Future<void> _toggleNodeStatus() async {
@@ -1079,26 +1072,24 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   ),
                 ),
               ),
-              InkWell(
-                onTap: () { AppHaptics.selectionClick(); _copyToClipboard(_master.login, 'Master Login ID'); },
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Row(
-                    children: [
-                      Text(
-                        'ID: ${_master.login}',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: c.muted,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(LucideIcons.copy, size: 14, color: c.muted),
-                    ],
+              Row(
+                children: [
+                  Text(
+                    'ID: ${_master.login}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: c.muted,
+                    ),
                   ),
-                ),
+                  AppCopyButton(
+                    value: _master.login,
+                    label: 'Master Login ID',
+                    size: 14,
+                    padding: const EdgeInsets.all(4),
+                    color: c.muted,
+                  ),
+                ],
               ),
             ],
           ),
@@ -1745,13 +1736,12 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               ),
               if (copyable) ...[
                 const SizedBox(width: 6),
-                InkWell(
-                  onTap: () { AppHaptics.selectionClick(); _copyToClipboard(value, label); },
-                  borderRadius: BorderRadius.circular(4),
-                  child: Padding(
-                    padding: const EdgeInsets.all(2),
-                    child: Icon(LucideIcons.copy, size: 13, color: c.blue),
-                  ),
+                AppCopyButton(
+                  value: value,
+                  label: label,
+                  size: 13,
+                  padding: const EdgeInsets.all(2),
+                  color: c.blue,
                 ),
               ],
             ],

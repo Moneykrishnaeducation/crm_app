@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import '../app_notifications.dart';
 import '../services/auth_api.dart';
@@ -1841,6 +1842,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             if (mounted) _showSnack(error is AuthApiException ? error.message : 'Unable to refresh bank details.');
           }
         } else if (action == 'copy') {
+          unawaited(AppHaptics.lightImpact());
           await Clipboard.setData(ClipboardData(
             text: 'Bank: $_bankName\nAccount: $_bankAccountNumber\nIFSC: $_bankIfscCode\nBranch: $_bankBranch',
           ));
@@ -1880,6 +1882,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             if (mounted) _showSnack(error is AuthApiException ? error.message : 'Unable to refresh crypto details.');
           }
         } else if (action == 'copy') {
+          unawaited(AppHaptics.lightImpact());
           await Clipboard.setData(ClipboardData(
             text: 'Wallet: $_cryptoWalletAddress\nCurrency: $_cryptoCurrency',
           ));
@@ -3165,27 +3168,12 @@ class _PaymentDestinationDetailsModal extends StatelessWidget {
               ),
               if (item.copyable) ...[
                 const SizedBox(width: 6),
-                InkWell(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: item.value));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${item.label} copied to clipboard'),
-                        backgroundColor: Theme.of(context).colorScheme.inverseSurface,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          side: BorderSide(color: Theme.of(context).dividerColor),
-                        ),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(6),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(LucideIcons.copy, size: 14, color: c.accentBlue),
-                  ),
+                AppCopyButton(
+                  value: item.value,
+                  label: item.label,
+                  size: 14,
+                  padding: const EdgeInsets.all(4),
+                  color: c.accentBlue,
                 ),
               ],
             ],

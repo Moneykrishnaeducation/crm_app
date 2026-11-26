@@ -11,6 +11,7 @@ import 'app_haptics.dart';
 import 'services/auth_api.dart';
 
 export 'app_haptics.dart';
+export 'widgets/app_copy_button.dart';
 
 final GlobalKey<ScaffoldMessengerState> appScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();

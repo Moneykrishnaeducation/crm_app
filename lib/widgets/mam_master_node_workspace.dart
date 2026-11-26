@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../app_notifications.dart';
 import '../pages/funds_action_dialog.dart';
+import '../pages/mam_investor_live_positions_page.dart';
 import '../services/auth_api.dart';
 import 'pool_trades_modal.dart';
 
@@ -647,8 +648,18 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           final isActive = status.toLowerCase().contains('active') ||
               status.toLowerCase().contains('running') ||
               status.toLowerCase() == 'enabled';
+          final rawCopy = investor['manager_allow_copy'] ??
+              investor['manage_allow_copy'] ??
+              investor['investor_allow_copy'];
+          bool copyEnabled = rawCopy == true ||
+              ['true', '1', 'yes', 'enabled', 'active'].contains(
+                rawCopy?.toString().toLowerCase(),
+              );
+          bool copyUpdating = false;
 
-          return Container(
+          return StatefulBuilder(
+            builder: (tileContext, setTileState) {
+              return Container(
             margin: const EdgeInsets.only(bottom: 9),
             child: Material(
               color: Colors.transparent,
@@ -730,11 +741,96 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   detailLine('Country', country),
                   detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
                   detailLine('Created', created),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: copyEnabled ? c.greenLight.withValues(alpha: 0.45) : c.subCard,
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(color: copyEnabled ? c.green.withValues(alpha: 0.25) : c.subBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.copy, size: 16, color: copyEnabled ? c.green : c.muted),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Toggle Copy',
+                                style: GoogleFonts.inter(color: c.text, fontSize: 12, fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 2),
+                              Text(copyEnabled ? 'Copy trading is enabled' : 'Copy trading is paused',
+                                style: GoogleFonts.inter(color: c.muted, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                        if (copyUpdating)
+                          const SizedBox(width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        else
+                          Switch.adaptive(
+                            value: copyEnabled,
+                            activeColor: c.green,
+                            onChanged: (enabled) async {
+                              setTileState(() => copyUpdating = true);
+                              try {
+                                final response = await AuthApi.instance.toggleMamInvestorCopy(accountId);
+                                final returned = response['manager_allow_copy'] ??
+                                    response['manage_allow_copy'];
+                                final nextValue = returned is bool
+                                    ? returned
+                                    : (returned == null ? enabled : returned.toString().toLowerCase() == 'true');
+                                setTileState(() {
+                                  copyEnabled = nextValue;
+                                  copyUpdating = false;
+                                });
+                                investor['manager_allow_copy'] = nextValue;
+                                showAppMessage(response['message']?.toString() ??
+                                    (nextValue ? 'Copy trading enabled.' : 'Copy trading paused.'));
+                              } catch (error) {
+                                setTileState(() => copyUpdating = false);
+                                showAppMessage(error is AuthApiException
+                                    ? error.message
+                                    : 'Could not update copy-trading status.');
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).push(
+                          MaterialPageRoute(
+                            builder: (_) => MamInvestorLivePositionsPage(
+                              accountId: accountId,
+                              accountName: name,
+                            ),
+                          ),
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: c.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                      ),
+                      icon: const Icon(LucideIcons.activity, size: 16),
+                      label: const Text('Live Position Monitor',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                    ),
+                  ),
                   ],
                 ),
                 ),
               ),
             ),
+          );
+            },
           );
         }
 

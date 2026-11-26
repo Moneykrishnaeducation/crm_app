@@ -33,7 +33,6 @@ class MamMasterAccount {
     this.pendingWallet = 0.00,
     this.totalSettled = 0.00,
     this.tradesProcessed = 0,
-    this.profitShareAvailable = true,
   });
 
   String name;
@@ -56,7 +55,6 @@ class MamMasterAccount {
   double pendingWallet;
   double totalSettled;
   int tradesProcessed;
-  bool profitShareAvailable;
 }
 
 // -----------------------------------------------------------------------------
@@ -164,8 +162,6 @@ class MamMasterNodeWorkspace extends StatefulWidget {
 class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   late MamMasterAccount _master;
   bool _profitSummaryLoading = false;
-  double? _pendingReleaseValue;
-  double? _releasedPayoutValue;
   bool _settlementInProgress = false;
   bool _statusUpdating = false;
 
@@ -183,16 +179,13 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       final data = await AuthApi.instance.getMamProfitSummary(mamAccountId: _master.login);
       if (!mounted) return;
       setState(() {
-        _pendingReleaseValue = _readApiDouble(data['pending_amount']);
-        _releasedPayoutValue = _readApiDouble(data['total_settled']);
-        if (_pendingReleaseValue != null) {
-          _master.pendingWallet = _pendingReleaseValue!;
-          _master.pendingRelease = _pendingReleaseValue!;
-        }
-        if (_releasedPayoutValue != null) {
-          _master.totalSettled = _releasedPayoutValue!;
-          _master.releasedPayout = _releasedPayoutValue!;
-        }
+        final pending = double.tryParse(data['pending_amount']?.toString() ?? '') ?? 0.0;
+        final settled = double.tryParse(data['total_settled']?.toString() ?? '') ?? 0.0;
+        _master.pendingWallet = pending;
+        _master.pendingRelease = pending;
+        _master.totalSettled = settled;
+        _master.releasedPayout = settled;
+        _master.tradesProcessed = int.tryParse(data['trade_count']?.toString() ?? '') ?? 0;
       });
       widget.onUpdate?.call(_master);
     } catch (error) {
@@ -204,36 +197,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         _profitSummaryLoading = false;
       }
     }
-  }
-
-  double? _readApiDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    if (value is String && value.trim().isNotEmpty) {
-      return double.tryParse(value.trim());
-    }
-    return null;
-  }
-
-  bool? _readApiBool(dynamic value) {
-    if (value is bool) return value;
-    if (value is num) return value != 0;
-    if (value is String) {
-      switch (value.trim().toLowerCase()) {
-        case 'true':
-        case '1':
-        case 'yes':
-        case 'enabled':
-        case 'active':
-          return true;
-        case 'false':
-        case '0':
-        case 'no':
-        case 'disabled':
-        case 'inactive':
-          return false;
-      }
-    }
-    return null;
   }
 
   void _notifyUpdate() {
@@ -256,16 +219,8 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         enabled: !wasActive,
       );
       if (!mounted) return;
-      final confirmedStatus = _readApiBool(
-        response['is_trading_enabled'] ?? response['is_enabled'],
-      );
-      if (confirmedStatus == null) {
-        throw const AuthApiException(
-          'The server did not confirm the updated MAM trading status.',
-        );
-      }
       setState(() {
-        _master.status = confirmedStatus ? 'Active' : 'Paused';
+        _master.status = !wasActive ? 'Active' : 'Paused';
       });
       widget.onUpdate?.call(_master);
       showAppMessage(
@@ -1037,7 +992,8 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 _buildSecurityCard(c),
                 const SizedBox(height: 14),
 
-
+                // 6. Card 4: Profit Share Wallet & Settlements
+                _buildProfitWalletCard(c),
               ],
             ),
           ),
@@ -1551,84 +1507,87 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
           ),
           const SizedBox(height: 16),
 
-          // Compact financial summary matching the mobile reference.
-          _buildFinancialSummary(c),
-
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFinancialSummary(MamWorkspaceColors c) {
-    final metrics = <({String label, String value, Color color})>[
-      if (_pendingReleaseValue != null)
-        (label: 'PENDING RELEASE', value: r'$' + _pendingReleaseValue!.toStringAsFixed(2), color: c.blue),
-      if (_releasedPayoutValue != null)
-        (label: 'RELEASED PAYOUT', value: r'$' + _releasedPayoutValue!.toStringAsFixed(2), color: c.green),
-      if (_master.profitShareAvailable)
-        (label: 'PROFIT SHARE', value: _master.profitShare.toStringAsFixed(2) + '%', color: c.text),
-      if (_master.risk.trim().isNotEmpty)
-        (label: 'RISK PROFILE', value: _master.risk, color: c.blue),
-      if (_master.leverage.trim().isNotEmpty && _master.leverage != '—')
-        (label: 'LEVERAGE', value: _master.leverage, color: c.text),
-      if (_master.payout.trim().isNotEmpty)
-        (label: 'PAYOUT FREQUENCY', value: _master.payout, color: c.text),
-    ];
-
-    if (metrics.isEmpty) {
-      if (!_profitSummaryLoading) return const SizedBox.shrink();
-      return Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: c.subCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.subBorder),
-        ),
-        child: const Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-      decoration: BoxDecoration(
-        color: c.subCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.subBorder),
-      ),
-      child: Column(
-        children: [
-          for (var i = 0; i < metrics.length; i += 2) ...[
-            if (i > 0) Divider(height: 16, thickness: 1, color: c.subBorder),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Metrics Grid (2x3 Layout)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.subBorder),
+            ),
+            child: Column(
               children: [
-                Expanded(
-                  child: _metricCell(
-                    metrics[i].label,
-                    metrics[i].value,
-                    valueColor: metrics[i].color,
-                  ),
-                ),
-                if (i + 1 < metrics.length) ...[
-                  Container(width: 1, height: 32, color: c.subBorder),
-                  Expanded(
-                    child: _metricCell(
-                      metrics[i + 1].label,
-                      metrics[i + 1].value,
-                      valueColor: metrics[i + 1].color,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _metricCell(
+                        'PENDING RELEASE',
+                        '\$${_master.pendingRelease.toStringAsFixed(2)}',
+                        valueColor: c.blue,
+                      ),
                     ),
+                    Container(width: 1, height: 32, color: c.subBorder),
+                    Expanded(
+                      child: _metricCell(
+                        'RELEASED PAYOUT',
+                        '\$${_master.releasedPayout.toStringAsFixed(2)}',
+                        valueColor: c.green,
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(height: 16, thickness: 1, color: c.subBorder),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _metricCell(
+                        'PROFIT SHARE',
+                        '${_master.profitShare.toStringAsFixed(2)}%',
+                        valueColor: c.text,
+                      ),
+                    ),
+                    if (_master.risk.trim().isNotEmpty) ...[
+                      Container(width: 1, height: 32, color: c.subBorder),
+                      Expanded(
+                        child: _metricCell(
+                          'RISK PROFILE',
+                          _master.risk,
+                          valueColor: c.blue,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (_master.leverage.trim().isNotEmpty ||
+                    _master.payout.trim().isNotEmpty) ...[
+                  Divider(height: 16, thickness: 1, color: c.subBorder),
+                  Row(
+                    children: [
+                      if (_master.leverage.trim().isNotEmpty)
+                        Expanded(
+                          child: _metricCell(
+                            'LEVERAGE',
+                            _master.leverage,
+                            valueColor: c.text,
+                          ),
+                        ),
+                      if (_master.leverage.trim().isNotEmpty &&
+                          _master.payout.trim().isNotEmpty)
+                        Container(width: 1, height: 32, color: c.subBorder),
+                      if (_master.payout.trim().isNotEmpty)
+                        Expanded(
+                          child: _metricCell(
+                            'PAYOUT FREQUENCY',
+                            _master.payout,
+                            valueColor: c.text,
+                          ),
+                        ),
+                    ],
                   ),
-                ] else
-                  const Expanded(child: SizedBox.shrink()),
+                ],
               ],
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -1913,5 +1872,157 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // 6. CARD 4: PROFIT SHARE WALLET & SETTLEMENTS
+  // ---------------------------------------------------------------------------
+  Widget _buildProfitWalletCard(MamWorkspaceColors c) {
+    return Container(
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.border),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Profit Share Wallet & Settlements',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: c.text,
+                      ),
+                    ),
+                    Text(
+                      'Manage and trigger performance fee distributions',
+                      style: TextStyle(fontSize: 11, color: c.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 44,
+                child: FilledButton.icon(
+                  onPressed: _settlementInProgress ? null : () => _triggerSettlementDialog(c),
+                  icon: const Icon(LucideIcons.zap, size: 14),
+                  label: Text(
+                    'Trigger Settlement',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: c.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
 
+          // Metrics (3 Cards)
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: c.subCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: c.subBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'PENDING WALLET',
+                        style: GoogleFonts.inter(fontSize: 9.5, fontWeight: FontWeight.w700, color: c.muted),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _profitSummaryLoading ? 'Loading…' : '\$${_master.pendingWallet.toStringAsFixed(2)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: c.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: c.subCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: c.subBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TOTAL SETTLED',
+                        style: GoogleFonts.inter(fontSize: 9.5, fontWeight: FontWeight.w700, color: c.muted),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _profitSummaryLoading ? 'Loading…' : '\$${_master.totalSettled.toStringAsFixed(2)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: c.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: c.subCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: c.subBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TRADES PROCESSED',
+                        style: GoogleFonts.inter(fontSize: 9.5, fontWeight: FontWeight.w700, color: c.muted),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _profitSummaryLoading ? '…' : '${_master.tradesProcessed}',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: c.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

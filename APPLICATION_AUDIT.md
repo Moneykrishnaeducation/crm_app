@@ -1,269 +1,321 @@
-# Comprehensive Application Audit Report: VTIndex Institutional CRM & Trading Portal
-
-**Application**: VTIndex Flutter Client & Android Native Integration (`C:\crm_app`)  
-**Scope**: Frontend UI/UX, Backend Networking & API Contracts, Cryptography, Security & Data Storage, Native Android (`MainActivity.kt`, `TradeLiveUpdateService.kt`), and Background Synchronization.  
-**Auditors**: Frontend Performance Auditor & Backend/Security Auditor  
-**Date**: November 25, 2026  
-**Repository Branch**: `main`
-
----
-
-## Executive Summary & Scorecard
-
-A full architectural, security, and performance audit was conducted across the entire codebase (~45,000 lines of Dart and Kotlin).
-
-| Domain | Status | Key Risk |
-|---|:---:|---|
-| **Data Integrity & Transactions** | 🔴 **Critical** | Silent withdrawal exception swallowing presenting fake success receipts. |
-| **Authentication & Biometrics** | 🔴 **Critical** | Biometric bypass without cryptographic token binding; plaintext JWT storage. |
-| **Runtime Stability** | 🔴 **Critical** | Non-existent Firebase Messaging method calls will crash push notification flows. |
-| **Android Background Platform** | 🔴 **Critical** | Android 14/15 `dataSync` 6-hour timeout termination & Google Play policy violation. |
-| **Network & Cryptography** | 🟠 **High** | Insecure cleartext localhost failover; 15s 2048-bit RSA keygen CPU/battery drain. |
-| **Rendering & Virtualization** | 🟡 **Medium** | TextPainter allocations inside `paint()` loops; nested `ListView(shrinkWrap: true)`. |
-| **Code Architecture** | 🟡 **Medium** | Monolithic files (3,000–5,000 lines each) and `part of 'main.dart'` namespace pollution. |
+# VTIndex CRM / Institutional Trading Mobile App
+## Comprehensive Application Audit & Remediation Roadmap
+**Date of Audit:** November 26, 2026  
+**Target Platform:** Flutter (Android & iOS)  
+**Codebase:** `lib/`, `android/`, `test/`  
+**Latest Commits Analyzed:** `cadb863`, `4ff6e59`, `efd1d2e`, `d71f232` (PAMM & Partnership Modularization), `94f3b61` (Biometric Login), `a83157d` & `1ff1fcd` (MAM APIs)
 
 ---
 
-## 1. Critical Severity Issues (P0 — Immediate Action Required)
+## Executive Summary
 
-### 1.1 Silent Failure Swallowed in Withdrawal Flow Presenting Fake Success Receipt
-- **File**: [lib/pages/funds_action_dialog.dart:2342-2386](file:///C:/crm_app/lib/pages/funds_action_dialog.dart#L2342-L2386)
-- **Problem**: When a client confirms a fund withdrawal, `AuthApi.instance.requestWithdrawal` is executed inside a `try-catch` with an empty catch block (`catch (_) {}`). Regardless of whether the backend returns a 500 server error, network timeout, or insufficient balance rejection:
-  1. The code generates a client-side fake reference ID (`VTX-WTH-...`).
-  2. Dispatches a success push notification via `AppNotificationCenter`.
-  3. Displays `_showWithdrawReceiptModal` declaring the withdrawal submitted.
-- **Impact**: The user is falsely told their withdrawal succeeded while no money moved and the server transaction failed.
-- **Remediation**: Capture `AuthApiException`, abort receipt modal on failure, and display error toast:
-  ```dart
-  try {
-    final res = await AuthApi.instance.requestWithdrawal(...);
-    final refId = res['transaction_id'] != null 
-        ? 'VTX-WTH-${res['transaction_id']}' 
-        : 'VTX-WTH-${DateTime.now().millisecondsSinceEpoch}';
-    _showWithdrawReceiptModal(context, referenceId: refId, ...);
-  } on AuthApiException catch (e) {
-    showAppMessage(e.message);
-  } catch (e) {
-    showAppMessage('Withdrawal request failed. Please check your connection.');
-  }
-  ```
+A multi-agent deep technical audit of the VTIndex institutional trading and CRM mobile application was conducted on November 26, 2026. The audit covered UI rendering and layout pipelines, cryptographic protocols, backend networking, native Android foreground services, authentication security, and recently integrated features (MAM Master Node workspace, PAMM pool dialogs, IB Partnership studio, and Biometric authentication).
+
+### Summary of Discovered Issues by Severity
+
+| Severity Level | Definition | Count | Immediate Action Required |
+|:---|:---|:---:|:---|
+| **P0 (Critical)** | Direct data compromise, crash on modern OS, unvirtualized 1000-node layout stall, broken URL routes | **7** | Fix before production release |
+| **P1 (High)** | RenderFlex overflows, jank during touch scrub, background cellular drain, unhandled DRF validation errors | **11** | Remediate in next sprint |
+| **P2 (Medium)** | Memory leaks (undisposed controllers), status bar truncation, high-res image decodes, compiler warnings | **10** | Polish & code cleanup |
+| **Total** | | **28** | |
 
 ---
 
-### 1.2 Invalid Firebase Messaging Method Calls Will Cause Runtime Crash
-- **Files**: [lib/push_messaging.dart:36-43](file:///C:/crm_app/lib/push_messaging.dart#L36-L43), [lib/services/auth_api.dart:616-620](file:///C:/crm_app/lib/services/auth_api.dart#L616-L620)
-- **Problem**: In `push_messaging.dart` and `auth_api.dart`, the code calls:
-  ```dart
-  _tokenSubscription = FirebaseMessaging.instance.onRegistered.listen(...);
-  await FirebaseMessaging.instance.register();
-  ```
-  Neither `onRegistered` nor `register()` exist in the official `firebase_messaging` Flutter plugin. The correct API methods are `FirebaseMessaging.instance.onTokenRefresh` and `FirebaseMessaging.instance.getToken()`.
-- **Impact**: As soon as push notifications initialize on device, the app throws a fatal `NoSuchMethodError` or compile failure.
-- **Remediation**:
-  ```dart
-  _tokenSubscription = FirebaseMessaging.instance.onTokenRefresh.listen((token) {
-    if (token.isNotEmpty) unawaited(_registerToken(token));
-  });
-  final token = await FirebaseMessaging.instance.getToken();
-  if (token != null && token.isNotEmpty) unawaited(_registerToken(token));
-  ```
+## 1. Critical Severity Issues (P0 — Security, Crashes & Freeze Hazards)
 
----
-
-### 1.3 Complete Biometric Authentication Bypass (No Cryptographic Token Binding)
-- **Files**: [lib/biometric_sign_in.dart:10-47](file:///C:/crm_app/lib/biometric_sign_in.dart#L10-L47), [lib/pages/login_page.dart:165-175](file:///C:/crm_app/lib/pages/login_page.dart#L165-L175), [lib/main.dart:211-246](file:///C:/crm_app/lib/main.dart#L211-L246)
+### 1.1 Plaintext Master Password Persisted in Storage & In-Memory Heap
+- **Files**: 
+  - [lib/biometric_sign_in.dart:18, 46-57, 66-78](file:///C:/crm_app/lib/biometric_sign_in.dart#L18)
+  - [lib/pages/login_page.dart:351-356](file:///C:/crm_app/lib/pages/login_page.dart#L351-L356)
 - **Problem**: 
-  1. `BiometricSignIn` uses `local_auth` merely as a boolean gate.
-  2. In `login_page.dart`, when `authenticated == true`, it immediately invokes `widget.onLogin?.call()`.
-  3. `onLogin` directly triggers `_openDashboard()`, replacing the route with `AppShell`.
-  4. **The app enters the authenticated dashboard WITHOUT decrypting an access token or validating credentials against the backend.**
-  5. Any enrolled fingerprint on a shared or stolen device can bypass the login form. If the session expired or token is invalid, the dashboard enters an inconsistent broken state.
-- **Remediation**: Biometric prompt must decrypt the access token stored in the Android Keystore / iOS Keychain (via `flutter_secure_storage`), verify token validity with `AuthApi.instance.validateSession()`, and only then open the dashboard.
+  In commit `94f3b61`, biometric re-login was implemented by capturing the user's raw master password during credential authentication (`rememberSessionCredentials`), caching it in static memory (`_sessionPassword`), and writing it directly to `FlutterSecureStorage` under key `'vtindex_biometric_password'`.
+- **Risk**: 
+  Violates OWASP MASVS-STORAGE and CWE-312 (Cleartext Storage of Sensitive Information). Any memory inspection or rooted device extraction exposes the user's institutional trading master password. If the user changes their password on the web, mobile re-login silently fails with 401 and deletes stored credentials.
+- **Remediation**: 
+  Eliminate raw password storage entirely. Migrate to asymmetric hardware-backed biometric enrolment: generate an ECC/RSA keypair in Android Keystore / iOS Keychain requiring biometric authorization (`setUserAuthenticationRequired(true)`), register the public key with the backend (`/api/biometrics/register/`), and sign a server-issued challenge nonce on biometric unlock.
 
 ---
 
-### 1.4 Plaintext JWT Access Token Storage in SharedPreferences
-- **Files**: [lib/services/auth_api.dart:129-165](file:///C:/crm_app/lib/services/auth_api.dart#L129-L165), [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:102-107](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L102-L107)
-- **Problem**: The client persists the JWT access token in standard `SharedPreferences`. In Android, this writes to an unencrypted XML file at `/data/data/com.example.crm_app/shared_prefs/FlutterSharedPreferences.xml`. In `TradeLiveUpdateService.kt`, the native service reads this plaintext file directly:
-  ```kotlin
-  val accessToken = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-      .getString("flutter.vtindex_client_access_token", null)
-  ```
-  On rooted devices or via Android backup extraction, the plaintext JWT token can be extracted.
-- **Remediation**: Add `flutter_secure_storage` to encrypt tokens with hardware-backed Android Keystore / iOS Keychain. Pass the active token to `TradeLiveUpdateService` via in-memory Intent extras rather than reading raw XML files.
-
----
-
-### 1.5 Insecure Automatic Base URL Failover to Cleartext Localhost in Production
-- **File**: [lib/services/auth_api.dart:318-344](file:///C:/crm_app/lib/services/auth_api.dart#L318-L344)
-- **Problem**: When `_configuredBaseUrl` is empty, if an API call encounters a connection timeout or packet drop, `_isNetworkConnectionError()` triggers:
-  ```dart
-  final fallbackUri = _useLocalhost ? _productionBaseUri : _localBaseUri;
-  ...
-  _useLocalhost = !_useLocalhost;
-  ```
-  If a mobile user experiences brief Wi-Fi or cellular interruption, the app automatically switches `_useLocalhost = true`, pointing subsequent requests to `http://10.0.2.2:8000` or `http://127.0.0.1:8000`. All future authenticated requests (with live tokens and trade operations) are redirected to an unencrypted local socket, breaking the app until restart.
-- **Remediation**: Strictly gate the localhost fallback behind `if (kDebugMode)`. Production release builds must only target `https://client.hi5trader.com`.
-
----
-
-### 1.6 Android 14/15 Foreground Service Policy Violation & 6-Hour Timeout Crash
-- **Files**: [android/app/src/main/AndroidManifest.xml:4, 16](file:///C:/crm_app/android/app/src/main/AndroidManifest.xml#L4), [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:82, 375-377](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L82)
+### 1.2 Catastrophic Layout & Rebuild Cascades in IB Client Tree (1,000 Nodes)
+- **Files**: 
+  - [lib/pages/partnership/pages/broker_client_tree_page.dart:39, 137, 211, 576-620, 648](file:///C:/crm_app/lib/pages/partnership/pages/broker_client_tree_page.dart#L39)
 - **Problem**:
-  1. `TradeLiveUpdateService` is declared with `android:foregroundServiceType="dataSync"`. Under Google Play Policy for Android 14+ (API 34+), `dataSync` is restricted to active file transfers. Continuous background polling under `dataSync` will cause Google Play rejection.
-  2. Starting in Android 15 (API 35), `dataSync` foreground services have a strict **6-hour runtime quota**. Line 375 defines `onTimeout(startId: Int, fgsType: Int) { stopSelf(startId) }`. After 6 hours, the operating system forcibly terminates the service.
-- **Remediation**: Migrate background portfolio synchronization to Android `WorkManager` with periodic execution constraints, or push real-time updates via Firebase Cloud Messaging (FCM) high-priority data messages.
+  1. `AuthApi.instance.getIbClientTree(page: 1, perPage: 1000)` fetches up to 1,000 client records.
+  2. The page renders the full hierarchy using an unvirtualized `ListView(children: [ ...filtered.map(...) ])`.
+  3. Inside `_buildClientNode`, **every single client node instantiates a `LayoutBuilder`** (line 576) containing nested `Wrap`, `Column`, `Row`, and button widgets.
+  4. For an IB network with 500–1,000 nodes, 500–1,000 `LayoutBuilder` measurement passes execute simultaneously, inflating 40,000+ render objects in a single frame.
+  5. Keystrokes in the search bar trigger synchronous recursive tree scans that trigger full-tree layout passes.
+- **Risk**: 
+  Severe UI freeze (500ms–2,000ms stutter), massive memory allocation spikes (100MB+ GC churn), and OOM process termination on budget/mid-range devices.
+- **Remediation**:
+  - Flatten the tree into an indexed linear list of visible nodes (`List<VisibleTreeNode>`) where folded children are omitted from the array.
+  - Replace `ListView(children: [...])` with `ListView.builder` for viewport virtualization.
+  - Remove per-node `LayoutBuilder` widgets; derive breakpoints from `MediaQuery.sizeOf(context).width` at page level.
+  - Debounce search input by 300ms using a `Timer`.
 
 ---
 
-### 1.7 Header Support Ticket Request Sheet is a Dead-End Mock
-- **Files**: [lib/widgets/app_header.dart:402-404](file:///C:/crm_app/lib/widgets/app_header.dart#L402-L404), [lib/pages/support_legal_pages.dart:737-743](file:///C:/crm_app/lib/pages/support_legal_pages.dart#L737-L743)
-- **Problem**: In `app_header.dart`, clicking "Submit a Ticket" opens `_TicketRequestSheet`. On submit, it only pops the sheet and displays a toast without calling the backend. Meanwhile, a fully functional `_LiveTicketRequestSheet` exists in `support_legal_pages.dart` but is completely bypassed.
-- **Remediation**: Rewire `_showCreateTicketSheet` in `app_header.dart` to open `_LiveTicketRequestSheet` or navigate to `BrokerTicketsPage`.
+### 1.3 Unencrypted JWT Access Token in Android SharedPreferences
+- **Files**: 
+  - [lib/services/auth_api.dart:130, 155-168](file:///C:/crm_app/lib/services/auth_api.dart#L130)
+  - [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:102-104](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L102-L104)
+- **Problem**: 
+  `AuthApi._persistAccessToken()` stores the raw `_accessToken` into standard unencrypted `SharedPreferences` (`vtindex_client_access_token`) so that the background `TradeLiveUpdateService` in Kotlin can read `FlutterSharedPreferences.xml`.
+- **Risk**: 
+  The active session token is readable in cleartext XML at `/data/data/com.vtindex.crm/shared_prefs/FlutterSharedPreferences.xml`. On rooted devices or via Android backup extraction, attackers can extract the JWT and hijack trading sessions.
+- **Remediation**: 
+  Persist the JWT in `FlutterSecureStorage` and share it with the native service via `EncryptedSharedPreferences` (`androidx.security.crypto.EncryptedSharedPreferences`) or explicit Intent extras on service startup.
 
 ---
 
-## 2. High Severity Issues (P1 — Core Operational & Performance Risks)
-
-### 2.1 Excessive CPU & Battery Drain: 2048-bit RSA Keygen Every 15 Seconds in Native Service
-- **File**: [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:95, 193-203, 258-260](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L95)
-- **Problem**: The native Android service polls every 15 seconds. In each cycle, for every single account in the portfolio, it runs:
-  ```kotlin
-  val responseKeyPair = createResponseKeyPair() // KeyPairGenerator RSA 2048
-  ```
-  Generating a 2048-bit RSA key pair requires intensive prime number generation. Repeating this 20+ times per minute on a mobile CPU drains the device battery and causes thermal throttling.
-- **Remediation**: Cache the `KeyPair` at the service instance level, rotating it once every 15–30 minutes, or align the polling rate to 45s.
-
----
-
-### 2.2 Text Shaping & Dynamic Allocation in CustomPainter `paint()` Loops
-- **Files**: [lib/pages/trade_report_page.dart:1875-1899, 1950-1956](file:///C:/crm_app/lib/pages/trade_report_page.dart#L1875-L1899), [lib/pages/login_page.dart:1916-1930](file:///C:/crm_app/lib/pages/login_page.dart#L1916-L1930)
-- **Problem**: In `_TradeReportLinePainter`, `_TradeReportBarPainter`, and `_LoginBackgroundPainter`, `TextPainter()` instances are instantiated and `.layout()` is called inside a loop on **every paint frame**. Text layout and font shaping are CPU-intensive operations that drop frame rates from 60fps/120fps down to 20-30fps during scrolling.
-- **Remediation**: Pre-layout and cache `TextPainter` instances or render label grids using lightweight Flutter widgets (`Row`, `Text`) overlaid on the canvas.
+### 1.4 Broken Response Decryption During RSA Session Key Rotation
+- **Files**: 
+  - [lib/services/auth_api.dart:134-138, 402-439, 449-464](file:///C:/crm_app/lib/services/auth_api.dart#L134-L138)
+- **Problem**: 
+  `AuthApi` rotates its 2048-bit RSA keypair every 100 requests or 30 minutes. In `_decryptResponseEnvelope()`, if `envelope.keyId != _cachedSessionKeyPair.keyId`, it looks up the previous private key in `_responseEncryptionPrivateKeys.remove(keyId)`. However, `_responseEncryptionPrivateKeys` is **never populated anywhere** in `auth_api.dart`!
+- **Risk**: 
+  Any in-flight requests that finish after a key rotation look up their `keyId` in an empty map, receive `null`, and fail with `AuthApiException('The encrypted server response could not be opened.')`.
+- **Remediation**: 
+  Store previous keys in an LRU history ring buffer (`Map<String, ({RSAPrivateKey key, DateTime retiredAt})>`) keeping the last 5 retired keys for 5 minutes before discarding.
 
 ---
 
-### 2.3 Global Cleartext HTTP Traffic Allowed in Android Manifest
-- **File**: [android/app/src/main/AndroidManifest.xml:15](file:///C:/crm_app/android/app/src/main/AndroidManifest.xml#L15)
-- **Problem**: `android:usesCleartextTraffic="true"` is declared globally on `<application>`. This disables Android's default cleartext protection for all network calls across the app.
-- **Remediation**: Set `android:usesCleartextTraffic="false"` and configure `res/xml/network_security_config.xml` to allow cleartext solely for `10.0.2.2` in `debug` builds.
+### 1.5 Android 14/15 6-Hour Timeout on `dataSync` Foreground Service
+- **Files**: 
+  - [android/app/src/main/AndroidManifest.xml:4, 17](file:///C:/crm_app/android/app/src/main/AndroidManifest.xml#L4)
+  - [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:78-83, 393-395](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L78-L83)
+- **Problem**: 
+  `TradeLiveUpdateService` declares `android:foregroundServiceType="dataSync"`. Starting in Android 14 (API 34) and strictly enforced in Android 15 (API 35), `dataSync` services have a **hard 6-hour execution limit** in any 24-hour window. Line 393 implements `onTimeout(startId: Int, fgsType: Int) { stopSelf(startId) }`.
+- **Risk**: 
+  After 6 hours of background tracking, the OS forcibly terminates the service. Furthermore, continuous background polling under `dataSync` violates Google Play policy for apps targeting API 34+.
+- **Remediation**: 
+  Replace continuous background HTTP polling with **Firebase Cloud Messaging (FCM) high-priority data messages** or WebSockets. The backend triggers a push notification when position P/L changes significantly, eliminating the need for an unconstrained polling foreground service.
 
 ---
 
-### 2.4 Complete Absence of SSL/TLS Certificate Pinning
-- **Files**: [lib/services/auth_http_client_stub.dart:3](file:///C:/crm_app/lib/services/auth_http_client_stub.dart#L3), [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:194-206](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L194-L206)
-- **Problem**: Both Dart (`createAuthHttpClient()` returns default `http.Client()`) and Kotlin (`HttpURLConnection`) rely entirely on the device CA trust store. For a financial application executing trade orders and managing institutional capital, this leaves connections vulnerable to MITM interception on compromised Wi-Fi networks.
-- **Remediation**: Implement SSL Public Key Pinning (SPKI) using Dart's `SecurityContext` and Android's `<pin-set>` in `network_security_config.xml`.
+### 1.6 Foreground Service Crash via `START_STICKY` on Android 14+
+- **Files**: 
+  - [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:77-86, 97](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L97)
+- **Problem**: 
+  `TradeLiveUpdateService.onStartCommand` returns `START_STICKY`. When the OS re-creates the service in the background after memory reclamation, it immediately executes `ServiceCompat.startForeground(this, notificationId, initial, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)`.
+- **Risk**: 
+  On Android 14+, launching a foreground service from the background without a user-visible trigger throws `android.app.ForegroundServiceStartNotAllowedException`, immediately crashing the app process.
+- **Remediation**: 
+  Return `START_NOT_STICKY` so Android does not attempt to restart the foreground service when the app is backgrounded.
 
 ---
 
-### 2.5 Keyboard Inset Occlusion via `resizeToAvoidBottomInset: false`
-- **File**: [lib/pages/login_page.dart:539-565](file:///C:/crm_app/lib/pages/login_page.dart#L539-L565)
-- **Problem**: `LoginPage` sets `resizeToAvoidBottomInset: false` on the Scaffold. When the software keyboard opens on screens $\le$ 6.1 inches, in landscape mode, or with display scaling enabled, the keyboard obscures the password field and sign-in button with no ability to scroll them into view.
-- **Remediation**: Remove `resizeToAvoidBottomInset: false`. Keep the decorative background stationary with `Positioned.fill` inside a `Stack` and allow the form `SingleChildScrollView` to inset naturally.
+### 1.7 Missing Trailing Slash in MAM Toggle Copy Endpoint (HTTP 301 Downgrade)
+- **Files**: 
+  - [lib/services/auth_api.dart:1513](file:///C:/crm_app/lib/services/auth_api.dart#L1513)
+- **Problem**: 
+  `toggleMamInvestorCopy(String accountId)` calls:
+  `_request('POST', 'mam/investors/${Uri.encodeComponent(accountId)}/toggle-copy')`
+  Django REST Framework routes require a trailing slash. The server responds with `HTTP 301 Moved Permanently`. Standard HTTP clients follow the redirect by changing the HTTP method to `GET`.
+- **Risk**: 
+  The server rejects the redirected GET request with `HTTP 405 Method Not Allowed`, completely breaking investor copy trading toggling.
+- **Remediation**: 
+  Append trailing slash: `'mam/investors/${Uri.encodeComponent(accountId)}/toggle-copy/'`.
 
 ---
 
-### 2.6 Missing In-Flight Submission Guard on Withdrawals
-- **File**: [lib/pages/funds_action_dialog.dart:2176-2199, 2811](file:///C:/crm_app/lib/pages/funds_action_dialog.dart#L2176-L2199)
-- **Problem**: In `_BrokerFundsPageState._submit()`, if `withdrawal == true`, it opens `_showWithdrawConfirmationSheet` without locking `_isSubmitting = true`. Inside `_WithdrawConfirmationSheet`, the confirm button does not disable itself or set a debounce flag during the async HTTP call. Rapid double-tapping can dispatch duplicate withdrawal requests to the MT5 gateway.
-- **Remediation**: Set `_isSubmitting = true` before opening the sheet and disable the confirm button on first click.
+## 2. High Priority Issues (P1 — Performance, Overflows & Network Robustness)
+
+### 2.1 RenderFlex Overflows in Broker Commission Ledger
+- **Files**: [lib/pages/partnership/pages/broker_commission_ledger_page.dart:200-245](file:///C:/crm_app/lib/pages/partnership/pages/broker_commission_ledger_page.dart#L200-L245)
+- **Problem**: Inside each transaction card, `Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [ Row(children: [ icon, Column(children: [ Text(positionSymbol), Text(clientDetails) ]) ]), Column(...) ])` does not wrap the inner Row/Column with `Expanded`.
+- **Impact**: On viewports $\le$ 375dp or when client names exceed 15 characters, it causes a hard `RenderFlex overflowed by X pixels on the right` error banner.
+- **Remediation**: Wrap the leading `Row` and client `Column` in `Expanded` and add `overflow: TextOverflow.ellipsis`.
 
 ---
 
-### 2.7 Viewport Virtualization Disabled by Nested `ListView(shrinkWrap: true)`
-- **File**: [lib/pages/broker_screens.dart:3866, 4344, 4781](file:///C:/crm_app/lib/pages/broker_screens.dart#L3866) (`BrokerTransactionsPage`)
-- **Problem**: Open positions, closed positions, and account transaction histories use nested `ListView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics())` inside an outer `ListView`. This forces double-layout measurement passes and instantiates all 100+ transaction cards in memory at once.
-- **Remediation**: Replace with a unified `CustomScrollView` utilizing `SliverList.builder`.
+### 2.2 RenderFlex Overflows in Account Detail Sheet Positions
+- **Files**: [lib/pages/partnership/widgets/account_detail_sheet.dart:202-249](file:///C:/crm_app/lib/pages/partnership/widgets/account_detail_sheet.dart#L202-L249)
+- **Problem**: Unconstrained Row rendering `"$vol Lots · Open: 1.08523 · Current: 1.08545"` (~230dp) beside BUY/SELL badges (40dp) and PnL column (70dp) exceeds available screen width on devices $\le$ 400dp width.
+- **Impact**: Yellow-and-black striped layout overflow in live account inspection modals.
+- **Remediation**: Wrap inner Row in `Expanded` and truncate price details gracefully with `TextOverflow.ellipsis`.
 
 ---
 
-### 2.8 Indefinite RSA Session Key Caching Without Rotation
-- **File**: [lib/services/auth_api.dart:134-135, 396-422, 433-437](file:///C:/crm_app/lib/services/auth_api.dart#L134-L135)
-- **Problem**: The session RSA-2048 keypair generated in Phase 1 is cached in `_cachedSessionKeyPair`. Line 426 explicitly checks:
+### 2.3 RenderFlex Overflow in Leaderboard Referral Links
+- **Files**: [lib/pages/partnership/widgets/leaderboard_card.dart:187-231](file:///C:/crm_app/lib/pages/partnership/widgets/leaderboard_card.dart#L187-L231)
+- **Problem**: Leading Row displaying profile name opposite `OutlinedButton.icon(...)` lacks `Expanded` or `Flexible` constraint. Long profile names push the action button off-screen.
+- **Impact**: Layout overflow error on portrait mobile devices.
+- **Remediation**: Wrap text container in `Expanded` with single-line max constraint.
+
+---
+
+### 2.4 Font Shaping & Frame Churn in `CommissionTrajectoryPainter`
+- **Files**: 
+  - [lib/pages/partnership/widgets/commission_trajectory_painter.dart:122-131](file:///C:/crm_app/lib/pages/partnership/widgets/commission_trajectory_painter.dart#L122-L131)
+  - [lib/pages/partnership/widgets/trajectory_chart_card.dart:91-114](file:///C:/crm_app/lib/pages/partnership/widgets/trajectory_chart_card.dart#L91-L114)
+- **Problem**: Inside `CommissionTrajectoryPainter.paint()`, a new `TextPainter` is instantiated and `.layout()` is called in a loop for all 12 month labels. When users drag/scrub across the chart, `setState()` executes at 60–120Hz, triggering HarfBuzz font shaping 12 times per frame. Furthermore, `CustomPaint` lacks a `RepaintBoundary`.
+- **Impact**: Severe frame drops (jank) during touch scrub interactions and high CPU utilization.
+- **Remediation**: Cache `TextPainter` instances or render month labels using a Flutter `Row` with standard `Text` widgets; isolate the chart with `RepaintBoundary`.
+
+---
+
+### 2.5 Keyboard Avoidance Occlusion in PAMM & Client Registration Sheets
+- **Files**: 
+  - [lib/pages/pamm/widgets/dialogs/pamm_create_pool_dialog.dart:348-356, 701-748](file:///C:/crm_app/lib/pages/pamm/widgets/dialogs/pamm_create_pool_dialog.dart#L348-L356)
+  - [lib/pages/partnership/widgets/client_registration_dialog.dart:72-84](file:///C:/crm_app/lib/pages/partnership/widgets/client_registration_dialog.dart#L72-L84)
+- **Problem**: Both bottom sheets use fixed height constraints without factoring `MediaQuery.viewInsetsOf(context).bottom`. When the software keyboard opens, it completely occludes the submit/action buttons and lower input fields.
+- **Impact**: Users cannot see active input fields or submit forms without manually dismissing the keyboard.
+- **Remediation**: Add `EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom + 16)` to sheet containers.
+
+---
+
+### 2.6 Unvirtualized Lists in MAM Investor Live Positions Page
+- **Files**: [lib/pages/mam_investor_live_positions_page.dart:214-237](file:///C:/crm_app/lib/pages/mam_investor_live_positions_page.dart#L214-L237)
+- **Problem**: `ListView(children: [ summaryGrid(), ...positions.map(...) ])` instantiates all position cards at once. A 5-second periodic timer triggers `setState()`, forcing a complete rebuild of the entire card tree.
+- **Impact**: Scroll stutter and continuous CPU load when an investor has many active positions.
+- **Remediation**: Refactor to `CustomScrollView` with `SliverList.builder`.
+
+---
+
+### 2.7 DRF Serializer Field Validation Errors Discarded
+- **Files**: [lib/services/auth_api.dart:531-550](file:///C:/crm_app/lib/services/auth_api.dart#L531-L550)
+- **Problem**: Django REST Framework returns validation errors formatted as `{ "<field_name>": ["<error message>"] }`. `AuthApi._messageFrom()` checks only hardcoded keys (`message`, `error`, `errors`, `detail`, `non_field_errors`).
+- **Impact**: Form field validation rejections fall through to the generic fallback `"The request failed. Please try again."`, hiding the actual error reason from users.
+- **Remediation**: Concatenate dynamic map entries into `"${entry.key}: ${entry.value}"` when standard keys are absent.
+
+---
+
+### 2.8 Defective Error Check in `_multipartRequest`
+- **Files**: [lib/services/auth_api.dart:738](file:///C:/crm_app/lib/services/auth_api.dart#L738)
+- **Problem**: Line 738 checks `if (response.statusCode < 200 || response.statusCode >= 300 || data['error'] is String)`. If the backend returns `{"error": {...}}` or `{"errors": [...]}`, `data['error'] is String` evaluates to `false`.
+- **Impact**: Multipart uploads (KYC documents, payment proofs) can treat error responses as successful if HTTP 200 is returned by gateway middleware.
+- **Remediation**: Use standardized error detection matching `_request()`.
+
+---
+
+### 2.9 Offline Login Bypass on Transient Network Failure in Biometric Auth
+- **Files**: [lib/pages/login_page.dart:213-222](file:///C:/crm_app/lib/pages/login_page.dart#L213-L222)
+- **Problem**: In `_signInWithBiometrics()`, if `AuthApi.instance.getProfile()` fails due to a network glitch or timeout, it catches the error and checks `if (AuthApi.instance.hasToken)`:
   ```dart
-  void _cleanupResponseKeyPair(String keyId) {
-    if (_cachedSessionKeyPair?.keyId != keyId) {
-      _responseEncryptionPrivateKeys.remove(keyId);
+  } catch (_) {
+    if (AuthApi.instance.hasToken) {
+      widget.onLogin?.call();
+      return;
     }
-  }
   ```
-  Because the key matches `_cachedSessionKeyPair?.keyId`, it is never cleared and is reused across thousands of requests until app termination, reducing forward secrecy.
-- **Remediation**: Implement automated key rotation every 100 requests or 30 minutes.
+- **Impact**: Suspended or disabled users can bypass server-side token validation by triggering biometric authentication while in airplane mode.
+- **Remediation**: Require server verification; show an offline banner rather than granting access to trading workspaces.
 
 ---
 
-### 2.9 Missing `POST_NOTIFICATIONS` Permission Guard Before Launching Service
-- **File**: [android/app/src/main/kotlin/com/example/crm_app/MainActivity.kt:91-109](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/MainActivity.kt#L91-L109)
-- **Problem**: In `MainActivity.kt`, `startPositionService` starts `TradeLiveUpdateService` via `ContextCompat.startForegroundService()` without checking if `android.permission.POST_NOTIFICATIONS` has been granted. On Android 13+ (API 33+), the notification is suppressed, and foreground service execution may be restricted by the OS.
-- **Remediation**: Verify permission before launching or prompt the user via Flutter.
+### 2.10 Aggressive Cellular Radio Drain via 45-Second Polling Loop
+- **Files**: [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:95, 120-155](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L95)
+- **Problem**: Native Android service polls sequentially over every live and demo account every 45 seconds over cellular radio.
+- **Impact**: Mobile radio baseband remains in high-power state continuously, draining 5–10% battery per hour and triggering OS battery optimizations that kill the app.
+- **Remediation**: Implement a single batched endpoint `GET /client/api/portfolio-summary/` and pause polling when device screen turns off (`ACTION_SCREEN_OFF`).
 
 ---
 
-## 3. Medium & Low Severity Issues (P2 — Robustness & Polish)
-
-| ID | Severity | File & Location | Description | Recommendation |
-|---|:---:|---|---|---|
-| **3.1** | **Medium** | [accounts_page.dart:343-356](file:///C:/crm_app/lib/pages/accounts_page.dart#L343-L356), [broker_screens.dart:326](file:///C:/crm_app/lib/pages/broker_screens.dart#L326) | `Path()`, `Paint()`, and `Shader` allocated every frame inside `paint()` loops causing GC pressure. | Allocate reusable `Paint` and `Path` as fields on the painter and call `.reset()`. |
-| **3.2** | **Medium** | [more_page.dart:223-228](file:///C:/crm_app/lib/pages/more_page.dart#L223-L228) | High-res logo assets (1024x1024) loaded in 40x40 circle avatars without `cacheWidth`/`cacheHeight`. | Add `cacheWidth: 120, cacheHeight: 120` to `Image.asset`. |
-| **3.3** | **Medium** | [auth_api.dart:452](file:///C:/crm_app/lib/services/auth_api.dart#L452), [TradeLiveUpdateService.kt:269](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L269) | Static hardcoded string `'vtindex:user-info:v1'` used as AAD across unrelated endpoints. | Bind AAD to endpoint and account context: `vtindex:${endpoint}:${accountId}`. |
-| **3.4** | **Medium** | [auth_api.dart:378-385](file:///C:/crm_app/lib/services/auth_api.dart#L378-L385) | `hasErrorMessage = data['error'] is String`; DRF map errors (e.g. `{"error": {...}}`) ignored. | Update to `data['error'] != null && data['error'] != false`. |
-| **3.5** | **Medium** | [accounts_page.dart:731-750](file:///C:/crm_app/lib/pages/accounts_page.dart#L731-L750) | Trading group fetching failure swallowed silently; dropdown remains empty with no error state. | Display error banner with a "Retry" button when `_groups.isEmpty`. |
-| **3.6** | **Medium** | [main.dart:580-600](file:///C:/crm_app/lib/main.dart#L580-L600) | Notification and deep-link click handlers await async operations without `if (!mounted) return;`. | Add `if (!mounted) return;` guard before all `setState()` calls. |
-| **3.7** | **Medium** | [MainActivity.kt:114-131](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/MainActivity.kt#L114-L131) | Synchronous `getSharedPreferences().edit().apply()` on Android UI thread in MethodChannel. | Dispatch disk I/O to Kotlin Coroutines on `Dispatchers.IO`. |
-| **3.8** | **Low** | [dashboard_page.dart:340-365](file:///C:/crm_app/lib/pages/dashboard_page.dart#L340-L365) | Fixed width `SizedBox(width: 140)` items overflow on small screens (<360dp). | Wrap with `Wrap` or use `Expanded` with `FittedBox`. |
-| **3.9** | **Low** | [MainActivity.kt:143-148](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/MainActivity.kt#L143-L148) | Deprecated `windowManager.defaultDisplay` and `preferredRefreshRate` (deprecated in API 30). | Use `context.display` and `preferredDisplayModeId`. |
-| **3.10**| **Low** | [app_header.dart:280-310](file:///C:/crm_app/lib/widgets/app_header.dart#L280-L310) | Custom header icon buttons lack `tooltip` or `Semantics` tags. | Add accessibility tooltips for screen readers. |
+### 2.11 Unbounded Parallel MAM Network Flooding (`Future.wait`)
+- **Files**: [lib/pages/mam_page.dart:1805-1821](file:///C:/crm_app/lib/pages/mam_page.dart#L1805-L1821)
+- **Problem**: MAM page fires unbounded concurrent requests for every MAM account on page entry using `Future.wait()`.
+- **Impact**: Collisions in RSA key rotation and potential HTTP 429 rate limit errors from backend gateways.
+- **Remediation**: Implement request chunking (e.g. 3 concurrent requests max) or a single aggregated MAM portfolio endpoint.
 
 ---
 
-## 4. Architectural Findings & Code Health
+## 3. Medium & Low Severity Issues (P2 — Polish & Robustness)
 
-### 4.1 Namespace Pollution via `part of 'main.dart'`
-- **Problem**: 12 critical pages (`accounts_page.dart`, `broker_screens.dart`, `dashboard_page.dart`, `login_page.dart`, etc.) are linked into `main.dart` using Dart's `part` / `part of` directive.
-- **Risk**: All private (`_` prefixed) methods, classes, and top-level variables share a single global library scope. This previously caused the `_PortfolioLinePainter is already declared in this scope` build failure.
-- **Recommendation**: Convert `part` files into independent Dart library modules using standard `import` statements and explicit public exports.
-
-### 4.2 Monolithic "God Files"
-- **Problem**: Multiple page files exceed 3,500 lines:
-  - `broker_screens.dart`: 5,760 lines
-  - `partnership_page.dart`: 5,553 lines
-  - `pamm_page.dart`: 4,164 lines
-  - `login_page.dart`: 3,702 lines
-  - `mam_page.dart`: 3,670 lines
-- **Risk**: High risk of unintended regression, slow IDE indexing, and difficulty isolating widget rebuild scopes.
-- **Recommendation**: Split giant files into modular folder structures (e.g., `lib/pages/pamm/widgets/`, `lib/pages/pamm/models/`).
+### 3.1 Undisposed `TextEditingController`s in MAM Node Workspace
+- **Files**: [lib/widgets/mam_master_node_workspace.dart:233-234](file:///C:/crm_app/lib/widgets/mam_master_node_workspace.dart#L233-L234)
+- **Problem**: In `_openSecuritySettingsSheet`, `investorPwdCtrl` and `authKeyCtrl` are instantiated as local variables and never disposed when the modal closes.
+- **Remediation**: Convert the bottom sheet into a private `StatefulWidget` or dispose controllers in `whenComplete()`.
 
 ---
 
-## 5. Prioritized Remediation Roadmap
+### 3.2 Fixed Aspect Ratio GridView Overflow Under Accessibility Scaling
+- **Files**: [lib/pages/mam_investor_live_positions_page.dart:253-260](file:///C:/crm_app/lib/pages/mam_investor_live_positions_page.dart#L253-L260)
+- **Problem**: `GridView.builder` uses `childAspectRatio: 1.9` with `shrinkWrap: true`. When user enables large system font scaling (>1.2x), content exceeds 48dp tile height and overflows.
+- **Remediation**: Replace with flexible `Wrap` or wrap text values in `FittedBox`.
+
+---
+
+### 3.3 Unconstrained High-Resolution Bitmap Decoding in QR View
+- **Files**: [lib/pages/partnership/widgets/vtindex_qr_view.dart:49-53](file:///C:/crm_app/lib/pages/partnership/widgets/vtindex_qr_view.dart#L49-L53)
+- **Problem**: `Image.asset('assets/images/vtindex_logo_img.png')` inside 40dp QR center avatar lacks `cacheWidth` or `cacheHeight`.
+- **Remediation**: Add `cacheWidth: 120, cacheHeight: 120` to prevent full 1024x1024 bitmap allocations in GPU RAM.
+
+---
+
+### 3.4 Unvirtualized Spread in PAMM Tab Views & Portfolio
+- **Files**: 
+  - [lib/pages/pamm/widgets/pamm_tab_views.dart:141-150, 243-250](file:///C:/crm_app/lib/pages/pamm/widgets/pamm_tab_views.dart#L141-L150)
+  - [lib/pages/pamm/widgets/pamm_connected_portfolio_view.dart:370-433](file:///C:/crm_app/lib/pages/pamm/widgets/pamm_connected_portfolio_view.dart#L370-L433)
+- **Problem**: Direct list spreads (`for (final p in pools) ...`) inside unvirtualized `ListView`.
+- **Remediation**: Migrate to `ListView.builder`.
+
+---
+
+### 3.5 Four-Button Row Overflow on Narrow Screens (Commission Withdrawal)
+- **Files**: [lib/pages/partnership/pages/broker_commission_withdrawal_page.dart:239-249](file:///C:/crm_app/lib/pages/partnership/pages/broker_commission_withdrawal_page.dart#L239-L249)
+- **Problem**: 4 percentage buttons (`25%`, `50%`, `75%`, `100% (Max)`) in an unconstrained `Row` clip on 320–360dp viewports.
+- **Remediation**: Wrap labels in `FittedBox(fit: BoxFit.scaleDown)`.
+
+---
+
+### 3.6 Unconstrained Account Description in Client Accounts Sheet
+- **Files**: [lib/pages/partnership/widgets/client_accounts_sheet.dart:254-292](file:///C:/crm_app/lib/pages/partnership/widgets/client_accounts_sheet.dart#L254-L292)
+- **Problem**: Long `groupAlias` texts push the action button off-screen.
+- **Remediation**: Wrap text row in `Expanded` with `TextOverflow.ellipsis`.
+
+---
+
+### 3.7 Android Status Bar P/L Chip Truncation
+- **Files**: [android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt:174-175, 374](file:///C:/crm_app/android/app/src/main/kotlin/com/example/crm_app/TradeLiveUpdateService.kt#L374)
+- **Problem**: `.setShortCriticalText(shortText.trim().take(7))` truncates `"D+1500 L-2300"` to 7 characters (`"D+1500 "`), cutting off the Live trading P/L.
+- **Remediation**: Prioritize Live P/L in status text and remove hardcoded `.take(7)`.
+
+---
+
+### 3.8 Compiler Warnings & Deprecated Members
+- **Files**: 
+  - [lib/widgets/mam_master_node_workspace.dart:379, 637, 804](file:///C:/crm_app/lib/widgets/mam_master_node_workspace.dart#L379)
+  - [lib/pages/mam_investor_live_positions_page.dart:163, 225, 249-251, 311-315](file:///C:/crm_app/lib/pages/mam_investor_live_positions_page.dart#L163)
+- **Problem**: 12 issues detected by `flutter analyze`:
+  - `warning: The declaration '_openLiveTradesSheet' isn't referenced`
+  - `warning: The value of the local variable 'status' isn't used`
+  - `deprecated_member_use: 'activeColor' in Switch (use activeTrackColor/activeThumbColor)`
+  - 8x `prefer_interpolation_to_compose_strings`
+- **Remediation**: Clean up dead code, remove unused variables, and update deprecated Flutter properties.
+
+---
+
+## 4. Prioritized Remediation Roadmap
 
 ```mermaid
 flowchart TD
-    subgraph P0["P0: Critical Fixes (Data & Security)"]
-        A1["1.1 Fix Withdrawal Exception Swallowing"]
-        A2["1.2 Fix Broken Firebase Messaging Calls"]
-        A3["1.3 Secure Biometric Flow & Token Binding"]
-        A4["1.4 Migrate JWT to flutter_secure_storage"]
-        A5["1.5 Gate Localhost Failover behind kDebugMode"]
-        A6["1.7 Wire Live Support Ticket Sheet"]
-    end
-    
-    subgraph P1["P1: Performance & Platform Compliance"]
-        B1["2.1 Cache RSA KeyPair in Android Service (15s to 45s)"]
-        B2["2.2 Cache TextPainter & Shader Allocations"]
-        B3["2.3 Disable usesCleartextTraffic globally"]
-        B4["2.5 Fix Login resizeToAvoidBottomInset"]
-        B5["2.6 Add Withdrawal In-Flight Lock"]
-        B6["2.7 Virtualize Transaction History Lists"]
-        B7["1.6 Migrate dataSync FGS to WorkManager"]
+    subgraph P0["P0: Critical Stability & Security (Immediate)"]
+        A1["1.1 Remove Plaintext Password Storage (Biometrics)"]
+        A2["1.2 Flatten Client Tree & Remove 1000 LayoutBuilders"]
+        A3["1.3 Secure JWT Storage in EncryptedSharedPreferences"]
+        A4["1.4 Fix Private Key Ring Buffer in RSA Rotation"]
+        A5["1.5 Fix Android 14/15 6h Foreground Service Timeout"]
+        A6["1.6 Change FGS to START_NOT_STICKY (Prevent Crashes)"]
+        A7["1.7 Add Trailing Slash to MAM Toggle Copy URL"]
     end
 
-    subgraph P2["P2: Robustness & Polish"]
-        C1["3.1 Reusable Canvas Paint/Path Objects"]
-        C2["3.2 Add Image cacheWidth/cacheHeight"]
-        C3["3.4 Parse Non-String DRF Errors"]
-        C4["4.1 Refactor 'part of' into clean imports"]
+    subgraph P1["P1: High Priority (UI Overflows & Network Robustness)"]
+        B1["2.1 Fix RenderFlex Overflows (Commission Ledger & Positions)"]
+        B2["2.4 Cache TextPainters & Add RepaintBoundary in Charts"]
+        B3["2.5 Fix Keyboard Avoidance (viewInsets.bottom in PAMM Sheet)"]
+        B4["2.6 Virtualize MAM Investor Positions List"]
+        B5["2.7 Parse DRF Serializer Field Validation Errors"]
+        B6["2.9 Block Offline Biometric Login Bypass"]
+        B7["2.10 Throttle Cellular Polling on Screen Off"]
+    end
+
+    subgraph P2["P2: Polish & Code Hygiene"]
+        C1["3.1 Dispose TextEditingControllers in MAM Workspace"]
+        C2["3.3 Add cacheWidth/cacheHeight to QR Logo"]
+        C3["3.7 Fix Status Bar P/L Truncation in Native Kotlin"]
+        C4["3.8 Clean Unused Elements & Compiler Warnings"]
     end
 
     P0 --> P1 --> P2
@@ -271,11 +323,18 @@ flowchart TD
 
 ---
 
-## 6. Remediation Execution Status
+## 5. Execution Matrix & Responsibility Assignment
 
-| Phase | Priority | Scope | Status | Verification & Git Reference |
-|:---:|:---:|---|:---:|---|
-| **Phase 1** | **P0** | Withdrawal exception handling, live tickets, biometric token binding, debug-gated localhost, native RSA caching | **COMPLETED** | Verified via `flutter analyze` & unit tests (`a4b4881`) |
-| **Phase 2** | **P1** | Virtualized `BrokerTransactionsPage` slivers, static `TextPainter` cache, network security config cleartext lockdown, session RSA rotation | **COMPLETED** | Verified via `flutter analyze` & `activity_page_test.dart` (`e4b1830`) |
-| **Phase 3** | **P2** | Reusable Canvas `Paint`/`Path` caches, downsampled `cacheWidth`/`cacheHeight` image decodes, DRF error map parsing, async `mounted` guards, and trading group retry UI | **COMPLETED** | Verified via `flutter analyze` (0 issues) & full regression suite |
-
+| Remediation Item | Target Component | Lead Role | Files Impacted |
+|---|---|---|---|
+| **P0: Client Tree Virtualization** | Partnership UI | Frontend Engineer | `broker_client_tree_page.dart` |
+| **P0: Biometric Key Security** | Auth & Storage | Backend / Security | `biometric_sign_in.dart`, `login_page.dart` |
+| **P0: JWT Storage Lockdown** | Native Bridge | Backend / Security | `auth_api.dart`, `TradeLiveUpdateService.kt` |
+| **P0: RSA Ring Buffer Fix** | Cryptography | Backend Engineer | `auth_api.dart` |
+| **P0: Android FGS Lifecycle** | Native Android | Android Engineer | `TradeLiveUpdateService.kt`, `AndroidManifest.xml` |
+| **P0: MAM URL Trailing Slash** | Networking | Backend Engineer | `auth_api.dart` |
+| **P1: RenderFlex Overflow Fixes** | Mobile UI | Frontend Engineer | `broker_commission_ledger_page.dart`, `account_detail_sheet.dart`, `leaderboard_card.dart` |
+| **P1: Chart Trajectory Optimization** | Visualizations | Frontend Engineer | `commission_trajectory_painter.dart`, `trajectory_chart_card.dart` |
+| **P1: Keyboard Inset Fixes** | Modals & Sheets | Frontend Engineer | `pamm_create_pool_dialog.dart`, `client_registration_dialog.dart` |
+| **P1: DRF Error Parser** | Networking | Backend Engineer | `auth_api.dart` |
+| **P2: Code Hygiene & Analyzer Fixes** | Workspace Cleanup | Reviewer / Frontend | `mam_master_node_workspace.dart`, `mam_investor_live_positions_page.dart` |

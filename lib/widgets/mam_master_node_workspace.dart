@@ -645,9 +645,6 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
             'allocation_percentage', 'allocation_percent', 'share_percentage',
             'profit_sharing_percentage'
           ]);
-          final isActive = status.toLowerCase().contains('active') ||
-              status.toLowerCase().contains('running') ||
-              status.toLowerCase() == 'enabled';
           final rawCopy = investor['manager_allow_copy'] ??
               investor['manage_allow_copy'] ??
               investor['investor_allow_copy'];
@@ -736,7 +733,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   style: GoogleFonts.inter(color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 3),
-                  child: Text('MT5 Account #$accountId',
+                  child: Text('MT5 Account #$accountId · ${status == '—' ? 'LINKED' : status.toUpperCase()}',
                     maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
                 ),

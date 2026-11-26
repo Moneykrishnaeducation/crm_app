@@ -891,12 +891,13 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 final totalProfit = investors.fold<double>(0,
                   (sum, item) => sum + number(item, ['profit', 'floating_profit']));
                 final activeCount = investors.where((item) {
-                  final state = field(item, ['status', 'account_status', 'trading_status'],
-                    fallback: 'Active').toLowerCase();
-                  return state.contains('active') ||
-                      state.contains('running') ||
-                      state == 'enabled' ||
-                      state == 'true';
+                  final copyState = item['manager_allow_copy'] ??
+                      item['manage_allow_copy'] ??
+                      item['investor_allow_copy'];
+                  return copyState == true ||
+                      ['true', '1', 'yes', 'enabled', 'active'].contains(
+                        copyState?.toString().toLowerCase(),
+                      );
                 }).length;
 
                 return Column(children: [
@@ -907,7 +908,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                     child: Column(children: [
                       Row(children: [
                         Expanded(child: _investorMetric(c, 'TOTAL INVESTORS', '${investors.length}')),
-                        Expanded(child: _investorMetric(c, 'ACTIVE', '$activeCount')),
+                        Expanded(child: _investorMetric(c, 'ACTIVE MIRRORS', '$activeCount')),
                       ]),
                       const SizedBox(height: 10),
                       Row(children: [

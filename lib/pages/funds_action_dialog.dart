@@ -39,6 +39,7 @@ class BrokerFundsPage extends StatefulWidget {
 
 class _BrokerFundsPageState extends State<BrokerFundsPage> {
   final TextEditingController _amount = TextEditingController();
+  final ShakeController _amountShakeController = ShakeController();
   int _method = 0;
   int _currency = 0;
   int _payout = 0;
@@ -275,6 +276,7 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
 
   @override
   void dispose() {
+    _amountShakeController.dispose();
     _amount.dispose();
     super.dispose();
   }
@@ -1920,63 +1922,76 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final textPrimary = isDark ? Colors.white : _fundInk;
     final suffixBg = isDark ? const Color(0xFF1E2D47) : const Color(0xFFEAF0F8);
 
-    return Container(
-      height: 49,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: inputBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-      ),
-      child: Row(
-        children: [
-          Text(
-            symbol,
-            style: const TextStyle(
-              color: Color(0xFF59A4FF),
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
+    return ShakeFeedbackWidget(
+      controller: _amountShakeController,
+      child: AnimatedBuilder(
+        animation: _amountShakeController,
+        builder: (context, child) => Container(
+          height: 49,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: inputBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _amountShakeController.isError ? const Color(0xFFEF4444) : border,
+              width: _amountShakeController.isError ? 1.6 : 1.0,
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: _amount,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.done,
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
-              onSubmitted: (_) => FocusScope.of(context).unfocus(),
-              onChanged: (_) => setState(() {}),
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-              decoration: const InputDecoration(
-                hintText: '0.00',
-                hintStyle: TextStyle(color: Color(0xFF61718C)),
-                border: InputBorder.none,
-                isDense: true,
+          child: child,
+        ),
+        child: Row(
+          children: [
+            Text(
+              symbol,
+              style: const TextStyle(
+                color: Color(0xFF59A4FF),
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ),
-          if (suffix != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-              decoration: BoxDecoration(
-                color: suffixBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                suffix,
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _amount,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.done,
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                onChanged: (_) {
+                  _amountShakeController.clearError();
+                  setState(() {});
+                },
                 style: TextStyle(
                   color: textPrimary,
-                  fontSize: 9,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
+                ),
+                decoration: const InputDecoration(
+                  hintText: '0.00',
+                  hintStyle: TextStyle(color: Color(0xFF61718C)),
+                  border: InputBorder.none,
+                  isDense: true,
                 ),
               ),
             ),
-        ],
+            if (suffix != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: suffixBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  suffix,
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -2148,28 +2163,32 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final normalizedAmount = _amount.text.trim().replaceAll(',', '');
     final parsedAmount = double.tryParse(normalizedAmount);
     if (parsedAmount == null || !parsedAmount.isFinite || parsedAmount <= 0) {
-      showAppMessage('Enter a valid amount greater than zero.');
+      _amountShakeController.shake();
+      showAppMessage('Enter a valid amount greater than zero.', type: AppFeedbackType.error);
       return;
     }
     if (withdrawal && parsedAmount < 10) {
-      showAppMessage('Enter a withdrawal amount of at least \$10.');
+      _amountShakeController.shake();
+      showAppMessage('Enter a withdrawal amount of at least \$10.', type: AppFeedbackType.error);
       return;
     }
 
     if (!withdrawal && _method != 2 && _usdInrRate <= 0) {
-      showAppMessage('The USD to INR exchange rate is unavailable. Please try again shortly.');
+      showAppMessage('The USD to INR exchange rate is unavailable. Please try again shortly.', type: AppFeedbackType.warning);
       return;
     }
 
     if (withdrawal) {
       if ((_payout == 0 && !_hasBankDestination) || (_payout == 1 && !_hasCryptoDestination)) {
-        showAppMessage('Select a saved payout method from Profile → Payment Methods.');
+        showAppMessage('Select a saved payout method from Profile → Payment Methods.', type: AppFeedbackType.warning);
         return;
       }
       final available = _activeTradingAccount['available'] as double;
       if (parsedAmount > available) {
+        _amountShakeController.shake();
         showAppMessage(
           'Amount exceeds available withdrawable balance of \$${available.toStringAsFixed(2)}.',
+          type: AppFeedbackType.error,
         );
         return;
       }

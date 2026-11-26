@@ -13,6 +13,7 @@ import 'services/auth_api.dart';
 export 'app_haptics.dart';
 export 'widgets/app_copy_button.dart';
 export 'widgets/app_skeletonizer.dart';
+export 'widgets/shake_feedback.dart';
 
 final GlobalKey<ScaffoldMessengerState> appScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();

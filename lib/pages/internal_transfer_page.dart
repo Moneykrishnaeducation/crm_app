@@ -48,6 +48,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
   late String _source;
   late String _destination;
   final _amountController = TextEditingController();
+  final _transferShakeController = ShakeController();
   bool _isProcessing = false;
 
   static double _parseBalance(String balanceStr) {
@@ -153,6 +154,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
 
   @override
   void dispose() {
+    _transferShakeController.dispose();
     _amountController.dispose();
     super.dispose();
   }
@@ -546,65 +548,76 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                           const SizedBox(height: 12),
 
                           // Big Input Field
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF071941).withValues(alpha: .6)
-                                  : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: _parsedAmount > _availableBalance
-                                    ? const Color(0xFFEF4444)
-                                    : (_parsedAmount > 0
-                                        ? brandPrimary
-                                        : (isDark ? Colors.white.withValues(alpha: .12) : const Color(0xFFCBD5E1))),
-                                width: _parsedAmount > 0 ? 1.5 : 1,
+                          ShakeFeedbackWidget(
+                            controller: _transferShakeController,
+                            child: AnimatedBuilder(
+                              animation: _transferShakeController,
+                              builder: (context, child) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF071941).withValues(alpha: .6)
+                                      : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: (_transferShakeController.isError || _parsedAmount > _availableBalance)
+                                        ? const Color(0xFFEF4444)
+                                        : (_parsedAmount > 0
+                                            ? brandPrimary
+                                            : (isDark ? Colors.white.withValues(alpha: .12) : const Color(0xFFCBD5E1))),
+                                    width: (_transferShakeController.isError || _parsedAmount > 0) ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: child,
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  r'$',
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    color: brandPrimary,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _amountController,
-                                    onChanged: (_) => setState(() {}),
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    style: theme.textTheme.headlineMedium?.copyWith(
+                              child: Row(
+                                children: [
+                                  Text(
+                                    r'$',
+                                    style: TextStyle(
+                                      fontSize: 26,
                                       fontWeight: FontWeight.w900,
-                                      letterSpacing: -.5,
+                                      color: brandPrimary,
                                     ),
-                                    decoration: InputDecoration(
-                                      hintText: '0.00',
-                                      hintStyle: theme.textTheme.headlineMedium?.copyWith(
-                                        color: muted.withValues(alpha: .35),
-                                        fontWeight: FontWeight.w700,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _amountController,
+                                      onChanged: (_) {
+                                        _transferShakeController.clearError();
+                                        setState(() {});
+                                      },
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      style: theme.textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -.5,
                                       ),
-                                      border: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                      decoration: InputDecoration(
+                                        hintText: '0.00',
+                                        hintStyle: theme.textTheme.headlineMedium?.copyWith(
+                                          color: muted.withValues(alpha: .35),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                if (_amountController.text.isNotEmpty)
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.x, size: 18),
-                                    color: muted,
-                                    tooltip: 'Clear',
-                                    onPressed: () {
-                                      _amountController.clear();
-                                      setState(() {});
-                                    },
-                                  ),
-                              ],
+                                  if (_amountController.text.isNotEmpty)
+                                    IconButton(
+                                      icon: const Icon(LucideIcons.x, size: 18),
+                                      color: muted,
+                                      tooltip: 'Clear',
+                                      onPressed: () {
+                                        _transferShakeController.clearError();
+                                        _amountController.clear();
+                                        setState(() {});
+                                      },
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
 
@@ -737,7 +750,22 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
                     SizedBox(
                       height: 52,
                       child: FilledButton(
-                        onPressed: _canSubmit ? _showConfirmationSheet : null,
+                        onPressed: _isProcessing
+                            ? null
+                            : () {
+                                if (_canSubmit) {
+                                  _showConfirmationSheet();
+                                } else {
+                                  _transferShakeController.shake();
+                                  if (_source == _destination) {
+                                    showAppMessage('Source and destination accounts must be different.', type: AppFeedbackType.error);
+                                  } else if (_parsedAmount > _availableBalance) {
+                                    showAppMessage('Transfer amount exceeds available balance.', type: AppFeedbackType.error);
+                                  } else if (_parsedAmount <= 0) {
+                                    showAppMessage('Enter a transfer amount greater than zero.', type: AppFeedbackType.error);
+                                  }
+                                }
+                              },
                         style: FilledButton.styleFrom(
                           backgroundColor: brandPrimary,
                           foregroundColor: Colors.white,
@@ -1425,6 +1453,7 @@ class _BrokerInternalTransferPageState extends State<BrokerInternalTransferPage>
       _showSuccessReceipt(record);
     } catch (error) {
       if (!mounted) return;
+      _transferShakeController.shake();
       setState(() => _isProcessing = false);
 
       final message = error is AuthApiException

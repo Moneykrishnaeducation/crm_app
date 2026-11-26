@@ -1,6 +1,7 @@
 import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/services/auth_api.dart';
+import 'package:crm_app/widgets/shake_feedback.dart';
 import 'package:flutter/material.dart';
 
 typedef PammWithdrawalEligibility = ({
@@ -156,12 +157,14 @@ class _PammWithdrawSheet extends StatefulWidget {
 
 class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
   final _amount = TextEditingController();
+  final _shakeController = ShakeController();
   late String _method = widget.eligibility.hasCrypto ? 'usdt' : 'bank';
   bool _submitting = false;
   String? _errorMessage;
 
   @override
   void dispose() {
+    _shakeController.dispose();
     _amount.dispose();
     super.dispose();
   }
@@ -170,14 +173,14 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
     FocusScope.of(context).unfocus();
     final value = double.tryParse(_amount.text.trim().replaceAll(',', ''));
     if (value == null || !value.isFinite || value <= 0) {
-      AppHaptics.lightImpact();
+      _shakeController.shake();
       setState(
         () => _errorMessage = 'Enter a valid amount greater than zero.',
       );
       return;
     }
     if (value > widget.availableBalance) {
-      AppHaptics.lightImpact();
+      _shakeController.shake();
       setState(
         () => _errorMessage = 'Amount exceeds your available balance.',
       );
@@ -198,7 +201,7 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
-      AppHaptics.lightImpact();
+      _shakeController.shake();
       setState(() {
         _submitting = false;
         _errorMessage = error is AuthApiException
@@ -376,29 +379,57 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: _amount,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        onChanged: (_) => setState(() => _errorMessage = null),
-                        style: TextStyle(
-                          color: text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: '0.00',
-                          prefixText: r'$ ',
-                          filled: true,
-                          fillColor: surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: border),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: border),
+                      ShakeFeedbackWidget(
+                        controller: _shakeController,
+                        child: AnimatedBuilder(
+                          animation: _shakeController,
+                          builder: (context, child) => TextField(
+                            controller: _amount,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            onChanged: (_) {
+                              _shakeController.clearError();
+                              setState(() => _errorMessage = null);
+                            },
+                            style: TextStyle(
+                              color: text,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '0.00',
+                              prefixText: r'$ ',
+                              filled: true,
+                              fillColor: surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: (_shakeController.isError || _errorMessage != null)
+                                      ? const Color(0xFFEF4444)
+                                      : border,
+                                  width: (_shakeController.isError || _errorMessage != null) ? 1.6 : 1.0,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: (_shakeController.isError || _errorMessage != null)
+                                      ? const Color(0xFFEF4444)
+                                      : border,
+                                  width: (_shakeController.isError || _errorMessage != null) ? 1.6 : 1.0,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: (_shakeController.isError || _errorMessage != null)
+                                      ? const Color(0xFFEF4444)
+                                      : Theme.of(context).colorScheme.primary,
+                                  width: 1.6,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -423,6 +454,7 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                                 AppHaptics.selectionClick();
                                 FocusScope.of(context).unfocus();
                                 setState(() {
+                                  _shakeController.clearError();
                                   _amount.text = presetText;
                                   _errorMessage = null;
                                 });

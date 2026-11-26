@@ -1486,6 +1486,20 @@ class AuthApi {
     body: {'leverage': leverage},
   );
 
+  /// Fetch the authenticated manager's MAM profit-share wallet summary.
+  Future<Map<String, dynamic>> getMamProfitSummary() =>
+      _request('GET', 'mam/profit/summary/');
+
+  /// Trigger settlement for a MAM master account owned by the current user.
+  Future<Map<String, dynamic>> triggerMamProfitSettlement({
+    required String mamAccountId,
+  }) =>
+      _request(
+        'POST',
+        'mam/profit/settlements/trigger/',
+        body: {'mam_account_id': mamAccountId},
+      );
+
   /// Fetch non-demo accounts (for internal transfer)
   Future<Map<String, dynamic>> getNonDemoAccounts({bool fresh = false}) =>
       _request('GET', 'non-demo-accounts/${fresh ? '?fresh=true' : ''}');

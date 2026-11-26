@@ -627,7 +627,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         Widget investorCard(Map<String, dynamic> investor, int index) {
           final accountId = field(investor, ['account_id', 'investor_account_id', 'login']);
           final name = field(investor, ['account_name', 'username', 'name'],
-              fallback: 'Investor \${index + 1}');
+              fallback: 'Investor ${index + 1}');
           final email = field(investor, ['email', 'user_email']);
           final balance = number(investor, ['balance']);
           final equity = number(investor, ['equity', 'balance']);
@@ -688,7 +688,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   Expanded(child: _investorMetric(c, 'EQUITY', money(equity))),
                   const SizedBox(width: 8),
                   Expanded(child: _investorMetric(c, 'FLOATING P/L',
-                    '\${profit >= 0 ? '+' : '-'}\$ \${profit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
+                    '${profit >= 0 ? '+' : '-'}\$ ${profit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
                     valueColor: profit >= 0 ? c.green : c.red)),
                 ]),
                 const SizedBox(height: 10),
@@ -723,7 +723,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 Text('Investor Pool & Allocations',
                   style: GoogleFonts.inter(color: c.text, fontSize: 17, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 3),
-                Text('Master #\${_master.login} · Connected investor account details',
+                Text('Master #${_master.login} · Connected investor account details',
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: c.muted, fontSize: 11)),
               ])),
@@ -775,7 +775,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       borderRadius: BorderRadius.circular(12), border: Border.all(color: c.subBorder)),
                     child: Column(children: [
                       Row(children: [
-                        Expanded(child: _investorMetric(c, 'TOTAL INVESTORS', '\${investors.length}')),
+                        Expanded(child: _investorMetric(c, 'TOTAL INVESTORS', '${investors.length}')),
                         Expanded(child: _investorMetric(c, 'ACTIVE', '$activeCount')),
                       ]),
                       const SizedBox(height: 10),
@@ -786,7 +786,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       const SizedBox(height: 10),
                       Row(children: [
                         Expanded(child: _investorMetric(c, 'AGGREGATE FLOATING P/L',
-                          '\${totalProfit >= 0 ? '+' : '-'}\$ \${totalProfit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
+                          '${totalProfit >= 0 ? '+' : '-'}\$ ${totalProfit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
                           valueColor: totalProfit >= 0 ? c.green : c.red)),
                         Expanded(child: _investorMetric(c, 'ALLOCATION METHOD', _master.allocationMethod)),
                       ]),
@@ -798,7 +798,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       style: GoogleFonts.inter(color: c.muted, fontSize: 10,
                         fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                     const Spacer(),
-                    Text('\${investors.length} accounts',
+                    Text('${investors.length} accounts',
                       style: TextStyle(color: c.muted, fontSize: 10)),
                   ]),
                   const SizedBox(height: 8),

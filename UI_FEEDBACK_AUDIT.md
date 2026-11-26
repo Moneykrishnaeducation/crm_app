@@ -335,10 +335,10 @@ class AppActionButton extends StatelessWidget {
 - **Status:** **Completed**. Created [lib/widgets/app_copy_button.dart](file:///C:/crm_app/lib/widgets/app_copy_button.dart) supporting icon and outlined button variants with animated scale transitions to `LucideIcons.check` and emerald feedback (`#10B981`) for 1500ms + `AppHaptics.lightImpact()`. Deployed across Accounts, Funds, Profile, Referral Studio, Client Network Tree, Commission Ledger, and MAM Workspace.
 - **Impact:** Eliminates static copy icons; provides immediate localized sensory reassurance across all 20+ copy touchpoints. Verified with dedicated test suite [test/app_copy_button_test.dart](file:///C:/crm_app/test/app_copy_button_test.dart).
 
-### Phase 3: Skeletonizer Expansion (Medium Term)
+### Phase 3: Skeletonizer Expansion (Status: COMPLETED ✅)
 - **Goal:** Build skeleton placeholder layouts for `accounts_page.dart`, `dashboard_page.dart`, and `mam_page.dart`.
-- **Impact:** Eliminates layout shift (CLS) and screen popping; unifies loading experience with PAMM and Partnership.
-- **Estimated Effort:** 4 hours.
+- **Status:** **Completed**. Created [lib/widgets/app_skeletonizer.dart](file:///C:/crm_app/lib/widgets/app_skeletonizer.dart) offering theme-aware shimmer loading. Deployed structured placeholder models in [lib/pages/accounts_page.dart](file:///C:/crm_app/lib/pages/accounts_page.dart), [lib/pages/broker_screens.dart](file:///C:/crm_app/lib/pages/broker_screens.dart) (open positions & trading performance curve), and [lib/pages/mam_page.dart](file:///C:/crm_app/lib/pages/mam_page.dart) (master nodes & available investor pools).
+- **Impact:** Eliminates cumulative layout shift (CLS), eliminates unconstrained spinners, and provides seamless visual placeholders. Verified with dedicated test suite [test/app_skeletonizer_test.dart](file:///C:/crm_app/test/app_skeletonizer_test.dart).
 
 ### Phase 4: Form Error Shake & Sensory Validation (Medium Term)
 - **Goal:** Equip financial dialogs (deposit, withdrawal, transfer) with input border pulse, shake animations, and `AppHaptics.heavyImpact()` on invalid inputs.
@@ -349,5 +349,5 @@ class AppActionButton extends StatelessWidget {
 
 ## Verification & Integrity
 - All files analyzed against static Dart analyzer (`flutter analyze`: 0 issues).
-- All unit and widget tests passing across existing test suites (`flutter test`: 16/16 tests passing).
+- All unit and widget tests passing across all test suites (`flutter test`: 21/21 tests passing).
 - Report generated in accordance with `AGENTS.md` multi-agent standards.

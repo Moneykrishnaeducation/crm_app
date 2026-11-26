@@ -29,6 +29,18 @@ class BrokerAccountsPage extends StatefulWidget {
 }
 
 class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
+  static final List<BrokerAccount> _skeletonAccounts = List.generate(
+    3,
+    (i) => BrokerAccount(
+      'Standard MT5',
+      '8000${i + 1}2',
+      '1:500',
+      r'$15,250.00',
+      r'$15,250.00',
+      'Live MT5',
+    ),
+  );
+
   final _searchController = TextEditingController();
   Timer? _searchDebounce;
   String _query = '';
@@ -126,33 +138,33 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (widget.isLoading && widget.accounts.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 44),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (widget.loadError != null && widget.accounts.isEmpty)
+                  if (widget.loadError != null && widget.accounts.isEmpty)
                     _AccountLoadError(message: widget.loadError!, onRetry: widget.onRetry)
-                  else if (filtered.isEmpty)
+                  else if (filtered.isEmpty && !widget.isLoading)
                     _AccountEmptyState(searching: _query.isNotEmpty, onClear: () { _searchDebounce?.cancel(); _searchController.clear(); setState(() => _query = ''); }),
                 ],
               ),
             ),
           ),
-          if (!widget.isLoading && widget.loadError == null && filtered.isNotEmpty)
+          if (widget.loadError == null && (filtered.isNotEmpty || (widget.isLoading && widget.accounts.isEmpty)))
             SliverPadding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, bottomNavPadding),
-              sliver: SliverList.builder(
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  final account = filtered[index];
-                  return _ReferenceAccountCard(
-                    account: account,
-                    isFavorite: widget.favoriteLogins.contains(account.login),
-                    onToggleFavorite: () => widget.onToggleFavorite(account.login),
-                    onTap: () => widget.onAccountSelected(account),
-                  );
-                },
+              sliver: SliverToBoxAdapter(
+                child: AppSkeletonizer(
+                  enabled: widget.isLoading && widget.accounts.isEmpty,
+                  child: Column(
+                    children: [
+                      for (final account in (widget.isLoading && widget.accounts.isEmpty ? _skeletonAccounts : filtered)) ...[
+                        _ReferenceAccountCard(
+                          account: account,
+                          isFavorite: widget.favoriteLogins.contains(account.login),
+                          onToggleFavorite: () => widget.onToggleFavorite(account.login),
+                          onTap: () => widget.onAccountSelected(account),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
         ],
@@ -2765,11 +2777,6 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
             child: Row(children: [tab('Overview'), tab('Trading Stats'), tab('History')]),
           ),
           const SizedBox(height: 13),
-          if (_detailsLoading)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 10),
-              child: LinearProgressIndicator(minHeight: 2),
-            ),
           if (_detailsError != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -2790,7 +2797,9 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               ),
             ),
           if (_tab == 'Overview') ...[
-            panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            AppSkeletonizer(
+              enabled: _detailsLoading,
+              child: panelCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Container(width: 34, height: 34, decoration: BoxDecoration(color: blue.withValues(alpha: .12), borderRadius: BorderRadius.circular(11)), child: const Icon(LucideIcons.chartNoAxesCombined, color: blue, size: 18)),
                 const SizedBox(width: 9),
@@ -2861,6 +2870,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
                 )));
               }).toList()),
             ])),
+            ),
             const SizedBox(height: 13),
             Builder(builder: (context) {
               final openProfit = _livePositions.fold<double>(

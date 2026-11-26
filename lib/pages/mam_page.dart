@@ -270,6 +270,46 @@ class MamPage extends StatefulWidget {
 }
 
 class MamPageState extends State<MamPage> {
+  static final List<MamMasterAccount> _skeletonMasters = List.generate(
+    2,
+    (i) => MamMasterAccount(
+      name: 'Alpha Quant Yield Fund ${i + 1}',
+      login: '1000${i + 1}',
+      profitShare: 20.0,
+      leverage: '1:500',
+      balance: 50000.0 * (i + 1),
+      status: 'Active',
+      risk: 'Medium',
+      payout: 'Bi-Weekly',
+      allocationMethod: 'Lot Proportional',
+      investorsCount: 14 + (i * 8),
+      totalAum: 125000.0 * (i + 1),
+      monthlyGain: 14.8,
+      server: 'VTIndex-Live',
+    ),
+  );
+
+  static final List<AvailableMamPool> _skeletonAvailablePools = List.generate(
+    3,
+    (i) => AvailableMamPool(
+      id: 'POOL_${i + 1}',
+      name: 'Global FX Growth Pool ${i + 1}',
+      traderHandle: '@pro_manager_${i + 1}',
+      winRate: 78.5,
+      monthlyRoi: 16.4,
+      maxDrawdown: 5.2,
+      copiersCount: 120 + (i * 45),
+      totalAum: 450000.0,
+      riskScore: '3',
+      performanceFee: 15.0,
+      minDeposit: 500.0,
+      pairs: const ['EURUSD', 'GBPUSD', 'XAUUSD'],
+      isVerified: true,
+      managerName: 'Alex Vance',
+      leverage: '1:500',
+    ),
+  );
+
   late int _tab;
 
   // Search & Filter controllers
@@ -814,10 +854,16 @@ class MamPageState extends State<MamPage> {
       _buildManagerSearchAndFilters(),
       const SizedBox(height: 12),
       if (_isLoadingMamAccounts && _masters.isEmpty)
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 28),
-          alignment: Alignment.center,
-          child: const CircularProgressIndicator(),
+        AppSkeletonizer(
+          enabled: true,
+          child: Column(
+            children: [
+              for (final master in _skeletonMasters) ...[
+                _buildMasterNodeCard(master),
+                const SizedBox(height: 10),
+              ],
+            ],
+          ),
         )
       else if (_mamAccountsError != null && _masters.isEmpty)
         Container(
@@ -2280,7 +2326,17 @@ class MamPageState extends State<MamPage> {
       _buildAvailableSearchAndFilters(),
       const SizedBox(height: 12),
       if (_availableLoading && _availablePools.isEmpty)
-        const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Center(child: CircularProgressIndicator()))
+        AppSkeletonizer(
+          enabled: true,
+          child: Column(
+            children: [
+              for (final manager in _skeletonAvailablePools) ...[
+                _buildAvailablePoolCard(manager),
+                const SizedBox(height: 10),
+              ],
+            ],
+          ),
+        )
       else if (_availableError != null)
         _buildAvailableError()
       else if (filtered.isEmpty)

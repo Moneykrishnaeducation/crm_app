@@ -260,10 +260,13 @@ class _DashboardPositionSummary extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Open positions', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
-        if (loading) const LinearProgressIndicator(minHeight: 2) else Row(children: [
-          Expanded(child: _PositionStat(label: 'Active trades', value: '$count', icon: LucideIcons.layers)),
-          Expanded(child: _PositionStat(label: 'Open P&L', value: '${pnl >= 0 ? '+' : '-'}$money', icon: LucideIcons.trendingUp, positive: pnl >= 0)),
-        ]),
+        AppSkeletonizer(
+          enabled: loading,
+          child: Row(children: [
+            Expanded(child: _PositionStat(label: 'Active trades', value: loading ? '3' : '$count', icon: LucideIcons.layers)),
+            Expanded(child: _PositionStat(label: 'Open P&L', value: loading ? r'+$142.50' : '${pnl >= 0 ? '+' : '-'}$money', icon: LucideIcons.trendingUp, positive: pnl >= 0)),
+          ]),
+        ),
         if (error != null) Padding(padding: const EdgeInsets.only(top: 7), child: Text(error!, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10))),
       ]),
     );
@@ -304,7 +307,23 @@ class _DashboardPerformanceCard extends StatelessWidget {
         const SizedBox(height: 4),
         Text('Cumulative closed-trade P&L from account history', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10)),
         const SizedBox(height: 12),
-        if (loading) const LinearProgressIndicator(minHeight: 2)
+        if (loading)
+          AppSkeletonizer(
+            enabled: true,
+            child: SizedBox(
+              height: 112,
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: _DashboardPortfolioLinePainter(
+                    values: const [100.0, 150.0, 120.0, 180.0, 220.0],
+                    lineColor: color,
+                    fillColor: color.withValues(alpha: .10),
+                  ),
+                ),
+              ),
+            ),
+          )
         else if (values.length < 2) Text(error ?? 'Not enough closed-trade history to draw a trend yet.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11))
         else SizedBox(height: 112, child: RepaintBoundary(child: CustomPaint(size: Size.infinite, painter: _DashboardPortfolioLinePainter(values: values, lineColor: color, fillColor: color.withValues(alpha: .10))))),
       ]),

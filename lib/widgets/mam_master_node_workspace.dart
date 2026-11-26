@@ -627,7 +627,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         Widget investorCard(Map<String, dynamic> investor, int index) {
           final accountId = field(investor, ['account_id', 'investor_account_id', 'login']);
           final name = field(investor, ['account_name', 'username', 'name'],
-              fallback: 'Investor ${index + 1}');
+              fallback: 'Investor \${index + 1}');
           final email = field(investor, ['email', 'user_email']);
           final balance = number(investor, ['balance']);
           final equity = number(investor, ['equity', 'balance']);
@@ -644,64 +644,87 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
             'allocation_percentage', 'allocation_percent', 'share_percentage',
             'profit_sharing_percentage'
           ]);
+          final isActive = status.toLowerCase().contains('active') ||
+              status.toLowerCase().contains('running') ||
+              status.toLowerCase() == 'enabled';
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(13),
+            margin: const EdgeInsets.only(bottom: 9),
             decoration: BoxDecoration(
               color: c.subCard,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: c.subBorder),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Container(width: 38, height: 38,
-                    decoration: BoxDecoration(color: c.greenLight, borderRadius: BorderRadius.circular(11)),
-                    child: Icon(LucideIcons.userRound, color: c.green, size: 18)),
-                  const SizedBox(width: 10),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 3),
-                    Text('MT5 Account #$accountId',
-                      style: GoogleFonts.inter(color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
-                  ])),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: status.toLowerCase().contains('active') ? c.greenLight : c.blueLight,
-                      borderRadius: BorderRadius.circular(20)),
-                    child: Text(status == '—' ? 'LINKED' : status.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        color: status.toLowerCase().contains('active') ? c.green : c.blue,
-                        fontSize: 9, fontWeight: FontWeight.w800)),
+            child: Theme(
+              data: Theme.of(ctx).copyWith(
+                dividerColor: Colors.transparent,
+                splashColor: c.blue.withValues(alpha: 0.05),
+                highlightColor: Colors.transparent,
+              ),
+              child: ExpansionTile(
+                key: PageStorageKey('mam-investor-$accountId'),
+                tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                initiallyExpanded: false,
+                leading: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: c.greenLight,
+                    borderRadius: BorderRadius.circular(11),
                   ),
-                ]),
-                const SizedBox(height: 10),
-                Container(height: 1, color: c.subBorder),
-                const SizedBox(height: 8),
-                Row(children: [
-                  Expanded(child: _investorMetric(c, 'BALANCE', money(balance))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _investorMetric(c, 'EQUITY', money(equity))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _investorMetric(c, 'FLOATING P/L',
-                    '${profit >= 0 ? '+' : '-'}\$ ${profit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
-                    valueColor: profit >= 0 ? c.green : c.red)),
-                ]),
-                const SizedBox(height: 10),
-                detailLine('Email', email),
-                detailLine('Credit', money(credit)),
-                detailLine('Leverage', leverage == '—' ? '—' : '1:$leverage'),
-                detailLine('Trading Group', group),
-                detailLine('MT5 Server', server),
-                detailLine('Currency', currency),
-                detailLine('Country', country),
-                detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
-                detailLine('Created', created),
-              ],
+                  child: Icon(LucideIcons.userRound, color: c.green, size: 18),
+                ),
+                title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Text('MT5 Account #$accountId',
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isActive ? c.greenLight : c.blueLight,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(status == '—' ? 'LINKED' : status.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          color: isActive ? c.green : c.blue,
+                          fontSize: 9, fontWeight: FontWeight.w800)),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.chevronDown, size: 16, color: c.muted),
+                  ],
+                ),
+                children: [
+                  Container(height: 1, color: c.subBorder),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: _investorMetric(c, 'BALANCE', money(balance))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _investorMetric(c, 'EQUITY', money(equity))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _investorMetric(c, 'FLOATING P/L',
+                      '\${profit >= 0 ? '+' : '-'}\\$\${profit.abs().toStringAsFixed(2)}',
+                      valueColor: profit >= 0 ? c.green : c.red)),
+                  ]),
+                  const SizedBox(height: 10),
+                  detailLine('Email', email),
+                  detailLine('Credit', money(credit)),
+                  detailLine('Leverage', leverage == '—' ? '—' : '1:$leverage'),
+                  detailLine('Trading Group', group),
+                  detailLine('MT5 Server', server),
+                  detailLine('Currency', currency),
+                  detailLine('Country', country),
+                  detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
+                  detailLine('Created', created),
+                ],
+              ),
             ),
           );
         }

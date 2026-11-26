@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../app_notifications.dart';
 import '../pages/funds_action_dialog.dart';
+import '../services/auth_api.dart';
 import 'pool_trades_modal.dart';
 
 // -----------------------------------------------------------------------------
@@ -576,194 +577,256 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   }
 
   void _openManageInvestorsSheet(MamWorkspaceColors c) {
+    final investorsFuture = AuthApi.instance.getMamInvestors(_master.login);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        final investors = [
-          {'id': 'INV-90214', 'equity': '\$18,400.00', 'share': '22.4%', 'status': 'Connected'},
-          {'id': 'INV-77182', 'equity': '\$12,500.00', 'share': '15.2%', 'status': 'Connected'},
-          {'id': 'INV-65419', 'equity': '\$9,800.00', 'share': '11.9%', 'status': 'Connected'},
-          {'id': 'INV-55102', 'equity': '\$6,200.00', 'share': '7.5%', 'status': 'Connected'},
-        ];
+        final screenHeight = MediaQuery.sizeOf(ctx).height;
+        String field(Map<String, dynamic> item, List<String> keys,
+            {String fallback = '—'}) {
+          for (final key in keys) {
+            final value = item[key];
+            if (value != null && value.toString().trim().isNotEmpty) {
+              return value.toString();
+            }
+          }
+          return fallback;
+        }
+
+        double number(Map<String, dynamic> item, List<String> keys) {
+          for (final key in keys) {
+            final value = item[key];
+            if (value is num) return value.toDouble();
+            final parsed = double.tryParse(value?.toString() ?? '');
+            if (parsed != null) return parsed;
+          }
+          return 0;
+        }
+
+        String money(double value) => '\$' + value.toStringAsFixed(2);
+
+        Widget detailLine(String label, String value) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 112, child: Text(label,
+                  style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w600))),
+                const SizedBox(width: 8),
+                Expanded(child: Text(value, textAlign: TextAlign.right,
+                  style: GoogleFonts.inter(color: c.text, fontSize: 11, fontWeight: FontWeight.w700))),
+              ],
+            ),
+          );
+        }
+
+        Widget investorCard(Map<String, dynamic> investor, int index) {
+          final accountId = field(investor, ['account_id', 'investor_account_id', 'login']);
+          final name = field(investor, ['account_name', 'username', 'name'],
+              fallback: 'Investor \${index + 1}');
+          final email = field(investor, ['email', 'user_email']);
+          final balance = number(investor, ['balance']);
+          final equity = number(investor, ['equity', 'balance']);
+          final credit = number(investor, ['credit']);
+          final profit = number(investor, ['profit', 'floating_profit']);
+          final status = field(investor, ['status', 'account_status', 'trading_status']);
+          final server = field(investor, ['server', 'mt5_server']);
+          final leverage = field(investor, ['leverage']);
+          final group = field(investor, ['group_name', 'group', 'trade_group']);
+          final currency = field(investor, ['currency'], fallback: 'USD');
+          final country = field(investor, ['country']);
+          final created = field(investor, ['created_at', 'created', 'reg_date']);
+          final allocation = field(investor, [
+            'allocation_percentage', 'allocation_percent', 'share_percentage',
+            'profit_sharing_percentage'
+          ]);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: c.subCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(width: 38, height: 38,
+                    decoration: BoxDecoration(color: c.greenLight, borderRadius: BorderRadius.circular(11)),
+                    child: Icon(LucideIcons.userRound, color: c.green, size: 18)),
+                  const SizedBox(width: 10),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 3),
+                    Text('MT5 Account #$accountId',
+                      style: GoogleFonts.inter(color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
+                  ])),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: status.toLowerCase().contains('active') ? c.greenLight : c.blueLight,
+                      borderRadius: BorderRadius.circular(20)),
+                    child: Text(status == '—' ? 'LINKED' : status.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        color: status.toLowerCase().contains('active') ? c.green : c.blue,
+                        fontSize: 9, fontWeight: FontWeight.w800)),
+                  ),
+                ]),
+                const SizedBox(height: 10),
+                Container(height: 1, color: c.subBorder),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(child: _investorMetric(c, 'BALANCE', money(balance))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _investorMetric(c, 'EQUITY', money(equity))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _investorMetric(c, 'FLOATING P/L',
+                    '\${profit >= 0 ? '+' : '-'}\$ \${profit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
+                    valueColor: profit >= 0 ? c.green : c.red)),
+                ]),
+                const SizedBox(height: 10),
+                detailLine('Email', email),
+                detailLine('Credit', money(credit)),
+                detailLine('Leverage', leverage == '—' ? '—' : '1:$leverage'),
+                detailLine('Trading Group', group),
+                detailLine('MT5 Server', server),
+                detailLine('Currency', currency),
+                detailLine('Country', country),
+                detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
+                detailLine('Created', created),
+              ],
+            ),
+          );
+        }
 
         return Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          height: screenHeight * 0.92,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           decoration: BoxDecoration(
             color: c.card,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border.all(color: c.border),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.muted.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Investor Sub-Accounts',
-                        style: GoogleFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: c.text,
-                        ),
-                      ),
-                      Text(
-                        'Connected Capital & Copy Multiplexers',
-                        style: TextStyle(fontSize: 12, color: c.muted),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(LucideIcons.x, color: c.muted, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: c.muted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Investor Pool & Allocations',
+                  style: GoogleFonts.inter(color: c.text, fontSize: 17, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 3),
+                Text('Master #\${_master.login} · Connected investor account details',
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: c.muted, fontSize: 11)),
+              ])),
+              IconButton(onPressed: () => Navigator.pop(ctx),
+                icon: Icon(LucideIcons.x, color: c.muted, size: 20),
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44)),
+            ]),
+            const SizedBox(height: 10),
+            Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: investorsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(LucideIcons.alertCircle, color: c.red, size: 28),
+                    const SizedBox(height: 8),
+                    Text('Could not load investor accounts',
+                      style: TextStyle(color: c.text, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(snapshot.error.toString(), textAlign: TextAlign.center,
+                      style: TextStyle(color: c.muted, fontSize: 10)),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () { Navigator.pop(ctx); _openManageInvestorsSheet(c); },
+                      icon: const Icon(LucideIcons.refreshCw, size: 14),
+                      label: const Text('Retry')),
+                  ]));
+                }
 
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: c.subCard,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: c.subBorder),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Total Pool Equity', style: TextStyle(color: c.muted, fontSize: 11)),
-                        Text(
-                          '\$${_master.totalAum > 0 ? _master.totalAum.toStringAsFixed(2) : "482,500.00"}',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('Allocation Method', style: TextStyle(color: c.muted, fontSize: 11)),
-                        Text(
-                          _master.allocationMethod,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: c.blue,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
+                final investors = snapshot.data ?? const <Map<String, dynamic>>[];
+                final totalBalance = investors.fold<double>(0,
+                  (sum, item) => sum + number(item, ['balance']));
+                final totalEquity = investors.fold<double>(0,
+                  (sum, item) => sum + number(item, ['equity', 'balance']));
+                final totalProfit = investors.fold<double>(0,
+                  (sum, item) => sum + number(item, ['profit', 'floating_profit']));
+                final activeCount = investors.where((item) {
+                  final state = field(item, ['status', 'account_status', 'trading_status'],
+                    fallback: 'Active').toLowerCase();
+                  return state.contains('active') || state == 'enabled';
+                }).length;
 
-              Text(
-                'CONNECTED SUB-ACCOUNTS',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: c.muted,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              ...investors.map((inv) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: c.subCard,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: c.subBorder),
+                return Column(children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: c.subCard,
+                      borderRadius: BorderRadius.circular(12), border: Border.all(color: c.subBorder)),
+                    child: Column(children: [
+                      Row(children: [
+                        Expanded(child: _investorMetric(c, 'TOTAL INVESTORS', '\${investors.length}')),
+                        Expanded(child: _investorMetric(c, 'ACTIVE', '$activeCount')),
+                      ]),
+                      const SizedBox(height: 10),
+                      Row(children: [
+                        Expanded(child: _investorMetric(c, 'POOLED BALANCE', money(totalBalance))),
+                        Expanded(child: _investorMetric(c, 'TOTAL EQUITY', money(totalEquity))),
+                      ]),
+                      const SizedBox(height: 10),
+                      Row(children: [
+                        Expanded(child: _investorMetric(c, 'AGGREGATE FLOATING P/L',
+                          '\${totalProfit >= 0 ? '+' : '-'}\$ \${totalProfit.abs().toStringAsFixed(2)}'.replaceAll('\$ ', '\$'),
+                          valueColor: totalProfit >= 0 ? c.green : c.red)),
+                        Expanded(child: _investorMetric(c, 'ALLOCATION METHOD', _master.allocationMethod)),
+                      ]),
+                    ]),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(LucideIcons.userCheck, size: 16, color: c.green),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                inv['id']!,
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                  color: c.text,
-                                ),
-                              ),
-                              Text(
-                                'Allocation: ${inv['share']}',
-                                style: TextStyle(fontSize: 11, color: c.muted),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Text(
-                        inv['equity']!,
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: c.text,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    showAppMessage('Investor invite link generated & copied to clipboard');
-                  },
-                  icon: const Icon(LucideIcons.userPlus, size: 16),
-                  label: const Text('Invite / Connect New Investor', style: TextStyle(fontWeight: FontWeight.w700)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: c.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Text('CONNECTED INVESTOR ACCOUNTS',
+                      style: GoogleFonts.inter(color: c.muted, fontSize: 10,
+                        fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    const Spacer(),
+                    Text('\${investors.length} accounts',
+                      style: TextStyle(color: c.muted, fontSize: 10)),
+                  ]),
+                  const SizedBox(height: 8),
+                  Expanded(child: investors.isEmpty
+                    ? Center(child: Text('No investor accounts are connected to this MAM node.',
+                        textAlign: TextAlign.center, style: TextStyle(color: c.muted, fontSize: 12)))
+                    : ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: investors.length,
+                        itemBuilder: (context, index) => investorCard(investors[index], index))),
+                ]);
+              },
+            )),
+          ]),
         );
       },
     );
+  }
+
+  Widget _investorMetric(MamWorkspaceColors c, String label, String value,
+      {Color? valueColor}) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: c.muted, fontSize: 9, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 3),
+      Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.inter(color: valueColor ?? c.text, fontSize: 12, fontWeight: FontWeight.w800)),
+    ]);
   }
 
   void _triggerSettlementDialog(MamWorkspaceColors c) {

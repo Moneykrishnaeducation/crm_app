@@ -1245,11 +1245,17 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                             height: 36,
                             child: OutlinedButton.icon(
                               onPressed: _statusUpdating ? null : _toggleMasterStatus,
-                              icon: Icon(
-                                isActive ? LucideIcons.pause : LucideIcons.play,
-                                size: 13,
-                                color: isActive ? c.gold : c.green,
-                              ),
+                              icon: _statusUpdating
+                                  ? const SizedBox(
+                                      width: 13,
+                                      height: 13,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : Icon(
+                                      isActive ? LucideIcons.pause : LucideIcons.play,
+                                      size: 13,
+                                      color: isActive ? c.gold : c.green,
+                                    ),
                               label: Text(
                                 _statusUpdating ? 'Updating…' : (isActive ? 'Pause' : 'Resume'),
                                 style: GoogleFonts.inter(
@@ -1540,36 +1546,45 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                         valueColor: c.text,
                       ),
                     ),
-                    Container(width: 1, height: 32, color: c.subBorder),
-                    Expanded(
-                      child: _metricCell(
-                        'RISK PROFILE',
-                        _master.risk,
-                        valueColor: c.blue,
+                    if (_master.risk.trim().isNotEmpty) ...[
+                      Container(width: 1, height: 32, color: c.subBorder),
+                      Expanded(
+                        child: _metricCell(
+                          'RISK PROFILE',
+                          _master.risk,
+                          valueColor: c.blue,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                Divider(height: 16, thickness: 1, color: c.subBorder),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _metricCell(
-                        'LEVERAGE',
-                        _master.leverage,
-                        valueColor: c.text,
-                      ),
-                    ),
-                    Container(width: 1, height: 32, color: c.subBorder),
-                    Expanded(
-                      child: _metricCell(
-                        'PAYOUT FREQUENCY',
-                        _master.payout,
-                        valueColor: c.text,
-                      ),
-                    ),
-                  ],
-                ),
+                if (_master.leverage.trim().isNotEmpty ||
+                    _master.payout.trim().isNotEmpty) ...[
+                  Divider(height: 16, thickness: 1, color: c.subBorder),
+                  Row(
+                    children: [
+                      if (_master.leverage.trim().isNotEmpty)
+                        Expanded(
+                          child: _metricCell(
+                            'LEVERAGE',
+                            _master.leverage,
+                            valueColor: c.text,
+                          ),
+                        ),
+                      if (_master.leverage.trim().isNotEmpty &&
+                          _master.payout.trim().isNotEmpty)
+                        Container(width: 1, height: 32, color: c.subBorder),
+                      if (_master.payout.trim().isNotEmpty)
+                        Expanded(
+                          child: _metricCell(
+                            'PAYOUT FREQUENCY',
+                            _master.payout,
+                            valueColor: c.text,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

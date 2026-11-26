@@ -2234,7 +2234,7 @@ class MamPageState extends State<MamPage> {
           pairs: const [],
           isVerified: false,
           managerName: _availableText(item['manager_name']),
-          leverage: leverageValue.isEmpty ? '' : (leverageValue.startsWith('1:') ? leverageValue : '1:' + leverageValue),
+          leverage: leverageValue.isEmpty ? '' : (leverageValue.startsWith('1:') ? leverageValue : '1:$leverageValue'),
           balance: _availableNumber(item['current_balance'] ?? item['balance']),
           equity: _availableNumber(item['current_equity'] ?? item['equity']),
           accountAge: _availableText(item['account_age'] ?? item['accountAge']),
@@ -2565,9 +2565,6 @@ class MamPageState extends State<MamPage> {
     );
   }
 
-  void _openInvestModal(AvailableMamPool pool) {
-    _openManagerProfileModal(pool);
-  }
 }
 
 // -----------------------------------------------------------------------------

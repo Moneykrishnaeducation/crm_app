@@ -103,7 +103,9 @@ class PartnershipDashboardView extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFD97706).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD97706).withValues(alpha: 0.4)),
+        border: Border.all(
+          color: const Color(0xFFD97706).withValues(alpha: 0.4),
+        ),
       ),
       child: Row(
         children: [
@@ -112,7 +114,11 @@ class PartnershipDashboardView extends StatelessWidget {
           const Expanded(
             child: Text(
               'Demo Preview Mode • Real-time metrics will activate once your IB is approved.',
-              style: TextStyle(color: Color(0xFFF59E0B), fontSize: 11.5, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: Color(0xFFF59E0B),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           InkWell(
@@ -128,7 +134,11 @@ class PartnershipDashboardView extends StatelessWidget {
               ),
               child: const Text(
                 'Exit Demo',
-                style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ),
@@ -140,23 +150,17 @@ class PartnershipDashboardView extends StatelessWidget {
   Widget _buildTopBar(PartnershipColors colors) {
     return Row(
       children: [
-        if (onBack != null)
-          IconButton(
-            onPressed: onBack,
-            icon: Icon(LucideIcons.arrowLeft, color: colors.text),
-          )
-        else
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [colors.blue, const Color(0xFF1E3A8A)],
-              ),
-              borderRadius: BorderRadius.circular(12),
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [colors.blue, const Color(0xFF1E3A8A)],
             ),
-            child: const Icon(LucideIcons.network, color: Colors.white, size: 20),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: const Icon(LucideIcons.network, color: Colors.white, size: 20),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -188,7 +192,10 @@ class PartnershipDashboardView extends StatelessWidget {
               ? SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: colors.blue),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colors.blue,
+                  ),
                 )
               : Icon(LucideIcons.refreshCw, color: colors.muted, size: 18),
         ),
@@ -202,7 +209,11 @@ class PartnershipDashboardView extends StatelessWidget {
     final total = dashboardData.totalClients;
     final sub = math.max(0, total - direct);
     final velocityRatio = total > 0
-        ? math.min(1.0, (dashboardData.currentMonthVolume / math.max(1.0, dashboardData.totalVolume)))
+        ? math.min(
+            1.0,
+            (dashboardData.currentMonthVolume /
+                math.max(1.0, dashboardData.totalVolume)),
+          )
         : 0.5;
 
     return Container(
@@ -217,7 +228,11 @@ class PartnershipDashboardView extends StatelessWidget {
               : const [Color(0xFF0A255E), Color(0xFF103D88), Color(0xFF1652B0)],
         ),
         boxShadow: const [
-          BoxShadow(color: Color(0x2E040F36), blurRadius: 22, offset: Offset(0, 10)),
+          BoxShadow(
+            color: Color(0x2E040F36),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
@@ -239,7 +254,8 @@ class PartnershipDashboardView extends StatelessWidget {
                       showReferralQrModal(context, referralLinks[0]);
                     } else if (dashboardData.referralLink.isNotEmpty) {
                       final uri = Uri.tryParse(dashboardData.referralLink);
-                      final referralCode = uri?.queryParameters['ref'] ??
+                      final referralCode =
+                          uri?.queryParameters['ref'] ??
                           uri?.queryParameters['code'] ??
                           '';
                       showReferralQrModal(
@@ -259,32 +275,58 @@ class PartnershipDashboardView extends StatelessWidget {
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   icon: const Icon(LucideIcons.qrCode, size: 13),
-                  label: const Text('Instant QR', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
+                  label: const Text(
+                    'Instant QR',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
                 FilledButton.icon(
                   onPressed: () async {
                     AppHaptics.lightImpact();
                     await Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+                      MaterialPageRoute<void>(
+                        builder: (_) => const BrokerCommissionWithdrawalPage(),
+                      ),
                     );
                     onIbChanged();
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   icon: const Icon(LucideIcons.wallet, size: 13),
-                  label: const Text('Withdraw', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
+                  label: const Text(
+                    'Withdraw',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -293,7 +335,11 @@ class PartnershipDashboardView extends StatelessWidget {
           // Available Balance display
           Text(
             'Liquid Available Balance',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11.5, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 2),
           Row(
@@ -310,7 +356,14 @@ class PartnershipDashboardView extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              const Text('USD', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.w800)),
+              const Text(
+                'USD',
+                style: TextStyle(
+                  color: Color(0xFF38BDF8),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -325,9 +378,24 @@ class PartnershipDashboardView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: _heroStatCol('Month Earnings', '\$${dashboardData.currentMonthEarnings.toStringAsFixed(2)}')),
-                Expanded(child: _heroStatCol('Total Payouts', '\$${dashboardData.totalWithdrawals.toStringAsFixed(2)}')),
-                Expanded(child: _heroStatCol('Network Clients', '${dashboardData.totalClients} ($direct Direct)')),
+                Expanded(
+                  child: _heroStatCol(
+                    'Month Earnings',
+                    '\$${dashboardData.currentMonthEarnings.toStringAsFixed(2)}',
+                  ),
+                ),
+                Expanded(
+                  child: _heroStatCol(
+                    'Total Payouts',
+                    '\$${dashboardData.totalWithdrawals.toStringAsFixed(2)}',
+                  ),
+                ),
+                Expanded(
+                  child: _heroStatCol(
+                    'Network Clients',
+                    '${dashboardData.totalClients} ($direct Direct)',
+                  ),
+                ),
               ],
             ),
           ),
@@ -339,13 +407,21 @@ class PartnershipDashboardView extends StatelessWidget {
               Flexible(
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.zap, size: 14, color: Color(0xFFF5C438)),
+                    const Icon(
+                      LucideIcons.zap,
+                      size: 14,
+                      color: Color(0xFFF5C438),
+                    ),
                     const SizedBox(width: 5),
                     Flexible(
                       child: Text(
                         'Volume Velocity Meter',
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 11.5, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -358,7 +434,11 @@ class PartnershipDashboardView extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
-                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    color: Color(0xFF38BDF8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -370,7 +450,9 @@ class PartnershipDashboardView extends StatelessWidget {
               value: velocityRatio,
               minHeight: 6,
               backgroundColor: Colors.white.withValues(alpha: 0.15),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF38BDF8),
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -382,7 +464,10 @@ class PartnershipDashboardView extends StatelessWidget {
                   'All-Time: ${dashboardData.totalVolume.toStringAsFixed(2)} Lots',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 10),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    fontSize: 10,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -392,7 +477,11 @@ class PartnershipDashboardView extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 10, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -409,13 +498,20 @@ class PartnershipDashboardView extends StatelessWidget {
         Text(
           label,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 10),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.65),
+            fontSize: 10,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
           value,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ],
     );
@@ -443,17 +539,47 @@ class PartnershipDashboardView extends StatelessWidget {
           mainAxisSpacing: 10,
           childAspectRatio: 2.1,
           children: [
-            _kpiCard(colors, 'Total Earnings', '\$${dashboardData.totalEarnings.toStringAsFixed(2)}', LucideIcons.coins, colors.gold),
-            _kpiCard(colors, 'Commission Balance', '\$${dashboardData.commissionBalance.toStringAsFixed(2)}', LucideIcons.wallet, colors.blue),
-            _kpiCard(colors, 'Total Clients', '${dashboardData.totalClients}', LucideIcons.users, colors.green),
-            _kpiCard(colors, 'Total Traded Volume', '${dashboardData.totalVolume.toStringAsFixed(2)} Lots', LucideIcons.activity, const Color(0xFF06B6D4)),
+            _kpiCard(
+              colors,
+              'Total Earnings',
+              '\$${dashboardData.totalEarnings.toStringAsFixed(2)}',
+              LucideIcons.coins,
+              colors.gold,
+            ),
+            _kpiCard(
+              colors,
+              'Commission Balance',
+              '\$${dashboardData.commissionBalance.toStringAsFixed(2)}',
+              LucideIcons.wallet,
+              colors.blue,
+            ),
+            _kpiCard(
+              colors,
+              'Total Clients',
+              '${dashboardData.totalClients}',
+              LucideIcons.users,
+              colors.green,
+            ),
+            _kpiCard(
+              colors,
+              'Total Traded Volume',
+              '${dashboardData.totalVolume.toStringAsFixed(2)} Lots',
+              LucideIcons.activity,
+              const Color(0xFF06B6D4),
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _kpiCard(PartnershipColors colors, String label, String value, IconData icon, Color accent) {
+  Widget _kpiCard(
+    PartnershipColors colors,
+    String label,
+    String value,
+    IconData icon,
+    Color accent,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -481,13 +607,21 @@ class PartnershipDashboardView extends StatelessWidget {
                 Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.muted, fontSize: 10, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: colors.muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.text, fontSize: 13.5, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    color: colors.text,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
             ),
@@ -497,7 +631,10 @@ class PartnershipDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildShortcutsSection(BuildContext context, PartnershipColors colors) {
+  Widget _buildShortcutsSection(
+    BuildContext context,
+    PartnershipColors colors,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -515,10 +652,13 @@ class PartnershipDashboardView extends StatelessWidget {
           colors: colors,
           icon: LucideIcons.users,
           label: 'Client Network Hierarchy',
-          subtitle: 'View multi-level downline tiers, accounts, and client details',
+          subtitle:
+              'View multi-level downline tiers, accounts, and client details',
           onTap: () async {
             await Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => const BrokerClientTreePage()),
+              MaterialPageRoute<void>(
+                builder: (_) => const BrokerClientTreePage(),
+              ),
             );
             onIbChanged();
           },
@@ -528,9 +668,12 @@ class PartnershipDashboardView extends StatelessWidget {
           colors: colors,
           icon: LucideIcons.creditCard,
           label: 'Commission Ledger & History',
-          subtitle: '${commissionTxns.isNotEmpty ? '${commissionTxns.length} recorded deals' : 'Complete trade deal records'}, volume, and generated commissions',
+          subtitle:
+              '${commissionTxns.isNotEmpty ? '${commissionTxns.length} recorded deals' : 'Complete trade deal records'}, volume, and generated commissions',
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const BrokerCommissionLedgerPage()),
+            MaterialPageRoute<void>(
+              builder: (_) => const BrokerCommissionLedgerPage(),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -541,7 +684,9 @@ class PartnershipDashboardView extends StatelessWidget {
           subtitle: 'Instant internal transfer of available commission to live MT5 accounts',
           onTap: () async {
             await Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => const BrokerCommissionWithdrawalPage()),
+              MaterialPageRoute<void>(
+                builder: (_) => const BrokerCommissionWithdrawalPage(),
+              ),
             );
             onIbChanged();
           },
@@ -551,9 +696,12 @@ class PartnershipDashboardView extends StatelessWidget {
           colors: colors,
           icon: LucideIcons.qrCode,
           label: 'Referral Link & QR Studio',
-          subtitle: 'Branded referral profiles, marketing links, and social sharing',
+          subtitle:
+              'Branded referral profiles, marketing links, and social sharing',
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const BrokerReferralStudioPage()),
+            MaterialPageRoute<void>(
+              builder: (_) => const BrokerReferralStudioPage(),
+            ),
           ),
         ),
       ],
@@ -591,9 +739,19 @@ class PartnershipDashboardView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: colors.text,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 1),
-                Text(subtitle, style: TextStyle(color: colors.muted, fontSize: 11)),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: colors.muted, fontSize: 11),
+                ),
               ],
             ),
           ),

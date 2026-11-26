@@ -864,19 +864,10 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Accrued Gross Profit', style: TextStyle(fontSize: 12, color: c.muted)),
-                        Text('\$810.00', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.text)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Profit Share (${_master.profitShare.toStringAsFixed(0)}%)',
-                            style: TextStyle(fontSize: 12, color: c.muted)),
+                        Text('Pending wallet balance', style: TextStyle(fontSize: 12, color: c.muted)),
                         Text(
-                          '+\$324.00',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.green),
+                          '\${_master.pendingWallet.toStringAsFixed(2)}',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.text),
                         ),
                       ],
                     ),
@@ -884,8 +875,9 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Cycle Status', style: TextStyle(fontSize: 12, color: c.muted)),
-                        Text('Ready to settle', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: c.blue)),
+                        Text('Master account', style: TextStyle(fontSize: 12, color: c.muted)),
+                        Text('#${_master.login}',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.text)),
                       ],
                     ),
                   ],
@@ -899,24 +891,37 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               child: Text('Cancel', style: TextStyle(color: c.muted)),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                setState(() {
-                  _master.totalSettled += 324.00;
-                  _master.tradesProcessed += 14;
-                  _master.pendingRelease = 0.00;
-                  _master.releasedPayout += 324.00;
-                });
-                _notifyUpdate();
-                showAppMessage(
-                  'Profit share settlement of \$324.00 successfully distributed and added to settled wallet!',
-                );
+              onPressed: _settlementInProgress ? null : () async {
+                setState(() => _settlementInProgress = true);
+                try {
+                  final response = await AuthApi.instance.triggerMamProfitSettlement(
+                    mamAccountId: _master.login,
+                  );
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  await _loadProfitSummary();
+                  showAppMessage(
+                    response['message']?.toString() ??
+                    response['detail']?.toString() ??
+                    'Settlement request completed. Wallet summary refreshed.',
+                  );
+                } catch (error) {
+                  if (ctx.mounted) {
+                    showAppMessage(error is AuthApiException
+                      ? error.message
+                      : 'Could not trigger MAM settlement.');
+                  }
+                } finally {
+                  if (mounted) setState(() => _settlementInProgress = false);
+                }
               },
               style: FilledButton.styleFrom(
                 backgroundColor: c.blue,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Execute Now', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: _settlementInProgress
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Execute Now', style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
         );
@@ -1872,7 +1877,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
               SizedBox(
                 height: 44,
                 child: FilledButton.icon(
-                  onPressed: () => _triggerSettlementDialog(c),
+                  onPressed: _settlementInProgress ? null : () => _triggerSettlementDialog(c),
                   icon: const Icon(LucideIcons.zap, size: 14),
                   label: Text(
                     'Trigger Settlement',
@@ -1910,7 +1915,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '\$${_master.pendingWallet.toStringAsFixed(2)}',
+                        _profitSummaryLoading ? 'Loading…' : '\${_master.pendingWallet.toStringAsFixed(2)}',
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -1939,7 +1944,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '\$${_master.totalSettled.toStringAsFixed(2)}',
+                        _profitSummaryLoading ? 'Loading…' : '\${_master.totalSettled.toStringAsFixed(2)}',
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -1968,7 +1973,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${_master.tradesProcessed}',
+                        _profitSummaryLoading ? '…' : '${_master.tradesProcessed}',
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,

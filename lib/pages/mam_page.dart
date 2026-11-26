@@ -1869,6 +1869,10 @@ class MamPageState extends State<MamPage> {
       name: (account['account_name'] ?? 'MAM Account $login').toString(),
       login: login,
       profitShare: _apiDouble(account['profit_sharing_percentage']),
+      profitShareAvailable: account['profit_sharing_percentage'] != null &&
+          account['profit_sharing_percentage'].toString().trim().isNotEmpty,
+      balanceAvailable: account['balance'] != null &&
+          account['balance'].toString().trim().isNotEmpty,
       leverage: leverageValue.isEmpty ? '—' : '1:$leverageValue',
       balance: balance,
       status: isTradingEnabled ? 'Active' : 'Paused',
@@ -1879,8 +1883,10 @@ class MamPageState extends State<MamPage> {
       totalAum: balance,
       monthlyGain: 0.0,
       server: (account['server'] ?? '').toString(),
-      tradingPlatform: 'MetaTrader 5 (MT5)',
-      algoTrading: _apiBool(account['is_algo_enabled']) ? 'Enabled' : 'Disabled',
+      tradingPlatform: '',
+      algoTrading: account['is_algo_enabled'] == null
+          ? ''
+          : (_apiBool(account['is_algo_enabled']) ? 'Enabled' : 'Disabled'),
       pendingRelease: _apiDouble(account['pending_release']),
       releasedPayout: _apiDouble(account['released_payout']),
       pendingWallet: _apiDouble(account['pending_wallet']),

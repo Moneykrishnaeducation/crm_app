@@ -1487,8 +1487,13 @@ class AuthApi {
   );
 
   /// Fetch the authenticated manager's MAM profit-share wallet summary.
-  Future<Map<String, dynamic>> getMamProfitSummary() =>
-      _request('GET', 'mam/profit/summary/');
+  Future<Map<String, dynamic>> getMamProfitSummary({
+    required String mamAccountId,
+  }) =>
+      _request(
+        'GET',
+        'mam/profit/summary/?mam_account_id=${Uri.encodeComponent(mamAccountId)}',
+      );
 
   /// Trigger settlement for a MAM master account owned by the current user.
   Future<Map<String, dynamic>> triggerMamProfitSettlement({

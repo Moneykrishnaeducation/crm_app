@@ -9,6 +9,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../widgets/mam_master_node_workspace.dart';
 import '../services/auth_api.dart';
+import '../widgets/mam_modals.dart';
 import 'mam_investor_page.dart';
 import 'funds_action_dialog.dart';
 
@@ -2520,6 +2521,49 @@ class MamPageState extends State<MamPage> {
     );
   }
 
+  void _openManagerProfileModal(AvailableMamPool pool) {
+    final data = MamManagerProfileData.fromPool(pool);
+    showManagerPerformanceProfileModal(
+      context,
+      manager: data,
+      onInvestTap: () {
+        Navigator.pop(context);
+        _openPasswordInvestModal(pool, data);
+      },
+    );
+  }
+
+  void _openPasswordInvestModal(
+    AvailableMamPool pool,
+    MamManagerProfileData data,
+  ) {
+    showInvestInManagerModal(
+      context,
+      manager: data,
+      onConfirmed: (password) {
+        final allocatedAmount = 1000.0;
+        final newSub = MamInvestmentSubscription(
+          id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
+          poolName: pool.name,
+          managerLogin: data.login,
+          initialCapital: allocatedAmount,
+          currentEquity: allocatedAmount,
+          unrealizedPnl: 0.0,
+          allocationMethod: 'Direct STP',
+          feePercentage: pool.performanceFee,
+          joinedDate: 'Today',
+          isMirroringActive: true,
+          riskLevel: pool.riskScore,
+        );
+        setState(() {
+          pool.copiersCount += 1;
+          pool.totalAum += allocatedAmount;
+          _investments.insert(0, newSub);
+          _tab = 1; // Switch to Tab 1 to see the newly joined pool!
+        });
+      },
+    );
+  }
 
 }
 

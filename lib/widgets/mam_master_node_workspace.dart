@@ -650,18 +650,19 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
 
           return Container(
             margin: const EdgeInsets.only(bottom: 9),
-            decoration: BoxDecoration(
-              color: c.subCard,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: c.subBorder),
-            ),
             child: Material(
               color: Colors.transparent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
               clipBehavior: Clip.antiAlias,
-              child: Theme(
+              child: Ink(
+                decoration: BoxDecoration(
+                  color: c.subCard,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: c.subBorder),
+                ),
+                child: Theme(
                 data: Theme.of(ctx).copyWith(
                   dividerColor: Colors.transparent,
                   splashColor: c.blue.withValues(alpha: 0.05),
@@ -730,6 +731,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   detailLine('Allocation', allocation == '—' ? 'Not provided by API' : allocation),
                   detailLine('Created', created),
                   ],
+                ),
                 ),
               ),
             ),

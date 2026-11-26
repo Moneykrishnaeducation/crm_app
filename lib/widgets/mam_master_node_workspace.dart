@@ -933,7 +933,1007 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                       children: [
                         Text('Pending wallet balance', style: TextStyle(fontSize: 12, color: c.muted)),
                         Text(
-                          '\$${_master.pendingWallet.toStringAsFixed(2)}',
+                          _pendingReleaseValue == null
+                              ? 'Not available'
+                              : r'
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.text),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Master account', style: TextStyle(fontSize: 12, color: c.muted)),
+                        Text('#${_master.login}',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.text)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: TextStyle(color: c.muted)),
+            ),
+            FilledButton(
+              onPressed: _settlementInProgress || _pendingReleaseValue == null ? null : () async {
+                setState(() => _settlementInProgress = true);
+                try {
+                  final response = await AuthApi.instance.triggerMamProfitSettlement(
+                    mamAccountId: _master.login,
+                  );
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  await _loadProfitSummary();
+                  showAppMessage(
+                    response['message']?.toString() ??
+                    response['detail']?.toString() ??
+                    'Settlement request completed. Wallet summary refreshed.',
+                  );
+                } catch (error) {
+                  if (ctx.mounted) {
+                    showAppMessage(error is AuthApiException
+                      ? error.message
+                      : 'Could not trigger MAM settlement.');
+                  }
+                } finally {
+                  if (mounted) setState(() => _settlementInProgress = false);
+                }
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: c.blue,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: _settlementInProgress
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Execute Now', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _openPerformanceSheet(MamWorkspaceColors c) {
+    // Show actual MT5 MAM positions and live trade metrics instead of
+    // placeholder ROI / win-rate figures.
+    PoolTradesModal.show(
+      context,
+      poolLogin: _master.login,
+      poolName: _master.name,
+      isManager: true,
+    );
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // MAIN BUILD
+  // ---------------------------------------------------------------------------
+  @override
+  Widget build(BuildContext context) {
+    final c = MamWorkspaceColors.of(context);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 580),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
+              children: [
+                // 2. Hero Balance & Action Card
+                _buildHeroBalanceCard(c),
+                const SizedBox(height: 14),
+
+                // 3. Card 1: Master Specifications
+                _buildSpecificationsCard(c),
+                const SizedBox(height: 14),
+
+                // 4. Card 2: Security & Credentials
+                _buildSecurityCard(c),
+                const SizedBox(height: 14),
+
+
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2. HERO BALANCE & ACTION CARD
+  // ---------------------------------------------------------------------------
+  Widget _buildHeroBalanceCard(MamWorkspaceColors c) {
+    return Container(
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: c.border),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            c.card,
+            c.isDark ? const Color(0xFF142138) : const Color(0xFFF9FBFF),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: c.isDark ? 0.3 : 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Node Badge Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: c.blueLight,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: c.blueBorder),
+                ),
+                child: Text(
+                  _master.name.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: c.blue,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _copyToClipboard(_master.login, 'Master Login ID'),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        'ID: ${_master.login}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: c.muted,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(LucideIcons.copy, size: 14, color: c.muted),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // NET AVAILABLE BALANCE DISPLAY
+          if (_master.balanceAvailable) ...[
+            Text(
+              'NET AVAILABLE BALANCE',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: c.muted,
+                letterSpacing: 0.6,
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
+
+          // Responsive Balance & Action Controls Layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 440;
+              final isActive = _master.status == 'Active';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Large Balance Display
+                  if (_master.balanceAvailable) ...[
+                    FittedBox(
+                      alignment: Alignment.centerLeft,
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        r'$' + _master.balance.toStringAsFixed(2) + ' USD',
+                        style: GoogleFonts.inter(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
+                          color: c.text,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  if (isMobile) ...[
+                    // Row 1 (Primary Financial Actions)
+                    Row(
+                      children: [
+                        // [+ Quick Fund]
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: FilledButton.icon(
+                              onPressed: () => _openQuickFundSheet(c),
+                              icon: const Icon(LucideIcons.plus, size: 16),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Quick Fund',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: c.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // [↗ Withdraw]
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openWithdrawSheet(c),
+                              icon: Icon(
+                                LucideIcons.arrowUpRight,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Withdraw',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Row 2 (Master Node Status & Broadcast Control Strip)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? c.greenLight.withValues(alpha: 0.5)
+                            : c.goldLight.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isActive ? c.greenBorder : c.goldBorder,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isActive ? LucideIcons.radio : LucideIcons.pause,
+                            size: 16,
+                            color: isActive ? c.green : c.gold,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isActive
+                                      ? 'Master Node Active'
+                                      : 'Master Node Paused',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: c.text,
+                                  ),
+                                ),
+                                Text(
+                                  isActive
+                                      ? 'Broadcasting orders to ${_master.investorsCount} followers'
+                                      : 'Broadcasting suspended by manager',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10.5,
+                                    color: c.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 36,
+                            child: OutlinedButton.icon(
+                              onPressed: _statusUpdating ? null : _toggleMasterStatus,
+                              icon: _statusUpdating
+                                  ? const SizedBox(
+                                      width: 13,
+                                      height: 13,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : Icon(
+                                      isActive ? LucideIcons.pause : LucideIcons.play,
+                                      size: 13,
+                                      color: isActive ? c.gold : c.green,
+                                    ),
+                              label: Text(
+                                _statusUpdating ? 'Updating…' : (isActive ? 'Pause' : 'Resume'),
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isActive ? c.gold : c.green,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: c.card,
+                                side: BorderSide(
+                                  color: isActive ? c.goldBorder : c.greenBorder,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                minimumSize: const Size(0, 36),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Row 3 (Workspace Navigation Actions)
+                    Row(
+                      children: [
+                        // [Performance]
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openPerformanceSheet(c),
+                              icon: Icon(
+                                LucideIcons.barChart2,
+                                size: 15,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Performance',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // [Investor Pool]
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openManageInvestorsSheet(c),
+                              icon: Icon(
+                                LucideIcons.users,
+                                size: 15,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Investor Pool',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    // Tablet / Desktop screens (maxWidth >= 440): 4-button 2x2 grid
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: FilledButton.icon(
+                              onPressed: () => _openDepositSheet(c),
+                              icon: const Icon(LucideIcons.plus, size: 16),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Quick Fund',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: c.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openWithdrawSheet(c),
+                              icon: Icon(
+                                LucideIcons.arrowUpRight,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Withdraw',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openPerformanceSheet(c),
+                              icon: Icon(
+                                LucideIcons.barChart2,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Performance',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openManageInvestorsSheet(c),
+                              icon: Icon(
+                                LucideIcons.users,
+                                size: 16,
+                                color: c.text,
+                              ),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Investor Pool',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.text,
+                                  ),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: c.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Compact financial summary matching the mobile reference.
+          _buildFinancialSummary(c),
+
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinancialSummary(MamWorkspaceColors c) {
+    final metrics = <({String label, String value, Color color})>[
+      if (_pendingReleaseValue != null)
+        (label: 'PENDING RELEASE', value: r'$' + _pendingReleaseValue!.toStringAsFixed(2), color: c.blue),
+      if (_releasedPayoutValue != null)
+        (label: 'RELEASED PAYOUT', value: r'$' + _releasedPayoutValue!.toStringAsFixed(2), color: c.green),
+      if (_master.profitShareAvailable)
+        (label: 'PROFIT SHARE', value: _master.profitShare.toStringAsFixed(2) + '%', color: c.text),
+      if (_master.risk.trim().isNotEmpty)
+        (label: 'RISK PROFILE', value: _master.risk, color: c.blue),
+      if (_master.leverage.trim().isNotEmpty && _master.leverage != '—')
+        (label: 'LEVERAGE', value: _master.leverage, color: c.text),
+      if (_master.payout.trim().isNotEmpty)
+        (label: 'PAYOUT FREQUENCY', value: _master.payout, color: c.text),
+    ];
+
+    if (metrics.isEmpty) {
+      if (!_profitSummaryLoading) return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: c.subCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.subBorder),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+      decoration: BoxDecoration(
+        color: c.subCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: c.subBorder),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < metrics.length; i += 2) ...[
+            if (i > 0) Divider(height: 16, thickness: 1, color: c.subBorder),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _metricCell(
+                    metrics[i].label,
+                    metrics[i].value,
+                    valueColor: metrics[i].color,
+                  ),
+                ),
+                if (i + 1 < metrics.length) ...[
+                  Container(width: 1, height: 32, color: c.subBorder),
+                  Expanded(
+                    child: _metricCell(
+                      metrics[i + 1].label,
+                      metrics[i + 1].value,
+                      valueColor: metrics[i + 1].color,
+                    ),
+                  ),
+                ] else
+                  const Expanded(child: SizedBox.shrink()),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCell(String label, String value, {required Color valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF94A3B8),
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: GoogleFonts.inter(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: valueColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. CARD 1: MASTER SPECIFICATIONS
+  // ---------------------------------------------------------------------------
+  Widget _buildSpecificationsCard(MamWorkspaceColors c) {
+    final rows = <({String label, String value, bool copyable})>[
+      if (_master.name.trim().isNotEmpty)
+        (label: 'Account Name', value: _master.name, copyable: false),
+      (label: 'Master Login ID', value: _master.login, copyable: true),
+      if (_master.server.trim().isNotEmpty)
+        (label: 'Server', value: _master.server, copyable: true),
+      if (_master.payout.trim().isNotEmpty)
+        (label: 'Payout Cycle', value: _master.payout.toLowerCase(), copyable: false),
+      if (_master.algoTrading.trim().isNotEmpty)
+        (label: 'Algo Trading', value: _master.algoTrading, copyable: false),
+      if (_master.leverage.trim().isNotEmpty && _master.leverage != '—')
+        (label: 'Current Leverage', value: _master.leverage, copyable: false),
+    ];
+
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.border),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.cpu, size: 18, color: c.blue),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Master Specifications',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: c.text,
+                      ),
+                    ),
+                    Text(
+                      'MAM master account details',
+                      style: TextStyle(fontSize: 11, color: c.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Divider(height: 1, color: c.border),
+          const SizedBox(height: 8),
+          for (final row in rows)
+            _specRow(c, row.label, row.value, copyable: row.copyable),
+        ],
+      ),
+    );
+  }
+
+  Widget _specRow(MamWorkspaceColors c, String label, String value, {bool copyable = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: c.muted),
+          ),
+          Row(
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: c.text,
+                ),
+              ),
+              if (copyable) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () => _copyToClipboard(value, label),
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Icon(LucideIcons.copy, size: 13, color: c.blue),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. CARD 2: SECURITY & CREDENTIALS
+  // ---------------------------------------------------------------------------
+  Widget _buildSecurityCard(MamWorkspaceColors c) {
+    return Container(
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.border),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.shieldCheck, size: 18, color: c.blue),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Security & Credentials',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: c.text,
+                      ),
+                    ),
+                    Text(
+                      'Investor password & MT5 keys',
+                      style: TextStyle(fontSize: 11, color: c.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Box 1: INVESTOR READ-ONLY CREDENTIALS
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: c.subCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'INVESTOR READ-ONLY CREDENTIALS',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: c.text,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Manage investor read-only password and MT5 node keys securely.',
+                  style: TextStyle(fontSize: 11.5, color: c.muted, height: 1.3),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: FilledButton.icon(
+                    onPressed: () => _openSecuritySettingsSheet(c),
+                    icon: const Icon(LucideIcons.keyRound, size: 15),
+                    label: Text(
+                      'Master Security & Settings',
+                      style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: c.navy,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Box 2: RISK & LEVERAGE CONFIGURATION
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: c.subCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'RISK & LEVERAGE CONFIGURATION',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: c.text,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Current master leverage: ${_master.leverage}. Update the leverage supported by your MT5 account.',
+                  style: TextStyle(fontSize: 11.5, color: c.muted, height: 1.3),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 42,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openRiskSettingsSheet(c),
+                    icon: const Icon(LucideIcons.slidersHorizontal, size: 15),
+                    label: const Text('Configure Leverage',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: c.blue,
+                      side: BorderSide(color: c.blue.withValues(alpha: 0.3)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+}
+ + _pendingReleaseValue!.toStringAsFixed(2),
                           style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.text),
                         ),
                       ],

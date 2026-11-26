@@ -12,17 +12,83 @@ import 'services/auth_api.dart';
 final GlobalKey<ScaffoldMessengerState> appScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
-/// Displays standard in-app feedback message via SnackBar
-void showAppMessage(String message) {
+enum AppFeedbackType { info, success, error, warning }
+
+/// Displays standard in-app feedback message via SnackBar with tactile and visual confirmation
+void showAppMessage(
+  String message, {
+  AppFeedbackType type = AppFeedbackType.info,
+}) {
+  switch (type) {
+    case AppFeedbackType.error:
+      HapticFeedback.heavyImpact();
+      break;
+    case AppFeedbackType.success:
+      HapticFeedback.lightImpact();
+      break;
+    case AppFeedbackType.warning:
+      HapticFeedback.mediumImpact();
+      break;
+    case AppFeedbackType.info:
+      HapticFeedback.selectionClick();
+      break;
+  }
+
   final messenger = appScaffoldMessengerKey.currentState;
   if (messenger == null) return;
+
+  final (bgColor, icon, iconColor) = switch (type) {
+    AppFeedbackType.success => (
+      const Color(0xFF0F291E),
+      LucideIcons.circleCheck,
+      const Color(0xFF34D399),
+    ),
+    AppFeedbackType.error => (
+      const Color(0xFF2E1014),
+      LucideIcons.circleAlert,
+      const Color(0xFFF87171),
+    ),
+    AppFeedbackType.warning => (
+      const Color(0xFF2C2009),
+      LucideIcons.triangleAlert,
+      const Color(0xFFFBBF24),
+    ),
+    AppFeedbackType.info => (
+      const Color(0xFF101F34),
+      LucideIcons.info,
+      const Color(0xFF60A5FA),
+    ),
+  };
+
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: bgColor,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: iconColor.withValues(alpha: 0.35), width: 1),
+        ),
+        elevation: 6,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: Duration(seconds: type == AppFeedbackType.error ? 4 : 3),
       ),
     );
 }

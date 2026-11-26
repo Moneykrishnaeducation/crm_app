@@ -255,8 +255,9 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
+                        HapticFeedback.lightImpact();
                         Clipboard.setData(ClipboardData(text: url));
-                        showAppMessage('Referral link copied!');
+                        showAppMessage('Referral link copied!', type: AppFeedbackType.success);
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: colors.border),

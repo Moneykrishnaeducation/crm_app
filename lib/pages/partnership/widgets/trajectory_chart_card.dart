@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/partnership_models.dart';
 import 'commission_trajectory_painter.dart';
@@ -95,7 +96,10 @@ class _TrajectoryChartCardState extends State<TrajectoryChartCard> {
                     final localX = details.localPosition.dx.clamp(0.0, box.size.width);
                     final step = box.size.width / (months.length - 1);
                     final index = (localX / step).round().clamp(0, months.length - 1);
-                    setState(() => _scrubbedMonthIndex = index);
+                    if (_scrubbedMonthIndex != index) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _scrubbedMonthIndex = index);
+                    }
                   }
                 },
                 onPanEnd: (_) => setState(() => _scrubbedMonthIndex = null),

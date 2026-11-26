@@ -221,8 +221,9 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
                             const SizedBox(width: 8),
                             OutlinedButton.icon(
                               onPressed: () {
+                                HapticFeedback.lightImpact();
                                 Clipboard.setData(ClipboardData(text: link.referralCode));
-                                showAppMessage('Code ${link.referralCode} copied!');
+                                showAppMessage('Code ${link.referralCode} copied!', type: AppFeedbackType.success);
                               },
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

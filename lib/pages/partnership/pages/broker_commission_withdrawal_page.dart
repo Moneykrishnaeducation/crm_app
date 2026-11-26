@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../../app_notifications.dart';
@@ -301,7 +302,10 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
   Widget _percentBtn(PartnershipColors colors, String label, VoidCallback onTap) {
     return Expanded(
       child: OutlinedButton(
-        onPressed: onTap,
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: colors.border),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),

@@ -193,8 +193,9 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () {
+                            HapticFeedback.lightImpact();
                             Clipboard.setData(ClipboardData(text: url));
-                            showAppMessage('Referral link copied!');
+                            showAppMessage('Referral link copied!', type: AppFeedbackType.success);
                           },
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: colors.border),
@@ -209,8 +210,9 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () {
+                            HapticFeedback.lightImpact();
                             Clipboard.setData(ClipboardData(text: link.referralCode));
-                            showAppMessage('Referral code copied!');
+                            showAppMessage('Referral code copied!', type: AppFeedbackType.success);
                           },
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: colors.border),

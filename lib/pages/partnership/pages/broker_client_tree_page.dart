@@ -393,8 +393,9 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
             if (client.referralCode.isNotEmpty)
               InkWell(
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   Clipboard.setData(ClipboardData(text: client.referralCode));
-                  showAppMessage('Referral code copied: ${client.referralCode}');
+                  showAppMessage('Referral code copied: ${client.referralCode}', type: AppFeedbackType.success);
                 },
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(

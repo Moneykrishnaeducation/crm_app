@@ -674,8 +674,9 @@ class _AccountCredentialsPanel extends StatelessWidget {
         IconButton(
           tooltip: 'Copy $label',
           onPressed: () {
+            HapticFeedback.lightImpact();
             Clipboard.setData(ClipboardData(text: value));
-            showAppMessage('$label copied to clipboard.');
+            showAppMessage('$label copied to clipboard.', type: AppFeedbackType.success);
           },
           icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
         ),
@@ -2335,8 +2336,9 @@ class _BrokerAccountSettingsSheetState extends State<_BrokerAccountSettingsSheet
         IconButton(
           tooltip: 'Copy $label',
           onPressed: () {
+            HapticFeedback.lightImpact();
             Clipboard.setData(ClipboardData(text: value));
-            showAppMessage('$label copied to clipboard.');
+            showAppMessage('$label copied to clipboard.', type: AppFeedbackType.success);
           },
           icon: Icon(LucideIcons.copy, color: cs.primary, size: 16),
         ),
@@ -2523,6 +2525,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
     );
     if (confirmed != true || !mounted) return;
 
+    HapticFeedback.mediumImpact();
     setState(() => _closingTickets.add(ticket));
     try {
       final result = await AuthApi.instance.closePosition(
@@ -2535,12 +2538,15 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
           (result['message'] ?? 'MT5 could not close this position.').toString(),
         );
       }
-      showAppMessage((result['message'] ?? 'Position closed successfully.').toString());
+      HapticFeedback.lightImpact();
+      showAppMessage((result['message'] ?? 'Position closed successfully.').toString(), type: AppFeedbackType.success);
       await _loadAccountData();
     } on AuthApiException catch (error) {
-      if (mounted) showAppMessage(error.message);
+      HapticFeedback.heavyImpact();
+      if (mounted) showAppMessage(error.message, type: AppFeedbackType.error);
     } catch (_) {
-      if (mounted) showAppMessage('Unable to close this position. Refresh and check its status before retrying.');
+      HapticFeedback.heavyImpact();
+      if (mounted) showAppMessage('Unable to close this position. Refresh and check its status before retrying.', type: AppFeedbackType.error);
     } finally {
       if (mounted) setState(() => _closingTickets.remove(ticket));
     }

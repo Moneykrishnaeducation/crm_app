@@ -205,12 +205,14 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
   }
 
   void _copyToClipboard(String text, String label) {
+    HapticFeedback.lightImpact();
     Clipboard.setData(ClipboardData(text: text));
-    showAppMessage('$label copied to clipboard');
+    showAppMessage('$label copied to clipboard', type: AppFeedbackType.success);
   }
 
   Future<void> _toggleNodeStatus() async {
     if (_statusUpdating) return;
+    HapticFeedback.selectionClick();
     final wasActive = _master.status == 'Active';
     setState(() => _statusUpdating = true);
     try {
@@ -219,6 +221,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
         enabled: !wasActive,
       );
       if (!mounted) return;
+      HapticFeedback.lightImpact();
       setState(() {
         _master.status = !wasActive ? 'Active' : 'Paused';
       });
@@ -226,13 +229,16 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       showAppMessage(
         response['message']?.toString() ??
             (!wasActive ? 'Master node resumed successfully.' : 'Master node paused successfully.'),
+        type: AppFeedbackType.success,
       );
     } catch (error) {
       if (!mounted) return;
+      HapticFeedback.heavyImpact();
       showAppMessage(
         error is AuthApiException
             ? error.message
             : 'Could not update the MAM master trading status.',
+        type: AppFeedbackType.error,
       );
     } finally {
       if (mounted) setState(() => _statusUpdating = false);
@@ -846,104 +852,124 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: c.card,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Row(
-            children: [
-              Icon(LucideIcons.zap, color: c.blue, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                'Trigger Settlement',
-                style: GoogleFonts.inter(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: c.text,
-                ),
+        bool inProgress = false;
+        final hasPending = _master.pendingWallet > 0.00;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: c.card,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              title: Row(
+                children: [
+                  Icon(LucideIcons.zap, color: c.blue, size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Trigger Settlement',
+                    style: GoogleFonts.inter(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: c.text,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Execute weekly performance fee distribution for node #${_master.login}.',
-                style: TextStyle(color: c.muted, fontSize: 13),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: c.subCard,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: c.subBorder),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasPending
+                        ? 'Execute weekly performance fee distribution for node #${_master.login}.'
+                        : 'No pending performance fees available to settle for node #${_master.login}.',
+                    style: TextStyle(color: c.muted, fontSize: 13),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: c.subCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: c.subBorder),
+                    ),
+                    child: Column(
                       children: [
-                        Text('Pending wallet balance', style: TextStyle(fontSize: 12, color: c.muted)),
-                        Text(
-                          '\$${_master.pendingWallet.toStringAsFixed(2)}',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: c.text),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Pending wallet balance', style: TextStyle(fontSize: 12, color: c.muted)),
+                            Text(
+                              '\$${_master.pendingWallet.toStringAsFixed(2)}',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w800,
+                                color: hasPending ? c.blue : c.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Master account', style: TextStyle(fontSize: 12, color: c.muted)),
+                            Text('#${_master.login}',
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.text)),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Master account', style: TextStyle(fontSize: 12, color: c.muted)),
-                        Text('#${_master.login}',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.text)),
-                      ],
-                    ),
-                  ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: inProgress ? null : () => Navigator.pop(ctx),
+                  child: Text('Cancel', style: TextStyle(color: c.muted)),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel', style: TextStyle(color: c.muted)),
-            ),
-            FilledButton(
-              onPressed: _settlementInProgress ? null : () async {
-                setState(() => _settlementInProgress = true);
-                try {
-                  final response = await AuthApi.instance.triggerMamProfitSettlement(
-                    mamAccountId: _master.login,
-                  );
-                  if (!ctx.mounted) return;
-                  Navigator.pop(ctx);
-                  await _loadProfitSummary();
-                  showAppMessage(
-                    response['message']?.toString() ??
-                    response['detail']?.toString() ??
-                    'Settlement request completed. Wallet summary refreshed.',
-                  );
-                } catch (error) {
-                  if (ctx.mounted) {
-                    showAppMessage(error is AuthApiException
-                      ? error.message
-                      : 'Could not trigger MAM settlement.');
-                  }
-                } finally {
-                  if (mounted) setState(() => _settlementInProgress = false);
-                }
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: c.blue,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: _settlementInProgress
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Execute Now', style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
+                FilledButton(
+                  onPressed: (!inProgress && hasPending) ? () async {
+                    HapticFeedback.mediumImpact();
+                    setDialogState(() => inProgress = true);
+                    setState(() => _settlementInProgress = true);
+                    try {
+                      final response = await AuthApi.instance.triggerMamProfitSettlement(
+                        mamAccountId: _master.login,
+                      );
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                      HapticFeedback.lightImpact();
+                      await _loadProfitSummary();
+                      showAppMessage(
+                        response['message']?.toString() ??
+                        response['detail']?.toString() ??
+                        'Settlement request completed. Wallet summary refreshed.',
+                        type: AppFeedbackType.success,
+                      );
+                    } catch (error) {
+                      if (ctx.mounted) {
+                        setDialogState(() => inProgress = false);
+                        HapticFeedback.heavyImpact();
+                        showAppMessage(
+                          error is AuthApiException
+                            ? error.message
+                            : 'Could not trigger MAM settlement.',
+                          type: AppFeedbackType.error,
+                        );
+                      }
+                    } finally {
+                      if (mounted) setState(() => _settlementInProgress = false);
+                    }
+                  } : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: c.blue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: inProgress
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Execute Now', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ],
+            );
+          },
         );
       },
     );

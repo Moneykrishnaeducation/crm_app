@@ -210,13 +210,8 @@ class _LoginPageState extends State<LoginPage> {
           }
           // Fall through to re-authenticate using stored biometric credentials.
         } catch (_) {
-          if (AuthApi.instance.hasToken) {
-            HapticFeedback.selectionClick();
-            widget.onLogin?.call();
-            return;
-          }
           if (credentials == null) {
-            showAppMessage('Session expired. Please log in with your credentials.');
+            showAppMessage('Unable to verify session with server. Please check your connection.');
             return;
           }
         }

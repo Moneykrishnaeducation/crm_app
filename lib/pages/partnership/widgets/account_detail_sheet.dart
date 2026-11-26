@@ -202,41 +202,50 @@ class _AccountDetailSheetState extends State<AccountDetailSheet> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: isBuy
-                                              ? colors.green.withValues(alpha: 0.15)
-                                              : colors.red.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          isBuy ? 'BUY' : 'SELL',
-                                          style: TextStyle(
-                                            color: isBuy ? colors.green : colors.red,
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w900,
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: isBuy
+                                                ? colors.green.withValues(alpha: 0.15)
+                                                : colors.red.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            isBuy ? 'BUY' : 'SELL',
+                                            style: TextStyle(
+                                              color: isBuy ? colors.green : colors.red,
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.w900,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            sym,
-                                            style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                sym,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w800),
+                                              ),
+                                              Text(
+                                                '$vol Lots · Open: $openPrice · Current: $curPrice',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(color: colors.muted, fontSize: 10.5),
+                                              ),
+                                            ],
                                           ),
-                                          Text(
-                                            '$vol Lots · Open: $openPrice · Current: $curPrice',
-                                            style: TextStyle(color: colors.muted, fontSize: 10.5),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Text(
                                     '${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(2)}',
                                     style: TextStyle(

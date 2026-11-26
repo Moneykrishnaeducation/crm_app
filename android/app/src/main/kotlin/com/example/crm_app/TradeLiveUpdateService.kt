@@ -10,6 +10,7 @@ import android.app.PendingIntent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Base64
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -98,6 +99,10 @@ class TradeLiveUpdateService : Service() {
     }
 
     private fun refreshPortfolio() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (powerManager != null && !powerManager.isInteractive) {
+            return
+        }
         val accountsJson = prefs.getString("accountsJson", null) ?: return
         val accessToken = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             .getString("flutter.vtindex_client_access_token", null)

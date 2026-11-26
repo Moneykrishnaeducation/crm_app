@@ -102,12 +102,14 @@ class _TrajectoryChartCardState extends State<TrajectoryChartCard> {
                 child: SizedBox(
                   height: 180,
                   width: double.infinity,
-                  child: CustomPaint(
-                    painter: CommissionTrajectoryPainter(
-                      monthsData: months,
-                      lineColor: colors.blue,
-                      isDark: colors.isDark,
-                      selectedIndex: _scrubbedMonthIndex,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: CommissionTrajectoryPainter(
+                        monthsData: months,
+                        lineColor: colors.blue,
+                        isDark: colors.isDark,
+                        selectedIndex: _scrubbedMonthIndex,
+                      ),
                     ),
                   ),
                 ),

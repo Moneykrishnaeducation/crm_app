@@ -1803,22 +1803,31 @@ class MamPageState extends State<MamPage> {
 
     try {
       final accounts = await AuthApi.instance.getUserMamAccounts();
-      final masters = await Future.wait(accounts.map((account) async {
-        final master = _mamMasterFromApi(account);
-        try {
-          final investors = await AuthApi.instance.getMamInvestors(master.login);
-          master.investorsCount = investors.length;
-          final investorCapital = investors.fold<double>(
-            0.0,
-            (total, investor) => total + _apiDouble(investor['balance']),
-          );
-          // Managed AUM reflects the master balance plus linked investor capital.
-          master.totalAum = master.balance + investorCapital;
-        } catch (error) {
-          debugPrint('Could not load investors for MAM ${master.login}: $error');
-        }
-        return master;
-      }));
+      final masters = <MamMasterAccount>[];
+      const chunkSize = 3;
+      for (var i = 0; i < accounts.length; i += chunkSize) {
+        final chunk = accounts.sublist(
+          i,
+          i + chunkSize > accounts.length ? accounts.length : i + chunkSize,
+        );
+        final chunkMasters = await Future.wait(chunk.map((account) async {
+          final master = _mamMasterFromApi(account);
+          try {
+            final investors = await AuthApi.instance.getMamInvestors(master.login);
+            master.investorsCount = investors.length;
+            final investorCapital = investors.fold<double>(
+              0.0,
+              (total, investor) => total + _apiDouble(investor['balance']),
+            );
+            // Managed AUM reflects the master balance plus linked investor capital.
+            master.totalAum = master.balance + investorCapital;
+          } catch (error) {
+            debugPrint('Could not load investors for MAM ${master.login}: $error');
+          }
+          return master;
+        }));
+        masters.addAll(chunkMasters);
+      }
 
       if (!mounted) return;
       setState(() {

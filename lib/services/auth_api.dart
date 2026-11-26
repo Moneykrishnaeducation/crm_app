@@ -575,6 +575,21 @@ class AuthApi {
         if (messages.isNotEmpty) return messages.join('; ');
       }
     }
+    // Handle Django REST Framework field validation errors: { "field_name": ["error_text"] }
+    final fieldMessages = <String>[];
+    for (final entry in data.entries) {
+      if (['status', 'code', 'status_code', 'encrypted', 'success', 'data'].contains(entry.key)) continue;
+      final v = entry.value;
+      if (v is List && v.isNotEmpty) {
+        fieldMessages.add('${entry.key}: ${v.join(', ')}');
+      } else if (v is String && v.isNotEmpty) {
+        fieldMessages.add('${entry.key}: $v');
+      } else if (v is Map && v.isNotEmpty) {
+        fieldMessages.add('${entry.key}: ${v.values.join(', ')}');
+      }
+    }
+    if (fieldMessages.isNotEmpty) return fieldMessages.join('; ');
+
     return 'The request failed. Please try again.';
   }
 
@@ -764,8 +779,23 @@ class AuthApi {
       _cleanupResponseKeyPair(keyPair.keyId);
     }
     final data = payload is Map<String, dynamic> ? payload : <String, dynamic>{'data': payload};
-    if (response.statusCode < 200 || response.statusCode >= 300 || data['error'] is String) {
-      throw AuthApiException(_messageFrom(data), statusCode: response.statusCode, data: data);
+    final apiCode = data['code'];
+    final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
+    final errorVal = data['error'] ?? data['errors'];
+    final hasErrorMessage = errorVal != null &&
+        errorVal != false &&
+        (errorVal is! String || errorVal.isNotEmpty) &&
+        (errorVal is! List || errorVal.isNotEmpty) &&
+        (errorVal is! Map || errorVal.isNotEmpty);
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        hasApiError ||
+        hasErrorMessage) {
+      throw AuthApiException(
+        _messageFrom(data),
+        statusCode: response.statusCode,
+        data: data,
+      );
     }
     return data;
   }

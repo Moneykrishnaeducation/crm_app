@@ -200,34 +200,43 @@ class _BrokerCommissionLedgerPageState extends State<BrokerCommissionLedgerPage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: colors.blue.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: colors.blue.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(LucideIcons.receipt, color: colors.blue, size: 18),
                             ),
-                            child: Icon(LucideIcons.receipt, color: colors.blue, size: 18),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${txn.positionSymbol} · Deal #${txn.dealTicket}',
-                                style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${txn.positionSymbol} · Deal #${txn.dealTicket}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Acc: ${txn.clientTradingAccount} · ${txn.clientUser}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: colors.muted, fontSize: 10.5),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Acc: ${txn.clientTradingAccount} · ${txn.clientUser}',
-                                style: TextStyle(color: colors.muted, fontSize: 10.5),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [

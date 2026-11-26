@@ -68,10 +68,11 @@ class _ClientRegistrationDialogState extends State<ClientRegistrationDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = PartnershipColors.of(context);
+    final viewInsets = MediaQuery.viewInsetsOf(context);
 
     return SafeArea(
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + viewInsets.bottom),
         decoration: BoxDecoration(
           color: colors.card,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),

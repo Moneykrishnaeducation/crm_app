@@ -699,7 +699,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                   ),
                   Divider(height: 1, color: border),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
+                    padding: EdgeInsets.fromLTRB(16, 9, 16, 10 + MediaQuery.viewInsetsOf(context).bottom),
                     child: Row(
                       children: [
                         Expanded(

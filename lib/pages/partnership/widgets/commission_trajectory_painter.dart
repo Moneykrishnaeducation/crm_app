@@ -14,6 +14,8 @@ class CommissionTrajectoryPainter extends CustomPainter {
     this.selectedIndex,
   });
 
+  static final Map<String, TextPainter> _cachedPainters = {};
+
   final List<Map<String, dynamic>> monthsData;
   final Color lineColor;
   final bool isDark;
@@ -118,11 +120,13 @@ class CommissionTrajectoryPainter extends CustomPainter {
       // Draw label (skip alternate months on very small widths if crowded)
       if (size.width > 340 || i % 2 == 0 || i == points.length - 1) {
         final monthName = monthsData[i]['month']?.toString() ?? '';
-        final textSpan = TextSpan(text: monthName, style: textStyle);
-        final tp = TextPainter(
-          text: textSpan,
-          textDirection: TextDirection.ltr,
-        )..layout();
+        final cacheKey = '$monthName-$isDark';
+        final tp = _cachedPainters.putIfAbsent(cacheKey, () {
+          return TextPainter(
+            text: TextSpan(text: monthName, style: textStyle),
+            textDirection: TextDirection.ltr,
+          )..layout();
+        });
         tp.paint(
           canvas,
           Offset(p.dx - tp.width / 2, size.height - paddingBottom + 6),

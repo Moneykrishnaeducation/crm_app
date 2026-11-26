@@ -187,29 +187,38 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(color: link.color, shape: BoxShape.circle),
-                                ),
-                                const SizedBox(width: 10),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      link.profileName,
-                                      style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(color: link.color, shape: BoxShape.circle),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          link.profileName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(color: colors.text, fontSize: 12.5, fontWeight: FontWeight.w800),
+                                        ),
+                                        Text(
+                                          'Code: ${link.referralCode}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(color: colors.muted, fontSize: 10.5, fontFamily: 'monospace'),
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      'Code: ${link.referralCode}',
-                                      style: TextStyle(color: colors.muted, fontSize: 10.5, fontFamily: 'monospace'),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             OutlinedButton.icon(
                               onPressed: () {
                                 Clipboard.setData(ClipboardData(text: link.referralCode));

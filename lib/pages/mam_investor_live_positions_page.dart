@@ -211,28 +211,43 @@ class _MamInvestorLivePositionsPageState
                               ),
                             ],
                           )
-                        : ListView(
+                        : CustomScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
-                            children: [
-                              summaryGrid(),
-                              const SizedBox(height: 16),
-                              Row(children: [
-                                Text('OPEN POSITIONS',
-                                  style: GoogleFonts.inter(color: muted, fontSize: 10,
-                                    fontWeight: FontWeight.w900, letterSpacing: 0.7)),
-                                const Spacer(),
-                                Text('${positions.length} positions',
-                                  style: GoogleFonts.inter(color: muted, fontSize: 10)),
-                              ]),
-                              const SizedBox(height: 9),
-                              if (positions.isEmpty)
-                                SizedBox(height: 280,
-                                  child: messageState(LucideIcons.layers,
-                                    'No Active Open Positions',
-                                    'There are currently no open trades for this investor account.'))
-                              else
-                                ...positions.map(positionCard),
+                            slivers: [
+                              SliverPadding(
+                                padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                                sliver: SliverToBoxAdapter(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      summaryGrid(),
+                                      const SizedBox(height: 16),
+                                      Row(children: [
+                                        Text('OPEN POSITIONS',
+                                          style: GoogleFonts.inter(color: muted, fontSize: 10,
+                                            fontWeight: FontWeight.w900, letterSpacing: 0.7)),
+                                        const Spacer(),
+                                        Text('${positions.length} positions',
+                                          style: GoogleFonts.inter(color: muted, fontSize: 10)),
+                                      ]),
+                                      const SizedBox(height: 9),
+                                      if (positions.isEmpty)
+                                        SizedBox(height: 280,
+                                          child: messageState(LucideIcons.layers,
+                                            'No Active Open Positions',
+                                            'There are currently no open trades for this investor account.')),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (positions.isNotEmpty)
+                                SliverPadding(
+                                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+                                  sliver: SliverList.builder(
+                                    itemCount: positions.length,
+                                    itemBuilder: (context, index) => positionCard(positions[index]),
+                                  ),
+                                ),
                             ],
                           ),
               ),

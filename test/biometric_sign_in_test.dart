@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:crm_app/biometric_sign_in.dart';
@@ -8,9 +12,14 @@ import 'package:crm_app/main.dart';
 import 'package:crm_app/services/auth_api.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
+    await AuthApi.instance.resetForTesting();
+  });
+
+  tearDown(() async {
+    await AuthApi.instance.resetForTesting();
   });
 
   test('biometric preference defaults off and can be persisted', () async {
@@ -210,6 +219,111 @@ void main() {
       expect(biometricSignIn.authenticationCount, 0);
     },
   );
+
+  testWidgets(
+    'readCredentials is not called when biometric authenticate returns false',
+    (tester) async {
+      final biometricSignIn = _FakeBiometricSignIn(
+        enabled: true,
+        available: true,
+        authenticated: false,
+        storedCredentials: (
+          identifier: 'trader@vtindex.com',
+          password: 'SecretPass!1',
+        ),
+      );
+      var loginCalled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(
+            onLogin: () => loginCalled = true,
+            biometricSignIn: biometricSignIn,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(biometricSignIn.authenticationCount, 1);
+      expect(biometricSignIn.readCredentialsCount, 0);
+      expect(loginCalled, isFalse);
+    },
+  );
+
+  testWidgets(
+    'biometric re-login clears stale credentials if server rejects password with 403',
+    (tester) async {
+      final biometricSignIn = _FakeBiometricSignIn(
+        enabled: true,
+        available: true,
+        authenticated: true,
+        storedCredentials: (
+          identifier: 'trader@vtindex.com',
+          password: 'OldPassword',
+        ),
+      );
+      var loginCalled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(
+            onLogin: () => loginCalled = true,
+            biometricSignIn: biometricSignIn,
+            credentialLogin: ({
+              required identifier,
+              required password,
+              required rememberMe,
+            }) async {
+              throw const AuthApiException(
+                'Account access forbidden',
+                statusCode: 403,
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(biometricSignIn.authenticationCount, 1);
+      expect(biometricSignIn.readCredentialsCount, 1);
+      expect(loginCalled, isFalse);
+      expect(await biometricSignIn.hasStoredCredentials(), isFalse);
+    },
+  );
+
+  testWidgets(
+    'stale AuthApi token without stored biometric credentials does not trigger biometric prompt',
+    (tester) async {
+      AuthApi.instance.setSessionForTesting(accessToken: 'stale-jwt');
+      AuthApi.instance.setHttpClientForTesting(
+        MockClient((request) async {
+          if (request.url.path.endsWith('/login/')) {
+            return http.Response(jsonEncode({'authenticated': false}), 401);
+          }
+          return http.Response('{}', 200);
+        }),
+      );
+      final biometricSignIn = _FakeBiometricSignIn(
+        enabled: true,
+        available: true,
+        authenticated: true,
+        storedCredentials: null,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(
+            onLogin: () {},
+            biometricSignIn: biometricSignIn,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(biometricSignIn.authenticationCount, 0);
+      expect(biometricSignIn.readCredentialsCount, 0);
+    },
+  );
 }
 
 class _FakeBiometricSignIn extends BiometricSignIn {
@@ -225,6 +339,7 @@ class _FakeBiometricSignIn extends BiometricSignIn {
   final bool authenticated;
   BiometricCredentials? storedCredentials;
   int authenticationCount = 0;
+  int readCredentialsCount = 0;
 
   @override
   Future<bool> isEnabled() async => enabled;
@@ -253,7 +368,10 @@ class _FakeBiometricSignIn extends BiometricSignIn {
   }
 
   @override
-  Future<BiometricCredentials?> readCredentials() async => storedCredentials;
+  Future<BiometricCredentials?> readCredentials() async {
+    readCredentialsCount += 1;
+    return storedCredentials;
+  }
 
   @override
   Future<bool> hasStoredCredentials() async => storedCredentials != null;

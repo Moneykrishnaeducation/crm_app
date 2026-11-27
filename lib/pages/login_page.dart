@@ -32,15 +32,24 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
+final RegExp _emailValidationRegex = RegExp(
+  r'^[A-Za-z0-9._%+\-]+@(?:[A-Za-z0-9\-]+\.)+[A-Za-z]{2,}$',
+);
+
+bool _isValidEmailAddress(String email) => _emailValidationRegex.hasMatch(email);
+
 class _LoginPageState extends State<LoginPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _referralController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _signUpEmailController = TextEditingController();
+  final _signUpPasswordController = TextEditingController();
 
   late bool _isSignUp = widget.initialSignUp;
   bool _emailVerified = false;
   bool _passwordVisible = false;
+  bool _signUpPasswordVisible = false;
   bool _acceptedTerms = false;
   bool _rememberMe = true;
 
@@ -56,6 +65,11 @@ class _LoginPageState extends State<LoginPage> {
   bool _biometricAvailable = false;
   bool _biometricBusy = false;
   bool _loginBusy = false;
+  bool _signUpBusy = false;
+
+  Map<String, dynamic>? _captchaConfig;
+  bool _captchaEnabled = false;
+  bool _captchaConfigUnavailable = false;
 
   BiometricSignIn get _biometricService =>
       widget.biometricSignIn ?? BiometricSignIn.instance;
@@ -65,11 +79,42 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     unawaited(_restoreSessionThenBiometrics());
     unawaited(_loadRememberedLogin());
-    unawaited(
-      AuthApi.instance.getCaptchaConfig().catchError(
-        (_) => <String, dynamic>{},
-      ),
-    );
+    unawaited(_loadCaptchaConfig());
+  }
+
+  Future<void> _loadCaptchaConfig() async {
+    try {
+      final raw = await AuthApi.instance.getCaptchaConfig();
+      if (!mounted) return;
+      final config = _flattenAuthResponse(raw);
+      setState(() {
+        _captchaConfig = config;
+        _captchaEnabled = _readCaptchaEnabled(config);
+        _captchaConfigUnavailable = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _captchaConfigUnavailable = true;
+      });
+    }
+  }
+
+  bool _readCaptchaEnabled(Map<String, dynamic> config) {
+    for (final key in const [
+      'enabled',
+      'captcha_enabled',
+      'required',
+      'captcha_required',
+      'is_enabled',
+      'require_captcha_at_login',
+    ]) {
+      final value = config[key];
+      if (value == true || value == 1 || value == 'true') {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<void> _restoreSessionThenBiometrics() async {
@@ -122,9 +167,7 @@ class _LoginPageState extends State<LoginPage> {
             platform: Theme.of(context).platform,
           );
       final hasStoredCredentials =
-          available &&
-          (AuthApi.instance.hasToken ||
-              await _biometricService.hasStoredCredentials());
+          available && await _biometricService.hasStoredCredentials();
       if (!mounted) return;
       setState(() {
         _biometricEnabled = enabled;
@@ -172,18 +215,19 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final credentials = await _biometricService.readCredentials();
-    if (!mounted) return;
-    final hasActiveToken = AuthApi.instance.hasToken;
-    if (!hasActiveToken && credentials == null) {
-      showAppMessage(
-        'Please sign in once with your email and password to enable biometric re-login.',
-      );
-      return;
-    }
-
     setState(() => _biometricBusy = true);
     try {
+      final hasActiveToken = AuthApi.instance.hasToken;
+      final hasStoredCredentials =
+          await _biometricService.hasStoredCredentials();
+      if (!mounted) return;
+      if (!hasActiveToken && !hasStoredCredentials) {
+        showAppMessage(
+          'Please sign in once with your email and password to enable biometric re-login.',
+        );
+        return;
+      }
+
       final authenticated = await _biometricService.authenticate(
         localizedReason: 'Sign in to your VTIndex account',
       );
@@ -196,6 +240,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       if (hasActiveToken) {
+        String sessionFailureMessage;
         try {
           await AuthApi.instance.restoreSession();
           await AuthApi.instance.getProfile();
@@ -204,21 +249,42 @@ class _LoginPageState extends State<LoginPage> {
           widget.onLogin?.call();
           return;
         } on AuthApiException catch (e) {
-          if (credentials == null) {
-            showAppMessage('Session expired: ${e.message}. Please log in again.');
-            return;
-          }
-          // Fall through to re-authenticate using stored biometric credentials.
+          sessionFailureMessage =
+              'Session expired: ${e.message}. Please log in again.';
         } catch (_) {
-          if (credentials == null) {
-            showAppMessage('Unable to verify session with server. Please check your connection.');
-            return;
-          }
+          sessionFailureMessage =
+              'Unable to verify session with server. Please check your connection.';
         }
+
+        final fallbackCredentials = hasStoredCredentials
+            ? await _biometricService.readCredentials()
+            : null;
+        if (!mounted) return;
+        if (fallbackCredentials == null) {
+          showAppMessage(sessionFailureMessage);
+          return;
+        }
+        await _authenticateWithCredentials(
+          identifier: fallbackCredentials.identifier,
+          password: fallbackCredentials.password,
+          fromBiometric: true,
+        );
+        return;
+      }
+
+      final credentials = hasStoredCredentials
+          ? await _biometricService.readCredentials()
+          : null;
+      if (!mounted) return;
+      if (credentials == null) {
+        showAppMessage(
+          'Please sign in once with your email and password to enable biometric re-login.',
+        );
+        return;
       }
 
       await _authenticateWithCredentials(
-        identifier: credentials!.identifier,
+        identifier: credentials.identifier,
         password: credentials.password,
         fromBiometric: true,
       );
@@ -245,11 +311,13 @@ class _LoginPageState extends State<LoginPage> {
     _emailController.dispose();
     _referralController.dispose();
     _passwordController.dispose();
+    _signUpEmailController.dispose();
+    _signUpPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    if (_loginBusy) return;
+    if (_loginBusy || _biometricBusy) return;
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -290,14 +358,53 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  List<Map<String, dynamic>> _responseMaps(Map<String, dynamic> response) {
+    final nested = response['data'];
+    return <Map<String, dynamic>>[
+      response,
+      if (nested is Map) nested.cast<String, dynamic>(),
+    ];
+  }
+
+  Map<String, dynamic> _flattenAuthResponse(Map<String, dynamic> response) {
+    final nested = response['data'];
+    if (nested is Map) {
+      return <String, dynamic>{
+        ...nested.cast<String, dynamic>(),
+        ...response,
+      };
+    }
+    return response;
+  }
+
+  bool _responseHasToken(Map<String, dynamic> response) {
+    for (final map in _responseMaps(response)) {
+      for (final key in const ['access', 'access_token', 'token']) {
+        final value = map[key];
+        if (value is String && value.isNotEmpty) return true;
+        if (value != null && value is! String) return true;
+      }
+    }
+    return false;
+  }
+
+  String _captchaRequiredMessage(Map<String, dynamic> response) {
+    for (final map in _responseMaps(response)) {
+      final msg = map['message'];
+      if (msg is String && msg.trim().isNotEmpty) return msg;
+    }
+    if (_captchaConfigUnavailable || (_captchaEnabled && _captchaConfig == null)) {
+      return 'CAPTCHA verification is required, and CAPTCHA configuration is currently unavailable in this app. Please verify via the web portal or disable Login CAPTCHA in Security Settings.';
+    }
+    return 'CAPTCHA verification is required. Please verify via the web portal or disable Login CAPTCHA in Security Settings.';
+  }
+
   Future<void> _authenticateWithCredentials({
     required String identifier,
     required String password,
     required bool fromBiometric,
   }) async {
     try {
-      // Fetch the public GeeTest configuration before login. The backend only
-      // exposes the public site ID here; secret validation remains server-side.
       var response = widget.credentialLogin != null
           ? await widget.credentialLogin!(
               identifier: identifier,
@@ -319,25 +426,24 @@ class _LoginPageState extends State<LoginPage> {
           'The server still requires a login verification code.',
         );
       }
-      if (response['captcha_required'] == true) {
-        throw AuthApiException(
-          response['message'] as String? ??
-              'CAPTCHA verification is required. Please verify via the web portal or disable Login CAPTCHA in Security Settings.',
-        );
+      final maps = _responseMaps(response);
+      if (maps.any((m) => m['captcha_required'] == true)) {
+        throw AuthApiException(_captchaRequiredMessage(response));
       }
-      if (response['success'] == false || response['authenticated'] == false) {
+      if (maps.any(
+        (m) => m['success'] == false || m['authenticated'] == false,
+      )) {
         throw AuthApiException(_apiResponseMessage(response));
       }
-      final hasToken = response['access'] != null ||
-          response['access_token'] != null ||
-          response['token'] != null ||
-          AuthApi.instance.hasToken;
+      final responseAuthenticated = maps.any(
+        (m) => m['authenticated'] == true,
+      );
       final skipRemoteStatusCheck =
           widget.credentialLogin != null &&
-          response['authenticated'] == true &&
-          hasToken;
+          responseAuthenticated &&
+          (_responseHasToken(response) || AuthApi.instance.hasToken);
       if (!skipRemoteStatusCheck && !await AuthApi.instance.isAuthenticated()) {
-        if (!hasToken) {
+        if (!AuthApi.instance.hasToken) {
           throw const AuthApiException(
             'The server did not confirm an authenticated session.',
           );
@@ -354,7 +460,9 @@ class _LoginPageState extends State<LoginPage> {
       widget.onLogin?.call();
     } on AuthApiException catch (error) {
       if (fromBiometric &&
-          (error.statusCode == 400 || error.statusCode == 401)) {
+          (error.statusCode == 400 ||
+              error.statusCode == 401 ||
+              error.statusCode == 403)) {
         // Stored password is no longer accepted by the server; clear it so the
         // user can sign in once with their updated credentials.
         await _biometricService.clearCredentials();
@@ -373,112 +481,62 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool _requiresLoginOtp(Map<String, dynamic> response) {
-    for (final key in const [
-      'verification_required',
-      'requires_verification',
-      'otp_required',
-      'requires_otp',
-      'email_verification_required',
-      'otp',
-    ]) {
-      if (response[key] == true) return true;
+    for (final map in _responseMaps(response)) {
+      for (final key in const [
+        'verification_required',
+        'requires_verification',
+        'otp_required',
+        'requires_otp',
+        'email_verification_required',
+        'otp',
+      ]) {
+        if (map[key] == true) return true;
+      }
+      final status = (map['status'] ?? map['state'] ?? '')
+          .toString()
+          .toLowerCase();
+      if (status.contains('otp') || status.contains('verification_required')) {
+        return true;
+      }
+      final message = (map['message'] ?? '').toString().toLowerCase();
+      if (message.contains('verification code') ||
+          message.contains('verify to continue')) {
+        return true;
+      }
     }
-    final status = (response['status'] ?? response['state'] ?? '')
-        .toString()
-        .toLowerCase();
-    if (status.contains('otp') || status.contains('verification_required')) {
-      return true;
-    }
-    final message = (response['message'] ?? '').toString().toLowerCase();
-    return message.contains('verification code') ||
-        message.contains('verify to continue');
+    return false;
   }
 
   String _apiResponseMessage(Map<String, dynamic> response) {
-    for (final key in const ['message', 'error', 'detail']) {
-      final value = response[key];
-      if (value is String && value.isNotEmpty) return value;
+    for (final map in _responseMaps(response)) {
+      for (final key in const ['message', 'error', 'detail']) {
+        final value = map[key];
+        if (value is String && value.isNotEmpty) return value;
+      }
     }
     return 'Login could not be completed. Please try again.';
   }
 
   Future<String?> _requestLoginOtp(String email) async {
-    final otpController = TextEditingController();
-    try {
-      unawaited(
-        AuthApi.instance
-            .loginOtpStatus(email)
-            .catchError((_) => <String, dynamic>{}),
-      );
-      if (!mounted) return null;
-      return await showDialog<String>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Verify your login'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'A verification code was sent to $email. Please enter it below to continue.',
-                style: const TextStyle(fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: otpController,
-                autofocus: true,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  labelText: 'Email verification code',
-                  hintText: 'Enter 6-digit code',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                try {
-                  await AuthApi.instance.resendLoginOtp({'email': email});
-                  if (dialogContext.mounted) {
-                    showAppMessage('A new verification code was sent.');
-                  }
-                } on AuthApiException catch (error) {
-                  if (dialogContext.mounted) showAppMessage(error.message);
-                } catch (_) {
-                  if (dialogContext.mounted) {
-                    showAppMessage('Could not resend the verification code.');
-                  }
-                }
-              },
-              child: const Text('Resend code'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final code = otpController.text.trim();
-                if (code.isNotEmpty) Navigator.pop(dialogContext, code);
-              },
-              child: const Text('Verify'),
-            ),
-          ],
-        ),
-      );
-    } finally {
-      otpController.dispose();
-    }
+    unawaited(
+      AuthApi.instance
+          .loginOtpStatus(email)
+          .catchError((_) => <String, dynamic>{}),
+    );
+    if (!mounted) return null;
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _LoginOtpDialog(email: email),
+    );
   }
 
   void _submitSignUp() {
+    if (_signUpBusy) return;
     FocusScope.of(context).unfocus();
     final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
+    final email = _signUpEmailController.text.trim();
+    final password = _signUpPasswordController.text;
 
     String? nameErr;
     String? emailErr;
@@ -490,7 +548,7 @@ class _LoginPageState extends State<LoginPage> {
     }
     if (email.isEmpty) {
       emailErr = 'Please enter your email address.';
-    } else if (!email.contains('@') || !email.contains('.')) {
+    } else if (!_isValidEmailAddress(email)) {
       emailErr = 'Please enter a valid email address.';
     }
     if (password.isEmpty) {
@@ -502,7 +560,7 @@ class _LoginPageState extends State<LoginPage> {
       termsErr = 'Please accept the Terms & Conditions and Privacy Policy.';
     }
 
-    if (!_emailVerified) {
+    if (!_emailVerified && emailErr == null) {
       emailErr = 'Please verify your email address to continue.';
     }
 
@@ -520,7 +578,9 @@ class _LoginPageState extends State<LoginPage> {
           nameErr == null &&
           passErr == null &&
           termsErr == null &&
-          !_emailVerified) {
+          !_emailVerified &&
+          email.isNotEmpty &&
+          _isValidEmailAddress(email)) {
         _showSignUpEmailVerificationModal(
           isDark: Theme.of(context).brightness == Brightness.dark,
         );
@@ -533,6 +593,7 @@ class _LoginPageState extends State<LoginPage> {
       _signUpEmailError = null;
       _signUpPasswordError = null;
       _signUpTermsError = null;
+      _signUpBusy = true;
     });
 
     unawaited(_createAccount(name, email, password));
@@ -543,6 +604,9 @@ class _LoginPageState extends State<LoginPage> {
     String email,
     String password,
   ) async {
+    if (!_signUpBusy) {
+      setState(() => _signUpBusy = true);
+    }
     try {
       final encryptedPassword = await AuthApi.instance
           .encryptPasswordForPasswordFlow(password);
@@ -564,13 +628,15 @@ class _LoginPageState extends State<LoginPage> {
           'Could not connect to the signup server. Please try again.',
         );
       }
+    } finally {
+      if (mounted) setState(() => _signUpBusy = false);
     }
   }
 
   void _showSignUpEmailVerificationModal({required bool isDark}) {
     FocusScope.of(context).unfocus();
-    final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
+    final email = _signUpEmailController.text.trim();
+    if (email.isEmpty || !_isValidEmailAddress(email)) {
       setState(
         () => _signUpEmailError = 'Please enter a valid email address first.',
       );
@@ -1171,7 +1237,7 @@ class _LoginPageState extends State<LoginPage> {
         // Login button (Royal blue gradient pill with gold rim & arrow)
         _buildRaisedButton(
           label: _loginBusy ? 'Connecting…' : 'Login',
-          onPressed: _submit,
+          onPressed: (_loginBusy || _biometricBusy) ? null : _submit,
           isDark: isDark,
           busy: _loginBusy,
         ),
@@ -1346,7 +1412,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 Expanded(
                   child: TextFormField(
-                    controller: _emailController,
+                    controller: _signUpEmailController,
                     textAlignVertical: TextAlignVertical.center,
                     keyboardType: TextInputType.emailAddress,
                     cursorColor: isDark
@@ -1507,9 +1573,9 @@ class _LoginPageState extends State<LoginPage> {
           ),
           child: Center(
             child: TextFormField(
-              controller: _passwordController,
+              controller: _signUpPasswordController,
               textAlignVertical: TextAlignVertical.center,
-              obscureText: !_passwordVisible,
+              obscureText: !_signUpPasswordVisible,
               obscuringCharacter: '•',
               cursorColor: isDark ? const Color(0xFF6DA2F5) : _loginRoyalBlue,
               style: TextStyle(
@@ -1517,7 +1583,8 @@ class _LoginPageState extends State<LoginPage> {
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 letterSpacing:
-                    (_passwordVisible || _passwordController.text.isEmpty)
+                    (_signUpPasswordVisible ||
+                        _signUpPasswordController.text.isEmpty)
                     ? 0
                     : 2.5,
                 height: 1.25,
@@ -1558,11 +1625,14 @@ class _LoginPageState extends State<LoginPage> {
                 suffixIcon: Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: GestureDetector(
-                    onTap: () =>
-                        setState(() => _passwordVisible = !_passwordVisible),
+                    onTap: () => setState(
+                      () => _signUpPasswordVisible = !_signUpPasswordVisible,
+                    ),
                     behavior: HitTestBehavior.opaque,
                     child: Icon(
-                      _passwordVisible ? LucideIcons.eye : LucideIcons.eyeOff,
+                      _signUpPasswordVisible
+                          ? LucideIcons.eye
+                          : LucideIcons.eyeOff,
                       color: placeholderColor,
                       size: 20,
                     ),
@@ -1639,9 +1709,10 @@ class _LoginPageState extends State<LoginPage> {
         const SizedBox(height: 22),
 
         _buildRaisedButton(
-          label: 'Create Account',
-          onPressed: _submitSignUp,
+          label: _signUpBusy ? 'Creating Account…' : 'Create Account',
+          onPressed: _signUpBusy ? null : _submitSignUp,
           isDark: isDark,
+          busy: _signUpBusy,
         ),
         const SizedBox(height: 22),
 
@@ -1691,6 +1762,7 @@ class _LoginPageState extends State<LoginPage> {
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         backgroundColor: Colors.transparent,
+        disabledBackgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
         padding: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -2077,10 +2149,12 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
 
   bool _newPasswordVisible = false;
   bool _confirmPasswordVisible = false;
+  bool _submitting = false;
+  bool _resending = false;
 
   String? _stepError;
   String? _resetToken;
-  int _resendCountdown = 45;
+  int _resendCountdown = 0;
   Timer? _countdownTimer;
 
   @override
@@ -2118,6 +2192,13 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
   }
 
   Future<void> _resendResetOtp() async {
+    if (_resending || _submitting) return;
+    setState(() {
+      _resending = true;
+      _otpController.clear();
+      _stepError = null;
+    });
+    _otpFocusNode.requestFocus();
     try {
       await AuthApi.instance.sendResetOtp(_emailController.text.trim());
       if (mounted) _startTimer();
@@ -2127,11 +2208,14 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       if (mounted) {
         setState(() => _stepError = 'Could not resend the reset code.');
       }
+    } finally {
+      if (mounted) setState(() => _resending = false);
     }
   }
 
   // --- Step 1: Send OTP to Email ---
   Future<void> _submitStep1() async {
+    if (_submitting) return;
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     if (email.isEmpty) {
@@ -2140,13 +2224,18 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       );
       return;
     }
-    if (!email.contains('@') || !email.contains('.')) {
+    if (!_isValidEmailAddress(email)) {
       setState(() => _stepError = 'Please enter a valid email address.');
       return;
     }
+    setState(() {
+      _submitting = true;
+      _stepError = null;
+    });
     try {
       await AuthApi.instance.sendResetOtp(email);
       if (!mounted) return;
+      _otpController.clear();
       setState(() {
         _stepError = null;
         _currentStep = 2;
@@ -2161,23 +2250,30 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       if (mounted) {
         setState(() => _stepError = 'Could not send the reset code.');
       }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
   // --- Step 2: Verify OTP ---
   Future<void> _submitStep2() async {
+    if (_submitting) return;
     FocusScope.of(context).unfocus();
     final otp = _otpController.text.trim();
     if (otp.isEmpty) {
       setState(() => _stepError = 'Please enter the verification code.');
       return;
     }
-    if (otp.length < 4) {
+    if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
       setState(
-        () => _stepError = 'Please enter the complete verification code.',
+        () => _stepError = 'Please enter the complete 6-digit verification code.',
       );
       return;
     }
+    setState(() {
+      _submitting = true;
+      _stepError = null;
+    });
     try {
       final result = await AuthApi.instance.verifyOtp(
         email: _emailController.text.trim(),
@@ -2193,6 +2289,7 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         );
       }
       if (!mounted) return;
+      _countdownTimer?.cancel();
       setState(() {
         _stepError = null;
         _resetToken = resetToken;
@@ -2204,11 +2301,14 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       if (mounted) {
         setState(() => _stepError = 'Could not verify the reset code.');
       }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
   // --- Step 3: Set New Password & Confirm Password (in same window one by one) ---
   Future<void> _submitStep3() async {
+    if (_submitting) return;
     FocusScope.of(context).unfocus();
     final pass = _newPasswordController.text;
     final confirm = _confirmPasswordController.text;
@@ -2230,6 +2330,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       setState(() => _stepError = 'Passwords do not match. Please re-enter.');
       return;
     }
+    setState(() {
+      _submitting = true;
+      _stepError = null;
+    });
     try {
       final encryptedPassword = await AuthApi.instance
           .encryptPasswordForPasswordFlow(_newPasswordController.text);
@@ -2253,6 +2357,8 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
       if (mounted) {
         setState(() => _stepError = 'Could not reset your password.');
       }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -2290,13 +2396,15 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
 
   Widget _buildActionButton({
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     IconData icon = Icons.arrow_forward_rounded,
+    bool busy = false,
   }) {
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         backgroundColor: Colors.transparent,
+        disabledBackgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
         padding: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -2336,15 +2444,27 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
               ),
               Positioned(
                 right: 8,
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.22),
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 19),
-                ),
+                child: busy
+                    ? const Padding(
+                        padding: EdgeInsets.only(right: 6),
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.22),
+                        ),
+                        child: Icon(icon, color: Colors.white, size: 19),
+                      ),
               ),
             ],
           ),
@@ -2434,7 +2554,11 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         ),
         _buildStepErrorFeedback(),
         const SizedBox(height: 24),
-        _buildActionButton(label: 'Send OTP', onPressed: _submitStep1),
+        _buildActionButton(
+          label: _submitting ? 'Sending OTP…' : 'Send OTP',
+          onPressed: _submitting ? null : _submitStep1,
+          busy: _submitting,
+        ),
       ],
     );
   }
@@ -2448,8 +2572,6 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
     Color inputTextColor,
     Color placeholderColor,
   ) {
-    final otpText = _otpController.text;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2466,12 +2588,17 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
               ),
             ),
             InkWell(
-              onTap: () {
-                setState(() {
-                  _stepError = null;
-                  _currentStep = 1;
-                });
-              },
+              onTap: (_submitting || _resending)
+                  ? null
+                  : () {
+                      _countdownTimer?.cancel();
+                      _otpController.clear();
+                      setState(() {
+                        _stepError = null;
+                        _resendCountdown = 0;
+                        _currentStep = 1;
+                      });
+                    },
               borderRadius: BorderRadius.circular(6),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -2507,299 +2634,47 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         ),
         const SizedBox(height: 24),
 
-        // 6-digit PIN Box interactive input
-        SizedBox(
-          height: 62,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Hidden real text field backing the UX
-              Opacity(
-                opacity: 0.0,
-                child: TextField(
-                  controller: _otpController,
-                  focusNode: _otpFocusNode,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  autofocus: true,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(6),
-                  ],
-                  onChanged: (val) {
-                    if (_stepError != null) setState(() => _stepError = null);
-                    setState(() {});
-                    if (val.length == 6) {
-                      _submitStep2();
-                    }
-                  },
-                  onSubmitted: (_) => _submitStep2(),
-                ),
-              ),
-
-              // Visual 6 individual cells
-              GestureDetector(
-                onTap: () => _otpFocusNode.requestFocus(),
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  children: List.generate(6, (index) {
-                    final hasChar = index < otpText.length;
-                    final char = hasChar ? otpText[index] : '';
-                    final isFocusedCell =
-                        _otpFocusNode.hasFocus &&
-                        (index == otpText.length ||
-                            (index == 5 && otpText.length == 6));
-                    final hasError = _stepError != null;
-
-                    Color cellBorder;
-                    double borderWidth;
-                    List<BoxShadow> cellShadow;
-
-                    if (hasError) {
-                      cellBorder = _loginErrorColor;
-                      borderWidth = 1.5;
-                      cellShadow = const [
-                        BoxShadow(
-                          color: Color(0x26E53935),
-                          offset: Offset(0, 3),
-                          blurRadius: 8,
-                        ),
-                      ];
-                    } else if (isFocusedCell) {
-                      cellBorder = _loginRoyalBlue;
-                      borderWidth = 2.0;
-                      cellShadow = [
-                        BoxShadow(
-                          color: _loginRoyalBlue.withValues(alpha: 0.28),
-                          offset: const Offset(0, 4),
-                          blurRadius: 10,
-                        ),
-                      ];
-                    } else if (hasChar) {
-                      cellBorder = widget.isDark
-                          ? const Color(0xFF4C7FD8)
-                          : _loginRoyalBlue.withValues(alpha: 0.65);
-                      borderWidth = 1.5;
-                      cellShadow = const [
-                        BoxShadow(
-                          color: Color(0x141E70E8),
-                          offset: Offset(0, 2),
-                          blurRadius: 6,
-                        ),
-                      ];
-                    } else {
-                      cellBorder = inputBorder;
-                      borderWidth = 1.2;
-                      cellShadow = [];
-                    }
-
-                    return Expanded(
-                      child: Container(
-                        height: 60,
-                        margin: EdgeInsets.only(
-                          left: index == 0 ? 0 : 4,
-                          right: index == 5 ? 0 : 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: inputBg,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: cellBorder,
-                            width: borderWidth,
-                          ),
-                          boxShadow: cellShadow,
-                        ),
-                        child: Center(
-                          child: hasChar
-                              ? Text(
-                                  char,
-                                  style: TextStyle(
-                                    color: inputTextColor,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                )
-                              : isFocusedCell
-                              ? Container(
-                                  width: 2.2,
-                                  height: 22,
-                                  decoration: BoxDecoration(
-                                    color: _loginRoyalBlue,
-                                    borderRadius: BorderRadius.circular(1),
-                                  ),
-                                )
-                              : Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: placeholderColor.withValues(
-                                      alpha: 0.35,
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
+        _SixDigitOtpInput(
+          controller: _otpController,
+          focusNode: _otpFocusNode,
+          isDark: widget.isDark,
+          hasError: _stepError != null,
+          inputBg: inputBg,
+          inputBorder: inputBorder,
+          inputTextColor: inputTextColor,
+          placeholderColor: placeholderColor,
+          enabled: !_submitting,
+          onChanged: () {
+            if (_stepError != null) {
+              setState(() => _stepError = null);
+            } else {
+              setState(() {});
+            }
+          },
+          onCompleted: _submitStep2,
+          onSubmitted: _submitStep2,
         ),
 
         _buildStepErrorFeedback(),
 
-        const SizedBox(height: 14),
-
-        // Helper row: Quick paste & Clear action
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            InkWell(
-              onTap: () async {
-                final data = await Clipboard.getData('text/plain');
-                if (data?.text != null) {
-                  final digits = data!.text!.replaceAll(RegExp(r'\D'), '');
-                  if (digits.isNotEmpty) {
-                    final code = digits.substring(
-                      0,
-                      math.min(6, digits.length),
-                    );
-                    setState(() {
-                      _otpController.text = code;
-                      if (_stepError != null) _stepError = null;
-                    });
-                    if (code.length == 6) {
-                      _submitStep2();
-                    }
-                  }
-                }
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      LucideIcons.clipboardPaste,
-                      size: 14,
-                      color: widget.isDark
-                          ? const Color(0xFF7E8B9F)
-                          : _loginMutedBlueText,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Paste code',
-                      style: TextStyle(
-                        color: widget.isDark
-                            ? const Color(0xFF7E8B9F)
-                            : _loginMutedBlueText,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (otpText.isNotEmpty)
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _otpController.clear();
-                    if (_stepError != null) _stepError = null;
-                  });
-                  _otpFocusNode.requestFocus();
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 4,
-                  ),
-                  child: Text(
-                    'Clear',
-                    style: TextStyle(
-                      color: widget.isDark
-                          ? const Color(0xFF7E8B9F)
-                          : _loginMutedBlueText,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-
         const SizedBox(height: 12),
 
-        // Resend code countdown timer pill / active button
-        Center(
-          child: _resendCountdown > 0
-              ? Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: widget.isDark
-                        ? const Color(0xFF1E2028)
-                        : const Color(0xFFF0F5FD),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: widget.isDark
-                          ? const Color(0x22FFFFFF)
-                          : const Color(0x331E70E8),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.clock, size: 14, color: subtitleColor),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Resend code in 00:${_resendCountdown.toString().padLeft(2, '0')}',
-                        style: TextStyle(
-                          color: subtitleColor,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _otpController.clear();
-                      if (_stepError != null) _stepError = null;
-                    });
-                    unawaited(_resendResetOtp());
-                    _otpFocusNode.requestFocus();
-                  },
-                  icon: const Icon(
-                    LucideIcons.rotateCcw,
-                    size: 14,
-                    color: _loginRoyalBlue,
-                  ),
-                  label: const Text(
-                    'Resend OTP Code',
-                    style: TextStyle(
-                      color: _loginRoyalBlue,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+        _OtpResendCountdown(
+          countdown: _resendCountdown,
+          isDark: widget.isDark,
+          subtitleColor: subtitleColor,
+          sending: _resending,
+          disabled: _submitting,
+          onResend: () => unawaited(_resendResetOtp()),
         ),
 
         const SizedBox(height: 20),
 
-        _buildActionButton(label: 'Verify OTP', onPressed: _submitStep2),
+        _buildActionButton(
+          label: _submitting ? 'Verifying…' : 'Verify OTP',
+          onPressed: _submitting ? null : _submitStep2,
+          busy: _submitting,
+        ),
       ],
     );
   }
@@ -2998,9 +2873,10 @@ class _ForgotPasswordFlowModalState extends State<_ForgotPasswordFlowModal> {
         _buildStepErrorFeedback(),
         const SizedBox(height: 22),
         _buildActionButton(
-          label: 'Reset Password',
-          onPressed: _submitStep3,
+          label: _submitting ? 'Resetting…' : 'Reset Password',
+          onPressed: _submitting ? null : _submitStep3,
           icon: Icons.check_rounded,
+          busy: _submitting,
         ),
       ],
     );
@@ -3202,13 +3078,17 @@ class _SignUpEmailVerificationModalState
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _otpFocusNode = FocusNode();
   String? _error;
-  int _countdown = 45;
+  int _countdown = 0;
   Timer? _timer;
+  bool _sending = false;
+  bool _verifying = false;
+  bool _verifiedAndClosing = false;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_sendSignupOtp());
+    _sending = true;
+    unawaited(_sendSignupOtp(fromInit: true));
     _otpFocusNode.addListener(() {
       if (mounted) setState(() {});
     });
@@ -3239,7 +3119,16 @@ class _SignUpEmailVerificationModalState
     });
   }
 
-  Future<void> _sendSignupOtp() async {
+  Future<void> _sendSignupOtp({bool fromInit = false}) async {
+    if (!fromInit) {
+      if (_sending || _verifying || _verifiedAndClosing) return;
+      setState(() {
+        _sending = true;
+        _otpController.clear();
+        _error = null;
+      });
+      _otpFocusNode.requestFocus();
+    }
     try {
       await AuthApi.instance.sendSignupOtp(widget.email);
       if (mounted) _startTimer();
@@ -3249,37 +3138,52 @@ class _SignUpEmailVerificationModalState
       if (mounted) {
         setState(() => _error = 'Could not send the verification code.');
       }
+    } finally {
+      if (mounted) setState(() => _sending = false);
     }
   }
 
   Future<void> _verifyOtp() async {
+    if (_verifying || _verifiedAndClosing) return;
     FocusScope.of(context).unfocus();
     final otp = _otpController.text.trim();
     if (otp.isEmpty) {
       setState(() => _error = 'Please enter the verification code.');
       return;
     }
-    if (otp.length < 4) {
-      setState(() => _error = 'Please enter the complete verification code.');
+    if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
+      setState(
+        () => _error = 'Please enter the complete 6-digit verification code.',
+      );
       return;
     }
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
     try {
       await AuthApi.instance.verifySignupOtp(email: widget.email, otp: otp);
       if (!mounted) return;
+      _verifiedAndClosing = true;
       widget.onVerified();
       Navigator.pop(context);
     } on AuthApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not verify the code.');
+    } finally {
+      if (mounted && !_verifiedAndClosing) {
+        setState(() => _verifying = false);
+      }
     }
   }
 
   Widget _buildActionButton() {
     return FilledButton(
-      onPressed: _verifyOtp,
+      onPressed: (_verifying || _verifiedAndClosing) ? null : _verifyOtp,
       style: FilledButton.styleFrom(
         backgroundColor: Colors.transparent,
+        disabledBackgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
         padding: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -3306,10 +3210,10 @@ class _SignUpEmailVerificationModalState
           child: Stack(
             alignment: Alignment.center,
             children: [
-              const Center(
+              Center(
                 child: Text(
-                  'Verify Email',
-                  style: TextStyle(
+                  _verifying ? 'Verifying…' : 'Verify Email',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16.5,
                     fontWeight: FontWeight.w700,
@@ -3319,19 +3223,31 @@ class _SignUpEmailVerificationModalState
               ),
               Positioned(
                 right: 8,
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.22),
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
+                child: _verifying
+                    ? const Padding(
+                        padding: EdgeInsets.only(right: 6),
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.22),
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -3356,7 +3272,6 @@ class _SignUpEmailVerificationModalState
     final placeholderColor = widget.isDark
         ? const Color(0xFF757885)
         : _loginPlaceholderText;
-    final otpText = _otpController.text;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -3450,146 +3365,25 @@ class _SignUpEmailVerificationModalState
                 ),
                 const SizedBox(height: 24),
 
-                // 6-digit PIN Box interactive input
-                SizedBox(
-                  height: 62,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Opacity(
-                        opacity: 0.0,
-                        child: TextField(
-                          controller: _otpController,
-                          focusNode: _otpFocusNode,
-                          keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
-                          autofocus: true,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(6),
-                          ],
-                          onChanged: (val) {
-                            if (_error != null) setState(() => _error = null);
-                            setState(() {});
-                            if (val.length == 6) {
-                              _verifyOtp();
-                            }
-                          },
-                          onSubmitted: (_) => _verifyOtp(),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _otpFocusNode.requestFocus(),
-                        behavior: HitTestBehavior.opaque,
-                        child: Row(
-                          children: List.generate(6, (index) {
-                            final hasChar = index < otpText.length;
-                            final char = hasChar ? otpText[index] : '';
-                            final isFocusedCell =
-                                _otpFocusNode.hasFocus &&
-                                (index == otpText.length ||
-                                    (index == 5 && otpText.length == 6));
-                            final hasError = _error != null;
-
-                            Color cellBorder;
-                            double borderWidth;
-                            List<BoxShadow> cellShadow;
-
-                            if (hasError) {
-                              cellBorder = _loginErrorColor;
-                              borderWidth = 1.5;
-                              cellShadow = const [
-                                BoxShadow(
-                                  color: Color(0x26E53935),
-                                  offset: Offset(0, 3),
-                                  blurRadius: 8,
-                                ),
-                              ];
-                            } else if (isFocusedCell) {
-                              cellBorder = _loginRoyalBlue;
-                              borderWidth = 2.0;
-                              cellShadow = [
-                                BoxShadow(
-                                  color: _loginRoyalBlue.withValues(
-                                    alpha: 0.28,
-                                  ),
-                                  offset: const Offset(0, 4),
-                                  blurRadius: 10,
-                                ),
-                              ];
-                            } else if (hasChar) {
-                              cellBorder = widget.isDark
-                                  ? const Color(0xFF4C7FD8)
-                                  : _loginRoyalBlue.withValues(alpha: 0.65);
-                              borderWidth = 1.5;
-                              cellShadow = const [
-                                BoxShadow(
-                                  color: Color(0x141E70E8),
-                                  offset: Offset(0, 2),
-                                  blurRadius: 6,
-                                ),
-                              ];
-                            } else {
-                              cellBorder = inputBorder;
-                              borderWidth = 1.2;
-                              cellShadow = [];
-                            }
-
-                            return Expanded(
-                              child: Container(
-                                height: 60,
-                                margin: EdgeInsets.only(
-                                  left: index == 0 ? 0 : 4,
-                                  right: index == 5 ? 0 : 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: inputBg,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: cellBorder,
-                                    width: borderWidth,
-                                  ),
-                                  boxShadow: cellShadow,
-                                ),
-                                child: Center(
-                                  child: hasChar
-                                      ? Text(
-                                          char,
-                                          style: TextStyle(
-                                            color: inputTextColor,
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        )
-                                      : isFocusedCell
-                                      ? Container(
-                                          width: 2.2,
-                                          height: 22,
-                                          decoration: BoxDecoration(
-                                            color: _loginRoyalBlue,
-                                            borderRadius: BorderRadius.circular(
-                                              1,
-                                            ),
-                                          ),
-                                        )
-                                      : Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: placeholderColor.withValues(
-                                              alpha: 0.35,
-                                            ),
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                    ],
-                  ),
+                _SixDigitOtpInput(
+                  controller: _otpController,
+                  focusNode: _otpFocusNode,
+                  isDark: widget.isDark,
+                  hasError: _error != null,
+                  inputBg: inputBg,
+                  inputBorder: inputBorder,
+                  inputTextColor: inputTextColor,
+                  placeholderColor: placeholderColor,
+                  enabled: !_verifying && !_verifiedAndClosing,
+                  onChanged: () {
+                    if (_error != null) {
+                      setState(() => _error = null);
+                    } else {
+                      setState(() {});
+                    }
+                  },
+                  onCompleted: _verifyOtp,
+                  onSubmitted: _verifyOtp,
                 ),
 
                 if (_error != null)
@@ -3617,159 +3411,15 @@ class _SignUpEmailVerificationModalState
                     ),
                   ),
 
-                const SizedBox(height: 14),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    InkWell(
-                      onTap: () async {
-                        final data = await Clipboard.getData('text/plain');
-                        if (data?.text != null) {
-                          final digits = data!.text!.replaceAll(
-                            RegExp(r'\D'),
-                            '',
-                          );
-                          if (digits.isNotEmpty) {
-                            final code = digits.substring(
-                              0,
-                              math.min(6, digits.length),
-                            );
-                            setState(() {
-                              _otpController.text = code;
-                              if (_error != null) _error = null;
-                            });
-                            if (code.length == 6) {
-                              _verifyOtp();
-                            }
-                          }
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.clipboardPaste,
-                              size: 14,
-                              color: widget.isDark
-                                  ? const Color(0xFF7E8B9F)
-                                  : _loginMutedBlueText,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Paste code',
-                              style: TextStyle(
-                                color: widget.isDark
-                                    ? const Color(0xFF7E8B9F)
-                                    : _loginMutedBlueText,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (otpText.isNotEmpty)
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            _otpController.clear();
-                            if (_error != null) _error = null;
-                          });
-                          _otpFocusNode.requestFocus();
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 4,
-                          ),
-                          child: Text(
-                            'Clear',
-                            style: TextStyle(
-                              color: widget.isDark
-                                  ? const Color(0xFF7E8B9F)
-                                  : _loginMutedBlueText,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-
                 const SizedBox(height: 12),
 
-                Center(
-                  child: _countdown > 0
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: widget.isDark
-                                ? const Color(0xFF1E2028)
-                                : const Color(0xFFF0F5FD),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: widget.isDark
-                                  ? const Color(0x22FFFFFF)
-                                  : const Color(0x331E70E8),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                LucideIcons.clock,
-                                size: 14,
-                                color: subtitleColor,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Resend code in 00:${_countdown.toString().padLeft(2, '0')}',
-                                style: TextStyle(
-                                  color: subtitleColor,
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _otpController.clear();
-                              if (_error != null) _error = null;
-                            });
-                            unawaited(_sendSignupOtp());
-                            _otpFocusNode.requestFocus();
-                          },
-                          icon: const Icon(
-                            LucideIcons.rotateCcw,
-                            size: 14,
-                            color: _loginRoyalBlue,
-                          ),
-                          label: const Text(
-                            'Resend OTP Code',
-                            style: TextStyle(
-                              color: _loginRoyalBlue,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
+                _OtpResendCountdown(
+                  countdown: _countdown,
+                  isDark: widget.isDark,
+                  subtitleColor: subtitleColor,
+                  sending: _sending,
+                  disabled: _verifying || _verifiedAndClosing,
+                  onResend: () => unawaited(_sendSignupOtp()),
                 ),
 
                 const SizedBox(height: 20),
@@ -3780,6 +3430,458 @@ class _SignUpEmailVerificationModalState
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LoginOtpDialog extends StatefulWidget {
+  const _LoginOtpDialog({required this.email});
+
+  final String email;
+
+  @override
+  State<_LoginOtpDialog> createState() => _LoginOtpDialogState();
+}
+
+class _LoginOtpDialogState extends State<_LoginOtpDialog> {
+  final TextEditingController _otpController = TextEditingController();
+  String? _errorText;
+  bool _resending = false;
+  bool _submitted = false;
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_submitted) return;
+    final code = _otpController.text.trim();
+    if (code.isEmpty) {
+      setState(() => _errorText = 'Please enter the verification code.');
+      return;
+    }
+    if (!RegExp(r'^\d{4,8}$').hasMatch(code)) {
+      setState(
+        () => _errorText = 'Please enter a valid 4–8 digit verification code.',
+      );
+      return;
+    }
+    _submitted = true;
+    Navigator.pop(context, code);
+  }
+
+  Future<void> _resendCode() async {
+    if (_resending || _submitted) return;
+    setState(() => _resending = true);
+    try {
+      await AuthApi.instance.resendLoginOtp({'email': widget.email});
+      if (mounted) {
+        showAppMessage('A new verification code was sent.');
+      }
+    } on AuthApiException catch (error) {
+      if (mounted) showAppMessage(error.message);
+    } catch (_) {
+      if (mounted) {
+        showAppMessage('Could not resend the verification code.');
+      }
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Verify your login'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'A verification code was sent to ${widget.email}. Please enter it below to continue.',
+            style: const TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _otpController,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(8),
+            ],
+            onChanged: (_) {
+              if (_errorText != null) setState(() => _errorText = null);
+            },
+            onSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: 'Email verification code',
+              hintText: 'Enter 6-digit code',
+              errorText: _errorText,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _resending ? null : _resendCode,
+          child: Text(_resending ? 'Sending…' : 'Resend code'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submitted ? null : _submit,
+          child: const Text('Verify'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SixDigitOtpInput extends StatefulWidget {
+  const _SixDigitOtpInput({
+    required this.controller,
+    required this.focusNode,
+    required this.isDark,
+    required this.hasError,
+    required this.inputBg,
+    required this.inputBorder,
+    required this.inputTextColor,
+    required this.placeholderColor,
+    required this.enabled,
+    required this.onChanged,
+    required this.onCompleted,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool isDark;
+  final bool hasError;
+  final Color inputBg;
+  final Color inputBorder;
+  final Color inputTextColor;
+  final Color placeholderColor;
+  final bool enabled;
+  final VoidCallback onChanged;
+  final VoidCallback onCompleted;
+  final VoidCallback onSubmitted;
+
+  @override
+  State<_SixDigitOtpInput> createState() => _SixDigitOtpInputState();
+}
+
+class _SixDigitOtpInputState extends State<_SixDigitOtpInput> {
+  Future<void> _pasteFromClipboard() async {
+    if (!widget.enabled) return;
+    final data = await Clipboard.getData('text/plain');
+    if (!mounted) return;
+    final raw = data?.text;
+    if (raw == null) return;
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return;
+    final code = digits.substring(0, math.min(6, digits.length));
+    widget.controller.value = TextEditingValue(
+      text: code,
+      selection: TextSelection.collapsed(offset: code.length),
+    );
+    widget.onChanged();
+    if (code.length == 6) {
+      widget.onCompleted();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final actionTextColor = widget.isDark
+        ? const Color(0xFF7E8B9F)
+        : _loginMutedBlueText;
+
+    return ListenableBuilder(
+      listenable: Listenable.merge([widget.controller, widget.focusNode]),
+      builder: (context, _) {
+        final otpText = widget.controller.text;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 62,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  IgnorePointer(
+                    child: Row(
+                      children: List.generate(6, (index) {
+                        final hasChar = index < otpText.length;
+                        final char = hasChar ? otpText[index] : '';
+                        final isFocusedCell =
+                            widget.focusNode.hasFocus &&
+                            (index == otpText.length ||
+                                (index == 5 && otpText.length == 6));
+
+                        Color cellBorder;
+                        double borderWidth;
+                        List<BoxShadow> cellShadow;
+
+                        if (widget.hasError) {
+                          cellBorder = _loginErrorColor;
+                          borderWidth = 1.5;
+                          cellShadow = const [
+                            BoxShadow(
+                              color: Color(0x26E53935),
+                              offset: Offset(0, 3),
+                              blurRadius: 8,
+                            ),
+                          ];
+                        } else if (isFocusedCell) {
+                          cellBorder = _loginRoyalBlue;
+                          borderWidth = 2.0;
+                          cellShadow = [
+                            BoxShadow(
+                              color: _loginRoyalBlue.withValues(alpha: 0.28),
+                              offset: const Offset(0, 4),
+                              blurRadius: 10,
+                            ),
+                          ];
+                        } else if (hasChar) {
+                          cellBorder = widget.isDark
+                              ? const Color(0xFF4C7FD8)
+                              : _loginRoyalBlue.withValues(alpha: 0.65);
+                          borderWidth = 1.5;
+                          cellShadow = const [
+                            BoxShadow(
+                              color: Color(0x141E70E8),
+                              offset: Offset(0, 2),
+                              blurRadius: 6,
+                            ),
+                          ];
+                        } else {
+                          cellBorder = widget.inputBorder;
+                          borderWidth = 1.2;
+                          cellShadow = [];
+                        }
+
+                        return Expanded(
+                          child: Container(
+                            height: 60,
+                            margin: EdgeInsets.only(
+                              left: index == 0 ? 0 : 4,
+                              right: index == 5 ? 0 : 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: widget.inputBg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: cellBorder,
+                                width: borderWidth,
+                              ),
+                              boxShadow: cellShadow,
+                            ),
+                            child: Center(
+                              child: hasChar
+                                  ? Text(
+                                      char,
+                                      style: TextStyle(
+                                        color: widget.inputTextColor,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    )
+                                  : isFocusedCell
+                                  ? Container(
+                                      width: 2.2,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        color: _loginRoyalBlue,
+                                        borderRadius: BorderRadius.circular(1),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: widget.placeholderColor
+                                            .withValues(alpha: 0.35),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                  // Placed on top so taps and long-press paste menus hit the TextField directly.
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.0,
+                      child: TextField(
+                        controller: widget.controller,
+                        focusNode: widget.focusNode,
+                        enabled: widget.enabled,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 18),
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
+                        onChanged: (val) {
+                          widget.onChanged();
+                          if (val.length == 6) {
+                            widget.onCompleted();
+                          }
+                        },
+                        onSubmitted: (_) => widget.onSubmitted(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                InkWell(
+                  onTap: widget.enabled ? _pasteFromClipboard : null,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          LucideIcons.clipboardPaste,
+                          size: 14,
+                          color: actionTextColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Paste code',
+                          style: TextStyle(
+                            color: actionTextColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (otpText.isNotEmpty)
+                  InkWell(
+                    onTap: widget.enabled
+                        ? () {
+                            widget.controller.clear();
+                            widget.onChanged();
+                            widget.focusNode.requestFocus();
+                          }
+                        : null,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        'Clear',
+                        style: TextStyle(
+                          color: actionTextColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _OtpResendCountdown extends StatelessWidget {
+  const _OtpResendCountdown({
+    required this.countdown,
+    required this.isDark,
+    required this.subtitleColor,
+    required this.sending,
+    required this.disabled,
+    required this.onResend,
+  });
+
+  final int countdown;
+  final bool isDark;
+  final Color subtitleColor;
+  final bool sending;
+  final bool disabled;
+  final VoidCallback onResend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: countdown > 0
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E2028)
+                    : const Color(0xFFF0F5FD),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0x22FFFFFF)
+                      : const Color(0x331E70E8),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.clock, size: 14, color: subtitleColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Resend code in 00:${countdown.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      color: subtitleColor,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : TextButton.icon(
+              onPressed: (sending || disabled) ? null : onResend,
+              icon: const Icon(
+                LucideIcons.rotateCcw,
+                size: 14,
+                color: _loginRoyalBlue,
+              ),
+              label: Text(
+                sending ? 'Sending code…' : 'Resend OTP Code',
+                style: const TextStyle(
+                  color: _loginRoyalBlue,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
     );
   }
 }

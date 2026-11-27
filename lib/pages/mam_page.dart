@@ -508,7 +508,19 @@ class MamPageState extends State<MamPage> {
           body: SafeArea(
             child: MamInvestorPage(
               showBackButton: false,
-              initialAccountId: _selectedInvestorAccountId ?? '3511',
+              initialAccountId: _selectedInvestorAccountId,
+              initialAccountDetails: _investorAccounts
+                  .where((account) => account.accountId == _selectedInvestorAccountId)
+                  .map((account) => <String, dynamic>{
+                    'account_id': account.accountId,
+                    'master_account_id': account.masterAccountId,
+                    'name': account.alias,
+                    'balance': account.balance,
+                    'profit': account.totalProfit,
+                    'profit_share': account.profitShare,
+                    'status': account.isCopying ? 'Copying' : 'Paused',
+                  })
+                  .firstOrNull,
               onBack: () => popSubView(),
               onExploreAvailable: () {
                 setState(() {

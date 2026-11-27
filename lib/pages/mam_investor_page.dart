@@ -223,12 +223,14 @@ class MamInvestorPage extends StatefulWidget {
     this.onExploreAvailable,
     this.showBackButton = true,
     this.initialAccountId,
+    this.initialAccountDetails,
   });
 
   final VoidCallback? onBack;
   final VoidCallback? onExploreAvailable;
   final bool showBackButton;
   final String? initialAccountId;
+  final Map<String, dynamic>? initialAccountDetails;
 
   @override
   State<MamInvestorPage> createState() => _MamInvestorPageState();
@@ -241,51 +243,38 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   @override
   void initState() {
     super.initState();
-    _accounts = [
-      InvestorAccountData(
-        accountId: '3511',
-        masterAccountId: '3510',
-        alias: 'testtest1 - Investment',
-        platform: 'MetaTrader 5 (MT5)',
-        server: 'VTIndex-Live',
-        balance: 0.00,
-        totalProfit: 0.00,
-        profitShare: 10.0,
-        riskLevel: 'Medium',
-        leverage: '1:1',
-        isCopying: true,
-        scalingMethod: 'BALANCE RATIO',
-        multiplicationFactor: 1.00,
-        orderCloning: false,
-        cloneCount: 1,
-      ),
-      InvestorAccountData(
-        accountId: '3520',
-        masterAccountId: '3510',
-        alias: 'testtest2 - Pro Copier',
-        platform: 'MetaTrader 5 (MT5)',
-        server: 'VTIndex-Live',
-        balance: 2450.00,
-        totalProfit: 348.50,
-        profitShare: 10.0,
-        riskLevel: 'Medium',
-        leverage: '1:1',
-        isCopying: true,
-        scalingMethod: 'FIXED RATIO',
-        multiplicationFactor: 1.50,
-        orderCloning: true,
-        cloneCount: 3,
-      ),
-    ];
-    _selectedAccountIndex = 0;
-    if (widget.initialAccountId != null) {
-      final index = _accounts.indexWhere(
-        (account) => account.accountId == widget.initialAccountId,
-      );
-      if (index >= 0) {
-        _selectedAccountIndex = index;
+    final details = widget.initialAccountDetails;
+    if (details != null) {
+      final accountId = (details['account_id'] ?? widget.initialAccountId ?? '').toString();
+      final masterId = (details['master_account_id'] ?? '').toString();
+      final status = (details['status'] ?? '').toString().toLowerCase();
+      double number(dynamic value) {
+        if (value is num) return value.toDouble();
+        return double.tryParse(
+              value?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '',
+            ) ??
+            0;
       }
+
+      _accounts = [
+        InvestorAccountData(
+          accountId: accountId,
+          masterAccountId: masterId,
+          alias: (details['name'] ?? 'MAM Investment #$accountId').toString(),
+          platform: 'MetaTrader 5 (MT5)',
+          server: 'VTIndex-MT5',
+          balance: number(details['balance']),
+          totalProfit: number(details['profit']),
+          profitShare: number(details['profit_share']),
+          riskLevel: (details['risk_level'] ?? '—').toString(),
+          leverage: (details['leverage'] ?? '—').toString(),
+          isCopying: status == 'copying' || status == 'running',
+        ),
+      ];
+    } else {
+      _accounts = [];
     }
+    _selectedAccountIndex = 0;
   }
 
   InvestorAccountData get _currentAccount => _accounts[_selectedAccountIndex];

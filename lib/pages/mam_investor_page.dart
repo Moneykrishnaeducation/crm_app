@@ -241,6 +241,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   late List<InvestorAccountData> _accounts;
   late int _selectedAccountIndex;
   bool _isCopyToggleLoading = false;
+  int? _investorOpenTradeCount;
+  int? _masterOpenTradeCount;
+  double? _tradeWinRate;
+  bool _isTradeOverviewLoading = false;
 
   @override
   void initState() {
@@ -295,6 +299,53 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       _accounts = [];
     }
     _selectedAccountIndex = 0;
+    _refreshTradeOverview(); // Load live MAM trade summary
+  }
+
+  List<Map<String, dynamic>> _extractPositions(dynamic response) {
+    if (response is List) return response.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+    if (response is Map) {
+      final data = response['data'];
+      final raw = response['positions'] ?? (data is Map ? data['positions'] : null);
+      if (raw is List) return raw.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+    }
+    return const [];
+  }
+
+  double _tradeNumber(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  Future<void> _refreshTradeOverview() async {
+    if (_accounts.isEmpty) return;
+    final acc = _currentAccount;
+    if (mounted) setState(() => _isTradeOverviewLoading = true);
+    try {
+      final investorFuture = AuthApi.instance.getOpenPositions(acc.accountId);
+      final masterFuture = acc.masterAccountId.isEmpty
+          ? Future<Map<String, dynamic>>.value({'positions': <dynamic>[]})
+          : AuthApi.instance.getPammOpenPositions(acc.masterAccountId, isManager: true);
+      final patternFuture = AuthApi.instance.getTradePatternAnalysis(acc.accountId);
+      final results = await Future.wait<dynamic>([investorFuture, masterFuture, patternFuture]);
+      final investorPositions = _extractPositions(results[0]);
+      final masterPositions = _extractPositions(results[1]);
+      final patterns = results[2] as List<Map<String, dynamic>>;
+      var count = 0, wins = 0;
+      for (final item in patterns) {
+        count += int.tryParse((item['count'] ?? 0).toString()) ?? 0;
+        wins += int.tryParse((item['win_count'] ?? 0).toString()) ?? 0;
+      }
+      if (!mounted) return;
+      setState(() {
+        _investorOpenTradeCount = investorPositions.length;
+        _masterOpenTradeCount = masterPositions.length;
+        _tradeWinRate = count > 0 ? wins * 100 / count : null;
+        _isTradeOverviewLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isTradeOverviewLoading = false);
+    }
   }
 
   Future<void> _toggleCopying(InvestorAccountData account) async {
@@ -1130,7 +1181,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             iconColor: _c.blue,
             title: 'Investor Live Trades',
             subtitle: 'Your open positions & floating P&L',
-            badgeText: '3 Open',
+            badgeText: _isTradeOverviewLoading ? 'Loading' : (_investorOpenTradeCount == null ? '—' : '$_investorOpenTradeCount Open'),
             badgeColor: _c.green,
             onTap: _openLiveTradesSheet,
           ),
@@ -1142,7 +1193,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             iconColor: _c.gold,
             title: 'Master Manager Trades',
             subtitle: 'Source orders executed by master node',
-            badgeText: '5 Master Tickets',
+            badgeText: _isTradeOverviewLoading ? 'Loading' : (_masterOpenTradeCount == null ? '—' : '$_masterOpenTradeCount Open'),
             badgeColor: _c.blue,
             onTap: _openMasterTradesSheet,
           ),
@@ -1154,7 +1205,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             iconColor: _c.green,
             title: 'Trade Pattern Analysis',
             subtitle: 'AI behavioral metrics & win rate',
-            badgeText: '78.4% Win',
+            badgeText: _isTradeOverviewLoading ? 'Loading' : (_tradeWinRate == null ? '—' : '${_tradeWinRate!.toStringAsFixed(1)}% Win'),
             badgeColor: _c.green,
             onTap: _openTradePatternSheet,
           ),
@@ -1705,237 +1756,81 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // 10. INTERACTIVE MODAL: LIVE TRADES SHEET
   // ---------------------------------------------------------------------------
   void _openLiveTradesSheet() {
-    final acc = _currentAccount;
+    _showLivePositionsSheet(title: 'Investor Live Trades', accountId: _currentAccount.accountId, isMaster: false);
+  }
 
+  void _showLivePositionsSheet({
+    required String title,
+    required String accountId,
+    required bool isMaster,
+  }) {
+    final future = isMaster
+        ? AuthApi.instance.getPammOpenPositions(accountId, isManager: true)
+        : AuthApi.instance.getOpenPositions(accountId);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final trades = [
-          {
-            'symbol': 'EURUSD',
-            'type': 'BUY',
-            'lots': '0.20',
-            'openPrice': '1.08450',
-            'currentPrice': '1.08720',
-            'pnl': '+54.00',
-            'ticket': '98201',
-            'time': '10:14:22',
-            'isPos': true,
-          },
-          {
-            'symbol': 'GBPUSD',
-            'type': 'SELL',
-            'lots': '0.15',
-            'openPrice': '1.29800',
-            'currentPrice': '1.29610',
-            'pnl': '+28.50',
-            'ticket': '98208',
-            'time': '11:02:15',
-            'isPos': true,
-          },
-          {
-            'symbol': 'XAUUSD',
-            'type': 'BUY',
-            'lots': '0.05',
-            'openPrice': '2685.10',
-            'currentPrice': '2685.44',
-            'pnl': '+1.70',
-            'ticket': '98214',
-            'time': '11:45:09',
-            'isPos': true,
-          },
-        ];
-
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          decoration: BoxDecoration(
-            color: _c.card,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: _c.border),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: _c.muted.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: _c.blueLight,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: _c.blueBorder),
-                        ),
-                        child: Icon(
-                          LucideIcons.barChart2,
-                          size: 17,
-                          color: _c.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Investor Live Trades',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: _c.text,
-                            ),
-                          ),
-                          Text(
-                            'Account ${acc.accountId} • 3 Active Orders',
-                            style: TextStyle(fontSize: 11, color: _c.muted),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                    constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Summary Bar
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: _c.greenLight,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _c.greenBorder),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'TOTAL FLOATING P&L',
-                      style: GoogleFonts.inter(
-                        color: _c.green,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      '+\$84.20 USD',
-                      style: GoogleFonts.inter(
-                        color: _c.green,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              Expanded(
-                child: ListView.separated(
-                  itemCount: trades.length,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.78,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        decoration: BoxDecoration(color: _c.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), border: Border.all(color: _c.border)),
+        child: Column(children: [
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: _c.muted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: GoogleFonts.inter(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
+              Text('MT5 Account $accountId', style: TextStyle(color: _c.muted, fontSize: 11)),
+            ])),
+            IconButton(onPressed: () => Navigator.pop(ctx), icon: Icon(LucideIcons.x, color: _c.muted)),
+          ]),
+          const SizedBox(height: 8),
+          Expanded(child: FutureBuilder<dynamic>(
+            future: future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) return Center(child: CircularProgressIndicator(color: _c.blue));
+              if (snapshot.hasError) return Center(child: Text('Unable to load live positions. Please try again.', style: TextStyle(color: _c.muted), textAlign: TextAlign.center));
+              final positions = _extractPositions(snapshot.data);
+              if (positions.isEmpty) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(LucideIcons.chartNoAxesCombined, size: 34, color: _c.muted),
+                const SizedBox(height: 10),
+                Text('No open positions', style: GoogleFonts.inter(color: _c.text, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text('There are currently no active MT5 trades.', style: TextStyle(color: _c.muted, fontSize: 11)),
+              ]));
+              final totalProfit = positions.fold<double>(0, (sum, p) => sum + _tradeNumber(p['profit']));
+              return Column(children: [
+                Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(10), border: Border.all(color: _c.subBorder)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text('${positions.length} OPEN POSITIONS', style: GoogleFonts.inter(color: _c.muted, fontSize: 10, fontWeight: FontWeight.w700)),
+                  Text('${totalProfit >= 0 ? '+' : ''}${totalProfit.toStringAsFixed(2)} USD', style: GoogleFonts.inter(color: totalProfit >= 0 ? _c.green : _c.red, fontSize: 13, fontWeight: FontWeight.w800)),
+                ])),
+                const SizedBox(height: 10),
+                Expanded(child: ListView.separated(
+                  itemCount: positions.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final t = trades[index];
-                    final isPos = t['isPos'] as bool;
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _c.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _c.subBorder),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: t['type'] == 'BUY'
-                                  ? _c.blueLight
-                                  : _c.redLight,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${t['type']} ${t['lots']}',
-                              style: GoogleFonts.inter(
-                                color: t['type'] == 'BUY' ? _c.blue : _c.red,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  t['symbol'] as String,
-                                  style: GoogleFonts.inter(
-                                    color: _c.text,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  '${t['ticket']} • ${t['openPrice']} → ${t['currentPrice']}',
-                                  style: TextStyle(
-                                    color: _c.muted,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '\$${t['pnl']}',
-                            style: GoogleFonts.inter(
-                              color: isPos ? _c.green : _c.red,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                    final p = positions[index];
+                    final type = (p['type'] ?? p['trade_type'] ?? '').toString().toUpperCase();
+                    final isBuy = type.contains('BUY');
+                    final profit = _tradeNumber(p['profit']);
+                    return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: _c.subBorder)), child: Row(children: [
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: isBuy ? _c.blueLight : _c.redLight, borderRadius: BorderRadius.circular(6)), child: Text(type.isEmpty ? 'TRADE' : type, style: GoogleFonts.inter(color: isBuy ? _c.blue : _c.red, fontSize: 10, fontWeight: FontWeight.w800))),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text((p['symbol'] ?? '—').toString(), style: GoogleFonts.inter(color: _c.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                        Text('Ticket ${p['ticket'] ?? p['position_id'] ?? '—'} • ${_tradeNumber(p['volume']).toStringAsFixed(2)} lots', style: TextStyle(color: _c.muted, fontSize: 10.5)),
+                        Text('Open ${p['open_price'] ?? '—'} • Current ${p['current_price'] ?? '—'}', style: TextStyle(color: _c.muted, fontSize: 10)),
+                      ])),
+                      Text('${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(2)}', style: GoogleFonts.inter(color: profit >= 0 ? _c.green : _c.red, fontSize: 12, fontWeight: FontWeight.w800)),
+                    ]));
                   },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+                )),
+              ]);
+            },
+          )),
+        ]),
+      ),
     );
   }
 
@@ -1943,518 +1838,93 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // 11. INTERACTIVE MODAL: MASTER TRADES SHEET
   // ---------------------------------------------------------------------------
   void _openMasterTradesSheet() {
-    final acc = _currentAccount;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final masterTrades = [
-          {
-            'symbol': 'EURUSD',
-            'type': 'BUY',
-            'lots': '5.00',
-            'ticket': '9812044',
-            'pnl': '+270.00',
-          },
-          {
-            'symbol': 'GBPUSD',
-            'type': 'SELL',
-            'lots': '3.50',
-            'ticket': '9812110',
-            'pnl': '+133.00',
-          },
-          {
-            'symbol': 'USDJPY',
-            'type': 'BUY',
-            'lots': '2.00',
-            'ticket': '9812239',
-            'pnl': '-18.00',
-          },
-          {
-            'symbol': 'XAUUSD',
-            'type': 'BUY',
-            'lots': '2.00',
-            'ticket': '9812301',
-            'pnl': '+35.00',
-          },
-        ];
-
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          decoration: BoxDecoration(
-            color: _c.card,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: _c.border),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: _c.muted.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: _c.goldLight,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: _c.goldBorder),
-                        ),
-                        child: Icon(
-                          LucideIcons.usersRound,
-                          size: 17,
-                          color: _c.gold,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Master Manager Trades',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: _c.text,
-                            ),
-                          ),
-                          Text(
-                            'Master Node ${acc.masterAccountId} Live Source Orders',
-                            style: TextStyle(fontSize: 11, color: _c.muted),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                    constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Overview Banner
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: _c.subCard,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _c.subBorder),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total Master Volume: 12.50 Lots',
-                      style: TextStyle(color: _c.muted, fontSize: 11.5),
-                    ),
-                    Text(
-                      'Master Float: +\$420.00',
-                      style: GoogleFonts.inter(
-                        color: _c.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              Expanded(
-                child: ListView.separated(
-                  itemCount: masterTrades.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final mt = masterTrades[index];
-                    final isPos = (mt['pnl'] as String).startsWith('+');
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _c.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _c.subBorder),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: mt['type'] == 'BUY'
-                                  ? _c.blueLight
-                                  : _c.redLight,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${mt['type']} ${mt['lots']}',
-                              style: GoogleFonts.inter(
-                                color: mt['type'] == 'BUY' ? _c.blue : _c.red,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  mt['symbol'] as String,
-                                  style: GoogleFonts.inter(
-                                    color: _c.text,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  'Master Ticket ${mt['ticket']}',
-                                  style: TextStyle(
-                                    color: _c.muted,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '\$${mt['pnl']}',
-                            style: GoogleFonts.inter(
-                              color: isPos ? _c.green : _c.red,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    final masterId = _currentAccount.masterAccountId;
+    if (masterId.isEmpty) {
+      showAppMessage('Master account information is unavailable.');
+      return;
+    }
+    _showLivePositionsSheet(title: 'Master Manager Trades', accountId: masterId, isMaster: true);
   }
 
   // ---------------------------------------------------------------------------
   // 12. INTERACTIVE MODAL: TRADE PATTERN ANALYSIS
   // ---------------------------------------------------------------------------
   void _openTradePatternSheet() {
+    final accountId = _currentAccount.accountId;
+    final future = AuthApi.instance.getTradePatternAnalysis(accountId, days: 30);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          decoration: BoxDecoration(
-            color: _c.card,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: _c.border),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: _c.muted.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: _c.greenLight,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: _c.greenBorder),
-                          ),
-                          child: Icon(
-                            LucideIcons.lineChart,
-                            size: 17,
-                            color: _c.green,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Trade Pattern Analysis',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: _c.text,
-                              ),
-                            ),
-                            Text(
-                              'AI Behavioral Metrics & Historical Alpha',
-                              style: TextStyle(fontSize: 11, color: _c.muted),
-                            ),
-                          ],
-                        ),
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.76,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        decoration: BoxDecoration(color: _c.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), border: Border.all(color: _c.border)),
+        child: Column(children: [
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: _c.muted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Trade Pattern Analysis', style: GoogleFonts.inter(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
+              Text('Account $accountId • Last 30 days', style: TextStyle(color: _c.muted, fontSize: 11)),
+            ])),
+            IconButton(onPressed: () => Navigator.pop(ctx), icon: Icon(LucideIcons.x, color: _c.muted)),
+          ]),
+          const SizedBox(height: 10),
+          Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) return Center(child: CircularProgressIndicator(color: _c.blue));
+              if (snapshot.hasError) return Center(child: Text('Unable to load trade analytics.', style: TextStyle(color: _c.muted)));
+              final patterns = snapshot.data ?? const [];
+              final total = patterns.fold<int>(0, (sum, p) => sum + (int.tryParse((p['count'] ?? 0).toString()) ?? 0));
+              final wins = patterns.fold<int>(0, (sum, p) => sum + (int.tryParse((p['win_count'] ?? 0).toString()) ?? 0));
+              final winRate = total == 0 ? 0.0 : wins * 100 / total;
+              if (patterns.isEmpty) return Center(child: Text('No closed-trade analytics available yet.', style: TextStyle(color: _c.muted)));
+              return Column(children: [
+                Container(width: double.infinity, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: _c.subBorder)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('OVERALL WIN RATE', style: GoogleFonts.inter(color: _c.muted, fontSize: 10, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text('${winRate.toStringAsFixed(1)}%', style: GoogleFonts.inter(color: _c.text, fontSize: 24, fontWeight: FontWeight.w800)),
+                  ]),
+                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text('$total CLOSED TRADES', style: GoogleFonts.inter(color: _c.muted, fontSize: 10, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text('$wins WINNING', style: GoogleFonts.inter(color: _c.green, fontSize: 12, fontWeight: FontWeight.w800)),
+                  ]),
+                ])),
+                const SizedBox(height: 10),
+                Expanded(child: ListView.separated(
+                  itemCount: patterns.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final p = patterns[index];
+                    final profit = _tradeNumber(p['profit']);
+                    final count = int.tryParse((p['count'] ?? 0).toString()) ?? 0;
+                    final rate = _tradeNumber(p['win_rate']);
+                    return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: _c.subBorder)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Expanded(child: Text((p['label'] ?? 'Trade pattern').toString(), style: GoogleFonts.inter(color: _c.text, fontSize: 12, fontWeight: FontWeight.w700))),
+                        Text('${rate.toStringAsFixed(0)}% win', style: GoogleFonts.inter(color: _c.blue, fontSize: 11, fontWeight: FontWeight.w800)),
+                      ]),
+                      const SizedBox(height: 6),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text('$count trades', style: TextStyle(color: _c.muted, fontSize: 10.5)),
+                        Text('${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(2)} USD', style: GoogleFonts.inter(color: profit >= 0 ? _c.green : _c.red, fontSize: 11, fontWeight: FontWeight.w800)),
+                      ]),
+                      if ((p['recommendation'] ?? '').toString().isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(p['recommendation'].toString(), style: TextStyle(color: _c.muted, fontSize: 10.5)),
                       ],
-                    ),
-                    IconButton(
-                      icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
-                      constraints: const BoxConstraints(
-                        minWidth: 44,
-                        minHeight: 44,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Win Rate Hero Banner
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: _c.subCard,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _c.subBorder),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'OVERALL WIN RATE',
-                            style: GoogleFonts.inter(
-                              color: _c.muted,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '78.4%',
-                            style: GoogleFonts.inter(
-                              color: _c.green,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _c.greenLight,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: _c.greenBorder),
-                        ),
-                        child: Text(
-                          'CONSERVATIVE PROFILE',
-                          style: GoogleFonts.inter(
-                            color: _c.green,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // 2x3 Metric Grid
-                Text(
-                  'PERFORMANCE METRICS',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: _c.muted,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _c.subCard,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _c.subBorder),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _patternStat(
-                              'Profit Factor',
-                              '2.45',
-                              _c.blue,
-                            ),
-                          ),
-                          Container(width: 1, height: 32, color: _c.subBorder),
-                          Expanded(
-                            child: _patternStat(
-                              'Sharpe Ratio',
-                              '1.89',
-                              _c.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Divider(height: 16, thickness: 1, color: _c.subBorder),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _patternStat(
-                              'Max Drawdown',
-                              '4.2%',
-                              _c.gold,
-                            ),
-                          ),
-                          Container(width: 1, height: 32, color: _c.subBorder),
-                          Expanded(
-                            child: _patternStat(
-                              'Avg Trade Duration',
-                              '3h 42m',
-                              _c.text,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Divider(height: 16, thickness: 1, color: _c.subBorder),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _patternStat(
-                              'Total Closed Trades',
-                              '342',
-                              _c.text,
-                            ),
-                          ),
-                          Container(width: 1, height: 32, color: _c.subBorder),
-                          Expanded(
-                            child: _patternStat(
-                              'Avg Win / Loss',
-                              '2.1x',
-                              _c.blue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Asset Distribution
-                Text(
-                  'TOP TRADED ASSETS',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: _c.muted,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _c.subCard,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _c.subBorder),
-                  ),
-                  child: Column(
-                    children: [
-                      _assetBar('EURUSD', 0.45, '45%'),
-                      const SizedBox(height: 8),
-                      _assetBar('GBPUSD', 0.30, '30%'),
-                      const SizedBox(height: 8),
-                      _assetBar('XAUUSD', 0.20, '20%'),
-                      const SizedBox(height: 8),
-                      _assetBar('Other', 0.05, '5%'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _c.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      'Close Analysis',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+                    ]));
+                  },
+                )),
+              ]);
+            },
+          )),
+        ]),
+      ),
     );
   }
 

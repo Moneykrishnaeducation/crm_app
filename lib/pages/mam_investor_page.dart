@@ -305,11 +305,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                         ? [_buildEmptyInvestorState()]
                         : [
                             _buildHeroBalanceCard(_currentAccount),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             _buildAllocationSpecificationsCard(),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             _buildSecurityCredentialsCard(),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             _buildLiveOrdersTradesCard(),
                           ],
                   ),
@@ -633,71 +633,44 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     final acc = _currentAccount;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _c.blueLight,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _c.blueBorder),
-                ),
-                child: Icon(
-                  LucideIcons.slidersHorizontal,
-                  color: _c.blue,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Allocation Specifications',
-                      style: GoogleFonts.inter(
-                        color: _c.text,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      'Investor node connection parameters',
-                      style: TextStyle(color: _c.muted, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Text(
+            'ACCOUNT DETAILS',
+            style: GoogleFonts.inter(
+              color: _c.text,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .45,
+            ),
           ),
-          const SizedBox(height: 14),
-
-          // Specs Table
+          const SizedBox(height: 4),
+          Text(
+            'Investment account information',
+            style: GoogleFonts.inter(
+              color: _c.muted,
+              fontSize: 10.5,
+            ),
+          ),
+          const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
               color: _c.subCard,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(11),
               border: Border.all(color: _c.subBorder),
             ),
             child: Column(
               children: [
                 _specRow('Account ID', acc.accountId, copyable: true),
                 _specDivider(),
-                _specRow(
-                  'Master Account ID',
-                  acc.masterAccountId,
-                  copyable: true,
-                ),
+                _specRow('Master Account ID', acc.masterAccountId, copyable: true),
                 _specDivider(),
                 _specRow('Account Alias', acc.alias),
                 _specDivider(),

@@ -2688,12 +2688,19 @@ class MamPageState extends State<MamPage> {
                 Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    color: _c.card,
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFF0B1D3A), Color(0xFF174A91)],
+                      colors: [
+                        _c.card,
+                        _c.isDark
+                            ? const Color(0xFF142138)
+                            : const Color(0xFFF1F6FF),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _c.border),
                   ),
                   child: Row(
                     children: [
@@ -2701,15 +2708,13 @@ class MamPageState extends State<MamPage> {
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: .13),
+                          color: _c.blueLight,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: .18),
-                          ),
+                          border: Border.all(color: _c.blueBorder),
                         ),
                         child: const Icon(
                           LucideIcons.userRound,
-                          color: Colors.white,
+                          color: _c.blue,
                           size: 22,
                         ),
                       ),
@@ -2723,7 +2728,7 @@ class MamPageState extends State<MamPage> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: _c.text,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -2732,7 +2737,7 @@ class MamPageState extends State<MamPage> {
                             Text(
                               'Manager ID  ·  ${manager.id}',
                               style: GoogleFonts.inter(
-                                color: Colors.white.withValues(alpha: .7),
+                                color: _c.muted,
                                 fontSize: 10.5,
                               ),
                             ),
@@ -2741,7 +2746,7 @@ class MamPageState extends State<MamPage> {
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(sheetContext),
-                        icon: const Icon(Icons.close, color: Colors.white70),
+                        icon: Icon(Icons.close, color: _c.muted),
                         constraints: const BoxConstraints(
                           minWidth: 38,
                           minHeight: 38,

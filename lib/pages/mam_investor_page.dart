@@ -266,8 +266,8 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           balance: number(details['balance']),
           totalProfit: number(details['profit']),
           profitShare: number(details['profit_share']),
-          riskLevel: (details['risk_level'] ?? '—').toString(),
-          leverage: (details['leverage'] ?? '—').toString(),
+          riskLevel: (details['risk_level'] ?? details['riskLevel'] ?? '—').toString(),
+          leverage: (details['leverage'] ?? details['package_leverage'] ?? '—').toString(),
           isCopying: status == 'copying' || status == 'running',
         ),
       ];
@@ -676,7 +676,15 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                 _specDivider(),
                 _specRow('Trading Platform', acc.platform),
                 _specDivider(),
-                _specRow('Server', acc.server, copyable: true),
+                _specRow(
+                  'Risk Level',
+                  acc.riskLevel.isEmpty ? '—' : acc.riskLevel,
+                ),
+                _specDivider(),
+                _specRow(
+                  'Leverage',
+                  acc.leverage.isEmpty ? '—' : acc.leverage,
+                ),
                 _specDivider(),
                 _specRow(
                   'Status',
@@ -684,8 +692,6 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   isBadge: true,
                   badgeColor: acc.isCopying ? _c.green : _c.gold,
                 ),
-                _specDivider(),
-                _specRow('Leverage', acc.leverage),
               ],
             ),
           ),

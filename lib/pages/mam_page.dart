@@ -2912,345 +2912,288 @@ class MamPageState extends State<MamPage> {
             ? _c.red
             : _c.gold;
     final isInvesting = _investingManagerIds.contains(manager.id);
-    final initial = manager.name.trim().isEmpty
-        ? 'M'
-        : manager.name.trim().substring(0, 1).toUpperCase();
 
-    Widget dataTile({
-      required IconData icon,
-      required String label,
-      required String value,
-      Color? valueColor,
-    }) {
-      return Expanded(
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 68),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          decoration: BoxDecoration(
-            color: _c.card,
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: _c.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 12, color: _c.muted),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: _c.muted,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 7),
-              Text(
-                value.isEmpty ? '—' : value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+    Widget specRow(IconData icon, String label, String value, {Color? color}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        child: Row(
+          children: [
+            Icon(icon, size: 15, color: _c.muted),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                label,
                 style: GoogleFonts.inter(
-                  color: valueColor ?? _c.text,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
+                  color: _c.muted,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              value.isEmpty ? '—' : value,
+              textAlign: TextAlign.right,
+              style: GoogleFonts.inter(
+                color: color ?? _c.text,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _c.border),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _c.card,
+            _c.isDark ? const Color(0xFF142138) : const Color(0xFFF9FBFF),
+          ],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? .18 : .045),
-            blurRadius: 16,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: _c.isDark ? .22 : .045),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Match the MAM Manager workspace: compact name badge and copyable ID.
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_c.blueLight, _c.subCard],
-                  ),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: _c.blueBorder),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  initial,
-                  style: GoogleFonts.inter(
-                    color: _c.blue,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 11),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      manager.name.isEmpty ? 'MAM Manager' : manager.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: _c.text,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: _c.blueLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _c.blueBorder),
+                  ),
+                  child: Text(
+                    (manager.name.isEmpty ? 'MAM MANAGER' : manager.name)
+                        .toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      color: _c.blue,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .45,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      manager.managerName.isNotEmpty
-                          ? '${manager.managerName}  ·  #${manager.id}'
-                          : 'Manager ID  ·  #${manager.id}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: _c.muted,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                decoration: BoxDecoration(
-                  color: manager.isEnabled ? _c.greenLight : _c.subCard,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: manager.isEnabled ? _c.greenBorder : _c.border,
-                  ),
+              Text(
+                'ID: ${manager.id}',
+                style: GoogleFonts.inter(
+                  color: _c.muted,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
                 ),
-                child: Text(
-                  manager.isEnabled ? 'ACTIVE' : 'OFFLINE',
-                  style: GoogleFonts.inter(
-                    color: manager.isEnabled ? _c.green : _c.muted,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+              ),
+              const SizedBox(width: 5),
+              Icon(
+                manager.isEnabled ? LucideIcons.circleCheck : LucideIcons.pauseCircle,
+                size: 15,
+                color: manager.isEnabled ? _c.green : _c.muted,
               ),
             ],
           ),
-          const SizedBox(height: 15),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: _c.navy,
-              borderRadius: BorderRadius.circular(16),
+          const SizedBox(height: 7),
+          if (manager.managerName.isNotEmpty)
+            Text(
+              manager.managerName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: _c.muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'MANAGER BALANCE',
+          const SizedBox(height: 16),
+          Text(
+            'MANAGER BALANCE',
+            style: GoogleFonts.inter(
+              color: _c.muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: .6,
+            ),
+          ),
+          const SizedBox(height: 4),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: FittedBox(
+                      alignment: Alignment.centerLeft,
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        _formatCurrency(manager.balance),
                         style: GoogleFonts.inter(
-                          color: Colors.white.withValues(alpha: .68),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: .8,
+                          color: _c.text,
+                          fontSize: 29,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -.6,
                         ),
                       ),
-                      const SizedBox(height: 5),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          _formatCurrency(manager.balance),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _c.goldLight,
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(color: _c.goldBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'PROFIT SHARE',
                           style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 22,
+                            color: _c.muted,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: .35,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
+                          style: GoogleFonts.inter(
+                            color: _c.gold,
+                            fontSize: 19,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 9,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .10),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: .14),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'PROFIT SHARE',
-                        style: GoogleFonts.inter(
-                          color: Colors.white.withValues(alpha: .68),
-                          fontSize: 8,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFFBBF24),
-                          fontSize: 19,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: _c.subBorder),
             ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              dataTile(
-                icon: LucideIcons.trendingUp,
-                label: 'Historical growth',
-                value: manager.historicalGrowth,
-                valueColor: _c.green,
-              ),
-              const SizedBox(width: 8),
-              dataTile(
-                icon: LucideIcons.shield,
-                label: 'Risk profile',
-                value: risk.isEmpty ? '—' : risk,
-                valueColor: risk.isEmpty ? _c.muted : riskColor,
-              ),
-              const SizedBox(width: 8),
-              dataTile(
-                icon: LucideIcons.calendarDays,
-                label: 'Account age',
-                value: manager.accountAge,
-              ),
-            ],
-          ),
-          if (manager.leverage.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Row(
+            child: Column(
               children: [
-                Icon(LucideIcons.scale, size: 13, color: _c.muted),
-                const SizedBox(width: 6),
-                Text(
-                  'Leverage',
-                  style: GoogleFonts.inter(
-                    color: _c.muted,
-                    fontSize: 10.5,
-                  ),
+                specRow(
+                  LucideIcons.trendingUp,
+                  'Historical growth',
+                  manager.historicalGrowth,
+                  color: _c.green,
                 ),
-                const Spacer(),
-                Text(
-                  manager.leverage,
-                  style: GoogleFonts.inter(
-                    color: _c.text,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Divider(height: 1, color: _c.subBorder),
+                specRow(
+                  LucideIcons.shieldCheck,
+                  'Risk profile',
+                  risk.isEmpty ? '—' : risk,
+                  color: risk.isEmpty ? _c.muted : riskColor,
                 ),
+                Divider(height: 1, color: _c.subBorder),
+                specRow(
+                  LucideIcons.calendarDays,
+                  'Account age',
+                  manager.accountAge,
+                ),
+                if (manager.leverage.isNotEmpty) ...[
+                  Divider(height: 1, color: _c.subBorder),
+                  specRow(LucideIcons.scale, 'Leverage', manager.leverage),
+                ],
               ],
             ),
-          ],
+          ),
           const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
                 child: SizedBox(
                   height: 46,
-                  child: OutlinedButton(
+                  child: OutlinedButton.icon(
                     onPressed: () {
                       AppHaptics.lightImpact();
                       _viewAvailableManager(manager);
                     },
+                    icon: Icon(LucideIcons.arrowUpRight, size: 15, color: _c.text),
+                    label: const Text('View details'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: _c.blue,
-                      side: BorderSide(color: _c.blueBorder),
+                      foregroundColor: _c.text,
+                      side: BorderSide(color: _c.border),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
-                    child: const Text('View details'),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                flex: 2,
                 child: SizedBox(
                   height: 46,
-                  child: FilledButton(
+                  child: FilledButton.icon(
                     onPressed: !manager.isEnabled || isInvesting
                         ? null
                         : () {
                             AppHaptics.mediumImpact();
                             _investInManager(manager);
                           },
+                    icon: isInvesting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(LucideIcons.wallet, size: 16),
+                    label: Text(
+                      isInvesting
+                          ? 'Please wait'
+                          : manager.isEnabled
+                              ? 'Invest'
+                              : 'Unavailable',
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
                     style: FilledButton.styleFrom(
                       backgroundColor: _brandGold,
                       foregroundColor: const Color(0xFF10264A),
                       disabledBackgroundColor: _c.border,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      textStyle: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
-                    child: isInvesting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(LucideIcons.wallet, size: 16),
-                              const SizedBox(width: 7),
-                              Text(
-                                manager.isEnabled ? 'Invest now' : 'Unavailable',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
                   ),
                 ),
               ),

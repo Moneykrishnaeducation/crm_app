@@ -2465,11 +2465,76 @@ class MamPageState extends State<MamPage> {
       await _loadMamInvestments();
       if (!mounted) return;
 
+      // Some deployments cache UserInvestmentsView briefly. If the newly
+      // created account is not in that response yet, seed the selected session
+      // from the create response instead of opening an empty workspace.
+      final responseAccount = response['account'] is Map
+          ? (response['account'] as Map).cast<String, dynamic>()
+          : response['trading_account'] is Map
+              ? (response['trading_account'] as Map).cast<String, dynamic>()
+              : response['data'] is Map
+                  ? (response['data'] as Map).cast<String, dynamic>()
+                  : response;
+
+      final responseAccountId = _availableText(
+        responseAccount['account_id'] ??
+            responseAccount['accountId'] ??
+            responseAccount['login'] ??
+            responseAccount['id'] ??
+            createdAccountId,
+      );
       final refreshedAccountId = createdAccountId.isNotEmpty
           ? createdAccountId
-          : (_investorAccounts.isNotEmpty
-                ? _investorAccounts.last.accountId
-                : '');
+          : responseAccountId.isNotEmpty
+              ? responseAccountId
+              : (_investorAccounts.isNotEmpty
+                    ? _investorAccounts.last.accountId
+                    : '');
+
+      if (refreshedAccountId.isNotEmpty &&
+          !_investorAccounts.any((account) => account.accountId == refreshedAccountId)) {
+        final responseAlias = _availableText(
+          responseAccount['name'] ??
+              responseAccount['account_name'] ??
+              responseAccount['mam_account_name'],
+        );
+        final responseMasterId = _availableText(
+          responseAccount['master_account_id'] ??
+              responseAccount['mam_master_id'] ??
+              manager.id,
+        );
+        final responseBalance = _availableNumber(
+          responseAccount['current_balance'] ??
+              responseAccount['balance'] ??
+              responseAccount['initial_balance'],
+        );
+        final responseProfit = _availableNumber(
+          responseAccount['profit'] ?? responseAccount['total_profit'],
+        );
+        final responseShare = _availableNumber(
+          responseAccount['profit_sharing_percentage'] ??
+              responseAccount['profit_share'] ??
+              responseAccount['profitShare'] ??
+              manager.profitSharingPercentage ??
+              manager.performanceFee,
+        );
+        setState(() {
+          _investorAccounts = [
+            ..._investorAccounts,
+            MamInvestorAccount(
+              accountId: refreshedAccountId,
+              alias: responseAlias.isEmpty
+                  ? '${manager.name} Investment'
+                  : responseAlias,
+              masterAccountId: responseMasterId,
+              balance: responseBalance,
+              totalProfit: responseProfit,
+              profitShare: responseShare,
+              isCopying: true,
+            ),
+          ];
+        });
+      }
 
       if (refreshedAccountId.isEmpty) {
         setState(() => _tab = 1);

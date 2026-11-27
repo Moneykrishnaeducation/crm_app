@@ -1962,10 +1962,10 @@ class MamPageState extends State<MamPage> {
             Expanded(
               child: _metricCard(
                 label: 'CURRENT BALANCE',
-                value: '$' + _investorAccounts.fold<double>(
+                value: '\$${_investorAccounts.fold<double>(
                   0,
                   (sum, account) => sum + account.balance,
-                ).toStringAsFixed(2),
+                ).toStringAsFixed(2)}',
                 subtext: 'Across MAM accounts',
                 icon: Icons.show_chart,
                 accent: _c.green,
@@ -3191,7 +3191,7 @@ class _InvestMamPasswordSheetState extends State<_InvestMamPasswordSheet> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: _brandBlue,
+                    color: c.blue,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(

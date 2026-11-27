@@ -179,6 +179,8 @@ class AvailableMamPool {
     this.totalDeposits = 0,
     this.totalWithdrawals = 0,
     this.profitSharingPercentage = 0,
+    this.historicalGrowth = '0.00%',
+    this.isEnabled = true,
   });
 
   final String id;
@@ -203,6 +205,8 @@ class AvailableMamPool {
   final double totalDeposits;
   final double totalWithdrawals;
   final double profitSharingPercentage;
+  final String historicalGrowth;
+  final bool isEnabled;
 }
 
 // -----------------------------------------------------------------------------
@@ -340,6 +344,9 @@ class MamPageState extends State<MamPage> {
   int _availablePage = 1;
   static const int _availablePageSize = 10;
   final Set<String> _mamStatusUpdating = <String>{};
+  final Set<String> _investingManagerIds = <String>{};
+  bool _investorAccountsLoading = false;
+  String? _investorAccountsError;
   bool _isLoadingMamAccounts = true;
   String? _mamAccountsError;
 
@@ -354,59 +361,13 @@ class MamPageState extends State<MamPage> {
     // Master accounts are loaded from the authenticated backend API.
     _masters = [];
 
-    _investments = [
-      MamInvestmentSubscription(
-        id: 'sub_101',
-        poolName: 'Alpha Quant Alpha-1',
-        managerLogin: '8849102',
-        initialCapital: 5000.00,
-        currentEquity: 5740.00,
-        unrealizedPnl: 740.00,
-        allocationMethod: 'Equity Proportional',
-        feePercentage: 20.0,
-        joinedDate: '12 Oct 2026',
-        isMirroringActive: true,
-        riskLevel: 'Moderate',
-      ),
-      MamInvestmentSubscription(
-        id: 'sub_102',
-        poolName: 'Prime Trend Rider',
-        managerLogin: '8850231',
-        initialCapital: 3000.00,
-        currentEquity: 3336.00,
-        unrealizedPnl: 336.00,
-        allocationMethod: 'Lot Proportional',
-        feePercentage: 25.0,
-        joinedDate: '28 Oct 2026',
-        isMirroringActive: true,
-        riskLevel: 'Low-Risk',
-      ),
-    ];
-
-    _investorAccounts = [
-      MamInvestorAccount(
-        accountId: '3511',
-        alias: 'testtest1 - Investment',
-        masterAccountId: '3510',
-        balance: 0.00,
-        totalProfit: 0.00,
-        profitShare: 10.0,
-        isCopying: true,
-      ),
-      MamInvestorAccount(
-        accountId: '3520',
-        alias: 'testtest2 - Pro Copier',
-        masterAccountId: '3510',
-        balance: 2450.00,
-        totalProfit: 348.50,
-        profitShare: 10.0,
-        isCopying: true,
-      ),
-    ];
+    _investments = [];
+    _investorAccounts = [];
 
     _availablePools = [];
 
     _loadMamAccounts();
+    _loadMamInvestments();
     if (_tab == 2) _loadAvailableManagers();
     _managerSearchController.addListener(() {
       _managerSearchDebounce?.cancel();
@@ -1922,46 +1883,107 @@ class MamPageState extends State<MamPage> {
     return [
       _buildInvestorAccountsHeader(),
       const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: _metricCard(
-              label: 'INVESTMENT',
-              value:
-                  '\$${_investorAccounts.fold<double>(0, (sum, account) => sum + account.balance).toStringAsFixed(2)}',
-              subtext: 'Current balance',
-              icon: LucideIcons.wallet,
-              accent: _c.blue,
-            ),
+      if (_investorAccountsLoading && _investorAccounts.isEmpty)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 36),
+          child: Center(child: CircularProgressIndicator()),
+        )
+      else if (_investorAccountsError != null && _investorAccounts.isEmpty)
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _c.border),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _metricCard(
-              label: 'ACCOUNTS',
-              value: '${_investorAccounts.length}',
-              subtext: 'Investor accounts',
-              icon: LucideIcons.usersRound,
-              accent: _c.gold,
-            ),
+          child: Column(
+            children: [
+              Text(
+                _investorAccountsError!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _c.muted, fontSize: 12),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: _investorAccountsLoading ? null : _loadMamInvestments,
+                icon: const Icon(LucideIcons.refreshCw, size: 15),
+                label: const Text('Retry'),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _metricCard(
-              label: 'PROFIT',
-              value:
-                  '\$${_investorAccounts.fold<double>(0, (sum, account) => sum + account.totalProfit).toStringAsFixed(2)}',
-              subtext: 'Total realized',
-              icon: LucideIcons.trendingUp,
-              accent: _c.green,
-            ),
+        )
+      else if (_investorAccounts.isEmpty)
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _c.border),
           ),
+          child: Column(
+            children: [
+              Icon(LucideIcons.wallet, color: _c.muted, size: 32),
+              const SizedBox(height: 10),
+              Text(
+                'No MAM investments yet',
+                style: GoogleFonts.inter(
+                  color: _c.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'Explore available managers and create your first investment account.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _c.muted, fontSize: 11.5),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => setState(() => _tab = 2),
+                child: const Text('Explore MAM managers'),
+              ),
+            ],
+          ),
+        )
+      else ...[
+        Row(
+          children: [
+            Expanded(
+              child: _metricCard(
+                label: 'INVESTMENT ACCOUNTS',
+                value: '${_investorAccounts.length}',
+                subtext: 'Live from backend',
+                icon: LucideIcons.wallet,
+                accent: _c.blue,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _metricCard(
+                label: 'CURRENT BALANCE',
+                value: '$' + _investorAccounts.fold<double>(
+                  0,
+                  (sum, account) => sum + account.balance,
+                ).toStringAsFixed(2),
+                subtext: 'Across MAM accounts',
+                icon: LucideIcons.chartNoAxesCombined,
+                accent: _c.green,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        for (final account in _investorAccounts) ...[
+          _buildInvestorAccountCard(account),
+          const SizedBox(height: 10),
         ],
-      ),
-      const SizedBox(height: 14),
-      for (final account in _investorAccounts) ...[
-        _buildInvestorAccountCard(account),
-        const SizedBox(height: 10),
       ],
+      if (_investorAccountsLoading && _investorAccounts.isNotEmpty)
+        const Padding(
+          padding: EdgeInsets.all(8),
+          child: Center(child: LinearProgressIndicator()),
+        ),
     ];
   }
 
@@ -2287,6 +2309,8 @@ class MamPageState extends State<MamPage> {
           totalDeposits: _availableNumber(item['total_deposits']),
           totalWithdrawals: _availableNumber(item['total_withdrawals']),
           profitSharingPercentage: profitShare,
+          historicalGrowth: _availableText(item['growth'] ?? item['growth_percentage'] ?? '0.00%'),
+          isEnabled: _apiBool(item['status'] ?? item['is_enabled'], fallback: true),
         );
       }).where((manager) => manager.id.isNotEmpty).toList();
 
@@ -2309,6 +2333,237 @@ class MamPageState extends State<MamPage> {
       }
     }
   }
+
+  /// Load the signed-in client's MAM investor accounts from UserInvestmentsView.
+  Future<void> _loadMamInvestments() async {
+    if (mounted) {
+      setState(() {
+        _investorAccountsLoading = true;
+        _investorAccountsError = null;
+      });
+    }
+    try {
+      final response = await AuthApi.instance.getUserMamInvestments();
+      final raw = response['results'] is List
+          ? response['results'] as List
+          : response['data'] is List
+              ? response['data'] as List
+              : <dynamic>[];
+      final accounts = <MamInvestorAccount>[];
+      final subscriptions = <MamInvestmentSubscription>[];
+      for (final entry in raw.whereType<Map>()) {
+        final item = entry.cast<String, dynamic>();
+        final accountId = _availableText(
+          item['accountId'] ?? item['trading_account_id'] ?? item['account_id'] ?? item['id'],
+        );
+        if (accountId.isEmpty) continue;
+        final masterId = _availableText(item['master_account_id']);
+        final balance = _availableNumber(item['current_balance'] ?? item['balance']);
+        final equity = _availableNumber(item['current_equity'] ?? item['equity']);
+        final profit = _availableNumber(item['profit'] ?? item['total_profit']);
+        final share = _availableNumber(
+          item['profit_sharing_percentage'] ?? item['profit_sharing'] ?? item['profitShare'],
+        );
+        final status = _availableText(item['status']).toLowerCase();
+        final copying = status == 'copying' || status == 'running' ||
+            _apiBool(item['is_enabled'], fallback: false);
+        final alias = _availableText(item['name'] ?? item['mam_account_name']);
+        accounts.add(MamInvestorAccount(
+          accountId: accountId,
+          alias: alias.isEmpty ? 'MAM Investment #$accountId' : alias,
+          masterAccountId: masterId,
+          balance: balance,
+          totalProfit: profit,
+          profitShare: share,
+          isCopying: copying,
+        ));
+        final createdAt = _availableText(item['created_at']);
+        subscriptions.add(MamInvestmentSubscription(
+          id: accountId,
+          poolName: alias.isEmpty ? 'MAM Investment #$accountId' : alias,
+          managerLogin: masterId,
+          initialCapital: _availableNumber(item['amount_invested']),
+          currentEquity: equity,
+          unrealizedPnl: _availableNumber(item['open_profit']),
+          allocationMethod: '—',
+          feePercentage: share,
+          joinedDate: createdAt.isEmpty ? '—' : createdAt.split('T').first,
+          isMirroringActive: copying,
+          riskLevel: _availableText(item['risk_level']).isEmpty
+              ? '—'
+              : _availableText(item['risk_level']),
+        ));
+      }
+      if (!mounted) return;
+      setState(() {
+        _investorAccounts = accounts;
+        _investments = subscriptions;
+        _investorAccountsLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _investorAccounts = [];
+        _investments = [];
+        _investorAccountsLoading = false;
+        _investorAccountsError = error is AuthApiException
+            ? error.message
+            : 'Could not load your MAM investment accounts.';
+      });
+    }
+  }
+
+  Future<void> _investInManager(AvailableMamPool manager) async {
+    final managerId = manager.id.trim();
+    if (managerId.isEmpty || _investingManagerIds.contains(managerId)) return;
+
+    final password = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.62),
+      builder: (_) => _InvestMamPasswordSheet(pool: manager, colors: _c),
+    );
+    if (password == null || password.isEmpty || !mounted) return;
+
+    setState(() => _investingManagerIds.add(managerId));
+    try {
+      final response = await AuthApi.instance.createMamInvestment(
+        managerId: managerId,
+        investorPassword: password,
+      );
+      AppHaptics.heavyImpact();
+      await _loadMamInvestments();
+      if (!mounted) return;
+      setState(() => _tab = 1);
+      showAppMessage(
+        _availableText(response['message']).isNotEmpty
+            ? _availableText(response['message'])
+            : 'MAM investment account created successfully.',
+      );
+    } catch (error) {
+      AppHaptics.vibrate();
+      if (mounted) {
+        showAppMessage(
+          error is AuthApiException
+              ? error.message
+              : 'Could not create the MAM investment account. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _investingManagerIds.remove(managerId));
+    }
+  }
+
+  void _viewAvailableManager(AvailableMamPool manager) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 22),
+        decoration: BoxDecoration(
+          color: _c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: _c.border),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _c.muted.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    manager.name.isEmpty ? 'MAM Manager' : manager.name,
+                    style: GoogleFonts.inter(
+                      color: _c.text,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(sheetContext),
+                  icon: Icon(Icons.close, color: _c.muted),
+                ),
+              ],
+            ),
+            Text(
+              'Manager ID  ${manager.id}',
+              style: GoogleFonts.inter(color: _c.muted, fontSize: 11),
+            ),
+            const SizedBox(height: 14),
+            _managerDetailLine('Manager', manager.managerName),
+            _managerDetailLine('Balance', _formatCurrency(manager.balance)),
+            _managerDetailLine('Equity', _formatCurrency(manager.equity)),
+            _managerDetailLine(
+              'Performance fee',
+              '${manager.profitSharingPercentage.toStringAsFixed(2)}%',
+            ),
+            _managerDetailLine('Risk profile', manager.riskScore.isEmpty ? '—' : manager.riskScore),
+            _managerDetailLine('Leverage', manager.leverage.isEmpty ? '—' : manager.leverage),
+            _managerDetailLine('Account age', manager.accountAge.isEmpty ? '—' : manager.accountAge),
+            _managerDetailLine('Historical growth', manager.historicalGrowth),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: FilledButton.icon(
+                onPressed: manager.isEnabled
+                    ? () {
+                        Navigator.pop(sheetContext);
+                        _investInManager(manager);
+                      }
+                    : null,
+                icon: const Icon(Icons.arrow_forward, size: 17),
+                label: const Text('Invest in this MAM'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _brandGold,
+                  foregroundColor: const Color(0xFF10264A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _managerDetailLine(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(label, style: TextStyle(color: _c.muted, fontSize: 12)),
+        ),
+        Text(
+          value.isEmpty ? '—' : value,
+          style: GoogleFonts.inter(
+            color: _c.text,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 
   // ---------------------------------------------------------------------------
   // TAB 2: MAM AVAILABLE
@@ -2511,148 +2766,392 @@ class MamPageState extends State<MamPage> {
 
   Widget _buildAvailablePoolCard(AvailableMamPool manager) {
     final risk = manager.riskScore;
-    final riskColor = risk.toLowerCase() == 'low' ? _c.green :
-        risk.toLowerCase() == 'high' ? _c.red : _c.gold;
-    final initial = manager.name.isEmpty ? 'M' : manager.name.substring(0, 1).toUpperCase();
+    final riskColor = risk.toLowerCase() == 'low'
+        ? _c.green
+        : risk.toLowerCase() == 'high'
+            ? _c.red
+            : _c.gold;
+    final initial = manager.name.isEmpty
+        ? 'M'
+        : manager.name.substring(0, 1).toUpperCase();
+
     Widget metric(String label, String value, {Color? color}) => Expanded(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label.toUpperCase(), style: TextStyle(color: _c.muted, fontSize: 9, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 4),
-        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.inter(color: color ?? _c.text, fontSize: 12, fontWeight: FontWeight.w800)),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: _c.muted,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: .35,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value.isEmpty ? '—' : value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              color: color ?? _c.text,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
     );
+
     return Container(
       padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(color: _c.card, borderRadius: BorderRadius.circular(15), border: Border.all(color: _c.border)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(width: 40, height: 40, alignment: Alignment.center,
-            decoration: BoxDecoration(color: _c.blueLight, shape: BoxShape.circle, border: Border.all(color: _c.blueBorder)),
-            child: Text(initial, style: GoogleFonts.inter(color: _c.blue, fontWeight: FontWeight.w800))),
-          const SizedBox(width: 10),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(manager.name.isEmpty ? 'MAM Manager' : manager.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(color: _c.text, fontSize: 13, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 3),
-            Text([if (manager.managerName.isNotEmpty) manager.managerName, 'Login #${manager.id}'].join(' • '),
-              maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _c.muted, fontSize: 10.5)),
-          ])),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: risk.isEmpty ? _c.subCard : riskColor.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(7), border: Border.all(color: risk.isEmpty ? _c.border : riskColor.withValues(alpha: .3))),
-            child: Text(risk.isEmpty ? 'Risk N/A' : '$risk Risk',
-              style: TextStyle(color: risk.isEmpty ? _c.muted : riskColor, fontSize: 10, fontWeight: FontWeight.w700))),
-        ]),
-        const SizedBox(height: 13),
-        Container(padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(11), border: Border.all(color: _c.subBorder)),
-          child: Column(children: [
-            Row(children: [
-              metric('Balance', _formatCurrency(manager.balance)),
-              const SizedBox(width: 10),
-              metric('Equity', _formatCurrency(manager.equity)),
-              const SizedBox(width: 10),
-              metric('Profit Share', '${manager.profitSharingPercentage.toStringAsFixed(2)}%', color: _c.blue),
-            ]),
-            const SizedBox(height: 10),
-            Divider(height: 1, color: _c.subBorder),
-            const SizedBox(height: 10),
-            Row(children: [
-              metric('Leverage', manager.leverage.isEmpty ? '—' : manager.leverage),
-              const SizedBox(width: 10),
-              metric('Account Age', manager.accountAge.isEmpty ? '—' : manager.accountAge),
-              const SizedBox(width: 10),
-              metric('Total Profit', _formatCurrency(manager.totalProfit), color: manager.totalProfit >= 0 ? _c.green : _c.red),
-            ]),
-          ]),
-        ),
-        if (manager.totalDeposits != 0 || manager.totalWithdrawals != 0) ...[
-          const SizedBox(height: 9),
-          Text('Deposits ${_formatCurrency(manager.totalDeposits)}  •  Withdrawals ${_formatCurrency(manager.totalWithdrawals)}',
-            style: TextStyle(color: _c.muted, fontSize: 10.5)),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _c.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _c.isDark ? .12 : .025),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
-      ]),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _c.blueLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                child: Text(
+                  initial,
+                  style: GoogleFonts.inter(
+                    color: _c.blue,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      manager.name.isEmpty ? 'MAM Manager' : manager.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      [
+                        if (manager.managerName.isNotEmpty) manager.managerName,
+                        'ID ${manager.id}',
+                      ].join('  •  '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: _c.muted, fontSize: 10.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: manager.isEnabled ? _c.greenLight : _c.subCard,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: manager.isEnabled ? _c.greenBorder : _c.border,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.circle,
+                      size: 6,
+                      color: manager.isEnabled ? _c.green : _c.muted,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      manager.isEnabled ? 'ACTIVE MAM' : 'DISABLED',
+                      style: TextStyle(
+                        color: manager.isEnabled ? _c.green : _c.muted,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+          Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    metric('Balance', _formatCurrency(manager.balance)),
+                    const SizedBox(width: 8),
+                    metric(
+                      'Profit Share',
+                      '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
+                      color: _c.blue,
+                    ),
+                    const SizedBox(width: 8),
+                    metric('Account Age', manager.accountAge),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Divider(height: 1, color: _c.subBorder),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    metric('Historical Growth', manager.historicalGrowth, color: _c.green),
+                    const SizedBox(width: 8),
+                    metric('Risk Profile', risk.isEmpty ? '—' : risk, color: risk.isEmpty ? _c.muted : riskColor),
+                    const SizedBox(width: 8),
+                    metric('Leverage', manager.leverage),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      AppHaptics.lightImpact();
+                      _viewAvailableManager(manager);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _c.blue,
+                      side: BorderSide(color: _c.blueBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('View'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: FilledButton(
+                    onPressed: !manager.isEnabled || _investingManagerIds.contains(manager.id)
+                        ? null
+                        : () {
+                            AppHaptics.mediumImpact();
+                            _investInManager(manager);
+                          },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brandGold,
+                      foregroundColor: const Color(0xFF10264A),
+                      disabledBackgroundColor: _c.border,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: _investingManagerIds.contains(manager.id)
+                        ? const SizedBox(
+                            width: 17,
+                            height: 17,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(
+                            'Invest',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
+
 }
 
 // -----------------------------------------------------------------------------
 // INVEST IN MAM MODAL
 // -----------------------------------------------------------------------------
-class _InvestInMamModal extends StatefulWidget {
-  const _InvestInMamModal({
+/// Password confirmation sheet for the create-investment endpoint.
+/// The backend creates the MT5 investor account and does not take a deposit
+/// amount, source account, allocation method, or drawdown guard in this call.
+class _InvestMamPasswordSheet extends StatefulWidget {
+  const _InvestMamPasswordSheet({
     required this.pool,
     required this.colors,
-    required this.onConfirmed,
   });
 
   final AvailableMamPool pool;
   final _MamColors colors;
-  final void Function(double amount, String account, String method) onConfirmed;
 
   @override
-  State<_InvestInMamModal> createState() => _InvestInMamModalState();
+  State<_InvestMamPasswordSheet> createState() =>
+      _InvestMamPasswordSheetState();
 }
 
-class _InvestInMamModalState extends State<_InvestInMamModal> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '1000',
-  );
-  String _selectedAccount = 'MT5 Standard - #8841029 (\$12,450.00)';
-  final String _allocationMethod = 'Equity Proportional';
-  double _drawdownGuard = 20.0;
-  bool _agreedToTerms = true;
-
-  final List<String> _accounts = [
-    'MT5 Standard - #8841029 (\$12,450.00)',
-    'MT5 Pro Raw - #8859182 (\$5,120.00)',
-    'MT5 Scalper - #8830194 (\$2,800.00)',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _amountController.addListener(() {
-      setState(() {});
-    });
-  }
+class _InvestMamPasswordSheetState extends State<_InvestMamPasswordSheet> {
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _hidePassword = true;
+  bool _hideConfirmPassword = true;
+  String? _validationError;
 
   @override
   void dispose() {
-    _amountController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _addQuickAmount(double delta) {
-    final cur = double.tryParse(_amountController.text.trim()) ?? 0.0;
-    final next = (cur + delta).clamp(100.0, 1000000.0);
-    setState(() {
-      _amountController.text = next.toStringAsFixed(0);
-    });
+  InputDecoration _passwordDecoration({
+    required String hint,
+    required bool hidden,
+    required VoidCallback onToggle,
+  }) {
+    final c = widget.colors;
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.robotoMono(
+        color: c.muted,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+      prefixIcon: Icon(Icons.key_outlined, color: c.blue, size: 18),
+      suffixIcon: IconButton(
+        onPressed: onToggle,
+        icon: Icon(
+          hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          color: c.muted,
+          size: 18,
+        ),
+      ),
+      filled: true,
+      fillColor: c.subCard,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: BorderSide(color: c.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: BorderSide(color: c.blue, width: 1.3),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: BorderSide(color: c.red),
+      ),
+    );
+  }
+
+  Widget _label(String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 7),
+    child: Text(
+      value.toUpperCase(),
+      style: GoogleFonts.inter(
+        color: widget.colors.text,
+        fontSize: 10.5,
+        fontWeight: FontWeight.w800,
+        letterSpacing: .35,
+      ),
+    ),
+  );
+
+  Widget _summaryMetric(String label, String value, {Color? valueColor}) {
+    final c = widget.colors;
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 11),
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: c.border),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: c.muted,
+                fontSize: 8.2,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              value.isEmpty ? '—' : value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: valueColor ?? c.text,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    final password = _passwordController.text;
+    final confirmation = _confirmPasswordController.text;
+    if (password.isEmpty || confirmation.isEmpty) {
+      setState(() => _validationError = 'Enter and confirm your investor password.');
+      return;
+    }
+    if (password != confirmation) {
+      setState(() => _validationError = 'Investor passwords do not match.');
+      return;
+    }
+    AppHaptics.mediumImpact();
+    Navigator.of(context).pop(password);
   }
 
   @override
   Widget build(BuildContext context) {
     final c = widget.colors;
+    final pool = widget.pool;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final currentAmt =
-        double.tryParse(_amountController.text.trim()) ??
-        widget.pool.minDeposit;
-    final grossGain = currentAmt * (widget.pool.monthlyRoi / 100);
-    final feeAmount = grossGain * (widget.pool.performanceFee / 100);
-    final netGain = grossGain - feeAmount;
-    final maxLoss = currentAmt * (_drawdownGuard / 100);
-    final stopEquity = (currentAmt - maxLoss).clamp(0.0, double.infinity);
-    final guardColor = _drawdownGuard <= 15
-        ? c.green
-        : (_drawdownGuard <= 25 ? c.gold : c.red);
-
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 14, 16, 20 + bottomInset),
+      padding: EdgeInsets.fromLTRB(17, 13, 17, 18 + bottomInset),
       decoration: BoxDecoration(
         color: c.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        border: Border.all(color: c.border),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -2661,400 +3160,234 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
           children: [
             Center(
               child: Container(
-                width: 36,
+                width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: c.muted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+                  color: c.muted.withValues(alpha: .35),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             Row(
               children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: _brandBlue,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.shield_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Invest in ${widget.pool.name}',
-                        style: GoogleFonts.inter(
-                          color: c.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        'Managed by ${widget.pool.traderHandle} • ${widget.pool.performanceFee.toStringAsFixed(0)}% Perf Fee',
-                        style: TextStyle(color: c.muted, fontSize: 11),
-                      ),
-                    ],
+                  child: Text(
+                    'Invest in ${pool.id}',
+                    style: GoogleFonts.inter(
+                      color: c.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(LucideIcons.x, size: 20, color: c.muted),
                   onPressed: () => Navigator.pop(context),
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
+                  icon: Icon(Icons.close, color: c.muted),
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-
-            // Select Account
-            Text(
-              'Source Trading Account',
-              style: TextStyle(
-                color: c.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedAccount,
-              dropdownColor: c.card,
-              style: TextStyle(color: c.text, fontSize: 12.5),
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                filled: true,
-                fillColor: c.subCard,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: c.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: c.border),
-                ),
-              ),
-              items: _accounts
-                  .map(
-                    (acc) => DropdownMenuItem(
-                      value: acc,
-                      child: Text(
-                        acc,
-                        style: GoogleFonts.inter(color: c.text, fontSize: 12),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => _selectedAccount = val);
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // Allocation Amount
-            Text(
-              'Investment Amount (\$ USD)',
-              style: TextStyle(
-                color: c.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              style: GoogleFonts.inter(
-                color: c.text,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(LucideIcons.dollarSign, size: 17),
-                filled: true,
-                fillColor: c.subCard,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: c.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: c.border),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Quick-select amount chips: +$500, +$1,000, +$2,500, +$5,000
-            Row(
-              children: [
-                for (final delta in [500.0, 1000.0, 2500.0, 5000.0])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: InkWell(
-                      onTap: () { AppHaptics.selectionClick(); _addQuickAmount(delta); },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 32),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: c.subCard,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: c.blue.withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: Text(
-                          '+\$${delta >= 1000 ? '${(delta / 1000).toStringAsFixed(delta % 1000 == 0 ? 0 : 1)}k' : delta.toInt()}',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: c.blue,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Live Dynamic Projected Yield Display
+            const SizedBox(height: 13),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: c.isDark
-                      ? [const Color(0xFF132D28), const Color(0xFF0F2420)]
-                      : [const Color(0xFFECFDF5), const Color(0xFFE6F9F0)],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: c.green.withValues(alpha: 0.35)),
+                color: c.blueLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: c.blueBorder),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(LucideIcons.sparkles, size: 14, color: c.green),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Live Projected Yield Preview',
-                            style: GoogleFonts.inter(
-                              color: c.green,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
-                          color: c.green.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
+                          color: c.blue.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(
-                          '+${widget.pool.monthlyRoi.toStringAsFixed(1)}% Past 30D',
-                          style: GoogleFonts.inter(
-                            color: c.green,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                        child: Icon(Icons.person_outline, color: c.blue, size: 20),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        '+\$${netGain.toStringAsFixed(2)}',
-                        style: GoogleFonts.inter(
-                          color: c.green,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 9),
                       Expanded(
-                        child: Text(
-                          'Est. Monthly Gain (net of ${widget.pool.performanceFee.toStringAsFixed(0)}% fee)',
-                          style: TextStyle(color: c.muted, fontSize: 10.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Drawdown Guard Slider
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Drawdown Stop Guard',
-                  style: TextStyle(
-                    color: c.text,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  '${_drawdownGuard.toStringAsFixed(0)}%',
-                  style: GoogleFonts.inter(
-                    color: guardColor,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            Slider(
-              value: _drawdownGuard,
-              min: 5.0,
-              max: 50.0,
-              divisions: 9,
-              activeColor: guardColor,
-              inactiveColor: c.border,
-              onChanged: (val) => setState(() => _drawdownGuard = val),
-            ),
-            const SizedBox(height: 6),
-
-            // Color-coded Drawdown Guard Cutoff Indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: c.subCard,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: guardColor.withValues(alpha: 0.35)),
-              ),
-              child: Row(
-                children: [
-                  Icon(LucideIcons.shieldCheck, size: 16, color: guardColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Capital Protected: \$${stopEquity.toStringAsFixed(2)}',
+                              pool.name.isEmpty ? 'MAM Manager' : pool.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
                                 color: c.text,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
+                            const SizedBox(height: 3),
                             Text(
-                              'Max Buffer: -\$${maxLoss.toStringAsFixed(2)}',
-                              style: GoogleFonts.inter(
-                                color: guardColor,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
+                              'ID: ${pool.id}',
+                              style: GoogleFonts.robotoMono(
+                                color: c.muted,
+                                fontSize: 9.5,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: (100 - _drawdownGuard) / 100,
-                            backgroundColor: guardColor.withValues(alpha: 0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              guardColor,
-                            ),
-                            minHeight: 4,
-                          ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: c.green.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: c.greenBorder),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, color: c.green, size: 6),
+                            const SizedBox(width: 5),
+                            Text(
+                              'ACTIVE MAM',
+                              style: TextStyle(
+                                color: c.green,
+                                fontSize: 8.3,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _summaryMetric(
+                        'Performance Fee',
+                        '${pool.profitSharingPercentage.toStringAsFixed(0)}%',
+                        valueColor: c.blue,
+                      ),
+                      const SizedBox(width: 7),
+                      _summaryMetric(
+                        'Risk Profile',
+                        pool.riskScore,
+                        valueColor: c.gold,
+                      ),
+                      const SizedBox(width: 7),
+                      _summaryMetric(
+                        'Leverage',
+                        pool.leverage,
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Mirroring stops and detaches automatically if portfolio drop reaches this limit.',
-              style: TextStyle(color: c.muted, fontSize: 10.5),
+            const SizedBox(height: 19),
+            _label('Investor Terminal Password *'),
+            TextField(
+              controller: _passwordController,
+              obscureText: _hidePassword,
+              autocorrect: false,
+              enableSuggestions: false,
+              style: GoogleFonts.robotoMono(
+                color: c.text,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: _passwordDecoration(
+                hint: 'Set investment terminal password',
+                hidden: _hidePassword,
+                onToggle: () => setState(() => _hidePassword = !_hidePassword),
+              ),
             ),
-            const SizedBox(height: 12),
-
-            // Terms
+            const SizedBox(height: 14),
+            _label('Confirm Investor Password *'),
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: _hideConfirmPassword,
+              autocorrect: false,
+              enableSuggestions: false,
+              style: GoogleFonts.robotoMono(
+                color: c.text,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: _passwordDecoration(
+                hint: 'Re-enter investment password',
+                hidden: _hideConfirmPassword,
+                onToggle: () => setState(
+                  () => _hideConfirmPassword = !_hideConfirmPassword,
+                ),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+            if (_validationError != null) ...[
+              const SizedBox(height: 9),
+              Text(
+                _validationError!,
+                style: TextStyle(color: c.red, fontSize: 11),
+              ),
+            ],
+            const SizedBox(height: 19),
             Row(
               children: [
-                Checkbox(
-                  value: _agreedToTerms,
-                  activeColor: c.blue,
-                  onChanged: (val) =>
-                      setState(() => _agreedToTerms = val ?? true),
-                ),
                 Expanded(
-                  child: Text(
-                    'I acknowledge MAM market risk and understand past performance does not guarantee future results.',
-                    style: TextStyle(color: c.muted, fontSize: 10.5),
+                  flex: 5,
+                  child: SizedBox(
+                    height: 46,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: c.text,
+                        side: BorderSide(color: c.border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                      ),
+                      child: const Text('CANCEL'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 9,
+                  child: SizedBox(
+                    height: 46,
+                    child: FilledButton.icon(
+                      onPressed: _submit,
+                      icon: const Icon(Icons.arrow_forward, size: 16),
+                      label: const Text(
+                        'CONFIRM & ALLOCATE',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: c.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 14),
-
-            // Submit
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: FilledButton(
-                onPressed: _agreedToTerms
-                    ? () {
-                        final amt =
-                            double.tryParse(_amountController.text) ??
-                            widget.pool.minDeposit;
-                        Navigator.pop(context);
-                        widget.onConfirmed(
-                          amt,
-                          _selectedAccount,
-                          _allocationMethod,
-                        );
-                      }
-                    : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: c.blue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(44),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  'Confirm Investment',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
             ),
           ],
         ),
@@ -3063,7 +3396,6 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
   }
 }
 
-// -----------------------------------------------------------------------------
 // CREATE MAM MASTER SHEET
 // -----------------------------------------------------------------------------
 class _CreateMamMasterSheet extends StatefulWidget {

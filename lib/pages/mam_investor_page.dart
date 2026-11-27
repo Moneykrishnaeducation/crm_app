@@ -327,19 +327,23 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           ? Future<Map<String, dynamic>>.value({'positions': <dynamic>[]})
           : AuthApi.instance.getPammOpenPositions(acc.masterAccountId, isManager: true);
       final patternFuture = AuthApi.instance.getTradePatternAnalysis(acc.accountId);
-      final results = await Future.wait<dynamic>([investorFuture, masterFuture, patternFuture]);
-      final investorPositions = _extractPositions(results[0]);
-      final masterPositions = _extractPositions(results[1]);
-      final patterns = results[2] as List<Map<String, dynamic>>;
+      final results = await Future.wait<dynamic>([
+        investorFuture.then<dynamic>((value) => value).catchError((_) => null),
+        masterFuture.then<dynamic>((value) => value).catchError((_) => null),
+        patternFuture.then<dynamic>((value) => value).catchError((_) => null),
+      ]);
+      final investorPositions = results[0] == null ? null : _extractPositions(results[0]);
+      final masterPositions = results[1] == null ? null : _extractPositions(results[1]);
+      final patterns = results[2] as List<Map<String, dynamic>>?;
       var count = 0, wins = 0;
-      for (final item in patterns) {
+      for (final item in patterns ?? const <Map<String, dynamic>>[]) {
         count += int.tryParse((item['count'] ?? 0).toString()) ?? 0;
         wins += int.tryParse((item['win_count'] ?? 0).toString()) ?? 0;
       }
       if (!mounted) return;
       setState(() {
-        _investorOpenTradeCount = investorPositions.length;
-        _masterOpenTradeCount = masterPositions.length;
+        _investorOpenTradeCount = investorPositions?.length;
+        _masterOpenTradeCount = masterPositions?.length;
         _tradeWinRate = count > 0 ? wins * 100 / count : null;
         _isTradeOverviewLoading = false;
       });
@@ -1176,7 +1180,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           const SizedBox(height: 14),
 
           // Tile 1: Investor Live Trades
-          _tradeNavTile(
+          if (_investorOpenTradeCount != null) _tradeNavTile(
             icon: LucideIcons.barChart2,
             iconColor: _c.blue,
             title: 'Investor Live Trades',
@@ -1185,10 +1189,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             badgeColor: _c.green,
             onTap: _openLiveTradesSheet,
           ),
-          const SizedBox(height: 10),
+          if (_investorOpenTradeCount != null && _masterOpenTradeCount != null) const SizedBox(height: 10),
 
           // Tile 2: Master Manager Trades
-          _tradeNavTile(
+          if (_masterOpenTradeCount != null) _tradeNavTile(
             icon: LucideIcons.usersRound,
             iconColor: _c.gold,
             title: 'Master Manager Trades',
@@ -1197,10 +1201,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             badgeColor: _c.blue,
             onTap: _openMasterTradesSheet,
           ),
-          const SizedBox(height: 10),
+          if (_masterOpenTradeCount != null && _tradeWinRate != null) const SizedBox(height: 10),
 
           // Tile 3: Trade Pattern Analysis
-          _tradeNavTile(
+          if (_tradeWinRate != null) _tradeNavTile(
             icon: LucideIcons.lineChart,
             iconColor: _c.green,
             title: 'Trade Pattern Analysis',
@@ -1227,8 +1231,8 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        constraints: const BoxConstraints(minHeight: 56),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        constraints: const BoxConstraints(minHeight: 68),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: _c.subCard,
           borderRadius: BorderRadius.circular(12),
@@ -1237,8 +1241,8 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
         child: Row(
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: _c.isDark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -1793,7 +1797,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               if (snapshot.hasError) return Center(child: Text('Unable to load live positions. Please try again.', style: TextStyle(color: _c.muted), textAlign: TextAlign.center));
               final positions = _extractPositions(snapshot.data);
               if (positions.isEmpty) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(LucideIcons.chartNoAxesCombined, size: 34, color: _c.muted),
+                Icon(LucideIcons.activity, size: 34, color: _c.muted),
                 const SizedBox(height: 10),
                 Text('No open positions', style: GoogleFonts.inter(color: _c.text, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),

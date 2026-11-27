@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../app_notifications.dart';
+import '../services/auth_api.dart';
 import '../widgets/mam_modals.dart';
 import 'funds_action_dialog.dart';
 
@@ -239,6 +240,7 @@ class MamInvestorPage extends StatefulWidget {
 class _MamInvestorPageState extends State<MamInvestorPage> {
   late List<InvestorAccountData> _accounts;
   late int _selectedAccountIndex;
+  bool _isCopyToggleLoading = false;
 
   @override
   void initState() {
@@ -248,6 +250,12 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       final accountId = (details['account_id'] ?? widget.initialAccountId ?? '').toString();
       final masterId = (details['master_account_id'] ?? '').toString();
       final status = (details['status'] ?? '').toString().toLowerCase();
+      final rawCopyPermission = details['investor_allow_copy'];
+      final initialCopyEnabled = rawCopyPermission is bool
+          ? rawCopyPermission
+          : rawCopyPermission != null
+              ? rawCopyPermission.toString().toLowerCase() == 'true'
+              : (status == 'copying' || status == 'running' || status == 'active');
       double number(dynamic value) {
         if (value is num) return value.toDouble();
         return double.tryParse(
@@ -268,13 +276,44 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           profitShare: number(details['profit_share']),
           riskLevel: (details['risk_level'] ?? details['riskLevel'] ?? '—').toString(),
           leverage: (details['leverage'] ?? details['package_leverage'] ?? '—').toString(),
-          isCopying: status == 'copying' || status == 'running',
+          isCopying: initialCopyEnabled,
         ),
       ];
     } else {
       _accounts = [];
     }
     _selectedAccountIndex = 0;
+  }
+
+  Future<void> _toggleCopying(InvestorAccountData account) async {
+    if (_isCopyToggleLoading) return;
+    final enableCopying = !account.isCopying;
+
+    setState(() => _isCopyToggleLoading = true);
+    try {
+      await AuthApi.instance.setMamInvestorCopying(
+        accountId: account.accountId,
+        enabled: enableCopying,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        account.isCopying = enableCopying;
+        _isCopyToggleLoading = false;
+      });
+      showAppMessage(
+        enableCopying
+            ? 'Trade copying resumed for Account ${account.accountId}'
+            : 'Trade copying paused for Account ${account.accountId}',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isCopyToggleLoading = false);
+      final message = error is AuthApiException
+          ? error.message
+          : 'Could not ${enableCopying ? 'resume' : 'pause'} trade copying. Please try again.';
+      showAppMessage(message);
+    }
   }
 
   InvestorAccountData get _currentAccount => _accounts[_selectedAccountIndex];
@@ -600,22 +639,24 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    setState(() {
-                      acc.isCopying = !acc.isCopying;
-                    });
-                    showAppMessage(
-                      acc.isCopying
-                          ? 'Trade copying resumed for Account ${acc.accountId}'
-                          : 'Trade copying paused for Account ${acc.accountId}',
-                    );
-                  },
+                  onPressed: _isCopyToggleLoading
+                      ? null
+                      : () => _toggleCopying(acc),
                   style: TextButton.styleFrom(
                     foregroundColor: acc.isCopying ? _c.gold : _c.green,
                     minimumSize: const Size(0, 30),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  child: Text(acc.isCopying ? 'Pause' : 'Resume'),
+                  child: _isCopyToggleLoading
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: _c.blue,
+                          ),
+                        )
+                      : Text(acc.isCopying ? 'Pause' : 'Resume'),
                 ),
               ],
             ),

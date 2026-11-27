@@ -54,7 +54,7 @@ void main() {
                   context,
                   initialOrderCloning: true,
                   initialCloneCount: 1,
-                  onDeploy: (method, factor, orderCloning, cloneCount) {
+                  onDeploy: (method, factor, orderCloning, cloneCount) async {
                     deployedCloneCount = cloneCount;
                   },
                 );

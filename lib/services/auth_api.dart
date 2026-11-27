@@ -871,6 +871,24 @@ class AuthApi {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getTradePatternAnalysis(
+    String accountId, {
+    int days = 30,
+  }) async {
+    final id = Uri.encodeComponent(accountId);
+    final response = await _request(
+      'GET',
+      'trade-pattern-analysis/?account_id=$id&days=$days',
+    );
+    final raw = response['patterns'];
+    if (raw is List) {
+      return raw.whereType<Map>()
+          .map((item) => item.cast<String, dynamic>())
+          .toList(growable: false);
+    }
+    return const [];
+  }
+
   Future<Map<String, dynamic>> getPammOpenPositions(
     String accountId, {
     required bool isManager,

@@ -5,6 +5,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../app_notifications.dart';
 import '../services/auth_api.dart';
+import '../widgets/pool_trades_modal.dart';
 import '../widgets/mam_modals.dart';
 import 'funds_action_dialog.dart';
 
@@ -1768,73 +1769,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     required String accountId,
     required bool isMaster,
   }) {
-    final future = isMaster
-        ? AuthApi.instance.getPammOpenPositions(accountId, isManager: true)
-        : AuthApi.instance.getOpenPositions(accountId);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        height: MediaQuery.of(ctx).size.height * 0.78,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        decoration: BoxDecoration(color: _c.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), border: Border.all(color: _c.border)),
-        child: Column(children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: _c.muted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 14),
-          Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: GoogleFonts.inter(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
-              Text('MT5 Account $accountId', style: TextStyle(color: _c.muted, fontSize: 11)),
-            ])),
-            IconButton(onPressed: () => Navigator.pop(ctx), icon: Icon(LucideIcons.x, color: _c.muted)),
-          ]),
-          const SizedBox(height: 8),
-          Expanded(child: FutureBuilder<dynamic>(
-            future: future,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) return Center(child: CircularProgressIndicator(color: _c.blue));
-              if (snapshot.hasError) return Center(child: Text('Unable to load live positions. Please try again.', style: TextStyle(color: _c.muted), textAlign: TextAlign.center));
-              final positions = _extractPositions(snapshot.data);
-              if (positions.isEmpty) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(LucideIcons.activity, size: 34, color: _c.muted),
-                const SizedBox(height: 10),
-                Text('No open positions', style: GoogleFonts.inter(color: _c.text, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text('There are currently no active MT5 trades.', style: TextStyle(color: _c.muted, fontSize: 11)),
-              ]));
-              final totalProfit = positions.fold<double>(0, (sum, p) => sum + _tradeNumber(p['profit']));
-              return Column(children: [
-                Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(10), border: Border.all(color: _c.subBorder)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('${positions.length} OPEN POSITIONS', style: GoogleFonts.inter(color: _c.muted, fontSize: 10, fontWeight: FontWeight.w700)),
-                  Text('${totalProfit >= 0 ? '+' : ''}${totalProfit.toStringAsFixed(2)} USD', style: GoogleFonts.inter(color: totalProfit >= 0 ? _c.green : _c.red, fontSize: 13, fontWeight: FontWeight.w800)),
-                ])),
-                const SizedBox(height: 10),
-                Expanded(child: ListView.separated(
-                  itemCount: positions.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final p = positions[index];
-                    final type = (p['type'] ?? p['trade_type'] ?? '').toString().toUpperCase();
-                    final isBuy = type.contains('BUY');
-                    final profit = _tradeNumber(p['profit']);
-                    return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: _c.subCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: _c.subBorder)), child: Row(children: [
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: isBuy ? _c.blueLight : _c.redLight, borderRadius: BorderRadius.circular(6)), child: Text(type.isEmpty ? 'TRADE' : type, style: GoogleFonts.inter(color: isBuy ? _c.blue : _c.red, fontSize: 10, fontWeight: FontWeight.w800))),
-                      const SizedBox(width: 10),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text((p['symbol'] ?? '—').toString(), style: GoogleFonts.inter(color: _c.text, fontSize: 13, fontWeight: FontWeight.w700)),
-                        Text('Ticket ${p['ticket'] ?? p['position_id'] ?? '—'} • ${_tradeNumber(p['volume']).toStringAsFixed(2)} lots', style: TextStyle(color: _c.muted, fontSize: 10.5)),
-                        Text('Open ${p['open_price'] ?? '—'} • Current ${p['current_price'] ?? '—'}', style: TextStyle(color: _c.muted, fontSize: 10)),
-                      ])),
-                      Text('${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(2)}', style: GoogleFonts.inter(color: profit >= 0 ? _c.green : _c.red, fontSize: 12, fontWeight: FontWeight.w800)),
-                    ]));
-                  },
-                )),
-              ]);
-            },
-          )),
-        ]),
-      ),
+    PoolTradesModal.show(
+      context,
+      poolLogin: accountId,
+      poolName: title,
+      isManager: isMaster,
     );
   }
 

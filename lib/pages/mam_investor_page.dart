@@ -1294,8 +1294,12 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // ---------------------------------------------------------------------------
   void _openInvestorPasswordModal() {
     final acc = _currentAccount;
-    bool showTrading = false;
-    bool showInvestor = false;
+    final passwordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool obscurePassword = true;
+    bool obscureConfirmPassword = true;
+    bool isSaving = false;
 
     showModalBottomSheet(
       context: context,
@@ -1304,6 +1308,62 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
+            Future<void> submitPassword() async {
+              if (isSaving || !formKey.currentState!.validate()) return;
+              setModalState(() => isSaving = true);
+              try {
+                await AuthApi.instance.updateTradingAccountPassword(
+                  accountId: acc.accountId,
+                  newPassword: passwordController.text,
+                );
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                showAppMessage(
+                  'Investor password updated for Account ${acc.accountId}',
+                );
+              } catch (error) {
+                if (!ctx.mounted) return;
+                setModalState(() => isSaving = false);
+                final message = error is AuthApiException
+                    ? error.message
+                    : 'Unable to update the investor password. Please try again.';
+                showAppMessage(message);
+              }
+            }
+
+            InputDecoration passwordDecoration({
+              required String label,
+              required bool obscure,
+              required VoidCallback toggle,
+            }) {
+              return InputDecoration(
+                labelText: label,
+                labelStyle: TextStyle(color: _c.muted, fontSize: 12),
+                filled: true,
+                fillColor: _c.subCard,
+                suffixIcon: IconButton(
+                  onPressed: toggle,
+                  icon: Icon(
+                    obscure ? LucideIcons.eye : LucideIcons.eyeOff,
+                    size: 18,
+                    color: _c.muted,
+                  ),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: _c.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: _c.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: _c.blue, width: 1.4),
+                ),
+              );
+            }
+
             return Container(
               padding: EdgeInsets.fromLTRB(
                 16,
@@ -1319,207 +1379,190 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                 border: Border.all(color: _c.border),
               ),
               child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: _c.muted.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: _c.muted.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: _c.greenLight,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: _c.greenBorder),
-                              ),
-                              child: Icon(
-                                LucideIcons.keyRound,
-                                size: 17,
-                                color: _c.green,
-                              ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: _c.blueLight,
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Investor Credentials',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: _c.text,
+                            child: Icon(
+                              LucideIcons.keyRound,
+                              size: 18,
+                              color: _c.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Change Investor Password',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: _c.text,
+                                  ),
+                                ),
+                                Text(
+                                  'MT5 Account ${acc.accountId}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: _c.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                            icon: Icon(LucideIcons.x, color: _c.muted),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _c.blueLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _c.blueBorder),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              LucideIcons.info,
+                              size: 16,
+                              color: _c.blue,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'This changes the MT5 read-only investor password. It does not change the master trading password.',
+                                style: TextStyle(
+                                  color: _c.text,
+                                  fontSize: 11.5,
+                                  height: 1.4,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        IconButton(
-                          icon: Icon(LucideIcons.x, color: _c.muted, size: 20),
-                          onPressed: () => Navigator.pop(ctx),
-                          constraints: const BoxConstraints(
-                            minWidth: 44,
-                            minHeight: 44,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: passwordController,
+                        obscureText: obscurePassword,
+                        enabled: !isSaving,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.newPassword],
+                        decoration: passwordDecoration(
+                          label: 'New investor password',
+                          obscure: obscurePassword,
+                          toggle: () => setModalState(
+                            () => obscurePassword = !obscurePassword,
                           ),
                         ),
-                      ],
-                    ),
-                    Text(
-                      'Security keys for Account ${acc.accountId} (${acc.server})',
-                      style: TextStyle(fontSize: 11.5, color: _c.muted),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Password Card 1: Trading Password
-                    _credentialCard(
-                      label: 'INVESTOR TRADING PASSWORD',
-                      value: showTrading ? 'AlphaTrader@2025' : '••••••••••••',
-                      description: 'Used for terminal execution permissions and account verification.',
-                      isMasked: !showTrading,
-                      onToggleVisibility: () {
-                        setModalState(() {
-                          showTrading = !showTrading;
-                        });
-                      },
-                      onCopy: () => _copyToClipboard(
-                        showTrading ? 'AlphaTrader@2025' : 'AlphaTrader@2025',
-                        'Investor Trading Password',
+                        validator: (value) {
+                          final password = value ?? '';
+                          if (password.isEmpty) {
+                            return 'Enter a new password';
+                          }
+                          if (password.length < 8) {
+                            return 'Password must be at least 8 characters';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Password Card 2: Read-Only Investor Password
-                    _credentialCard(
-                      label: 'READ-ONLY (INVESTOR) PASSWORD',
-                      value: showInvestor ? 'InvestView#8841' : '••••••••••••',
-                      description: 'Safe for third-party auditing tools (Myfxbook, FXBlue, etc.).',
-                      isMasked: !showInvestor,
-                      onToggleVisibility: () {
-                        setModalState(() {
-                          showInvestor = !showInvestor;
-                        });
-                      },
-                      onCopy: () => _copyToClipboard(
-                        showInvestor ? 'InvestView#8841' : 'InvestView#8841',
-                        'Read-Only Password',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Auth Token Card
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _c.subCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _c.subBorder),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'MT5 AUTH TOKEN',
-                                style: GoogleFonts.inter(
-                                  color: _c.muted,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () => _copyToClipboard(
-                                  acc.authToken,
-                                  'MT5 Auth Token',
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                                child: Container(
-                                  constraints: const BoxConstraints(
-                                    minHeight: 44,
-                                    minWidth: 44,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        LucideIcons.copy,
-                                        size: 13,
-                                        color: _c.blue,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Copy Token',
-                                        style: TextStyle(
-                                          color: _c.blue,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: confirmPasswordController,
+                        obscureText: obscureConfirmPassword,
+                        enabled: !isSaving,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => submitPassword(),
+                        decoration: passwordDecoration(
+                          label: 'Confirm new investor password',
+                          obscure: obscureConfirmPassword,
+                          toggle: () => setModalState(
+                            () => obscureConfirmPassword = !obscureConfirmPassword,
                           ),
-                          const SizedBox(height: 4),
-                          SelectableText(
-                            acc.authToken,
-                            style: GoogleFonts.robotoMono(
-                              color: _c.text,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                        ),
+                        validator: (value) {
+                          if ((value ?? '').isEmpty) {
+                            return 'Confirm your new password';
+                          }
+                          if (value != passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: isSaving ? null : submitPassword,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _c.blue,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: _c.blue.withValues(alpha: 0.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          showAppMessage('Credentials verified and secured');
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _c.blue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          'Done',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          child: isSaving
+                              ? const SizedBox(
+                                  width: 19,
+                                  height: 19,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  'Update Investor Password',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
           },
         );
       },
-    );
+    ).whenComplete(() {
+      passwordController.dispose();
+      confirmPasswordController.dispose();
+    });
   }
 
   Widget _credentialCard({

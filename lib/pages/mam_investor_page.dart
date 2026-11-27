@@ -260,7 +260,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
         InvestorAccountData(
           accountId: accountId,
           masterAccountId: masterId,
-          alias: (details['name'] ?? 'MAM Investment #$accountId').toString(),
+          alias: (details['name'] ?? 'MAM Investment $accountId').toString(),
           platform: 'MetaTrader 5 (MT5)',
           server: 'VTIndex-MT5',
           balance: number(details['balance']),
@@ -1215,7 +1215,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       context,
       withdrawal: false,
       accountId: acc.accountId,
-      accountLabel: '${acc.alias} · MT5 Live #${acc.accountId}',
+      accountLabel: '${acc.alias} · MT5 Live ${acc.accountId}',
       onCompleted: (amt) {
         setState(() {
           acc.balance += amt;
@@ -1233,7 +1233,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       context,
       withdrawal: true,
       accountId: acc.accountId,
-      accountLabel: '${acc.alias} · MT5 Live #${acc.accountId}',
+      accountLabel: '${acc.alias} · MT5 Live ${acc.accountId}',
       onCompleted: (amt) {
         setState(() {
           acc.balance = (acc.balance - amt).clamp(0.0, double.infinity);
@@ -1328,7 +1328,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       ],
                     ),
                     Text(
-                      'Security keys for Account #${acc.accountId} (${acc.server})',
+                      'Security keys for Account ${acc.accountId} (${acc.server})',
                       style: TextStyle(fontSize: 11.5, color: _c.muted),
                     ),
                     const SizedBox(height: 16),
@@ -1651,7 +1651,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                             ),
                           ),
                           Text(
-                            'Account #${acc.accountId} • 3 Active Orders',
+                            'Account ${acc.accountId} • 3 Active Orders',
                             style: TextStyle(fontSize: 11, color: _c.muted),
                           ),
                         ],
@@ -1755,7 +1755,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                   ),
                                 ),
                                 Text(
-                                  '#${t['ticket']} • ${t['openPrice']} → ${t['currentPrice']}',
+                                  '${t['ticket']} • ${t['openPrice']} → ${t['currentPrice']}',
                                   style: TextStyle(
                                     color: _c.muted,
                                     fontSize: 11,
@@ -1884,7 +1884,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                             ),
                           ),
                           Text(
-                            'Master Node #${acc.masterAccountId} Live Source Orders',
+                            'Master Node ${acc.masterAccountId} Live Source Orders',
                             style: TextStyle(fontSize: 11, color: _c.muted),
                           ),
                         ],
@@ -1984,7 +1984,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                                   ),
                                 ),
                                 Text(
-                                  'Master Ticket #${mt['ticket']}',
+                                  'Master Ticket ${mt['ticket']}',
                                   style: TextStyle(
                                     color: _c.muted,
                                     fontSize: 11,

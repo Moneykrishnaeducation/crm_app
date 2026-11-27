@@ -491,7 +491,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             alignment: Alignment.centerLeft,
             fit: BoxFit.scaleDown,
             child: Text(
-              '$ ${acc.balance.toStringAsFixed(2)} USD',
+              '\$ ${acc.balance.toStringAsFixed(2)} USD',
               style: GoogleFonts.inter(
                 color: _c.text,
                 fontSize: 29,
@@ -507,7 +507,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
             children: [
               metric(
                 'Total profit',
-                '$ ${acc.totalProfit.toStringAsFixed(2)}',
+                '\$ ${acc.totalProfit.toStringAsFixed(2)}',
                 color: profitColor,
               ),
               Container(width: 1, height: 30, color: _c.border),

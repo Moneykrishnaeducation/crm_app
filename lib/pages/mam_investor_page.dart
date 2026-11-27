@@ -301,21 +301,81 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                       parent: BouncingScrollPhysics(),
                     ),
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-                    children: [
-                      _buildHeroBalanceCard(_currentAccount),
-                      const SizedBox(height: 16),
-                      _buildAllocationSpecificationsCard(),
-                      const SizedBox(height: 16),
-                      _buildSecurityCredentialsCard(),
-                      const SizedBox(height: 16),
-                      _buildLiveOrdersTradesCard(),
-                    ],
+                    children: _accounts.isEmpty
+                        ? [_buildEmptyInvestorState()]
+                        : [
+                            _buildHeroBalanceCard(_currentAccount),
+                            const SizedBox(height: 16),
+                            _buildAllocationSpecificationsCard(),
+                            const SizedBox(height: 16),
+                            _buildSecurityCredentialsCard(),
+                            const SizedBox(height: 16),
+                            _buildLiveOrdersTradesCard(),
+                          ],
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyInvestorState() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 72),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: _c.blueLight,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(LucideIcons.wallet, color: _c.blue, size: 27),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Investment account details unavailable',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: _c.text,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'The account was created, but its latest details have not loaded yet. Return to MAM accounts and refresh the investment list.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: _c.muted,
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+          if (widget.onExploreAvailable != null) ...[
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton(
+                onPressed: widget.onExploreAvailable,
+                child: const Text('BACK TO MAM ACCOUNTS'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

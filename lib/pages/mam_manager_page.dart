@@ -920,7 +920,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
                         children: [
                           Flexible(
                             child: Text(
-                              'MT5 Node: #${master.login} • ${master.allocationMethod}',
+                              'MT5 Account: ${master.login} • ${master.allocationMethod}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(color: _c.muted, fontSize: 10.5),
@@ -1286,14 +1286,14 @@ class _MamManagerPageState extends State<MamManagerPage> {
       context,
       withdrawal: false,
       accountId: master.login,
-      accountLabel: '${master.name} · Master #${master.login}',
+      accountLabel: '${master.name} · Master ${master.login}',
       onCompleted: (amt) {
         setState(() {
           master.balance += amt;
           master.totalAum += amt;
         });
         showAppMessage(
-          'Deposited \$${amt.toStringAsFixed(2)} to Master Node #${master.login}',
+          'Deposited \$${amt.toStringAsFixed(2)} to Master Node ${master.login}',
         );
       },
     );
@@ -1304,14 +1304,14 @@ class _MamManagerPageState extends State<MamManagerPage> {
       context,
       withdrawal: true,
       accountId: master.login,
-      accountLabel: '${master.name} · Master #${master.login}',
+      accountLabel: '${master.name} · Master ${master.login}',
       onCompleted: (amt) {
         setState(() {
           master.balance = (master.balance - amt).clamp(0.0, double.infinity);
           master.totalAum = (master.totalAum - amt).clamp(0.0, double.infinity);
         });
         showAppMessage(
-          'Withdrew \$${amt.toStringAsFixed(2)} from Master Node #${master.login}',
+          'Withdrew \$${amt.toStringAsFixed(2)} from Master Node ${master.login}',
         );
       },
     );

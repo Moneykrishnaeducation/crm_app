@@ -251,6 +251,14 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       final masterId = (details['master_account_id'] ?? '').toString();
       final status = (details['status'] ?? '').toString().toLowerCase();
       final rawCopyPermission = details['investor_allow_copy'];
+      double number(dynamic value) {
+        if (value is num) return value.toDouble();
+        return double.tryParse(
+              value?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '',
+            ) ??
+            0;
+      }
+
       final rawCopyMode = (details['copy_mode'] ?? details['copy_multiplier_mode'] ?? 'balance_ratio').toString().toLowerCase();
       final initialScalingMethod = rawCopyMode == 'fixed_multiple' || rawCopyMode == 'fixed'
           ? 'FIXED RATIO'
@@ -264,14 +272,6 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           : rawCopyPermission != null
               ? rawCopyPermission.toString().toLowerCase() == 'true'
               : (status == 'copying' || status == 'running' || status == 'active');
-      double number(dynamic value) {
-        if (value is num) return value.toDouble();
-        return double.tryParse(
-              value?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '',
-            ) ??
-            0;
-      }
-
       _accounts = [
         InvestorAccountData(
           accountId: accountId,

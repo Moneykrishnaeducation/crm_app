@@ -144,6 +144,8 @@ class MamInvestorAccount {
     required this.totalProfit,
     required this.profitShare,
     required this.isCopying,
+    this.riskLevel = '',
+    this.leverage = '',
   });
 
   final String accountId;
@@ -153,6 +155,8 @@ class MamInvestorAccount {
   final double totalProfit;
   final double profitShare;
   final bool isCopying;
+  final String riskLevel;
+  final String leverage;
 }
 
 class AvailableMamPool {
@@ -523,6 +527,8 @@ class MamPageState extends State<MamPage> {
                         'balance': account.balance,
                         'profit': account.totalProfit,
                         'profit_share': account.profitShare,
+                        'risk_level': account.riskLevel,
+                        'leverage': account.leverage,
                         'status': account.isCopying ? 'Copying' : 'Paused',
                       };
                     })()
@@ -2401,6 +2407,8 @@ class MamPageState extends State<MamPage> {
           totalProfit: profit,
           profitShare: share,
           isCopying: copying,
+          riskLevel: _availableText(item['risk_level'] ?? item['riskLevel']),
+          leverage: _availableText(item['leverage'] ?? item['package_leverage']),
         ));
         final createdAt = _availableText(item['created_at']);
         subscriptions.add(MamInvestmentSubscription(
@@ -2540,6 +2548,12 @@ class MamPageState extends State<MamPage> {
               totalProfit: responseProfit,
               profitShare: responseShare,
               isCopying: true,
+              riskLevel: _availableText(
+                responseAccount['risk_level'] ?? responseAccount['riskLevel'],
+              ),
+              leverage: _availableText(
+                responseAccount['leverage'] ?? responseAccount['package_leverage'],
+              ),
             ),
           ];
         });

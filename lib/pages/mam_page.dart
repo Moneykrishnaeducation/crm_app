@@ -509,18 +509,24 @@ class MamPageState extends State<MamPage> {
             child: MamInvestorPage(
               showBackButton: false,
               initialAccountId: _selectedInvestorAccountId,
-              initialAccountDetails: _investorAccounts
-                  .where((account) => account.accountId == _selectedInvestorAccountId)
-                  .map((account) => <String, dynamic>{
-                    'account_id': account.accountId,
-                    'master_account_id': account.masterAccountId,
-                    'name': account.alias,
-                    'balance': account.balance,
-                    'profit': account.totalProfit,
-                    'profit_share': account.profitShare,
-                    'status': account.isCopying ? 'Copying' : 'Paused',
-                  })
-                  .firstOrNull,
+              initialAccountDetails: _investorAccounts.any(
+                (account) => account.accountId == _selectedInvestorAccountId,
+              )
+                  ? (() {
+                      final account = _investorAccounts.firstWhere(
+                        (account) => account.accountId == _selectedInvestorAccountId,
+                      );
+                      return <String, dynamic>{
+                        'account_id': account.accountId,
+                        'master_account_id': account.masterAccountId,
+                        'name': account.alias,
+                        'balance': account.balance,
+                        'profit': account.totalProfit,
+                        'profit_share': account.profitShare,
+                        'status': account.isCopying ? 'Copying' : 'Paused',
+                      };
+                    })()
+                  : null,
               onBack: () => popSubView(),
               onExploreAvailable: () {
                 setState(() {

@@ -2912,14 +2912,25 @@ class MamPageState extends State<MamPage> {
             ? _c.red
             : _c.gold;
     final isInvesting = _investingManagerIds.contains(manager.id);
+    final managerTitle = manager.name.trim().isEmpty
+        ? 'MAM Manager'
+        : manager.name.trim();
 
     Widget specRow(IconData icon, String label, String value, {Color? color}) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, size: 15, color: _c.muted),
-            const SizedBox(width: 9),
+            Container(
+              width: 29,
+              height: 29,
+              decoration: BoxDecoration(
+                color: _c.blueLight,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, size: 15, color: _c.blue),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 label,
@@ -2946,167 +2957,258 @@ class MamPageState extends State<MamPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _c.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: _c.border),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _c.card,
-            _c.isDark ? const Color(0xFF142138) : const Color(0xFFF9FBFF),
-          ],
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? .22 : .045),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: _c.isDark ? .24 : .06),
+            blurRadius: 20,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Match the MAM Manager workspace: compact name badge and copyable ID.
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _c.blueLight,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _c.blueBorder),
-                  ),
-                  child: Text(
-                    (manager.name.isEmpty ? 'MAM MANAGER' : manager.name)
-                        .toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      color: _c.blue,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: .45,
-                    ),
-                  ),
-                ),
+          // Premium identity and balance surface.
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF0B1D3A),
+                  const Color(0xFF12366D),
+                  _c.isDark ? const Color(0xFF174A91) : const Color(0xFF1E5BB8),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'ID: ${manager.id}',
-                style: GoogleFonts.inter(
-                  color: _c.muted,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 5),
-              Icon(
-                Icons.circle,
-                size: 8,
-                color: manager.isEnabled ? _c.green : _c.muted,
-              ),
-            ],
-          ),
-          const SizedBox(height: 7),
-          if (manager.managerName.isNotEmpty)
-            Text(
-              manager.managerName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                color: _c.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: .12),
               ),
             ),
-          const SizedBox(height: 16),
-          Text(
-            'MANAGER BALANCE',
-            style: GoogleFonts.inter(
-              color: _c.muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: .6,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: FittedBox(
-                      alignment: Alignment.centerLeft,
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        _formatCurrency(manager.balance),
-                        style: GoogleFonts.inter(
-                          color: _c.text,
-                          fontSize: 29,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -.6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .13),
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: .18),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _c.goldLight,
-                      borderRadius: BorderRadius.circular(11),
-                      border: Border.all(color: _c.goldBorder),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'PROFIT SHARE',
+                      child: Center(
+                        child: Text(
+                          managerTitle.substring(0, 1).toUpperCase(),
                           style: GoogleFonts.inter(
-                            color: _c.muted,
-                            fontSize: 8,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: .35,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
-                          style: GoogleFonts.inter(
-                            color: _c.gold,
-                            fontSize: 19,
+                            color: Colors.white,
+                            fontSize: 18,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            managerTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            manager.managerName.isEmpty
+                                ? 'Manager ID  #${manager.id}'
+                                : '${manager.managerName}  ·  #${manager.id}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              color: Colors.white.withValues(alpha: .68),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: manager.isEnabled
+                            ? const Color(0x1A34D399)
+                            : Colors.white.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: manager.isEnabled
+                              ? const Color(0x6634D399)
+                              : Colors.white.withValues(alpha: .16),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: 6,
+                            color: manager.isEnabled
+                                ? const Color(0xFF34D399)
+                                : Colors.white54,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            manager.isEnabled ? 'ACTIVE' : 'OFFLINE',
+                            style: GoogleFonts.inter(
+                              color: manager.isEnabled
+                                  ? const Color(0xFF6EE7B7)
+                                  : Colors.white70,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 19),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'MANAGER BALANCE',
+                            style: GoogleFonts.inter(
+                              color: Colors.white.withValues(alpha: .62),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: .9,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _formatCurrency(manager.balance),
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 27,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -.6,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x24FBBF24),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0x66FBBF24),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'PROFIT SHARE',
+                            style: GoogleFonts.inter(
+                              color: Colors.white.withValues(alpha: .7),
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: .4,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFFFBBF24),
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 13),
+                Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: .12),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(
+                      LucideIcons.trendingUp,
+                      size: 13,
+                      color: const Color(0xFF7DD3FC),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Historical growth',
+                      style: GoogleFonts.inter(
+                        color: Colors.white.withValues(alpha: .72),
+                        fontSize: 10.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      manager.historicalGrowth,
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF6EE7B7),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: _c.subCard,
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: _c.subBorder),
             ),
             child: Column(
               children: [
-                specRow(
-                  LucideIcons.trendingUp,
-                  'Historical growth',
-                  manager.historicalGrowth,
-                  color: _c.green,
-                ),
-                Divider(height: 1, color: _c.subBorder),
                 specRow(
                   LucideIcons.shield,
                   'Risk profile',
@@ -3126,34 +3228,37 @@ class MamPageState extends State<MamPage> {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 13),
           Row(
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 46,
+                  height: 48,
                   child: OutlinedButton.icon(
                     onPressed: () {
                       AppHaptics.lightImpact();
                       _viewAvailableManager(manager);
                     },
-                    icon: Icon(LucideIcons.arrowUpRight, size: 15, color: _c.text),
+                    icon: Icon(
+                      LucideIcons.arrowUpRight,
+                      size: 16,
+                      color: _c.blue,
+                    ),
                     label: const Text('View details'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: _c.text,
-                      side: BorderSide(color: _c.border),
+                      foregroundColor: _c.blue,
+                      side: BorderSide(color: _c.blueBorder),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(13),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 9),
               Expanded(
                 child: SizedBox(
-                  height: 46,
+                  height: 48,
                   child: FilledButton.icon(
                     onPressed: !manager.isEnabled || isInvesting
                         ? null
@@ -3163,8 +3268,8 @@ class MamPageState extends State<MamPage> {
                           },
                     icon: isInvesting
                         ? const SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: 17,
+                            height: 17,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(LucideIcons.wallet, size: 16),
@@ -3172,23 +3277,22 @@ class MamPageState extends State<MamPage> {
                       isInvesting
                           ? 'Please wait'
                           : manager.isEnabled
-                              ? 'Invest'
+                              ? 'Invest now'
                               : 'Unavailable',
                       maxLines: 1,
                       softWrap: false,
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: _brandGold,
-                      foregroundColor: const Color(0xFF10264A),
+                      backgroundColor: _brandBlue,
+                      foregroundColor: Colors.white,
                       disabledBackgroundColor: _c.border,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(13),
                       ),
                       textStyle: GoogleFonts.inter(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                   ),
                 ),

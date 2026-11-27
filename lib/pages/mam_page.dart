@@ -2466,7 +2466,9 @@ class MamPageState extends State<MamPage> {
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 22),
         decoration: BoxDecoration(
           color: _c.card,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
           border: Border.all(color: _c.border),
         ),
         child: SingleChildScrollView(
@@ -2478,69 +2480,81 @@ class MamPageState extends State<MamPage> {
                 child: Container(
                   width: 38,
                   height: 4,
-                decoration: BoxDecoration(
-                  color: _c.muted.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(4),
+                  decoration: BoxDecoration(
+                    color: _c.muted.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    manager.name.isEmpty ? 'MAM Manager' : manager.name,
-                    style: GoogleFonts.inter(
-                      color: _c.text,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      manager.name.isEmpty ? 'MAM Manager' : manager.name,
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: Icon(Icons.close, color: _c.muted),
+                  ),
+                ],
+              ),
+              Text(
+                'Manager ID  ${manager.id}',
+                style: GoogleFonts.inter(color: _c.muted, fontSize: 11),
+              ),
+              const SizedBox(height: 14),
+              _managerDetailLine('Manager', manager.managerName),
+              _managerDetailLine('Balance', _formatCurrency(manager.balance)),
+              _managerDetailLine('Equity', _formatCurrency(manager.equity)),
+              _managerDetailLine(
+                'Performance fee',
+                '${manager.profitSharingPercentage.toStringAsFixed(2)}%',
+              ),
+              _managerDetailLine(
+                'Risk profile',
+                manager.riskScore.isEmpty ? '—' : manager.riskScore,
+              ),
+              _managerDetailLine(
+                'Leverage',
+                manager.leverage.isEmpty ? '—' : manager.leverage,
+              ),
+              _managerDetailLine(
+                'Account age',
+                manager.accountAge.isEmpty ? '—' : manager.accountAge,
+              ),
+              _managerDetailLine(
+                'Historical growth',
+                manager.historicalGrowth,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: manager.isEnabled
+                      ? () {
+                          Navigator.pop(sheetContext);
+                          _investInManager(manager);
+                        }
+                      : null,
+                  icon: const Icon(Icons.arrow_forward, size: 17),
+                  label: const Text('Invest in this MAM'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _brandGold,
+                    foregroundColor: const Color(0xFF10264A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(sheetContext),
-                  icon: Icon(Icons.close, color: _c.muted),
-                ),
-              ],
-            ),
-            Text(
-              'Manager ID  ${manager.id}',
-              style: GoogleFonts.inter(color: _c.muted, fontSize: 11),
-            ),
-            const SizedBox(height: 14),
-            _managerDetailLine('Manager', manager.managerName),
-            _managerDetailLine('Balance', _formatCurrency(manager.balance)),
-            _managerDetailLine('Equity', _formatCurrency(manager.equity)),
-            _managerDetailLine(
-              'Performance fee',
-              '${manager.profitSharingPercentage.toStringAsFixed(2)}%',
-            ),
-            _managerDetailLine('Risk profile', manager.riskScore.isEmpty ? '—' : manager.riskScore),
-            _managerDetailLine('Leverage', manager.leverage.isEmpty ? '—' : manager.leverage),
-            _managerDetailLine('Account age', manager.accountAge.isEmpty ? '—' : manager.accountAge),
-            _managerDetailLine('Historical growth', manager.historicalGrowth),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: FilledButton.icon(
-                onPressed: manager.isEnabled
-                    ? () {
-                        Navigator.pop(sheetContext);
-                        _investInManager(manager);
-                      }
-                    : null,
-                icon: const Icon(Icons.arrow_forward, size: 17),
-                label: const Text('Invest in this MAM'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: _brandGold,
-                  foregroundColor: const Color(0xFF10264A),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
               ),
-            ),
             ],
           ),
         ),

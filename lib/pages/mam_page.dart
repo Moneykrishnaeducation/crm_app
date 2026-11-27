@@ -2434,13 +2434,43 @@ class MamPageState extends State<MamPage> {
         investorPassword: password,
       );
       AppHaptics.heavyImpact();
+
+      // The create endpoint returns the newly provisioned MT5 investor login.
+      // Refresh the investor list first so the new account can be selected.
+      final createdAccountId = _availableText(
+        response['account_id'] ??
+            response['accountId'] ??
+            response['trading_account_id'] ??
+            response['id'],
+      );
+
       await _loadMamInvestments();
       if (!mounted) return;
-      setState(() => _tab = 1);
+
+      final refreshedAccountId = createdAccountId.isNotEmpty
+          ? createdAccountId
+          : (_investorAccounts.isNotEmpty
+                ? _investorAccounts.last.accountId
+                : '');
+
+      if (refreshedAccountId.isEmpty) {
+        setState(() => _tab = 1);
+        showAppMessage(
+          'Investment account created, but its account ID was not returned. Open Investor Accounts to view it.',
+        );
+        return;
+      }
+
+      setState(() {
+        _tab = 1;
+        _selectedInvestorDetail = null;
+        _selectedInvestorAccountId = refreshedAccountId;
+      });
+
       showAppMessage(
         _availableText(response['message']).isNotEmpty
             ? _availableText(response['message'])
-            : 'MAM investment account created successfully.',
+            : 'Investment account created. Opening your investor session.',
       );
     } catch (error) {
       AppHaptics.vibrate();

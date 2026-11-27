@@ -1116,7 +1116,7 @@ class _InvestInMamModal extends StatefulWidget {
 
 class _InvestInMamModalState extends State<_InvestInMamModal> {
   final _amountController = TextEditingController(text: '1000');
-  String _selectedAccount = 'MT5 Standard #1029482 (\$8,420.00)';
+  String _selectedAccount = 'MT5 Standard 1029482 (\$8,420.00)';
   double _drawdownGuard = 15.0;
 
   @override
@@ -1231,12 +1231,12 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
               ),
               items: const [
                 DropdownMenuItem(
-                  value: 'MT5 Standard #1029482 (\$8,420.00)',
-                  child: Text('MT5 Standard #1029482 (\$8,420.00)'),
+                  value: 'MT5 Standard 1029482 (\$8,420.00)',
+                  child: Text('MT5 Standard 1029482 (\$8,420.00)'),
                 ),
                 DropdownMenuItem(
-                  value: 'MT5 Pro #1084920 (\$15,200.00)',
-                  child: Text('MT5 Pro #1084920 (\$15,200.00)'),
+                  value: 'MT5 Pro 1084920 (\$15,200.00)',
+                  child: Text('MT5 Pro 1084920 (\$15,200.00)'),
                 ),
               ],
               onChanged: (val) {

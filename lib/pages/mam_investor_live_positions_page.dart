@@ -160,7 +160,7 @@ class _MamInvestorLivePositionsPageState
           children: [
             Text('Live Position Monitor',
               style: GoogleFonts.inter(color: textColor, fontSize: 16, fontWeight: FontWeight.w800)),
-            Text('${widget.accountName} · #${widget.accountId}',
+            Text('${widget.accountName} · ${widget.accountId}',
               style: GoogleFonts.inter(color: muted, fontSize: 10)),
           ],
         ),
@@ -327,7 +327,7 @@ class _MamInvestorLivePositionsPageState
               style: GoogleFonts.inter(color: pnl, fontSize: 13, fontWeight: FontWeight.w900)),
           ]),
           const SizedBox(height: 5),
-          Text('Ticket #${position.ticket}',
+          Text('Ticket ${position.ticket}',
             style: GoogleFonts.inter(color: muted, fontSize: 10)),
           const SizedBox(height: 12),
           Row(children: [

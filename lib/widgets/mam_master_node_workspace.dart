@@ -248,7 +248,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       context,
       withdrawal: false,
       accountId: _master.login,
-      accountLabel: '${_master.name} · Master #${_master.login}',
+      accountLabel: '${_master.name} · Master ${_master.login}',
       // Deposit requests are pending until backend/payment confirmation. Do not
       // optimistically add the requested amount to the MT5 balance.
 
@@ -262,7 +262,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
       context,
       withdrawal: true,
       accountId: _master.login,
-      accountLabel: '${_master.name} · Master #${_master.login}',
+      accountLabel: '${_master.name} · Master ${_master.login}',
       // Withdrawal requests are pending approval. Keep the MT5 balance unchanged
       // until the backend confirms the actual debit.
 
@@ -294,7 +294,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                   IconButton(onPressed: () => Navigator.pop(ctx),
                     icon: Icon(LucideIcons.x, color: c.muted)),
                 ]),
-                Text('Set a new MT5 investor (read-only) password for master account #${_master.login}.',
+                Text('Set a new MT5 investor (read-only) password for master account ${_master.login}.',
                   style: TextStyle(fontSize: 12, color: c.muted)),
                 const SizedBox(height: 16),
                 Text('NEW INVESTOR PASSWORD',
@@ -377,7 +377,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 IconButton(onPressed: () => Navigator.pop(ctx),
                   icon: Icon(LucideIcons.x, color: c.muted)),
               ]),
-              Text('Master account #${_master.login} · Current leverage 1:${current.isEmpty ? '—' : current}',
+              Text('Master account ${_master.login} · Current leverage 1:${current.isEmpty ? '—' : current}',
                 style: TextStyle(color: c.muted, fontSize: 12)),
               const SizedBox(height: 16),
               Text('SELECT LEVERAGE',
@@ -578,7 +578,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                                     style: GoogleFonts.inter(
                                       color: c.text, fontSize: 13, fontWeight: FontWeight.w800)),
                                   const SizedBox(height: 4),
-                                  Text('MT5 Account #$accountId',
+                                  Text('MT5 Account $accountId',
                                     maxLines: 1, overflow: TextOverflow.ellipsis,
                                     style: GoogleFonts.inter(
                                       color: c.muted, fontSize: 10, fontWeight: FontWeight.w600)),
@@ -731,7 +731,7 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 Text('Investor Pool & Allocations',
                   style: GoogleFonts.inter(color: c.text, fontSize: 17, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 3),
-                Text('Master #${_master.login} · Connected investor account details',
+                Text('Master ${_master.login} · Connected investor account details',
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: c.muted, fontSize: 11)),
               ])),
@@ -872,8 +872,8 @@ class _MamMasterNodeWorkspaceState extends State<MamMasterNodeWorkspace> {
                 children: [
                   Text(
                     hasPending
-                        ? 'Execute weekly performance fee distribution for node #${_master.login}.'
-                        : 'No pending performance fees available to settle for node #${_master.login}.',
+                        ? 'Execute weekly performance fee distribution for node ${_master.login}.'
+                        : 'No pending performance fees available to settle for node ${_master.login}.',
                     style: TextStyle(color: c.muted, fontSize: 13),
                   ),
                   const SizedBox(height: 14),

@@ -3174,6 +3174,134 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     );
   }
 
+  /// Skeleton placeholder matching [_buildHeroCard] layout (dark gradient card).
+  Widget _buildHeroCardSkeleton() {
+    return AppSkeletonizer(
+      enabled: true,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        height: 160,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF071941), Color(0xFF0C2B68), Color(0xFF144EA5)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0C2B68).withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Account switcher pill
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 160,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  Container(
+                    width: 88,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              // "Equity" label
+              Container(width: 48, height: 12, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(4))),
+              const SizedBox(height: 8),
+              // Equity value
+              Container(width: 180, height: 26, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(6))),
+              const Spacer(),
+              // P&L + Balance row
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(width: 70, height: 10, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), borderRadius: BorderRadius.circular(3))),
+                        const SizedBox(height: 5),
+                        Container(width: 56, height: 14, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.28), borderRadius: BorderRadius.circular(4))),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(width: 50, height: 10, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), borderRadius: BorderRadius.circular(3))),
+                        const SizedBox(height: 5),
+                        Container(width: 68, height: 14, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.28), borderRadius: BorderRadius.circular(4))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Skeleton placeholder matching [_buildTabBar] layout.
+  Widget _buildTabBarSkeleton() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 5),
+      child: AppSkeletonizer(
+        enabled: true,
+        child: Container(
+          height: 54,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: List.generate(
+              4,
+              (i) => Expanded(
+                child: Container(
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: i == 0 ? Colors.grey.withValues(alpha: 0.35) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 48,
+                      height: 12,
+                      decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ─── End skeleton helpers ──────────────────────────────────────────────────
 
   void _openAccountSwitchSheet(BuildContext context) {
@@ -5051,18 +5179,22 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: _buildHeroCard(
-                    context,
-                    activeAccount,
-                    _currentEquity,
-                    _currentBalance,
-                    _currentTotalPL,
-                  ),
+                  child: (_accountsLoading && _remoteAccounts == null)
+                      ? _buildHeroCardSkeleton()
+                      : _buildHeroCard(
+                          context,
+                          activeAccount,
+                          _currentEquity,
+                          _currentBalance,
+                          _currentTotalPL,
+                        ),
                 ),
               ),
               // 4-Tab Navigation Bar
               SliverToBoxAdapter(
-                child: _buildTabBar(context, openCount, pendingCount),
+                child: (_accountsLoading && _remoteAccounts == null)
+                    ? _buildTabBarSkeleton()
+                    : _buildTabBar(context, openCount, pendingCount),
               ),
               SliverToBoxAdapter(
                 child: _buildActivityFilters(context, isDark),

@@ -3081,6 +3081,15 @@ class MamPageState extends State<MamPage> {
     final managerTitle = manager.name.trim().isEmpty
         ? 'MAM Manager'
         : manager.name.trim();
+    // Respect the app's active device theme: light mode uses a soft surface,
+    // while dark mode keeps the deep navy premium treatment.
+    final headerText = _c.isDark ? Colors.white : const Color(0xFF10264A);
+    final headerMuted = _c.isDark
+        ? Colors.white.withValues(alpha: .68)
+        : const Color(0xFF64748B);
+    final headerDivider = _c.isDark
+        ? Colors.white.withValues(alpha: .14)
+        : const Color(0xFFDBEAFE);
 
     Widget specRow(IconData icon, String label, String value, {Color? color}) {
       return Padding(
@@ -3146,15 +3155,23 @@ class MamPageState extends State<MamPage> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF0B1D3A),
-                  const Color(0xFF12366D),
-                  _c.isDark ? const Color(0xFF174A91) : const Color(0xFF1E5BB8),
-                ],
+                colors: _c.isDark
+                    ? const [
+                        Color(0xFF0B1D3A),
+                        Color(0xFF12366D),
+                        Color(0xFF174A91),
+                      ]
+                    : const [
+                        Color(0xFFFFFFFF),
+                        Color(0xFFF5F9FF),
+                        Color(0xFFEAF2FF),
+                      ],
               ),
               borderRadius: BorderRadius.circular(17),
               border: Border.all(
-                color: Colors.white.withValues(alpha: .12),
+                color: _c.isDark
+                    ? Colors.white.withValues(alpha: .12)
+                    : const Color(0xFFD6E5FA),
               ),
             ),
             child: Column(
@@ -3166,17 +3183,21 @@ class MamPageState extends State<MamPage> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .13),
+                        color: _c.isDark
+                            ? Colors.white.withValues(alpha: .13)
+                            : const Color(0xFFE8F1FF),
                         borderRadius: BorderRadius.circular(13),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: .18),
+                          color: _c.isDark
+                              ? Colors.white.withValues(alpha: .18)
+                              : const Color(0xFFCBDDF8),
                         ),
                       ),
                       child: Center(
                         child: Text(
                           managerTitle.substring(0, 1).toUpperCase(),
                           style: GoogleFonts.inter(
-                            color: Colors.white,
+                            color: headerText,
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
                           ),
@@ -3193,7 +3214,7 @@ class MamPageState extends State<MamPage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: headerText,
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                             ),
@@ -3206,7 +3227,7 @@ class MamPageState extends State<MamPage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: .68),
+                              color: headerMuted,
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
@@ -3222,13 +3243,19 @@ class MamPageState extends State<MamPage> {
                       ),
                       decoration: BoxDecoration(
                         color: manager.isEnabled
-                            ? const Color(0x1A34D399)
-                            : Colors.white.withValues(alpha: .10),
+                            ? (_c.isDark
+                                ? const Color(0x1A34D399)
+                                : const Color(0xFFECFDF5))
+                            : (_c.isDark
+                                ? Colors.white.withValues(alpha: .10)
+                                : const Color(0xFFF1F5F9)),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: manager.isEnabled
-                              ? const Color(0x6634D399)
-                              : Colors.white.withValues(alpha: .16),
+                              ? const Color(0xFFA7F3D0)
+                              : (_c.isDark
+                                  ? Colors.white.withValues(alpha: .16)
+                                  : const Color(0xFFCBD5E1)),
                         ),
                       ),
                       child: Row(
@@ -3238,16 +3265,20 @@ class MamPageState extends State<MamPage> {
                             Icons.circle,
                             size: 6,
                             color: manager.isEnabled
-                                ? const Color(0xFF34D399)
-                                : Colors.white54,
+                                ? const Color(0xFF10B981)
+                                : (_c.isDark
+                                    ? Colors.white54
+                                    : const Color(0xFF94A3B8)),
                           ),
                           const SizedBox(width: 5),
                           Text(
                             manager.isEnabled ? 'ACTIVE' : 'OFFLINE',
                             style: GoogleFonts.inter(
                               color: manager.isEnabled
-                                  ? const Color(0xFF6EE7B7)
-                                  : Colors.white70,
+                                  ? const Color(0xFF059669)
+                                  : (_c.isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF64748B)),
                               fontSize: 8.5,
                               fontWeight: FontWeight.w800,
                             ),
@@ -3268,7 +3299,7 @@ class MamPageState extends State<MamPage> {
                           Text(
                             'MANAGER BALANCE',
                             style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: .62),
+                              color: headerMuted,
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
                               letterSpacing: .9,
@@ -3281,7 +3312,7 @@ class MamPageState extends State<MamPage> {
                             child: Text(
                               _formatCurrency(manager.balance),
                               style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: headerText,
                                 fontSize: 27,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -.6,
@@ -3298,10 +3329,14 @@ class MamPageState extends State<MamPage> {
                         vertical: 9,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0x24FBBF24),
+                        color: _c.isDark
+                            ? const Color(0x24FBBF24)
+                            : const Color(0xFFFFF7E6),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0x66FBBF24),
+                          color: _c.isDark
+                              ? const Color(0x66FBBF24)
+                              : const Color(0xFFF5D58A),
                         ),
                       ),
                       child: Column(
@@ -3310,7 +3345,7 @@ class MamPageState extends State<MamPage> {
                           Text(
                             'PROFIT SHARE',
                             style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: .7),
+                              color: headerMuted,
                               fontSize: 8,
                               fontWeight: FontWeight.w700,
                               letterSpacing: .4,
@@ -3333,7 +3368,7 @@ class MamPageState extends State<MamPage> {
                 const SizedBox(height: 13),
                 Container(
                   height: 1,
-                  color: Colors.white.withValues(alpha: .12),
+                  color: headerDivider,
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -3341,13 +3376,15 @@ class MamPageState extends State<MamPage> {
                     Icon(
                       LucideIcons.trendingUp,
                       size: 13,
-                      color: const Color(0xFF7DD3FC),
+                      color: _c.isDark
+                          ? const Color(0xFF7DD3FC)
+                          : const Color(0xFF2563EB),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       'Historical growth',
                       style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: .72),
+                        color: headerMuted,
                         fontSize: 10.5,
                       ),
                     ),
@@ -3355,7 +3392,9 @@ class MamPageState extends State<MamPage> {
                     Text(
                       manager.historicalGrowth,
                       style: GoogleFonts.inter(
-                        color: const Color(0xFF6EE7B7),
+                        color: _c.isDark
+                          ? const Color(0xFF6EE7B7)
+                          : const Color(0xFF059669),
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                       ),

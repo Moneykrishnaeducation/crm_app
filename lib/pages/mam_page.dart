@@ -3087,12 +3087,25 @@ class MamPageState extends State<MamPage> {
         ? 'MAM Manager'
         : manager.name.trim();
 
-    Widget specRow(IconData icon, String label, String value, {Color? color}) {
+    Widget detailRow(
+      IconData icon,
+      String label,
+      String value, {
+      Color? valueColor,
+    }) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, size: 15, color: _c.muted),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: _c.blueLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 14, color: _c.blue),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -3104,11 +3117,12 @@ class MamPageState extends State<MamPage> {
                 ),
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               value.isEmpty ? '—' : value,
               textAlign: TextAlign.right,
               style: GoogleFonts.inter(
-                color: color ?? _c.text,
+                color: valueColor ?? _c.text,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
@@ -3119,7 +3133,7 @@ class MamPageState extends State<MamPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _c.card,
         borderRadius: BorderRadius.circular(18),
@@ -3134,7 +3148,7 @@ class MamPageState extends State<MamPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _c.isDark ? .22 : .045),
+            color: Colors.black.withValues(alpha: _c.isDark ? .20 : .04),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -3143,14 +3157,15 @@ class MamPageState extends State<MamPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Same understated account identity row used in the MAM workspaces.
+          // Identity row follows the same badge + login pattern as both
+          // existing MAM workspaces.
           Row(
             children: [
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
-                    vertical: 5,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: _c.blueLight,
@@ -3163,9 +3178,9 @@ class MamPageState extends State<MamPage> {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       color: _c.blue,
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: .45,
+                      letterSpacing: .35,
                     ),
                   ),
                 ),
@@ -3175,20 +3190,23 @@ class MamPageState extends State<MamPage> {
                 'ID: ${manager.id}',
                 style: GoogleFonts.inter(
                   color: _c.muted,
-                  fontSize: 10.5,
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 3),
-              Icon(
-                Icons.circle,
-                size: 7,
-                color: manager.isEnabled ? _c.green : _c.muted,
+              const SizedBox(width: 5),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: manager.isEnabled ? _c.green : _c.muted,
+                  shape: BoxShape.circle,
+                ),
               ),
             ],
           ),
           if (manager.managerName.isNotEmpty) ...[
-            const SizedBox(height: 7),
+            const SizedBox(height: 6),
             Text(
               manager.managerName,
               maxLines: 1,
@@ -3200,139 +3218,157 @@ class MamPageState extends State<MamPage> {
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          Text(
-            'MANAGER BALANCE',
-            style: GoogleFonts.inter(
-              color: _c.muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: .65,
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            alignment: Alignment.centerLeft,
-            fit: BoxFit.scaleDown,
-            child: Text(
-              _formatCurrency(manager.balance),
-              style: GoogleFonts.inter(
-                color: _c.text,
-                fontSize: 30,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -.7,
-              ),
-            ),
-          ),
           const SizedBox(height: 15),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 11,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _c.blueLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _c.blueBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'PROFIT SHARE',
-                        style: GoogleFonts.inter(
-                          color: _c.muted,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .4,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
-                        style: GoogleFonts.inter(
-                          color: _c.blue,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 11,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _c.subCard,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _c.subBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'HISTORICAL GROWTH',
-                        style: GoogleFonts.inter(
-                          color: _c.muted,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .25,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        manager.historicalGrowth,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          color: _c.green,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 13),
+          // Financial hero: balance and profit share are grouped like the
+          // balance panels used in the manager and investor workspaces.
           Container(
+            padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
               color: _c.subCard,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _c.subBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'MANAGER BALANCE',
+                            style: GoogleFonts.inter(
+                              color: _c.muted,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: .65,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _formatCurrency(manager.balance),
+                              style: GoogleFonts.inter(
+                                color: _c.text,
+                                fontSize: 27,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -.7,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _c.blueLight,
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(color: _c.blueBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'PROFIT SHARE',
+                            style: GoogleFonts.inter(
+                              color: _c.muted,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: .35,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
+                            style: GoogleFonts.inter(
+                              color: _c.blue,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(height: 1, color: _c.subBorder),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(
+                      LucideIcons.trendingUp,
+                      size: 14,
+                      color: _c.muted,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        'Historical growth',
+                        style: GoogleFonts.inter(
+                          color: _c.muted,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      manager.historicalGrowth,
+                      style: GoogleFonts.inter(
+                        color: _c.green,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11),
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(13),
               border: Border.all(color: _c.subBorder),
             ),
             child: Column(
               children: [
-                specRow(
+                detailRow(
                   LucideIcons.shield,
                   'Risk profile',
                   risk.isEmpty ? '—' : risk,
-                  color: risk.isEmpty ? _c.muted : riskColor,
+                  valueColor: risk.isEmpty ? _c.muted : riskColor,
                 ),
                 Divider(height: 1, color: _c.subBorder),
-                specRow(
+                detailRow(
                   LucideIcons.calendarDays,
                   'Account age',
                   manager.accountAge,
                 ),
                 if (manager.leverage.isNotEmpty) ...[
                   Divider(height: 1, color: _c.subBorder),
-                  specRow(LucideIcons.scale, 'Leverage', manager.leverage),
+                  detailRow(
+                    LucideIcons.scale,
+                    'Leverage',
+                    manager.leverage,
+                  ),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 13),
           Row(
             children: [
               Expanded(

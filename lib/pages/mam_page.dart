@@ -2712,7 +2712,7 @@ class MamPageState extends State<MamPage> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: _c.blueBorder),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           LucideIcons.userRound,
                           color: _c.blue,
                           size: 22,

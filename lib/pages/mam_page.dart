@@ -2894,6 +2894,374 @@ class MamPageState extends State<MamPage> {
   }
 
   Widget _buildAvailablePoolCard(AvailableMamPool manager) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 480) {
+          return _buildAvailablePoolCardMobile(manager);
+        }
+        return _buildAvailablePoolCardDesktop(manager);
+      },
+    );
+  }
+
+  Widget _buildAvailablePoolCardMobile(AvailableMamPool manager) {
+    final risk = manager.riskScore.trim();
+    final riskColor = risk.toLowerCase() == 'low'
+        ? _c.green
+        : risk.toLowerCase() == 'high'
+            ? _c.red
+            : _c.gold;
+    final isInvesting = _investingManagerIds.contains(manager.id);
+    final initial = manager.name.trim().isEmpty
+        ? 'M'
+        : manager.name.trim().substring(0, 1).toUpperCase();
+
+    Widget dataTile({
+      required IconData icon,
+      required String label,
+      required String value,
+      Color? valueColor,
+    }) {
+      return Expanded(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 68),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: _c.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 12, color: _c.muted),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: _c.muted,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                value.isEmpty ? '—' : value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  color: valueColor ?? _c.text,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _c.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _c.isDark ? .18 : .045),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_c.blueLight, _c.subCard],
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: _c.blueBorder),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initial,
+                  style: GoogleFonts.inter(
+                    color: _c.blue,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      manager.name.isEmpty ? 'MAM Manager' : manager.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: _c.text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      manager.managerName.isNotEmpty
+                          ? '${manager.managerName}  ·  #${manager.id}'
+                          : 'Manager ID  ·  #${manager.id}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: _c.muted,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                decoration: BoxDecoration(
+                  color: manager.isEnabled ? _c.greenLight : _c.subCard,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: manager.isEnabled ? _c.greenBorder : _c.border,
+                  ),
+                ),
+                child: Text(
+                  manager.isEnabled ? 'ACTIVE' : 'OFFLINE',
+                  style: GoogleFonts.inter(
+                    color: manager.isEnabled ? _c.green : _c.muted,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _c.navy,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'MANAGER BALANCE',
+                        style: GoogleFonts.inter(
+                          color: Colors.white.withValues(alpha: .68),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .8,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _formatCurrency(manager.balance),
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: .14),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'PROFIT SHARE',
+                        style: GoogleFonts.inter(
+                          color: Colors.white.withValues(alpha: .68),
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${manager.profitSharingPercentage.toStringAsFixed(0)}%',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFFBBF24),
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              dataTile(
+                icon: LucideIcons.trendingUp,
+                label: 'Historical growth',
+                value: manager.historicalGrowth,
+                valueColor: _c.green,
+              ),
+              const SizedBox(width: 8),
+              dataTile(
+                icon: LucideIcons.shield,
+                label: 'Risk profile',
+                value: risk.isEmpty ? '—' : risk,
+                valueColor: risk.isEmpty ? _c.muted : riskColor,
+              ),
+              const SizedBox(width: 8),
+              dataTile(
+                icon: LucideIcons.calendarDays,
+                label: 'Account age',
+                value: manager.accountAge,
+              ),
+            ],
+          ),
+          if (manager.leverage.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(LucideIcons.scale, size: 13, color: _c.muted),
+                const SizedBox(width: 6),
+                Text(
+                  'Leverage',
+                  style: GoogleFonts.inter(
+                    color: _c.muted,
+                    fontSize: 10.5,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  manager.leverage,
+                  style: GoogleFonts.inter(
+                    color: _c.text,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 46,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      AppHaptics.lightImpact();
+                      _viewAvailableManager(manager);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _c.blue,
+                      side: BorderSide(color: _c.blueBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                    child: const Text('View details'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: SizedBox(
+                  height: 46,
+                  child: FilledButton(
+                    onPressed: !manager.isEnabled || isInvesting
+                        ? null
+                        : () {
+                            AppHaptics.mediumImpact();
+                            _investInManager(manager);
+                          },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brandGold,
+                      foregroundColor: const Color(0xFF10264A),
+                      disabledBackgroundColor: _c.border,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                    child: isInvesting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(LucideIcons.wallet, size: 16),
+                              const SizedBox(width: 7),
+                              Text(
+                                manager.isEnabled ? 'Invest now' : 'Unavailable',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvailablePoolCardDesktop(AvailableMamPool manager) {
     final risk = manager.riskScore;
     final riskColor = risk.toLowerCase() == 'low'
         ? _c.green

@@ -5,6 +5,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../../app_notifications.dart';
 import '../../../services/auth_api.dart';
+import '../models/partnership_models.dart';
 import '../widgets/partnership_theme.dart';
 
 // ============================================================================
@@ -20,6 +21,7 @@ class BrokerCommissionWithdrawalPage extends StatefulWidget {
 
 class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdrawalPage> {
   bool _loading = true;
+  String? _loadError;
   double _availableBalance = 0.0;
   List<Map<String, dynamic>> _tradingAccounts = [];
   String? _selectedAccountId;
@@ -40,44 +42,87 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
     super.dispose();
   }
 
+  bool _isDemoAccount(Map<String, dynamic> account) {
+    if (account['is_demo'] == true) return true;
+    final accountType = (account['account_type'] ?? '').toString().trim().toLowerCase();
+    if (accountType == 'demo' || accountType.contains('demo')) return true;
+    final group = (account['group'] ??
+            account['group_name'] ??
+            account['group_alias'] ??
+            account['server'] ??
+            '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    return group.contains('demo');
+  }
+
+  String _accountIdOf(Map<String, dynamic> account) =>
+      (account['account_id'] ?? account['id'] ?? '').toString().trim();
+
   Future<void> _loadData() async {
-    setState(() => _loading = true);
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
     try {
+      String? errorMsg;
       final results = await Future.wait([
-        AuthApi.instance.getIbStats().catchError((_) => <String, dynamic>{}),
-        AuthApi.instance.getUserTradingAccounts().catchError((_) => <String, dynamic>{}),
+        AuthApi.instance.getIbStats().catchError((Object e) {
+          errorMsg ??= e is AuthApiException
+              ? e.message
+              : 'Unable to load IB commission balance.';
+          return <String, dynamic>{};
+        }),
+        AuthApi.instance.getNonDemoAccounts(fresh: true).catchError((Object e) {
+          errorMsg ??= e is AuthApiException
+              ? e.message
+              : 'Unable to load destination MT5 accounts.';
+          return <String, dynamic>{};
+        }),
       ]);
 
       final stats = results[0];
       final accRes = results[1];
 
-      final rawAccounts = accRes['accounts'] ?? (accRes['data'] is List ? accRes['data'] : []);
+      final rawAccounts = extractPartnershipList(
+        accRes,
+        keys: const ['accounts', 'results', 'data'],
+      );
       final accList = <Map<String, dynamic>>[];
-      if (rawAccounts is List) {
-        for (final item in rawAccounts.whereType<Map>()) {
-          accList.add(item.cast<String, dynamic>());
+      final seenIds = <String>{};
+      for (final item in rawAccounts) {
+        final id = _accountIdOf(item);
+        if (id.isEmpty || _isDemoAccount(item)) continue;
+        if (seenIds.add(id)) {
+          accList.add(<String, dynamic>{...item, 'account_id': id});
         }
       }
 
-      double bal = 0.0;
-      if (stats['commission_balance'] is num) {
-        bal = (stats['commission_balance'] as num).toDouble();
-      } else if (stats['commission_balance'] is String) {
-        bal = double.tryParse(stats['commission_balance']) ?? 0.0;
-      }
+      final bal = parseDouble(stats['commission_balance']);
+      final currentSelected = _selectedAccountId?.trim();
+      final nextSelected = (currentSelected != null &&
+              currentSelected.isNotEmpty &&
+              seenIds.contains(currentSelected))
+          ? currentSelected
+          : (accList.isNotEmpty ? _accountIdOf(accList.first) : null);
 
-      if (mounted) {
-        setState(() {
-          _availableBalance = bal;
-          _tradingAccounts = accList;
-          if (accList.isNotEmpty) {
-            _selectedAccountId = (accList[0]['account_id'] ?? '').toString();
-          }
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _availableBalance = bal;
+        _tradingAccounts = accList;
+        _selectedAccountId = nextSelected;
+        _loadError = errorMsg;
+        _loading = false;
+      });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() {
+        _loadError = 'Unable to load withdrawal details. Please try again.';
+        _loading = false;
+      });
     }
   }
 
@@ -110,6 +155,7 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
         comment: _commentController.text.trim(),
       );
       showAppMessage('Withdrawal request submitted successfully!');
+      if (!mounted) return;
       _amountController.clear();
       _commentController.clear();
       await _loadData();
@@ -169,6 +215,33 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (!_loading && _loadError != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: colors.red.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.red.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(LucideIcons.triangleAlert, size: 16, color: colors.red),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _loadError!,
+                                  style: TextStyle(color: colors.red, fontSize: 11.5, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _loadData,
+                                child: Text('Retry', style: TextStyle(color: colors.red, fontWeight: FontWeight.w800)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       // Balance Banner
                       Container(
                         padding: const EdgeInsets.all(18),
@@ -212,20 +285,20 @@ class _BrokerCommissionWithdrawalPageState extends State<BrokerCommissionWithdra
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _tradingAccounts.any((a) => (a['account_id'] ?? '').toString() == _selectedAccountId)
+                            value: _tradingAccounts.any((a) => _accountIdOf(a) == _selectedAccountId)
                                 ? _selectedAccountId
                                 : null,
                             isExpanded: true,
                             dropdownColor: colors.card,
                             iconEnabledColor: colors.blue,
                             hint: Text(
-                              _tradingAccounts.isEmpty ? 'No MT5 accounts found' : 'Select Destination Account',
+                              _tradingAccounts.isEmpty ? 'No live MT5 accounts found' : 'Select Destination Account',
                               style: TextStyle(color: colors.muted, fontSize: 13),
                             ),
                             style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w700),
                             items: _tradingAccounts.map((a) {
-                              final id = (a['account_id'] ?? '').toString();
-                              final type = (a['account_type'] ?? 'Standard').toString();
+                              final id = _accountIdOf(a);
+                              final type = (a['account_type'] ?? 'Live MT5').toString();
                               final bal = (a['balance'] ?? '0.00').toString();
                               return DropdownMenuItem(
                                 value: id,

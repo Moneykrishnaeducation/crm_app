@@ -2,6 +2,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../models/partnership_models.dart';
+
 // ============================================================================
 // CUSTOM VISUAL CHART PAINTERS
 // ============================================================================
@@ -32,7 +34,7 @@ class CommissionTrajectoryPainter extends CustomPainter {
 
     double maxVal = 0.0;
     for (final item in monthsData) {
-      final val = (item['total'] as num?)?.toDouble() ?? 0.0;
+      final val = parseDouble(item['total']);
       if (val > maxVal) maxVal = val;
     }
     if (maxVal <= 0) maxVal = 100.0;
@@ -55,7 +57,7 @@ class CommissionTrajectoryPainter extends CustomPainter {
         : chartWidth;
     final points = <Offset>[];
     for (int i = 0; i < monthsData.length; i++) {
-      final val = (monthsData[i]['total'] as num?)?.toDouble() ?? 0.0;
+      final val = parseDouble(monthsData[i]['total']);
       final x = i * stepX;
       final y = paddingTop + chartHeight - ((val / maxVal) * chartHeight);
       points.add(Offset(x, y));

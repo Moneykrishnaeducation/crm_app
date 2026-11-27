@@ -40,24 +40,22 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
   }
 
   Future<void> _fetchTree() async {
-    setState(() => _loading = true);
+    if (mounted) setState(() => _loading = true);
     try {
       final res = await AuthApi.instance.getIbClientTree(page: 1, perPage: 1000);
-      final rawList = res['clients'] ?? res['results'] ?? res['data'];
-      final parsed = <IbClient>[];
-      if (rawList is List) {
-        for (final item in rawList.whereType<Map>()) {
-          parsed.add(IbClient.fromJson(item.cast<String, dynamic>()));
-        }
-      }
-      if (mounted) {
-        setState(() {
-          _clients = parsed;
-          _loading = false;
-        });
-      }
+      final rawList = extractPartnershipList(
+        res,
+        keys: const ['clients', 'results', 'data'],
+      );
+      final parsed = rawList.map(IbClient.fromJson).toList();
+      if (!mounted) return;
+      setState(() {
+        _clients = parsed;
+        _loading = false;
+      });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() => _loading = false);
     }
   }
 
@@ -109,43 +107,67 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     return res;
   }
 
-  List<({IbClient client, int depth})> _flattenTree(List<IbClient> clients, int depth) {
-    final list = <({IbClient client, int depth})>[];
-    for (final client in clients) {
-      list.add((client: client, depth: depth));
+  String _nodeKey(IbClient client, int index, String parentKey) {
+    final id = client.id.trim();
+    if (id.isNotEmpty) return id;
+    final email = client.email.trim();
+    final name = client.name.trim();
+    final identity = email.isNotEmpty ? email : name;
+    return '$parentKey/node_${index}_$identity';
+  }
+
+  List<({IbClient client, int depth, String nodeKey})> _flattenTree(
+    List<IbClient> clients,
+    int depth, {
+    String parentKey = 'root',
+  }) {
+    final list = <({IbClient client, int depth, String nodeKey})>[];
+    for (var i = 0; i < clients.length; i++) {
+      final client = clients[i];
+      final key = _nodeKey(client, i, parentKey);
+      list.add((client: client, depth: depth, nodeKey: key));
       final hasChildren = client.clients.isNotEmpty;
-      final isExpanded = _expandedIds.contains(client.id);
+      final isExpanded = _expandedIds.contains(key);
       if (hasChildren && isExpanded) {
-        list.addAll(_flattenTree(client.clients, depth + 1));
+        list.addAll(_flattenTree(client.clients, depth + 1, parentKey: key));
       }
     }
     return list;
   }
 
-  Set<String> _collectExpandableIds(List<IbClient> list) {
+  Set<String> _collectExpandableIds(
+    List<IbClient> list, {
+    String parentKey = 'root',
+  }) {
     final ids = <String>{};
-    for (final c in list) {
+    for (var i = 0; i < list.length; i++) {
+      final c = list[i];
       if (c.clients.isNotEmpty) {
-        ids.add(c.id);
-        ids.addAll(_collectExpandableIds(c.clients));
+        final key = _nodeKey(c, i, parentKey);
+        ids.add(key);
+        ids.addAll(_collectExpandableIds(c.clients, parentKey: key));
       }
     }
     return ids;
   }
 
-  List<({IbClient client, int depth})> _buildDemoPlaceholders() {
+  List<({IbClient client, int depth, String nodeKey})> _buildDemoPlaceholders() {
     final demo = IbClient.demoTree();
-    final items = <({IbClient client, int depth})>[];
+    final items = <({IbClient client, int depth, String nodeKey})>[];
     if (demo.isNotEmpty) {
-      items.add((client: demo[0], depth: 0));
+      items.add((client: demo[0], depth: 0, nodeKey: 'demo_0'));
       if (demo[0].clients.isNotEmpty) {
-        items.add((client: demo[0].clients.first, depth: 1));
+        items.add((client: demo[0].clients.first, depth: 1, nodeKey: 'demo_0_0'));
       }
       if (demo.length > 1) {
-        items.add((client: demo[1], depth: 0));
+        items.add((client: demo[1], depth: 0, nodeKey: 'demo_1'));
       }
       while (items.length < 4) {
-        items.add((client: demo[items.length % demo.length], depth: 0));
+        items.add((
+          client: demo[items.length % demo.length],
+          depth: 0,
+          nodeKey: 'demo_pad_${items.length}',
+        ));
       }
     }
     return items.take(4).toList();
@@ -283,7 +305,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                       child: Column(
                         children: [
                           for (final item in _buildDemoPlaceholders())
-                            _buildClientNode(item.client, colors, item.depth, isWide),
+                            _buildClientNode(item.client, colors, item.depth, isWide, item.nodeKey),
                         ],
                       ),
                     ),
@@ -389,7 +411,7 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
                     itemCount: visibleClients.length,
                     itemBuilder: (context, index) {
                       final item = visibleClients[index];
-                      return _buildClientNode(item.client, colors, item.depth, isWide);
+                      return _buildClientNode(item.client, colors, item.depth, isWide, item.nodeKey);
                     },
                   ),
                 ),
@@ -459,10 +481,16 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
     );
   }
 
-  Widget _buildClientNode(IbClient client, PartnershipColors colors, int depth, bool isWide) {
+  Widget _buildClientNode(
+    IbClient client,
+    PartnershipColors colors,
+    int depth,
+    bool isWide,
+    String nodeKey,
+  ) {
     final theme = getIbLevelTheme(client.level, colors.isDark);
     final hasChildren = client.clients.isNotEmpty;
-    final isExpanded = _expandedIds.contains(client.id);
+    final isExpanded = _expandedIds.contains(nodeKey);
 
     final avatarWidget = Container(
       width: 38,
@@ -721,9 +749,9 @@ class _BrokerClientTreePageState extends State<BrokerClientTreePage> {
             AppHaptics.selectionClick();
             setState(() {
               if (isExpanded) {
-                _expandedIds.remove(client.id);
+                _expandedIds.remove(nodeKey);
               } else {
-                _expandedIds.add(client.id);
+                _expandedIds.add(nodeKey);
               }
             });
           },

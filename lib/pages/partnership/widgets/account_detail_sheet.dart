@@ -97,8 +97,10 @@ class _AccountDetailSheetState extends State<AccountDetailSheet> {
     final balance = _loading ? '12,450.00' : (_details['balance']?.toString() ?? '0.00');
     final equity = _loading ? '12,680.40' : (_details['equity']?.toString() ?? '0.00');
     final margin = _loading ? '1,240.00' : (_details['margin']?.toString() ?? '0.00');
-    final profit = _loading ? '230.40' : (_details['profit']?.toString() ?? '0.00');
-    final profitNum = double.tryParse(profit) ?? 0.0;
+    final profitRaw = _loading ? '230.40' : (_details['profit'] ?? '0.00');
+    final profitNum = parseDouble(profitRaw);
+    final profitFormatted =
+        '${profitNum < 0 ? '-' : ''}\$${profitNum.abs().toStringAsFixed(2)}';
     final displayedPositions = _loading ? _skeletonPositions : _positions;
 
     return SafeArea(
@@ -186,7 +188,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet> {
                     const SizedBox(width: 8),
                     _metricBox(colors, 'Margin', '\$$margin', colors.muted),
                     const SizedBox(width: 8),
-                    _metricBox(colors, 'Floating P/L', '\$$profit', profitNum >= 0 ? colors.green : colors.red),
+                    _metricBox(colors, 'Floating P/L', profitFormatted, profitNum >= 0 ? colors.green : colors.red),
                   ],
                 ),
               ),
@@ -240,7 +242,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet> {
                                 final vol = pos['volume']?.toString() ?? '0.01';
                                 final openPrice = pos['open_price']?.toString() ?? '0.00';
                                 final curPrice = pos['current_price']?.toString() ?? '0.00';
-                                final pnl = (pos['profit'] as num?)?.toDouble() ?? 0.0;
+                                final pnl = parseDouble(pos['profit']);
 
                                 return Container(
                                   padding: const EdgeInsets.all(12),
@@ -297,7 +299,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        '${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(2)}',
+                                        '${pnl >= 0 ? '+' : '-'}\$${pnl.abs().toStringAsFixed(2)}',
                                         style: TextStyle(
                                           color: pnl >= 0 ? colors.green : colors.red,
                                           fontSize: 13,

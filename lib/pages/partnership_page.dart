@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../services/auth_api.dart';
 import 'partnership/models/partnership_models.dart';
@@ -32,8 +33,12 @@ class BrokerPartnershipPage extends StatefulWidget {
 class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
   bool _initialLoading = true;
   bool _loading = true;
+  bool _loadingInFlight = false;
+  int _loadGeneration = 0;
   bool _isIbApproved = false;
   String _ibStatus = ''; // 'pending', 'rejected', 'approved', ''
+  String? _statusError;
+  String? _dataError;
   bool _demoPreviewMode = false;
 
   IbDashboardData _dashboardData = IbDashboardData();
@@ -48,64 +53,115 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
   }
 
   Future<void> _loadAllData() async {
-    if (mounted && !_loading) {
-      setState(() => _loading = true);
+    if (_loadingInFlight) return;
+    _loadingInFlight = true;
+    final gen = ++_loadGeneration;
+
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _statusError = null;
+      });
     }
+
     try {
-      // 1. Fetch user's IB status first to avoid unauthorized 403 Forbidden queries
-      Map<String, dynamic> statusRes = {};
+      // 1. Fetch user's IB status first to avoid unauthorized 403 Forbidden queries.
+      final Map<String, dynamic> statusRes;
       try {
         statusRes = await AuthApi.instance.getIbStatus();
-      } catch (_) {}
+      } on AuthApiException catch (e) {
+        if (!mounted || gen != _loadGeneration) return;
+        setState(() {
+          if (_isIbApproved) {
+            _dataError = e.message;
+          } else {
+            _statusError = e.message;
+          }
+          _loading = false;
+          _initialLoading = false;
+        });
+        return;
+      } catch (_) {
+        if (!mounted || gen != _loadGeneration) return;
+        const msg = 'Unable to verify Introducing Broker status. Please try again.';
+        setState(() {
+          if (_isIbApproved) {
+            _dataError = msg;
+          } else {
+            _statusError = msg;
+          }
+          _loading = false;
+          _initialLoading = false;
+        });
+        return;
+      }
 
-      final isApproved = statusRes['approved'] == true ||
-          statusRes['has_ib_status'] == true ||
-          (statusRes['status'] != null &&
-              statusRes['status'].toString().toLowerCase() == 'approved');
-      final ibStatus = (statusRes['status'] ?? '').toString().toLowerCase();
+      if (!mounted || gen != _loadGeneration) return;
 
-      // If status explicitly says the user is not an approved IB, handle cleanly without calling 403 endpoints
-      if (!isApproved && statusRes.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _isIbApproved = false;
-            _ibStatus = ibStatus;
-            _loading = false;
-            _initialLoading = false;
-          });
-        }
+      final ibStatus = (statusRes['status'] ?? '').toString().trim().toLowerCase();
+      final isApproved = statusRes['approved'] == true || ibStatus == 'approved';
+
+      // Never fall through to 403-protected IB endpoints when not explicitly approved.
+      if (!isApproved || statusRes.isEmpty) {
+        setState(() {
+          _isIbApproved = false;
+          _ibStatus = ibStatus;
+          _statusError = null;
+          _dataError = null;
+          _loading = false;
+          _initialLoading = false;
+        });
         return;
       }
 
       bool hit403 = false;
+      final failedEndpoints = <String>[];
+      String? firstEndpointError;
+
+      Future<Map<String, dynamic>> fetchEndpoint(
+        String label,
+        Future<Map<String, dynamic>> Function() request,
+      ) async {
+        try {
+          return await request();
+        } on AuthApiException catch (e) {
+          if (e.statusCode == 403) {
+            hit403 = true;
+          } else {
+            failedEndpoints.add(label);
+            firstEndpointError ??= e.message;
+          }
+          return <String, dynamic>{};
+        } catch (_) {
+          failedEndpoints.add(label);
+          return <String, dynamic>{};
+        }
+      }
+
       final results = await Future.wait([
-        AuthApi.instance.getIbStats().catchError((e) {
-          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
-          return <String, dynamic>{};
-        }),
-        AuthApi.instance.getIbReferralLinks().catchError((e) {
-          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
-          return <String, dynamic>{};
-        }),
-        AuthApi.instance.getIbCommissionTransactions().catchError((e) {
-          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
-          return <String, dynamic>{};
-        }),
-        AuthApi.instance.getIbClientTree(page: 1, perPage: 1000).catchError((e) {
-          if (e is AuthApiException && e.statusCode == 403) hit403 = true;
-          return <String, dynamic>{};
-        }),
+        fetchEndpoint('stats', AuthApi.instance.getIbStats),
+        fetchEndpoint('referral links', AuthApi.instance.getIbReferralLinks),
+        fetchEndpoint(
+          'commission ledger',
+          AuthApi.instance.getIbCommissionTransactions,
+        ),
+        fetchEndpoint(
+          'client tree',
+          () => AuthApi.instance.getIbClientTree(page: 1, perPage: 1000),
+        ),
       ]);
 
+      if (!mounted || gen != _loadGeneration) return;
+
       if (hit403) {
-        if (mounted) {
-          setState(() {
-            _isIbApproved = false;
-            _ibStatus = ibStatus.isNotEmpty ? ibStatus : 'none';
-            _loading = false;
-            _initialLoading = false;
-          });
-        }
+        setState(() {
+          _isIbApproved = false;
+          _ibStatus = ibStatus.isNotEmpty ? ibStatus : 'none';
+          _statusError = null;
+          _dataError = null;
+          _loading = false;
+          _initialLoading = false;
+        });
         return;
       }
 
@@ -114,51 +170,55 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
       final txnsRes = results[2];
       final treeRes = results[3];
 
-      // Parse Dashboard Data
       final dbData = IbDashboardData.fromJson(statsRes);
-
-      // Parse Referral Links across all supported response formats
       final parsedLinks = IbReferralLink.listFromResponse(
         linksRes,
         statsResponse: statsRes,
       );
+      final parsedTxns = extractPartnershipList(
+        txnsRes,
+        keys: const ['results', 'transactions', 'data'],
+      ).map(IbCommissionTxn.fromJson).toList();
+      final parsedClients = extractPartnershipList(
+        treeRes,
+        keys: const ['clients', 'results', 'data'],
+      ).map(IbClient.fromJson).toList();
 
-      // Parse Commission Transactions
-      final parsedTxns = <IbCommissionTxn>[];
-      final rawTxns = txnsRes['results'] ?? txnsRes['data'] ?? txnsRes['transactions'];
-      if (rawTxns is List) {
-        for (final item in rawTxns.whereType<Map>()) {
-          parsedTxns.add(IbCommissionTxn.fromJson(item.cast<String, dynamic>()));
-        }
+      String? dataError;
+      if (failedEndpoints.isNotEmpty) {
+        dataError = failedEndpoints.length == 4
+            ? (firstEndpointError ??
+                'Unable to load partnership metrics. Please tap Retry.')
+            : 'Some partnership data failed to load (${failedEndpoints.join(', ')}). Tap Retry to refresh.';
       }
 
-      // Parse Client Tree
-      final parsedClients = <IbClient>[];
-      final rawClients = treeRes['clients'] ?? treeRes['results'] ?? treeRes['data'];
-      if (rawClients is List) {
-        for (final item in rawClients.whereType<Map>()) {
-          parsedClients.add(IbClient.fromJson(item.cast<String, dynamic>()));
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _isIbApproved = true;
-          _ibStatus = 'approved';
-          _dashboardData = dbData;
-          _referralLinks = parsedLinks;
-          _commissionTxns = parsedTxns;
-          _clientTree = parsedClients;
-          _loading = false;
-          _initialLoading = false;
-        });
-      }
+      setState(() {
+        _isIbApproved = true;
+        _ibStatus = 'approved';
+        _statusError = null;
+        _dataError = dataError;
+        _dashboardData = dbData;
+        _referralLinks = parsedLinks;
+        _commissionTxns = parsedTxns;
+        _clientTree = parsedClients;
+        _loading = false;
+        _initialLoading = false;
+      });
     } catch (_) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _initialLoading = false;
-        });
+      if (!mounted || gen != _loadGeneration) return;
+      setState(() {
+        _loading = false;
+        _initialLoading = false;
+        if (!_isIbApproved) {
+          _statusError ??=
+              'Unable to load partnership details. Please try again.';
+        } else {
+          _dataError ??= 'Unable to refresh partnership metrics. Tap Retry.';
+        }
+      });
+    } finally {
+      if (gen == _loadGeneration) {
+        _loadingInFlight = false;
       }
     }
   }
@@ -201,6 +261,86 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
       );
     }
 
+    if (!_isIbApproved && !_demoPreviewMode && _statusError != null) {
+      return Scaffold(
+        backgroundColor: colors.canvas,
+        appBar: widget.onBack != null || Navigator.canPop(context)
+            ? AppBar(
+                backgroundColor: colors.appBarBg,
+                foregroundColor: colors.text,
+                elevation: 0,
+                leading: IconButton(
+                  tooltip: 'Back',
+                  onPressed: widget.onBack ?? () => Navigator.pop(context),
+                  icon: Icon(LucideIcons.arrowLeft, color: colors.text),
+                ),
+                title: const Text(
+                  'Introducing Broker (IB)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              )
+            : null,
+        body: PartnershipBackdrop(
+          colors: colors,
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.triangleAlert, size: 46, color: colors.red),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Unable to Load Partnership Status',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colors.text,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _statusError!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colors.muted,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: _loading ? null : _loadAllData,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colors.blue,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(LucideIcons.refreshCw, size: 15),
+                      label: const Text(
+                        'Retry',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     if (!_isIbApproved && !_demoPreviewMode) {
       return PartnershipApplicationView(
         ibStatus: _ibStatus,
@@ -220,6 +360,7 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
       commissionTxns: _commissionTxns,
       loading: _loading,
       demoPreviewMode: _demoPreviewMode,
+      errorMessage: _dataError,
       onBack: widget.onBack,
       onRefresh: _loadAllData,
       onExitDemoMode: _exitDemoPreviewMode,

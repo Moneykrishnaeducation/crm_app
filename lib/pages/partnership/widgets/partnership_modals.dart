@@ -185,7 +185,9 @@ void showConfirmIbModal(
                                 onIbChanged?.call();
                               } catch (e) {
                                 showAppMessage('Failed to submit IB request: $e');
-                                setDialogState(() => submitting = false);
+                                if (dialogContext.mounted) {
+                                  setDialogState(() => submitting = false);
+                                }
                               }
                             },
                       style: FilledButton.styleFrom(
@@ -222,9 +224,7 @@ void showReferralQrModal(BuildContext context, IbReferralLink link) {
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
       final colors = PartnershipColors.of(sheetContext);
-      final url = link.referralLink.isNotEmpty
-          ? link.referralLink
-          : 'https://client.vtindex.com/?ref=${link.referralCode}';
+      final url = link.effectiveUrl;
 
       return SafeArea(
         child: Container(
@@ -351,6 +351,7 @@ void showIbTermsModal(
       final colors = PartnershipColors.of(sheetContext);
       var agreed = initialAgreed;
       var submitting = false;
+      String? errorMessage;
 
       return StatefulBuilder(
         builder: (context, setSheetState) {
@@ -409,7 +410,7 @@ void showIbTermsModal(
                         ),
                         IconButton(
                           icon: const Icon(LucideIcons.x, size: 20),
-                          onPressed: () => Navigator.pop(sheetContext),
+                          onPressed: submitting ? null : () => Navigator.pop(sheetContext),
                         ),
                       ],
                     ),
@@ -472,6 +473,26 @@ void showIbTermsModal(
                       ),
                     ),
                     const SizedBox(height: 14),
+                    if (errorMessage != null) ...[
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: colors.red.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: colors.red.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          errorMessage!,
+                          style: TextStyle(
+                            color: colors.red,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -480,9 +501,26 @@ void showIbTermsModal(
                             ? null
                             : () async {
                                 AppHaptics.mediumImpact();
-                                setSheetState(() => submitting = true);
-                                Navigator.pop(sheetContext);
-                                await onSubmit();
+                                setSheetState(() {
+                                  submitting = true;
+                                  errorMessage = null;
+                                });
+                                try {
+                                  await onSubmit();
+                                  if (sheetContext.mounted) {
+                                    Navigator.pop(sheetContext);
+                                  }
+                                } catch (e) {
+                                  final msg = e is AuthApiException
+                                      ? e.message
+                                      : 'Failed to submit IB application.';
+                                  if (sheetContext.mounted) {
+                                    setSheetState(() {
+                                      submitting = false;
+                                      errorMessage = msg;
+                                    });
+                                  }
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colors.blue,

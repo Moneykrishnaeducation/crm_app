@@ -40,6 +40,7 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
   bool _agreedToTerms = true;
 
   Future<void> _submitIbApplication() async {
+    if (_submittingApplication) return;
     AppHaptics.mediumImpact();
     setState(() => _submittingApplication = true);
     try {
@@ -67,23 +68,16 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _submittingApplication = false);
-        final msg = e is AuthApiException ? e.message : 'Failed to submit IB application.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFFEF4444),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            content: Text(msg, style: const TextStyle(color: Colors.white)),
-          ),
-        );
       }
+      rethrow;
     }
   }
 
   void _openTermsModal() {
+    if (_submittingApplication) return;
     AppHaptics.selectionClick();
     showIbTermsModal(
       context,
@@ -98,7 +92,9 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
   @override
   Widget build(BuildContext context) {
     final colors = PartnershipColors.of(context);
-    final isPending = widget.ibStatus == 'pending';
+    final normalizedStatus = widget.ibStatus.trim().toLowerCase();
+    final isPending = normalizedStatus == 'pending';
+    final isRejected = normalizedStatus == 'rejected';
 
     return Scaffold(
       backgroundColor: colors.canvas,
@@ -112,9 +108,9 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 116),
               children: [
-                _buildIbAppTopBar(context, colors, isPending),
+                _buildIbAppTopBar(context, colors, isPending, isRejected),
                 const SizedBox(height: 14),
-                _buildIbStatusAlert(colors, isPending),
+                _buildIbStatusAlert(colors, isPending, isRejected),
                 const SizedBox(height: 16),
                 _buildIbHeroDeck(colors),
                 const SizedBox(height: 18),
@@ -126,7 +122,7 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
                 const SizedBox(height: 18),
                 IbFaqSection(colors: colors),
                 const SizedBox(height: 22),
-                _buildApplyFooterCta(colors, isPending),
+                _buildApplyFooterCta(colors, isPending, isRejected),
               ],
             ),
           ),
@@ -139,6 +135,7 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
     BuildContext context,
     PartnershipColors colors,
     bool isPending,
+    bool isRejected,
   ) {
     return Row(
       children: [
@@ -189,27 +186,37 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
           decoration: BoxDecoration(
             color: isPending
                 ? const Color(0xFFD97706).withValues(alpha: 0.15)
-                : colors.blue.withValues(alpha: 0.15),
+                : (isRejected
+                    ? colors.red.withValues(alpha: 0.15)
+                    : colors.blue.withValues(alpha: 0.15)),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isPending
                   ? const Color(0xFFD97706).withValues(alpha: 0.4)
-                  : colors.blue.withValues(alpha: 0.35),
+                  : (isRejected
+                      ? colors.red.withValues(alpha: 0.4)
+                      : colors.blue.withValues(alpha: 0.35)),
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isPending ? LucideIcons.clock : LucideIcons.sparkles,
+                isPending
+                    ? LucideIcons.clock
+                    : (isRejected ? LucideIcons.circleX : LucideIcons.sparkles),
                 size: 11,
-                color: isPending ? const Color(0xFFF59E0B) : colors.blue,
+                color: isPending
+                    ? const Color(0xFFF59E0B)
+                    : (isRejected ? colors.red : colors.blue),
               ),
               const SizedBox(width: 5),
               Text(
-                isPending ? 'Under Review' : 'Enrolling',
+                isPending ? 'Under Review' : (isRejected ? 'Rejected' : 'Enrolling'),
                 style: TextStyle(
-                  color: isPending ? const Color(0xFFF59E0B) : colors.blue,
+                  color: isPending
+                      ? const Color(0xFFF59E0B)
+                      : (isRejected ? colors.red : colors.blue),
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                 ),
@@ -230,7 +237,117 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
     );
   }
 
-  Widget _buildIbStatusAlert(PartnershipColors colors, bool isPending) {
+  Widget _buildIbStatusAlert(
+    PartnershipColors colors,
+    bool isPending,
+    bool isRejected,
+  ) {
+    if (isRejected) {
+      return Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            colors: colors.isDark
+                ? const [Color(0xFF3B0D14), Color(0xFF1F080C)]
+                : const [Color(0xFFFEE2E2), Color(0xFFFFF5F5)],
+          ),
+          border: Border.all(color: colors.red.withValues(alpha: 0.4)),
+          boxShadow: [
+            BoxShadow(
+              color: colors.red.withValues(alpha: 0.1),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colors.red.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(LucideIcons.circleX, color: colors.red, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Application Not Approved',
+                        style: TextStyle(
+                          color: colors.isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        'Previous IB request was declined',
+                        style: TextStyle(
+                          color: colors.isDark ? const Color(0xFFF87171) : const Color(0xFFB91C1C),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Your previous Introducing Broker application was not approved. Please ensure your account verification is complete, or submit a new application for compliance review.',
+              style: TextStyle(
+                color: colors.isDark
+                    ? const Color(0xFFFECACA).withValues(alpha: 0.9)
+                    : const Color(0xFF7F1D1D),
+                fontSize: 12,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _submittingApplication ? null : _openTermsModal,
+                  icon: const Icon(LucideIcons.send, size: 14),
+                  label: const Text('Re-apply for IB Partnership'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    elevation: 0,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    AppHaptics.lightImpact();
+                    widget.onEnterDemoMode();
+                  },
+                  icon: const Icon(LucideIcons.sparkles, size: 14),
+                  label: const Text('Preview Command Center'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B),
+                    side: BorderSide(color: colors.red.withValues(alpha: 0.45)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     if (isPending) {
       return Container(
         padding: const EdgeInsets.all(18),
@@ -411,7 +528,7 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
             runSpacing: 10,
             children: [
               ElevatedButton.icon(
-                onPressed: _openTermsModal,
+                onPressed: _submittingApplication ? null : _openTermsModal,
                 icon: const Icon(LucideIcons.send, size: 14),
                 label: const Text('Apply for IB Partnership'),
                 style: ElevatedButton.styleFrom(
@@ -706,7 +823,11 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
     );
   }
 
-  Widget _buildApplyFooterCta(PartnershipColors colors, bool isPending) {
+  Widget _buildApplyFooterCta(
+    PartnershipColors colors,
+    bool isPending,
+    bool isRejected,
+  ) {
     if (isPending) {
       return Container(
         width: double.infinity,
@@ -750,12 +871,14 @@ class _PartnershipApplicationViewState extends State<PartnershipApplicationView>
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(LucideIcons.send, size: 18),
-                  SizedBox(width: 10),
+                children: [
+                  const Icon(LucideIcons.send, size: 18),
+                  const SizedBox(width: 10),
                   Text(
-                    'Join VT-Index Partnership Program',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                    isRejected
+                        ? 'Re-apply for IB Partnership'
+                        : 'Join VT-Index Partnership Program',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                   ),
                 ],
               ),

@@ -2,6 +2,143 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../services/auth_api.dart';
+
+// ============================================================================
+// SHARED PARSING & URL HELPERS
+// ============================================================================
+
+/// Safely parses numbers, stringified decimals, and comma-formatted strings.
+double parseDouble(dynamic value, [double fallback = 0.0]) {
+  if (value is num) return value.toDouble();
+  if (value is String) {
+    final cleaned = value.replaceAll(',', '').trim();
+    if (cleaned.isEmpty) return fallback;
+    return double.tryParse(cleaned) ?? fallback;
+  }
+  return fallback;
+}
+
+/// Safely parses integers, numeric values, and comma-formatted strings.
+int parseInt(dynamic value, [int fallback = 0]) {
+  if (value is num) return value.toInt();
+  if (value is String) {
+    final cleaned = value.replaceAll(',', '').trim();
+    if (cleaned.isEmpty) return fallback;
+    return int.tryParse(cleaned) ?? double.tryParse(cleaned)?.toInt() ?? fallback;
+  }
+  return fallback;
+}
+
+/// Canonical 3-letter uppercase month labels in calendar order.
+const List<String> partnershipMonthNames = [
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC',
+];
+
+/// Normalizes numeric (`1..12`), named (`"Jan"`, `"January"`), or ISO
+/// (`"2026-04"`, `"2026-04-01T00:00:00Z"`) month values into `"JAN".."DEC"`.
+String? normalizePartnershipMonth(dynamic rawMonth) {
+  if (rawMonth is num) {
+    final idx = rawMonth.toInt();
+    if (idx >= 1 && idx <= 12) return partnershipMonthNames[idx - 1];
+    return null;
+  }
+  final str = (rawMonth ?? '').toString().trim();
+  if (str.isEmpty) return null;
+
+  final asInt = int.tryParse(str);
+  if (asInt != null && asInt >= 1 && asInt <= 12) {
+    return partnershipMonthNames[asInt - 1];
+  }
+
+  final isoMatch = RegExp(r'^(\d{4})[-/](\d{1,2})(?:$|[-/T])').firstMatch(str);
+  if (isoMatch != null) {
+    final monthNum = int.tryParse(isoMatch.group(2) ?? '');
+    if (monthNum != null && monthNum >= 1 && monthNum <= 12) {
+      return partnershipMonthNames[monthNum - 1];
+    }
+  }
+
+  final parsedDate = DateTime.tryParse(str);
+  if (parsedDate != null) {
+    return partnershipMonthNames[parsedDate.month - 1];
+  }
+
+  final upper = str.toUpperCase();
+  for (final m in partnershipMonthNames) {
+    if (upper == m || upper.startsWith(m)) return m;
+  }
+  return null;
+}
+
+/// Unwraps list payloads from top-level or nested `data` / `result` / `payload`
+/// response envelopes.
+List<Map<String, dynamic>> extractPartnershipList(
+  Map<String, dynamic> response, {
+  List<String> keys = const [
+    'results',
+    'data',
+    'clients',
+    'transactions',
+    'accounts',
+    'items',
+  ],
+}) {
+  final containers = <Map<String, dynamic>>[
+    response,
+    for (final envelopeKey in const ['data', 'result', 'payload'])
+      if (response[envelopeKey] is Map)
+        (response[envelopeKey] as Map).cast<String, dynamic>(),
+  ];
+
+  for (final container in containers) {
+    for (final key in keys) {
+      final raw = container[key];
+      if (raw is List) {
+        return raw
+            .whereType<Map>()
+            .map((item) => item.cast<String, dynamic>())
+            .toList();
+      }
+    }
+  }
+  return const [];
+}
+
+/// Returns the active API origin when available, falling back to the legacy
+/// VT Index portal origin only if no valid host is configured.
+String get partnershipBaseOrigin {
+  final uri = AuthApi.instance.baseUri;
+  if (uri.hasScheme && uri.host.isNotEmpty) {
+    return uri.origin;
+  }
+  return 'https://client.vtindex.com';
+}
+
+/// Builds a fallback referral URL using [partnershipBaseOrigin].
+String buildPartnershipReferralUrl([String referralCode = '']) {
+  final origin = partnershipBaseOrigin;
+  final code = referralCode.trim();
+  return code.isNotEmpty ? '$origin/?ref=$code' : '$origin/';
+}
+
+String _cleanString(dynamic value, [String fallback = '']) {
+  if (value == null) return fallback;
+  final str = value.toString();
+  return str == 'null' ? fallback : str;
+}
+
 // ============================================================================
 // LEVEL THEMING HELPER
 // ============================================================================
@@ -132,18 +269,6 @@ class IbDashboardData {
   final List<Map<String, dynamic>> monthlyEarningsPerLink;
 
   factory IbDashboardData.fromJson(Map<String, dynamic> json) {
-    double parseNum(dynamic value) {
-      if (value is num) return value.toDouble();
-      if (value is String) return double.tryParse(value) ?? 0.0;
-      return 0.0;
-    }
-
-    int parseInt(dynamic value) {
-      if (value is num) return value.toInt();
-      if (value is String) return int.tryParse(value) ?? 0;
-      return 0;
-    }
-
     final rawClients = json['earnings_per_client'];
     final clientList = <Map<String, dynamic>>[];
     if (rawClients is List) {
@@ -152,35 +277,26 @@ class IbDashboardData {
       }
     }
     clientList.sort((a, b) =>
-        parseNum(b['total_commission']).compareTo(parseNum(a['total_commission'])));
+        parseDouble(b['total_commission']).compareTo(parseDouble(a['total_commission'])));
 
     // Normalize monthly trajectory for all 12 months JAN..DEC
-    final months = [
-      'JAN',
-      'FEB',
-      'MAR',
-      'APR',
-      'MAY',
-      'JUN',
-      'JUL',
-      'AUG',
-      'SEP',
-      'OCT',
-      'NOV',
-      'DEC',
-    ];
     final monthlyMap = <String, double>{};
     final rawMonths = json['earnings_per_month'];
     if (rawMonths is List) {
       for (final item in rawMonths.whereType<Map>()) {
-        final mIdx = parseInt(item['month']);
-        if (mIdx >= 1 && mIdx <= 12) {
-          final mName = months[mIdx - 1];
-          monthlyMap[mName] = (monthlyMap[mName] ?? 0.0) + parseNum(item['total']);
+        final mName = normalizePartnershipMonth(item['month']);
+        if (mName != null) {
+          final val = parseDouble(
+            item['total'] ??
+                item['earnings'] ??
+                item['amount'] ??
+                item['commission'],
+          );
+          monthlyMap[mName] = (monthlyMap[mName] ?? 0.0) + val;
         }
       }
     }
-    final normalizedMonthly = months
+    final normalizedMonthly = partnershipMonthNames
         .map((m) => {'month': m, 'total': monthlyMap[m] ?? 0.0})
         .toList();
 
@@ -203,13 +319,13 @@ class IbDashboardData {
     return IbDashboardData(
       totalClients: parseInt(json['total_clients']),
       directClients: parseInt(json['direct_clients']),
-      totalEarnings: parseNum(json['total_earnings']),
-      totalWithdrawals: parseNum(json['total_withdrawals']),
-      commissionBalance: parseNum(json['commission_balance']),
-      currentMonthEarnings: parseNum(json['current_month_earnings']),
-      currentMonthVolume: parseNum(json['current_month_volume_traded']),
-      totalVolume: parseNum(json['total_volume_traded']),
-      referralLink: (json['referralLink'] ?? json['referral_link'] ?? '').toString(),
+      totalEarnings: parseDouble(json['total_earnings']),
+      totalWithdrawals: parseDouble(json['total_withdrawals']),
+      commissionBalance: parseDouble(json['commission_balance']),
+      currentMonthEarnings: parseDouble(json['current_month_earnings']),
+      currentMonthVolume: parseDouble(json['current_month_volume_traded']),
+      totalVolume: parseDouble(json['total_volume_traded']),
+      referralLink: _cleanString(json['referralLink'] ?? json['referral_link']),
       earningsPerClient: clientList,
       earningsPerMonth: normalizedMonthly,
       earningsPerLink: linkList,
@@ -232,7 +348,7 @@ class IbDashboardData {
         currentMonthEarnings: 1840.25,
         currentMonthVolume: 320.5,
         totalVolume: 1420.8,
-        referralLink: 'https://client.vtindex.com/?ref=VT-DEMO',
+        referralLink: buildPartnershipReferralUrl('VT-DEMO'),
         earningsPerClient: [
           {'name': 'Alexander Wright', 'total_commission': 1850.0, 'total_volume': 142.0, 'level': 1},
           {'name': 'Sophia Chen', 'total_commission': 1420.0, 'total_volume': 110.5, 'level': 1},
@@ -277,9 +393,7 @@ class IbReferralLink {
 
   String get effectiveUrl => referralLink.isNotEmpty
       ? referralLink
-      : (referralCode.isNotEmpty
-          ? 'https://client.vtindex.com/?ref=$referralCode'
-          : 'https://client.vtindex.com/');
+      : buildPartnershipReferralUrl(referralCode);
 
   static const List<Color> _palette = [
     Color(0xFF3B82F6), // Blue
@@ -293,7 +407,7 @@ class IbReferralLink {
   static List<IbReferralLink> demoList() => [
         IbReferralLink(
           profileName: 'Standard Rebate (Direct)',
-          referralLink: 'https://client.vtindex.com/?ref=VT-DIRECT',
+          referralLink: buildPartnershipReferralUrl('VT-DIRECT'),
           referralCode: 'VT-DIRECT',
           isPrimary: true,
           clientsCount: 28,
@@ -301,7 +415,7 @@ class IbReferralLink {
         ),
         IbReferralLink(
           profileName: 'VIP Scalpers Profile',
-          referralLink: 'https://client.vtindex.com/?ref=VT-SCALP',
+          referralLink: buildPartnershipReferralUrl('VT-SCALP'),
           referralCode: 'VT-SCALP',
           clientsCount: 14,
           color: const Color(0xFFF59E0B),
@@ -348,9 +462,7 @@ class IbReferralLink {
 
     final rawCount =
         json['clients_count'] ?? json['client_count'] ?? json['total_clients'];
-    final clientsCount = rawCount is num
-        ? rawCount.toInt()
-        : (int.tryParse((rawCount ?? '').toString()) ?? 0);
+    final clientsCount = parseInt(rawCount);
 
     return IbReferralLink(
       profileName: profileName,
@@ -521,21 +633,15 @@ class IbTradingAccount {
   final double totalCommission;
 
   factory IbTradingAccount.fromJson(Map<String, dynamic> json) {
-    double parseNum(dynamic v) {
-      if (v is num) return v.toDouble();
-      if (v is String) return double.tryParse(v) ?? 0.0;
-      return 0.0;
-    }
-
     return IbTradingAccount(
-      accountId: (json['account_id'] ?? json['id'] ?? '').toString(),
-      accountType: (json['account_type'] ?? 'MT5 Account').toString(),
-      groupAlias: (json['group_alias'] ?? json['group_name'] ?? 'Standard').toString(),
-      groupName: (json['group_name'] ?? '').toString(),
-      totalLots: parseNum(json['total_lots']),
-      totalDeposits: parseNum(json['total_deposits']),
-      totalWithdrawals: parseNum(json['total_withdrawals']),
-      totalCommission: parseNum(json['total_commission']),
+      accountId: _cleanString(json['account_id'] ?? json['id']),
+      accountType: _cleanString(json['account_type'], 'MT5 Account'),
+      groupAlias: _cleanString(json['group_alias'] ?? json['group_name'], 'Standard'),
+      groupName: _cleanString(json['group_name']),
+      totalLots: parseDouble(json['total_lots']),
+      totalDeposits: parseDouble(json['total_deposits']),
+      totalWithdrawals: parseDouble(json['total_withdrawals']),
+      totalCommission: parseDouble(json['total_commission']),
     );
   }
 }
@@ -584,12 +690,8 @@ class IbClient {
       accounts.fold(0.0, (sum, a) => sum + a.totalDeposits);
 
   factory IbClient.fromJson(Map<String, dynamic> json, {int inheritedLevel = 1}) {
-    int lvl = inheritedLevel;
-    if (json['level'] is num) {
-      lvl = (json['level'] as num).toInt();
-    } else if (json['level'] is String) {
-      lvl = int.tryParse(json['level']) ?? inheritedLevel;
-    }
+    final parsedLvl = parseInt(json['level'], inheritedLevel);
+    final lvl = parsedLvl > 0 ? parsedLvl : inheritedLevel;
 
     final rawAccounts = json['accounts'];
     final accList = <IbTradingAccount>[];
@@ -599,7 +701,7 @@ class IbClient {
       }
     }
 
-    final rawChildren = json['clients'];
+    final rawChildren = json['clients'] ?? json['children'];
     final childList = <IbClient>[];
     if (rawChildren is List) {
       for (final c in rawChildren.whereType<Map>()) {
@@ -607,34 +709,36 @@ class IbClient {
       }
     }
 
-    final refCode = (json['referral_code'] ??
-            (json['referral_link'] is Map ? json['referral_link']['code'] : ''))
-        .toString();
-    final profName = (json['commission_profile_name'] ??
-            json['profile_name'] ??
-            json['plan_name'] ??
-            json['plan'] ??
-            json['tag'] ??
-            (json['referral_link'] is Map ? json['referral_link']['profile_name'] : ''))
-        .toString();
-    final regDate = (json['registered_date'] ??
-            json['date_joined'] ??
-            json['created_at'] ??
-            json['joined_at'] ??
-            '')
-        .toString();
+    final refLinkMap = json['referral_link'] is Map ? json['referral_link'] as Map : null;
+    final refCode = _cleanString(json['referral_code'] ?? refLinkMap?['code']);
+    final profName = _cleanString(
+      json['commission_profile_name'] ??
+          json['profile_name'] ??
+          json['plan_name'] ??
+          json['plan'] ??
+          json['tag'] ??
+          refLinkMap?['profile_name'],
+    );
+    final regDate = _cleanString(
+      json['registered_date'] ??
+          json['date_joined'] ??
+          json['created_at'] ??
+          json['joined_at'],
+    );
 
     return IbClient(
-      id: (json['id'] ?? json['client_id'] ?? '').toString(),
-      name: (json['name'] ?? 'Client').toString(),
-      email: (json['email'] ?? '').toString(),
-      phone: (json['phone'] ?? '').toString(),
+      id: _cleanString(json['id'] ?? json['client_id']),
+      name: _cleanString(json['name'], 'Client'),
+      email: _cleanString(json['email']),
+      phone: _cleanString(json['phone']),
       registeredDate: regDate,
       referralCode: refCode,
       commissionProfileName: profName,
       level: lvl,
       isIb: json['is_ib'] == true || json['role'] == 'ib' || json['is_partner'] == true,
-      ibRequestStatus: (json['ib_request_status'] ?? (json['status'] == 'pending' ? 'pending' : '')).toString(),
+      ibRequestStatus: _cleanString(
+        json['ib_request_status'] ?? (json['status'] == 'pending' ? 'pending' : null),
+      ),
       accounts: accList,
       clients: childList,
     );
@@ -722,26 +826,22 @@ class IbCommissionTxn {
   final String commissionProfileName;
 
   factory IbCommissionTxn.fromJson(Map<String, dynamic> json) {
-    double parseNum(dynamic v) {
-      if (v is num) return v.toDouble();
-      if (v is String) return double.tryParse(v) ?? 0.0;
-      return 0.0;
-    }
-
-    final amt = parseNum(json['amount'] ?? json['commission_to_ib'] ?? json['total_commission']);
+    final amt = parseDouble(
+      json['amount'] ?? json['commission_to_ib'] ?? json['total_commission'],
+    );
     return IbCommissionTxn(
-      id: (json['id'] ?? json['deal_ticket'] ?? '').toString(),
-      clientUser: (json['client_user'] ?? json['client_name'] ?? 'Client').toString(),
-      clientTradingAccount: (json['client_trading_account'] ?? '').toString(),
-      positionSymbol: (json['position_symbol'] ?? json['symbol'] ?? '—').toString(),
-      dealTicket: (json['deal_ticket'] ?? '').toString(),
-      orderTicket: (json['order_ticket'] ?? '').toString(),
-      volumeLots: parseNum(json['volume_lots'] ?? json['lots']),
-      profit: parseNum(json['profit']),
+      id: _cleanString(json['id'] ?? json['deal_ticket']),
+      clientUser: _cleanString(json['client_user'] ?? json['client_name'], 'Client'),
+      clientTradingAccount: _cleanString(json['client_trading_account']),
+      positionSymbol: _cleanString(json['position_symbol'] ?? json['symbol'], '—'),
+      dealTicket: _cleanString(json['deal_ticket']),
+      orderTicket: _cleanString(json['order_ticket']),
+      volumeLots: parseDouble(json['volume_lots'] ?? json['lots']),
+      profit: parseDouble(json['profit']),
       commission: amt,
-      createdAt: (json['created_at'] ?? '').toString(),
-      referralCode: (json['referral_code'] ?? '').toString(),
-      commissionProfileName: (json['commission_profile_name'] ?? '').toString(),
+      createdAt: _cleanString(json['created_at']),
+      referralCode: _cleanString(json['referral_code']),
+      commissionProfileName: _cleanString(json['commission_profile_name']),
     );
   }
 }

@@ -23,6 +23,9 @@ class BrokerReferralStudioPage extends StatefulWidget {
 
 class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
   bool _loading = true;
+  bool _loadingInFlight = false;
+  bool _notApproved = false;
+  String? _errorMessage;
   List<IbReferralLink> _links = [];
   int _selectedIndex = 0;
 
@@ -33,25 +36,70 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
   }
 
   Future<void> _loadLinks() async {
-    setState(() => _loading = true);
+    if (_loadingInFlight) return;
+    _loadingInFlight = true;
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _errorMessage = null;
+        _notApproved = false;
+      });
+    }
     try {
+      final statusRes = await AuthApi.instance.getIbStatus();
+      final isApproved = statusRes['approved'] == true ||
+          (statusRes['status']?.toString().toLowerCase() == 'approved');
+      if (!isApproved) {
+        if (!mounted) return;
+        setState(() {
+          _links = [];
+          _notApproved = true;
+          _errorMessage = null;
+          _loading = false;
+        });
+        return;
+      }
+
       final res = await AuthApi.instance.getIbReferralLinks();
       var parsed = IbReferralLink.listFromResponse(res);
       if (parsed.isEmpty) {
-        final statsRes = await AuthApi.instance.getIbStats().catchError(
-          (_) => <String, dynamic>{},
-        );
-        parsed = IbReferralLink.listFromResponse(res, statsResponse: statsRes);
+        try {
+          final statsRes = await AuthApi.instance.getIbStats();
+          parsed = IbReferralLink.listFromResponse(res, statsResponse: statsRes);
+        } on AuthApiException catch (e) {
+          if (e.statusCode == 403) rethrow;
+        } catch (_) {}
       }
-      if (mounted) {
-        setState(() {
-          _links = parsed;
-          if (_selectedIndex >= _links.length) _selectedIndex = 0;
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _links = parsed;
+        if (_selectedIndex >= _links.length) _selectedIndex = 0;
+        _notApproved = false;
+        _errorMessage = null;
+        _loading = false;
+      });
+    } on AuthApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        if (e.statusCode == 403) {
+          _links = [];
+          _notApproved = true;
+          _errorMessage = null;
+        } else {
+          _errorMessage = e.message;
+          _notApproved = false;
+        }
+        _loading = false;
+      });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Unable to load referral links. Please try again.';
+        _notApproved = false;
+        _loading = false;
+      });
+    } finally {
+      _loadingInFlight = false;
     }
   }
 
@@ -69,18 +117,18 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
   @override
   Widget build(BuildContext context) {
     final colors = PartnershipColors.of(context);
-    final isEmptyState = !_loading && _links.isEmpty;
+    final isErrorState = !_loading && _errorMessage != null;
+    final isEmptyState =
+        !_loading && _errorMessage == null && (_notApproved || _links.isEmpty);
 
     final link = _links.isNotEmpty && _selectedIndex < _links.length
         ? _links[_selectedIndex]
         : IbReferralLink(
             profileName: 'Standard Partner Profile',
-            referralLink: 'https://client.vtindex.com/?ref=VT-PARTNER',
+            referralLink: buildPartnershipReferralUrl('VT-PARTNER'),
             referralCode: _loading ? 'VT-PARTNER' : '',
           );
-    final url = link.referralLink.isNotEmpty
-        ? link.referralLink
-        : 'https://client.vtindex.com/?ref=${link.referralCode}';
+    final url = link.effectiveUrl;
 
     return Scaffold(
       backgroundColor: colors.canvas,
@@ -108,7 +156,57 @@ class _BrokerReferralStudioPageState extends State<BrokerReferralStudioPage> {
           color: colors.blue,
           backgroundColor: colors.card,
           onRefresh: _loadLinks,
-          child: isEmptyState
+          child: isErrorState
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(LucideIcons.triangleAlert, size: 48, color: colors.red),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Unable to Load Referral Studio',
+                                  style: TextStyle(color: colors.text, fontSize: 18, fontWeight: FontWeight.w800),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _errorMessage!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: colors.muted, fontSize: 13, height: 1.4),
+                                ),
+                                const SizedBox(height: 20),
+                                FilledButton.icon(
+                                  onPressed: () {
+                                    AppHaptics.lightImpact();
+                                    _loadLinks();
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: colors.blue,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  icon: const Icon(LucideIcons.refreshCw, size: 15),
+                                  label: const Text(
+                                    'Retry',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : isEmptyState
               ? LayoutBuilder(
                   builder: (context, constraints) {
                     return SingleChildScrollView(

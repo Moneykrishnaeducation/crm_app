@@ -29,21 +29,6 @@ class TrajectoryChartCard extends StatefulWidget {
 }
 
 class _TrajectoryChartCardState extends State<TrajectoryChartCard> {
-  static const List<String> _monthNames = [
-    'JAN',
-    'FEB',
-    'MAR',
-    'APR',
-    'MAY',
-    'JUN',
-    'JUL',
-    'AUG',
-    'SEP',
-    'OCT',
-    'NOV',
-    'DEC',
-  ];
-
   static const List<double> _skeletonBarRatios = [
     0.34,
     0.50,
@@ -65,31 +50,6 @@ class _TrajectoryChartCardState extends State<TrajectoryChartCard> {
 
   String _linkKey(IbReferralLink link) =>
       link.referralCode.isNotEmpty ? link.referralCode : link.profileName;
-
-  double _parseNum(dynamic value) {
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
-  }
-
-  String? _normalizeMonthName(dynamic rawMonth) {
-    if (rawMonth is num) {
-      final idx = rawMonth.toInt();
-      if (idx >= 1 && idx <= 12) return _monthNames[idx - 1];
-      return null;
-    }
-    final str = (rawMonth ?? '').toString().trim();
-    if (str.isEmpty) return null;
-    final asInt = int.tryParse(str);
-    if (asInt != null && asInt >= 1 && asInt <= 12) {
-      return _monthNames[asInt - 1];
-    }
-    final upper = str.toUpperCase();
-    for (final m in _monthNames) {
-      if (upper == m || upper.startsWith(m)) return m;
-    }
-    return null;
-  }
 
   bool _matchesSelectedLink(Map<String, dynamic> item, IbReferralLink link) {
     final candidates = [
@@ -113,25 +73,25 @@ class _TrajectoryChartCardState extends State<TrajectoryChartCard> {
       final nested = item['months'] ?? item['earnings_per_month'] ?? item['data'];
       if (nested is List) {
         for (final sub in nested.whereType<Map>()) {
-          final mName = _normalizeMonthName(sub['month']);
+          final mName = normalizePartnershipMonth(sub['month']);
           if (mName != null) {
-            final val = _parseNum(
+            final val = parseDouble(
               sub['total'] ?? sub['earnings'] ?? sub['amount'] ?? sub['commission'],
             );
             monthlyMap[mName] = (monthlyMap[mName] ?? 0.0) + val;
           }
         }
       } else {
-        final mName = _normalizeMonthName(item['month']);
+        final mName = normalizePartnershipMonth(item['month']);
         if (mName != null) {
-          final val = _parseNum(
+          final val = parseDouble(
             item['total'] ?? item['earnings'] ?? item['amount'] ?? item['commission'],
           );
           monthlyMap[mName] = (monthlyMap[mName] ?? 0.0) + val;
         }
       }
     }
-    return _monthNames
+    return partnershipMonthNames
         .map((m) => {'month': m, 'total': monthlyMap[m] ?? 0.0})
         .toList();
   }
@@ -333,7 +293,7 @@ class _TrajectoryChartCardState extends State<TrajectoryChartCard> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${months[_scrubbedMonthIndex!]['month']}: \$${((months[_scrubbedMonthIndex!]['total'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(2)}',
+                      '${months[_scrubbedMonthIndex!]['month']}: \$${parseDouble(months[_scrubbedMonthIndex!]['total']).toStringAsFixed(2)}',
                       style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
                     ),
                   ),

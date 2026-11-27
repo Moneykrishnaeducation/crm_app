@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crm_app/pages/partnership/models/partnership_models.dart';
 import 'package:crm_app/pages/partnership/widgets/leaderboard_card.dart';
 import 'package:crm_app/pages/partnership/widgets/partnership_theme.dart';
+import 'package:crm_app/services/auth_api.dart';
 
 void main() {
   group('IbReferralLink.listFromResponse parsing', () {
@@ -57,7 +58,10 @@ void main() {
       });
       expect(nestedMap.length, 1);
       expect(nestedMap[0].referralCode, 'STD99');
-      expect(nestedMap[0].effectiveUrl, 'https://client.vtindex.com/?ref=STD99');
+      expect(
+        nestedMap[0].effectiveUrl,
+        '${AuthApi.instance.baseUri.origin}/?ref=STD99',
+      );
     });
 
     test('parses single Map referral_link, ignores empty strings, and uses stats fallback', () {

@@ -33,6 +33,41 @@ class LeaderboardCard extends StatefulWidget {
 class _LeaderboardCardState extends State<LeaderboardCard> {
   String _leaderboardView = 'Ranked'; // 'Ranked' | 'Links'
 
+  IbClient? _findClientById(List<IbClient> tree, String targetId) {
+    for (final client in tree) {
+      if (client.id.trim() == targetId) return client;
+      if (client.clients.isNotEmpty) {
+        final nested = _findClientById(client.clients, targetId);
+        if (nested != null) return nested;
+      }
+    }
+    return null;
+  }
+
+  IbClient? _findClientByName(List<IbClient> tree, String targetName) {
+    for (final client in tree) {
+      if (client.name.trim().toLowerCase() == targetName) return client;
+      if (client.clients.isNotEmpty) {
+        final nested = _findClientByName(client.clients, targetName);
+        if (nested != null) return nested;
+      }
+    }
+    return null;
+  }
+
+  IbClient? _findClientInTree(List<IbClient> tree, String cId, String name) {
+    final normalizedId = cId.trim();
+    if (normalizedId.isNotEmpty) {
+      final byId = _findClientById(tree, normalizedId);
+      if (byId != null) return byId;
+    }
+    final normalizedName = name.trim().toLowerCase();
+    if (normalizedName.isNotEmpty) {
+      return _findClientByName(tree, normalizedName);
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = widget.colors;
@@ -91,16 +126,14 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
                     children: clients.take(6).map((item) {
                       final rank = clients.indexOf(item) + 1;
                       final name = (item['name'] ?? 'Client').toString();
-                      final comm = (item['total_commission'] as num?)?.toDouble() ?? 0.0;
-                      final vol = (item['total_volume'] as num?)?.toDouble() ?? 0.0;
+                      final comm = parseDouble(item['total_commission']);
+                      final vol = parseDouble(item['total_volume']);
 
                       return InkWell(
                         onTap: () {
                           AppHaptics.selectionClick();
-                          final cId = (item['client_id'] ?? '').toString();
-                          final matched = widget.clientTree
-                              .where((c) => c.id == cId || c.name.toLowerCase() == name.toLowerCase())
-                              .firstOrNull;
+                          final cId = (item['client_id'] ?? '').toString().trim();
+                          final matched = _findClientInTree(widget.clientTree, cId, name);
                           showClientAccountsModal(
                             context,
                             matched ?? IbClient(id: cId, name: name),

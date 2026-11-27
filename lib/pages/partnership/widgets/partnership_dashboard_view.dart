@@ -31,6 +31,7 @@ class PartnershipDashboardView extends StatelessWidget {
     required this.commissionTxns,
     required this.loading,
     required this.demoPreviewMode,
+    this.errorMessage,
     this.onBack,
     required this.onRefresh,
     required this.onExitDemoMode,
@@ -43,6 +44,7 @@ class PartnershipDashboardView extends StatelessWidget {
   final List<IbCommissionTxn> commissionTxns;
   final bool loading;
   final bool demoPreviewMode;
+  final String? errorMessage;
   final VoidCallback? onBack;
   final Future<void> Function() onRefresh;
   final VoidCallback onExitDemoMode;
@@ -66,6 +68,10 @@ class PartnershipDashboardView extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 116),
               children: [
                 if (demoPreviewMode) _buildDemoPreviewBanner(),
+                if (!demoPreviewMode &&
+                    errorMessage != null &&
+                    errorMessage!.trim().isNotEmpty)
+                  _buildErrorRetryBanner(colors, errorMessage!),
                 _buildTopBar(colors),
                 const SizedBox(height: 14),
                 _buildHeroCommandCenter(context),
@@ -147,21 +153,86 @@ class PartnershipDashboardView extends StatelessWidget {
     );
   }
 
+  Widget _buildErrorRetryBanner(PartnershipColors colors, String message) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.red.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.red.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(LucideIcons.triangleAlert, color: colors.red, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: colors.red,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: loading
+                ? null
+                : () {
+                    AppHaptics.lightImpact();
+                    onRefresh();
+                  },
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: colors.red,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTopBar(PartnershipColors colors) {
     return Row(
       children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [colors.blue, const Color(0xFF1E3A8A)],
-            ),
-            borderRadius: BorderRadius.circular(12),
+        if (onBack != null) ...[
+          IconButton(
+            tooltip: 'Back',
+            onPressed: () {
+              AppHaptics.selectionClick();
+              onBack!();
+            },
+            icon: Icon(LucideIcons.arrowLeft, color: colors.text),
           ),
-          child: const Icon(LucideIcons.network, color: Colors.white, size: 20),
-        ),
-        const SizedBox(width: 12),
+          const SizedBox(width: 4),
+        ] else ...[
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [colors.blue, const Color(0xFF1E3A8A)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(LucideIcons.network, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

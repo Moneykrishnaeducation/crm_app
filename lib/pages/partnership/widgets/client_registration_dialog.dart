@@ -132,6 +132,15 @@ class _ClientRegistrationDialogState extends State<ClientRegistrationDialog> {
               ),
               const SizedBox(height: 10),
               _field(
+                'Date of Birth (Optional)',
+                _dobController,
+                'YYYY-MM-DD',
+                colors,
+                keyboardType: TextInputType.datetime,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 10),
+              _field(
                 'Country',
                 _countryController,
                 'e.g. India',

@@ -118,24 +118,22 @@ class _BrokerCommissionLedgerPageState extends State<BrokerCommissionLedgerPage>
   }
 
   Future<void> _fetchLedger() async {
-    setState(() => _loading = true);
+    if (mounted) setState(() => _loading = true);
     try {
       final res = await AuthApi.instance.getIbCommissionTransactions();
-      final rawList = res['results'] ?? res['data'] ?? res['transactions'];
-      final parsed = <IbCommissionTxn>[];
-      if (rawList is List) {
-        for (final item in rawList.whereType<Map>()) {
-          parsed.add(IbCommissionTxn.fromJson(item.cast<String, dynamic>()));
-        }
-      }
-      if (mounted) {
-        setState(() {
-          _txns = parsed;
-          _loading = false;
-        });
-      }
+      final rawList = extractPartnershipList(
+        res,
+        keys: const ['results', 'transactions', 'data'],
+      );
+      final parsed = rawList.map(IbCommissionTxn.fromJson).toList();
+      if (!mounted) return;
+      setState(() {
+        _txns = parsed;
+        _loading = false;
+      });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() => _loading = false);
     }
   }
 

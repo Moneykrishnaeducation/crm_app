@@ -1967,7 +1967,7 @@ class MamPageState extends State<MamPage> {
                   (sum, account) => sum + account.balance,
                 ).toStringAsFixed(2),
                 subtext: 'Across MAM accounts',
-                icon: LucideIcons.chartNoAxesCombined,
+                icon: Icons.show_chart,
                 accent: _c.green,
               ),
             ),
@@ -2469,14 +2469,15 @@ class MamPageState extends State<MamPage> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           border: Border.all(color: _c.border),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 38,
-                height: 4,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
                 decoration: BoxDecoration(
                   color: _c.muted.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(4),
@@ -2540,7 +2541,8 @@ class MamPageState extends State<MamPage> {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -3373,7 +3375,7 @@ class _InvestMamPasswordSheetState extends State<_InvestMamPasswordSheet> {
                       onPressed: _submit,
                       icon: const Icon(Icons.arrow_forward, size: 16),
                       label: const Text(
-                        'CONFIRM & ALLOCATE',
+                        'CONFIRM & CREATE',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

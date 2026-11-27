@@ -13,7 +13,7 @@ class BiometricSignIn {
         _secureStorage = secureStorage ??
             const FlutterSecureStorage(
               aOptions: AndroidOptions(resetOnError: true),
-              iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+              iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
             );
 
   static final BiometricSignIn instance = BiometricSignIn();
@@ -98,7 +98,15 @@ class BiometricSignIn {
   }
 
   Future<bool> hasStoredCredentials() async {
-    return (await readCredentials()) != null;
+    try {
+      final hasIdentifier = await _secureStorage.containsKey(
+        key: _identifierStorageKey,
+      );
+      if (!hasIdentifier) return false;
+      return await _secureStorage.containsKey(key: _passwordStorageKey);
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> clearCredentials() async {

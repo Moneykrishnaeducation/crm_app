@@ -235,7 +235,7 @@ class _AppEntryState extends State<_AppEntry> {
         },
       );
     }
-    if (!_sessionCheckComplete) {
+    if (!_sessionCheckComplete || _hasRestoredSession || _openingDashboard) {
       return const Scaffold(
         backgroundColor: Color(0xFF0B1424),
         body: Center(
@@ -277,10 +277,11 @@ class _LogoAnimationSplashState extends State<_LogoAnimationSplash> {
   Future<void> _initializeVideo() async {
     try {
       await _controller.initialize();
-      if (!mounted) return;
+      if (!mounted || _finished) return;
       await _controller.setVolume(0);
+      if (!mounted || _finished) return;
       await _controller.play();
-      if (mounted) setState(() => _ready = true);
+      if (mounted && !_finished) setState(() => _ready = true);
     } catch (_) {
       _finish();
     }

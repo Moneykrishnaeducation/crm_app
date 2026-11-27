@@ -291,7 +291,10 @@ class AuthApi {
 
   Map<String, String> get _headers => _headersForUri(_baseUri);
 
-  Map<String, String> _headersForUri(Uri uri) {
+  Map<String, String> _headersForUri(
+    Uri uri, {
+    bool includeSessionHeaders = true,
+  }) {
     final headers = <String, String>{'Accept': 'application/json'};
     final isLocal = _isLocalUri(uri);
     if (!kIsWeb && isLocal &&
@@ -300,12 +303,14 @@ class AuthApi {
       // Local development host override only. Production uses the configured API host.
       headers['Host'] = _localHost;
     }
-    if (_cookies.isNotEmpty) {
-      headers['Cookie'] = _cookies.entries
-          .map((entry) => '${entry.key}=${entry.value}')
-          .join('; ');
+    if (includeSessionHeaders) {
+      if (_cookies.isNotEmpty) {
+        headers['Cookie'] = _cookies.entries
+            .map((entry) => '${entry.key}=${entry.value}')
+            .join('; ');
+      }
+      if (_accessToken != null) headers['Authorization'] = 'Bearer $_accessToken';
     }
-    if (_accessToken != null) headers['Authorization'] = 'Bearer $_accessToken';
     return headers;
   }
 
@@ -341,9 +346,14 @@ class AuthApi {
     Map<String, dynamic>? body,
     bool encryptProfileBody = false,
     bool useRootApi = false,
+    bool includeSessionHeaders = true,
   }) async {
+    final requestGeneration = _sessionGeneration;
     await restoreSession();
-    final headers = _headers;
+    final headers = _headersForUri(
+      _baseUri,
+      includeSessionHeaders: includeSessionHeaders,
+    );
     final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
     headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
 
@@ -404,7 +414,10 @@ class AuthApi {
       if (kDebugMode && _configuredBaseUrl.isEmpty && _isNetworkConnectionError(error)) {
         final fallbackUri = _useLocalhost ? _productionBaseUri : _localBaseUri;
         try {
-          final fallbackHeaders = _headersForUri(fallbackUri);
+          final fallbackHeaders = _headersForUri(
+            fallbackUri,
+            includeSessionHeaders: includeSessionHeaders,
+          );
           fallbackHeaders['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
           if (headers.containsKey('X-Request-Encryption-Key-Id')) {
             fallbackHeaders['X-Request-Encryption-Key-Id'] = headers['X-Request-Encryption-Key-Id']!;
@@ -436,58 +449,13 @@ class AuthApi {
         rethrow;
       }
     }
-    _captureSession(response);
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      await _handleUnauthorizedResponse(response.statusCode, path);
-    }
-    dynamic decoded;
-    try {
-      decoded = response.body.isEmpty
-          ? <String, dynamic>{}
-          : await _decodeJsonBody(response.body);
-    } on FormatException {
-      _cleanupResponseKeyPair(responseKeyPair.keyId);
-      throw AuthApiException(
-        'The server returned an invalid response.',
-        statusCode: response.statusCode,
-      );
-    }
-    dynamic responsePayload = decoded;
-    if (decoded is Map && decoded['encrypted'] == true) {
-      responsePayload = _decryptResponseEnvelope(
-        decoded.cast<String, dynamic>(),
-        responseKeyPair.keyId,
-      );
-    } else {
-      _cleanupResponseKeyPair(responseKeyPair.keyId);
-    }
-    final data = responsePayload is Map<String, dynamic>
-        ? responsePayload
-        : <String, dynamic>{'data': responsePayload};
-    final apiCode = data['code'];
-    final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
-    if (response.statusCode != 401 &&
-        response.statusCode != 403 &&
-        (apiCode == 401 || apiCode == 403)) {
-      await _handleUnauthorizedResponse((apiCode as num).toInt(), path);
-    }
-    final errorVal = data['error'] ?? data['errors'];
-    final hasErrorMessage = errorVal != null &&
-        errorVal != false &&
-        (errorVal is! String || errorVal.isNotEmpty) &&
-        (errorVal is! List || errorVal.isNotEmpty) &&
-        (errorVal is! Map || errorVal.isNotEmpty);
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        hasApiError ||
-        hasErrorMessage) {
-      throw AuthApiException(
-        _messageFrom(data),
-        statusCode: response.statusCode,
-        data: data,
-      );
-    }
-    return data;
+    return _decodeAndValidateResponse(
+      response,
+      path,
+      responseKeyPair.keyId,
+      requestGeneration: requestGeneration,
+      allowCookieTokenOverwrite: !includeSessionHeaders,
+    );
   }
 
   Future<({String publicKey, String keyId})> _getOrCreateResponseEncryptionKeyPair() async {
@@ -571,12 +539,8 @@ class AuthApi {
       privateKey = _cachedSessionKeyPair!.privateKey;
     } else {
       final retired = _responseEncryptionPrivateKeys[keyId];
-      if (retired is RSAPrivateKey) {
-        privateKey = retired;
-      } else if (retired is ({RSAPrivateKey key, DateTime retiredAt})) {
+      if (retired is ({RSAPrivateKey key, DateTime retiredAt})) {
         privateKey = retired.key;
-      } else {
-        privateKey = _responseEncryptionPrivateKeys.remove(keyId) as RSAPrivateKey?;
       }
     }
     if (privateKey is! RSAPrivateKey) {
@@ -599,7 +563,92 @@ class AuthApi {
     return jsonDecode(utf8.decode(plaintext));
   }
 
-  void _captureSession(http.Response response) {
+  Future<Map<String, dynamic>> _decodeAndValidateResponse(
+    http.Response response,
+    String path,
+    String keyId, {
+    required int requestGeneration,
+    String invalidResponseMessage = 'The server returned an invalid response.',
+    bool allowCookieTokenOverwrite = false,
+  }) async {
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(response.statusCode, path);
+    }
+    dynamic decoded;
+    try {
+      decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : await _decodeJsonBody(response.body);
+    } on FormatException {
+      _cleanupResponseKeyPair(keyId);
+      throw AuthApiException(
+        invalidResponseMessage,
+        statusCode: response.statusCode,
+      );
+    }
+    dynamic responsePayload = decoded;
+    if (decoded is Map && decoded['encrypted'] == true) {
+      responsePayload = _decryptResponseEnvelope(
+        decoded.cast<String, dynamic>(),
+        keyId,
+      );
+    } else {
+      _cleanupResponseKeyPair(keyId);
+    }
+    final data = responsePayload is Map<String, dynamic>
+        ? responsePayload
+        : <String, dynamic>{'data': responsePayload};
+    await _validateResponseData(response, data, path);
+    _captureSession(
+      response,
+      payload: data,
+      requestGeneration: requestGeneration,
+      allowCookieTokenOverwrite: allowCookieTokenOverwrite,
+    );
+    return data;
+  }
+
+  Future<void> _validateResponseData(
+    http.Response response,
+    Map<String, dynamic> data,
+    String path,
+  ) async {
+    final apiCode = data['code'];
+    final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
+    if (response.statusCode != 401 &&
+        response.statusCode != 403 &&
+        (apiCode == 401 || apiCode == 403)) {
+      await _handleUnauthorizedResponse((apiCode as num).toInt(), path);
+    }
+    final errorVal = data['error'] ?? data['errors'];
+    final hasErrorMessage = errorVal != null &&
+        errorVal != false &&
+        (errorVal is! String || errorVal.isNotEmpty) &&
+        (errorVal is! List || errorVal.isNotEmpty) &&
+        (errorVal is! Map || errorVal.isNotEmpty);
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        hasApiError ||
+        hasErrorMessage) {
+      throw AuthApiException(
+        _messageFrom(data),
+        statusCode: response.statusCode,
+        data: data,
+      );
+    }
+  }
+
+  void _captureSession(
+    http.Response response, {
+    Map<String, dynamic>? payload,
+    required int requestGeneration,
+    bool allowCookieTokenOverwrite = false,
+  }) {
+    if (response.statusCode < 200 || response.statusCode >= 300) return;
+    if (_isLoggingOut || requestGeneration != _sessionGeneration) return;
+    final apiCode = payload?['code'];
+    if (apiCode == 401 || apiCode == 403) return;
+
     final rawCookies = response.headers['set-cookie'];
     if (rawCookies != null) {
       for (final cookie in rawCookies.split(RegExp(r',(?=\s*[^;,]+=)'))) {
@@ -612,7 +661,8 @@ class AuthApi {
         }
       }
     }
-    final decoded = response.body.isEmpty ? null : _tryDecode(response.body);
+    final decoded = payload ?? (response.body.isEmpty ? null : _tryDecode(response.body));
+    String? capturedToken;
     if (decoded is Map) {
       final nested = decoded['data'];
       final token =
@@ -623,22 +673,23 @@ class AuthApi {
               ? nested['access'] ?? nested['access_token'] ?? nested['token']
               : null);
       if (token is String && token.isNotEmpty) {
-        _accessToken = token;
-        _sessionGeneration++;
-        unawaited(_persistAccessToken());
+        capturedToken = token;
       }
     }
-    // Some authentication responses are encrypted by the same response-key
-    // contract; token persistence must happen after _request decrypts them.
-    if (_accessToken == null) {
+    if (capturedToken == null &&
+        (_accessToken == null ||
+            (allowCookieTokenOverwrite && rawCookies != null))) {
       final cookieToken = _cookies['client_access_token'] ??
           _cookies['access_token'] ??
           _cookies['jwt_token'];
       if (cookieToken != null && cookieToken.isNotEmpty) {
-        _accessToken = cookieToken;
-        _sessionGeneration++;
-        unawaited(_persistAccessToken());
+        capturedToken = cookieToken;
       }
+    }
+    if (capturedToken != null) {
+      _accessToken = capturedToken;
+      _sessionGeneration++;
+      unawaited(_persistAccessToken());
     }
   }
 
@@ -838,6 +889,7 @@ class AuthApi {
     String? fileName,
     List<int>? fileBytes,
   }) async {
+    final requestGeneration = _sessionGeneration;
     await restoreSession();
     final keyPair = await _getOrCreateResponseEncryptionKeyPair();
     http.Response response;
@@ -857,48 +909,12 @@ class AuthApi {
       _cleanupResponseKeyPair(keyPair.keyId);
       rethrow;
     }
-    _captureSession(response);
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      await _handleUnauthorizedResponse(response.statusCode, path);
-    }
-    dynamic decoded;
-    try {
-      decoded = response.body.isEmpty ? <String, dynamic>{} : await _decodeJsonBody(response.body);
-    } on FormatException {
-      _cleanupResponseKeyPair(keyPair.keyId);
-      throw AuthApiException('The server returned an invalid response.', statusCode: response.statusCode);
-    }
-    dynamic payload = decoded;
-    if (decoded is Map && decoded['encrypted'] == true) {
-      payload = _decryptResponseEnvelope(decoded.cast<String, dynamic>(), keyPair.keyId);
-    } else {
-      _cleanupResponseKeyPair(keyPair.keyId);
-    }
-    final data = payload is Map<String, dynamic> ? payload : <String, dynamic>{'data': payload};
-    final apiCode = data['code'];
-    final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
-    if (response.statusCode != 401 &&
-        response.statusCode != 403 &&
-        (apiCode == 401 || apiCode == 403)) {
-      await _handleUnauthorizedResponse((apiCode as num).toInt(), path);
-    }
-    final errorVal = data['error'] ?? data['errors'];
-    final hasErrorMessage = errorVal != null &&
-        errorVal != false &&
-        (errorVal is! String || errorVal.isNotEmpty) &&
-        (errorVal is! List || errorVal.isNotEmpty) &&
-        (errorVal is! Map || errorVal.isNotEmpty);
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        hasApiError ||
-        hasErrorMessage) {
-      throw AuthApiException(
-        _messageFrom(data),
-        statusCode: response.statusCode,
-        data: data,
-      );
-    }
-    return data;
+    return _decodeAndValidateResponse(
+      response,
+      path,
+      keyPair.keyId,
+      requestGeneration: requestGeneration,
+    );
   }
 
   Future<List<Map<String, dynamic>>> getSupportTickets() async {
@@ -1100,12 +1116,16 @@ class AuthApi {
     );
   }
 
-  Future<Map<String, dynamic>> getCaptchaConfig() =>
-      _request('GET', 'security/captcha/config/');
+  Future<Map<String, dynamic>> getCaptchaConfig() => _request(
+    'GET',
+    'security/captcha/config/',
+    includeSessionHeaders: false,
+  );
   Future<Map<String, dynamic>> requestPasswordKey() => _request(
     'POST',
     'pub/rsa_key/',
     body: const {'client': 'pc', 'scene': 'password'},
+    includeSessionHeaders: false,
   );
 
   Future<Map<String, dynamic>> login({
@@ -1114,7 +1134,11 @@ class AuthApi {
     bool rememberMe = true,
     Map<String, dynamic>? captcha,
   }) async {
-    final challenge = await _request('GET', 'login/encryption-challenge/');
+    final challenge = await _request(
+      'GET',
+      'login/encryption-challenge/',
+      includeSessionHeaders: false,
+    );
     final publicKey = _findString(challenge, const [
       'public_key',
       'publicKey',
@@ -1154,7 +1178,12 @@ class AuthApi {
       'encrypted_key': base64Encode(encryptedKey),
       'iv': base64Encode(iv),
     };
-    final result = await _request('POST', 'login/', body: payload);
+    final result = await _request(
+      'POST',
+      'login/',
+      body: payload,
+      includeSessionHeaders: false,
+    );
     final nested = result['data'];
     if (nested is Map) result.addAll(nested.cast<String, dynamic>());
     return result;
@@ -1209,37 +1238,101 @@ class AuthApi {
     };
   }
 
-  Future<Map<String, dynamic>> sendSignupOtp(String email) =>
-      _request('POST', 'send-signup-otp/', body: {'email': email});
+  void _throwIfUnsuccessful(Map<String, dynamic> data) {
+    if (data['success'] == false) {
+      throw AuthApiException(
+        _messageFrom(data),
+        statusCode: 200,
+        data: data,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> sendSignupOtp(String email) async {
+    final data = await _request(
+      'POST',
+      'send-signup-otp/',
+      body: {'email': email},
+      includeSessionHeaders: false,
+    );
+    _throwIfUnsuccessful(data);
+    return data;
+  }
+
   Future<Map<String, dynamic>> verifySignupOtp({
     required String email,
     required String otp,
-  }) => _request(
-    'POST',
-    'verify-signup-otp/',
-    body: {'email': email, 'otp': otp},
-  );
+  }) async {
+    final data = await _request(
+      'POST',
+      'verify-signup-otp/',
+      body: {'email': email, 'otp': otp},
+      includeSessionHeaders: false,
+    );
+    _throwIfUnsuccessful(data);
+    return data;
+  }
+
   Future<Map<String, dynamic>> verifyOtp({
     required String email,
     required String otp,
-  }) async => _request(
-    'POST',
-    'verify-otp/',
-    body: {'email': email, 'otp': otp, ...await getDeviceInfo()},
-  );
-  Future<Map<String, dynamic>> sendResetOtp(String email) =>
-      _request('POST', 'send-reset-otp/', body: {'email': email});
+  }) async {
+    final result = await _request(
+      'POST',
+      'verify-otp/',
+      body: {'email': email, 'otp': otp, ...await getDeviceInfo()},
+    );
+    final nested = result['data'];
+    if (nested is Map) result.addAll(nested.cast<String, dynamic>());
+    return result;
+  }
+
+  Future<Map<String, dynamic>> sendResetOtp(String email) async {
+    final data = await _request(
+      'POST',
+      'send-reset-otp/',
+      body: {'email': email},
+      includeSessionHeaders: false,
+    );
+    _throwIfUnsuccessful(data);
+    return data;
+  }
+
   Future<Map<String, dynamic>> confirmPasswordReset(
     Map<String, dynamic> payload,
-  ) => _request('POST', 'reset-password/confirm/', body: payload);
+  ) async {
+    final data = await _request(
+      'POST',
+      'reset-password/confirm/',
+      body: payload,
+      includeSessionHeaders: false,
+    );
+    _throwIfUnsuccessful(data);
+    return data;
+  }
 
-  Future<Map<String, dynamic>> signup(Map<String, dynamic> payload) =>
-      _request('POST', 'signup/', body: payload);
+  Future<Map<String, dynamic>> signup(Map<String, dynamic> payload) async {
+    final data = await _request(
+      'POST',
+      'signup/',
+      body: payload,
+      includeSessionHeaders: false,
+    );
+    _throwIfUnsuccessful(data);
+    return data;
+  }
+
   Future<Map<String, dynamic>> resendLoginOtp(Map<String, dynamic> payload) =>
-      _request('POST', 'resend-login-otp/', body: payload);
+      _request(
+        'POST',
+        'resend-login-otp/',
+        body: payload,
+        includeSessionHeaders: false,
+      );
   Future<Map<String, dynamic>> loginOtpStatus(String email) => _request(
     'GET',
     'login-otp-status/?email=${Uri.encodeQueryComponent(email)}',
+    includeSessionHeaders: false,
   );
   Future<Map<String, dynamic>> status() => _request('GET', 'status/');
   Future<bool> isAuthenticated() async {
@@ -1944,14 +2037,16 @@ class AuthApi {
       throw ArgumentError('A positive amount and payment proof are required.');
     }
 
+    final requestGeneration = _sessionGeneration;
     await restoreSession();
     final headers = _headers;
     final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
     headers['X-Response-Encryption-Key'] = responseKeyPair.publicKey;
 
+    final path = isManager ? 'pamm/manager-deposit/' : 'pamm/deposit/';
     final request = http.MultipartRequest(
       'POST',
-      _rootApiUri(isManager ? 'pamm/manager-deposit/' : 'pamm/deposit/'),
+      _rootApiUri(path),
     )..headers.addAll(headers);
     request.fields['pamm_id'] = pammId;
     request.fields['amount'] = amountUsd.toStringAsFixed(2);
@@ -1974,44 +2069,14 @@ class AuthApi {
       _cleanupResponseKeyPair(responseKeyPair.keyId);
       rethrow;
     }
-    _captureSession(response);
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      await _handleUnauthorizedResponse(
-        response.statusCode,
-        isManager ? 'pamm/manager-deposit/' : 'pamm/deposit/',
-      );
-    }
-    dynamic decoded;
-    try {
-      decoded = response.body.isEmpty ? <String, dynamic>{} : await _decodeJsonBody(response.body);
-    } on FormatException {
-      _cleanupResponseKeyPair(responseKeyPair.keyId);
-      throw AuthApiException(
-        'The server returned an invalid PAMM deposit response.',
-        statusCode: response.statusCode,
-      );
-    }
-
-    dynamic payload = decoded;
-    if (decoded is Map && decoded['encrypted'] == true) {
-      payload = _decryptResponseEnvelope(
-        decoded.cast<String, dynamic>(),
-        responseKeyPair.keyId,
-      );
-    } else {
-      _cleanupResponseKeyPair(responseKeyPair.keyId);
-    }
-    final data = payload is Map<String, dynamic>
-        ? payload
-        : <String, dynamic>{'data': payload};
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw AuthApiException(
-        _messageFrom(data),
-        statusCode: response.statusCode,
-        data: data,
-      );
-    }
-    return data;
+    return _decodeAndValidateResponse(
+      response,
+      path,
+      responseKeyPair.keyId,
+      requestGeneration: requestGeneration,
+      invalidResponseMessage:
+          'The server returned an invalid PAMM deposit response.',
+    );
   }
 
   Future<Map<String, dynamic>> requestPammWithdrawal({
@@ -2179,6 +2244,7 @@ class AuthApi {
     List<int>? proofBytes,
     String? proofFileName,
   }) async {
+    final requestGeneration = _sessionGeneration;
     await restoreSession();
     final headers = _headers;
     final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
@@ -2207,7 +2273,6 @@ class AuthApi {
       _cleanupResponseKeyPair(responseKeyPair.keyId);
       rethrow;
     }
-    _captureSession(response);
     if (response.statusCode == 401 || response.statusCode == 403) {
       await _handleUnauthorizedResponse(response.statusCode, 'manual-deposit/');
     }
@@ -2230,6 +2295,7 @@ class AuthApi {
           'Manual deposit accepted (HTTP ${response.statusCode}); '
           'response body was not JSON.',
         );
+        _captureSession(response, requestGeneration: requestGeneration);
         return <String, dynamic>{
           'message': 'Manual deposit request accepted.',
         };
@@ -2256,6 +2322,7 @@ class AuthApi {
           'Manual deposit accepted (HTTP ${response.statusCode}); '
           'encrypted acknowledgement could not be decoded: $error',
         );
+        _captureSession(response, requestGeneration: requestGeneration);
         return <String, dynamic>{
           'message': 'Manual deposit request accepted.',
         };
@@ -2275,6 +2342,11 @@ class AuthApi {
         data: data,
       );
     }
+    _captureSession(
+      response,
+      payload: data,
+      requestGeneration: requestGeneration,
+    );
     return data;
   }
 
@@ -2443,6 +2515,7 @@ class AuthApi {
     required String endpoint,
     required String fieldName,
   }) async {
+    final requestGeneration = _sessionGeneration;
     await restoreSession();
     final headers = _headers;
     final responseKeyPair = await _getOrCreateResponseEncryptionKeyPair();
@@ -2462,47 +2535,13 @@ class AuthApi {
       _cleanupResponseKeyPair(responseKeyPair.keyId);
       rethrow;
     }
-    _captureSession(response);
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      await _handleUnauthorizedResponse(response.statusCode, endpoint);
-    }
-
-    dynamic decoded;
-    try {
-      decoded = response.body.isEmpty
-          ? <String, dynamic>{}
-          : await _decodeJsonBody(response.body);
-    } on FormatException {
-      _cleanupResponseKeyPair(responseKeyPair.keyId);
-      throw AuthApiException(
-        'The server returned an invalid upload response.',
-        statusCode: response.statusCode,
-      );
-    }
-
-    dynamic payload = decoded;
-    if (decoded is Map && decoded['encrypted'] == true) {
-      payload = _decryptResponseEnvelope(
-        decoded.cast<String, dynamic>(),
-        responseKeyPair.keyId,
-      );
-    } else {
-      _cleanupResponseKeyPair(responseKeyPair.keyId);
-    }
-
-    final data = payload is Map<String, dynamic>
-        ? payload
-        : <String, dynamic>{'data': payload};
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        (data['error'] is String && (data['error'] as String).isNotEmpty)) {
-      throw AuthApiException(
-        _messageFrom(data),
-        statusCode: response.statusCode,
-        data: data,
-      );
-    }
-    return data;
+    return _decodeAndValidateResponse(
+      response,
+      endpoint,
+      responseKeyPair.keyId,
+      requestGeneration: requestGeneration,
+      invalidResponseMessage: 'The server returned an invalid upload response.',
+    );
   }
 
   /// Fetch an authenticated profile photo as raw image bytes.

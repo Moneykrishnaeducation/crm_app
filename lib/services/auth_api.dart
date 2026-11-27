@@ -125,17 +125,100 @@ class AuthApi {
   String get activeHost => _baseUri.host;
 
   final http.Client _client = createAuthHttpClient();
+  http.Client? _testClient;
+  http.Client get _httpClient => _testClient ?? _client;
   final Map<String, String> _cookies = <String, String>{};
   String? _accessToken;
   static const _accessTokenStorageKey = 'vtindex_client_access_token';
   String? _pushToken;
   static const _pushTokenStorageKey = 'vtindex_client_push_token';
   Future<void>? _restoreFuture;
+  Future<Map<String, dynamic>>? _logoutFuture;
+  bool _isLoggingOut = false;
+  int _sessionGeneration = 0;
+  final StreamController<int> _unauthorizedSessionController =
+      StreamController<int>.broadcast();
   final Map<String, dynamic> _responseEncryptionPrivateKeys = <String, dynamic>{};
   ({String publicKey, String keyId, RSAPrivateKey privateKey})? _cachedSessionKeyPair;
   Future<({String publicKey, String keyId, RSAPrivateKey privateKey})>? _generatingSessionKeyPair;
   int _sessionKeyUseCount = 0;
   DateTime? _sessionKeyCreatedAt;
+
+  /// Emits the HTTP status code (401 or 403) when an authenticated API call
+  /// triggers an automatic session logout.
+  Stream<int> get onUnauthorizedSession => _unauthorizedSessionController.stream;
+
+  @visibleForTesting
+  void setHttpClientForTesting(http.Client? client) {
+    _testClient = client;
+  }
+
+  @visibleForTesting
+  void setSessionForTesting({
+    String? accessToken,
+    Map<String, String>? cookies,
+  }) {
+    _sessionGeneration++;
+    _accessToken = accessToken;
+    _cookies.clear();
+    if (cookies != null) {
+      _cookies.addAll(cookies);
+    }
+    _restoreFuture = Future<void>.value();
+  }
+
+  @visibleForTesting
+  Future<void> resetForTesting() async {
+    _sessionGeneration++;
+    _testClient = null;
+    _isLoggingOut = false;
+    _logoutFuture = null;
+    _restoreFuture = null;
+    _cachedSessionKeyPair = null;
+    _generatingSessionKeyPair = null;
+    _responseEncryptionPrivateKeys.clear();
+    _cookies.clear();
+    _accessToken = null;
+    _pushToken = null;
+  }
+
+  static String _normalizeEndpointPath(String path) {
+    final withoutQuery = path.split('?').first.trim();
+    return withoutQuery.startsWith('/') ? withoutQuery.substring(1) : withoutQuery;
+  }
+
+  static bool _isUnauthorizedExemptPath(String path) {
+    final normalized = _normalizeEndpointPath(path);
+    return const <String>{
+      'logout/',
+      'login/',
+      'login/encryption-challenge/',
+      'verify-otp/',
+      'resend-login-otp/',
+      'login-otp-status/',
+      'signup/',
+      'send-signup-otp/',
+      'verify-signup-otp/',
+      'send-reset-otp/',
+      'reset-password/confirm/',
+      'security/captcha/config/',
+      'pub/rsa_key/',
+    }.contains(normalized);
+  }
+
+  Future<void> _handleUnauthorizedResponse(int? statusCode, String path) async {
+    if (statusCode != 401 && statusCode != 403) return;
+    if (_isLoggingOut || _isUnauthorizedExemptPath(path)) return;
+    if (!_unauthorizedSessionController.isClosed) {
+      _unauthorizedSessionController.add(statusCode!);
+    }
+    try {
+      await logout();
+    } catch (_) {
+      // Local credentials are cleared by logout()'s finally block even when
+      // the server logout call fails or returns an error status.
+    }
+  }
 
   bool get hasToken =>
       (_accessToken != null && _accessToken!.isNotEmpty) ||
@@ -313,7 +396,7 @@ class AuthApi {
         useRootApi ? _rootApiUri(path) : _uri(path),
       )..headers.addAll(headers);
       if (wireBody != null) request.body = jsonEncode(wireBody);
-      final streamed = await _client
+      final streamed = await _httpClient
           .send(request)
           .timeout(const Duration(seconds: 25));
       response = await http.Response.fromStream(streamed);
@@ -336,7 +419,7 @@ class AuthApi {
                 : _uri(path, base: fallbackUri),
           )..headers.addAll(fallbackHeaders);
           if (wireBody != null) fallbackRequest.body = jsonEncode(wireBody);
-          final streamed = await _client
+          final streamed = await _httpClient
               .send(fallbackRequest)
               .timeout(const Duration(seconds: 15));
           response = await http.Response.fromStream(streamed);
@@ -354,6 +437,9 @@ class AuthApi {
       }
     }
     _captureSession(response);
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(response.statusCode, path);
+    }
     dynamic decoded;
     try {
       decoded = response.body.isEmpty
@@ -380,6 +466,11 @@ class AuthApi {
         : <String, dynamic>{'data': responsePayload};
     final apiCode = data['code'];
     final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
+    if (response.statusCode != 401 &&
+        response.statusCode != 403 &&
+        (apiCode == 401 || apiCode == 403)) {
+      await _handleUnauthorizedResponse((apiCode as num).toInt(), path);
+    }
     final errorVal = data['error'] ?? data['errors'];
     final hasErrorMessage = errorVal != null &&
         errorVal != false &&
@@ -533,6 +624,7 @@ class AuthApi {
               : null);
       if (token is String && token.isNotEmpty) {
         _accessToken = token;
+        _sessionGeneration++;
         unawaited(_persistAccessToken());
       }
     }
@@ -544,6 +636,7 @@ class AuthApi {
           _cookies['jwt_token'];
       if (cookieToken != null && cookieToken.isNotEmpty) {
         _accessToken = cookieToken;
+        _sessionGeneration++;
         unawaited(_persistAccessToken());
       }
     }
@@ -758,13 +851,16 @@ class AuthApi {
           fileField, fileBytes, filename: fileName,
         ));
       }
-      final streamed = await _client.send(request).timeout(const Duration(seconds: 35));
+      final streamed = await _httpClient.send(request).timeout(const Duration(seconds: 35));
       response = await http.Response.fromStream(streamed);
     } catch (_) {
       _cleanupResponseKeyPair(keyPair.keyId);
       rethrow;
     }
     _captureSession(response);
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(response.statusCode, path);
+    }
     dynamic decoded;
     try {
       decoded = response.body.isEmpty ? <String, dynamic>{} : await _decodeJsonBody(response.body);
@@ -781,6 +877,11 @@ class AuthApi {
     final data = payload is Map<String, dynamic> ? payload : <String, dynamic>{'data': payload};
     final apiCode = data['code'];
     final hasApiError = apiCode is num && (apiCode < 200 || apiCode >= 300);
+    if (response.statusCode != 401 &&
+        response.statusCode != 403 &&
+        (apiCode == 401 || apiCode == 403)) {
+      await _handleUnauthorizedResponse((apiCode as num).toInt(), path);
+    }
     final errorVal = data['error'] ?? data['errors'];
     final hasErrorMessage = errorVal != null &&
         errorVal != false &&
@@ -1199,7 +1300,21 @@ class AuthApi {
     }
   }
 
-  Future<Map<String, dynamic>> logout() async {
+  Future<Map<String, dynamic>> logout() {
+    final ongoing = _logoutFuture;
+    if (ongoing != null) return ongoing;
+    final future = _performLogout();
+    _logoutFuture = future;
+    return future.whenComplete(() {
+      if (identical(_logoutFuture, future)) {
+        _logoutFuture = null;
+      }
+    });
+  }
+
+  Future<Map<String, dynamic>> _performLogout() async {
+    _isLoggingOut = true;
+    final logoutGeneration = ++_sessionGeneration;
     try {
       try {
         await const MethodChannel('com.vtindex.crm/live_updates').invokeMethod<void>('stopPositionService');
@@ -1220,17 +1335,20 @@ class AuthApi {
       }
       return await _request('GET', 'logout/');
     } finally {
-      _cachedSessionKeyPair = null;
-      _cookies.clear();
-      _accessToken = null;
-      _pushToken = null;
-      BiometricSignIn.instance.clearSessionCredentials();
-      try {
-        final preferences = await SharedPreferences.getInstance();
-        await preferences.remove(_accessTokenStorageKey);
-        await preferences.remove(_pushTokenStorageKey);
-      } catch (_) {}
-      _restoreFuture = null;
+      _isLoggingOut = false;
+      if (_sessionGeneration == logoutGeneration) {
+        _cachedSessionKeyPair = null;
+        _cookies.clear();
+        _accessToken = null;
+        _pushToken = null;
+        BiometricSignIn.instance.clearSessionCredentials();
+        try {
+          final preferences = await SharedPreferences.getInstance();
+          await preferences.remove(_accessTokenStorageKey);
+          await preferences.remove(_pushTokenStorageKey);
+        } catch (_) {}
+        _restoreFuture = null;
+      }
     }
   }
 
@@ -1848,7 +1966,7 @@ class AuthApi {
 
     http.Response response;
     try {
-      final streamed = await _client.send(request).timeout(
+      final streamed = await _httpClient.send(request).timeout(
         const Duration(seconds: 75),
       );
       response = await http.Response.fromStream(streamed);
@@ -1857,6 +1975,12 @@ class AuthApi {
       rethrow;
     }
     _captureSession(response);
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(
+        response.statusCode,
+        isManager ? 'pamm/manager-deposit/' : 'pamm/deposit/',
+      );
+    }
     dynamic decoded;
     try {
       decoded = response.body.isEmpty ? <String, dynamic>{} : await _decodeJsonBody(response.body);
@@ -2075,7 +2199,7 @@ class AuthApi {
 
     http.Response response;
     try {
-      final streamed = await _client
+      final streamed = await _httpClient
           .send(request)
           .timeout(const Duration(seconds: 75));
       response = await http.Response.fromStream(streamed);
@@ -2084,6 +2208,9 @@ class AuthApi {
       rethrow;
     }
     _captureSession(response);
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(response.statusCode, 'manual-deposit/');
+    }
 
     final isSuccessfulStatus =
         response.statusCode >= 200 && response.statusCode < 300;
@@ -2276,10 +2403,16 @@ class AuthApi {
     )
       ..headers.addAll(headers)
       ..body = jsonEncode({'password': password});
-    final streamed = await _client
+    final streamed = await _httpClient
         .send(request)
         .timeout(const Duration(seconds: 30));
     final response = await http.Response.fromStream(streamed);
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(
+        response.statusCode,
+        'profile/documents/$documentType/view/',
+      );
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       dynamic payload;
       try {
@@ -2321,7 +2454,7 @@ class AuthApi {
 
     http.Response response;
     try {
-      final streamed = await _client
+      final streamed = await _httpClient
           .send(request)
           .timeout(const Duration(seconds: 45));
       response = await http.Response.fromStream(streamed);
@@ -2330,6 +2463,9 @@ class AuthApi {
       rethrow;
     }
     _captureSession(response);
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(response.statusCode, endpoint);
+    }
 
     dynamic decoded;
     try {
@@ -2399,10 +2535,13 @@ class AuthApi {
     final request = http.Request('GET', _uri(endpoint))
       ..headers.addAll(headers);
 
-    final streamed = await _client
+    final streamed = await _httpClient
         .send(request)
         .timeout(const Duration(seconds: 25));
     final response = await http.Response.fromStream(streamed);
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _handleUnauthorizedResponse(response.statusCode, endpoint);
+    }
     final contentType = (response.headers['content-type'] ?? '').toLowerCase();
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

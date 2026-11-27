@@ -339,6 +339,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   String _selectedPage = 'Dashboard';
   int _activityRefreshToken = 0;
   Timer? _notificationRefreshTimer;
+  StreamSubscription<int>? _unauthorizedSubscription;
+  bool _isLoggingOut = false;
   final List<String> _navigationHistory = <String>[];
   final GlobalKey<MamPageState> _mamKey = GlobalKey<MamPageState>();
   BrokerAccount? _selectedAccount;
@@ -365,6 +367,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     FocusManager.instance.addListener(_handleFocusChange);
     PushMessagingService.instance.pendingActionUrl.addListener(_handlePushAction);
+    _unauthorizedSubscription = AuthApi.instance.onUnauthorizedSession.listen(
+      _handleUnauthorizedSession,
+    );
     _currentThemeMode = widget.themeMode;
     unawaited(PushMessagingService.instance.initializeAndRegister());
     _loadFavoriteAccounts();
@@ -459,6 +464,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _unauthorizedSubscription?.cancel();
     _notificationRefreshTimer?.cancel();
     unawaited(AppNotificationCenter.instance.stopPositionMonitoring());
     WidgetsBinding.instance.removeObserver(this);
@@ -860,7 +866,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
+  void _handleUnauthorizedSession(int statusCode) {
+    if (!mounted || _isLoggingOut) return;
+    showAppMessage(
+      'Your session has expired. Please sign in again.',
+      type: AppFeedbackType.warning,
+    );
+    unawaited(_logoutAndReturnToEntry());
+  }
+
   Future<void> _logoutAndReturnToEntry() async {
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
+    _notificationRefreshTimer?.cancel();
+    unawaited(AppNotificationCenter.instance.stopPositionMonitoring());
     try {
       await AuthApi.instance.logout();
     } catch (_) {

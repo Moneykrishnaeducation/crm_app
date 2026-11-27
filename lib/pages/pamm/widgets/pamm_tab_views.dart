@@ -96,12 +96,12 @@ class PammManagedTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final normalizedQuery = query.toLowerCase();
+    final normalizedQuery = query.trim().toLowerCase();
     final pools = managed
         .where(
           (pool) =>
               pool.name.toLowerCase().contains(normalizedQuery) ||
-              pool.login.contains(normalizedQuery),
+              pool.login.toLowerCase().contains(normalizedQuery),
         )
         .toList();
     final showSkeleton = loading && managed.isEmpty;
@@ -253,12 +253,12 @@ class PammAvailableTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final normalizedQuery = query.toLowerCase();
+    final normalizedQuery = query.trim().toLowerCase();
     var rows = available
         .where(
           (pool) =>
               pool.name.toLowerCase().contains(normalizedQuery) ||
-              pool.login.contains(normalizedQuery),
+              pool.login.toLowerCase().contains(normalizedQuery),
         )
         .toList();
     // Filter to pools with profit share configured and sort lowest fee first.
@@ -380,8 +380,6 @@ class PammInvestmentsTabView extends StatelessWidget {
   const PammInvestmentsTabView({
     super.key,
     required this.investments,
-    required this.managedCount,
-    required this.isManagedTab,
     this.loading = false,
     this.onRefresh,
     required this.query,
@@ -395,8 +393,6 @@ class PammInvestmentsTabView extends StatelessWidget {
   });
 
   final List<PammInvestment> investments;
-  final int managedCount;
-  final bool isManagedTab;
   final bool loading;
   final Future<void> Function()? onRefresh;
   final String query;
@@ -410,12 +406,12 @@ class PammInvestmentsTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final normalizedQuery = query.toLowerCase();
+    final normalizedQuery = query.trim().toLowerCase();
     final rows = investments
         .where(
           (investment) =>
               investment.name.toLowerCase().contains(normalizedQuery) ||
-              investment.login.contains(normalizedQuery) ||
+              investment.login.toLowerCase().contains(normalizedQuery) ||
               investment.manager.toLowerCase().contains(normalizedQuery),
         )
         .toList();
@@ -443,16 +439,6 @@ class PammInvestmentsTabView extends StatelessWidget {
     return PammInvestmentsTabPage(
       onRefresh: onRefresh,
       children: [
-        PammSkeletonizer(
-          enabled: showSkeleton,
-          child: PammSnapshotCard(
-            isManagedTab: isManagedTab,
-            managedCount: managedCount,
-            totalEquity: value,
-            totalPnl: pnl,
-          ),
-        ),
-        const SizedBox(height: 12),
         PammSkeletonizer(
           enabled: showSkeleton,
           child: PammMetricGrid(

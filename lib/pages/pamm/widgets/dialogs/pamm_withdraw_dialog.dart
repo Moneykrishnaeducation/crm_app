@@ -12,25 +12,65 @@ typedef PammWithdrawalEligibility = ({
   String bankAccount,
   String wallet,
   String currency,
+  String? error,
 });
 
-Future<PammWithdrawalEligibility> _fetchPammWithdrawalEligibility() async {
-  Map<String, dynamic> profile = {};
-  List<Map<String, dynamic>> documents = const [];
-  Map<String, dynamic> bank = {};
-  Map<String, dynamic> crypto = {};
+bool _withdrawDialogActive = false;
+
+String _pammEligibilityErrorMessage(Object error) {
+  if (error is AuthApiException) {
+    if (error.statusCode != null && error.statusCode! >= 500) {
+      return 'Unable to verify withdrawal eligibility right now. Please try again shortly.';
+    }
+    if (error.message.trim().isNotEmpty) {
+      return error.message;
+    }
+  }
+  return 'Unable to verify withdrawal eligibility due to a network or server error. Please try again.';
+}
+
+@visibleForTesting
+Future<PammWithdrawalEligibility> fetchPammWithdrawalEligibility() async {
+  PammWithdrawalEligibility failure(Object error) => (
+        approved: false,
+        hasBank: false,
+        hasCrypto: false,
+        bankName: 'Bank account',
+        bankAccount: '',
+        wallet: '',
+        currency: 'USDT',
+        error: _pammEligibilityErrorMessage(error),
+      );
+
+  late final Map<String, dynamic> profile;
+  late final List<Map<String, dynamic>> documents;
+  var bank = <String, dynamic>{};
+  var crypto = <String, dynamic>{};
+
   try {
     profile = unwrapPammApiMap(await AuthApi.instance.getProfile());
-  } catch (_) {}
+  } catch (error) {
+    return failure(error);
+  }
   try {
     documents = extractPammRows(await AuthApi.instance.getProfileDocuments());
-  } catch (_) {}
+  } catch (error) {
+    return failure(error);
+  }
   try {
     bank = unwrapPammApiMap(await AuthApi.instance.getBankDetails());
-  } catch (_) {}
+  } catch (error) {
+    if (error is! AuthApiException || error.statusCode != 404) {
+      return failure(error);
+    }
+  }
   try {
     crypto = unwrapPammApiMap(await AuthApi.instance.getCryptoDetails());
-  } catch (_) {}
+  } catch (error) {
+    if (error is! AuthApiException || error.statusCode != 404) {
+      return failure(error);
+    }
+  }
 
   bool approvedDocument(String type) => documents.any((document) {
         final docType =
@@ -58,11 +98,13 @@ Future<PammWithdrawalEligibility> _fetchPammWithdrawalEligibility() async {
   final personallyComplete = phone.isNotEmpty && dob.isNotEmpty && hasLocation;
   final verifiedFlag = profile['user_verified'] == true ||
       (identityVerified && residenceVerified && personallyComplete);
-  final bankAccount = pammStringValue(bank, const ['account_number']).trim();
-  final wallet = pammStringValue(
+  final rawBankAccount = pammStringValue(bank, const ['account_number']).trim();
+  final bankAccount = rawBankAccount == '—' ? '' : rawBankAccount;
+  final rawWallet = pammStringValue(
     crypto,
     const ['wallet_address', 'wallet_id', 'wallet'],
   ).trim();
+  final wallet = rawWallet == '—' ? '' : rawWallet;
   return (
     approved: verifiedFlag,
     hasBank: bankAccount.isNotEmpty,
@@ -72,6 +114,7 @@ Future<PammWithdrawalEligibility> _fetchPammWithdrawalEligibility() async {
     bankAccount: bankAccount,
     wallet: wallet,
     currency: pammStringValue(crypto, const ['currency'], fallback: 'USDT'),
+    error: null,
   );
 }
 
@@ -83,10 +126,12 @@ Future<void> showPammWithdrawDialog(
   required double availableBalance,
   required Future<void> Function() onSuccess,
 }) async {
+  if (_withdrawDialogActive) return;
   if (pammId.trim().isEmpty) {
     showPammMessage(
       context,
       'The PAMM identifier is missing. Refresh the account list and try again.',
+      isError: true,
     );
     return;
   }
@@ -95,39 +140,53 @@ Future<void> showPammWithdrawDialog(
     showPammMessage(
       context,
       'The PAMM identifier is invalid. Refresh the account list and try again.',
-    );
-    return;
-  }
-  final eligibility = await _fetchPammWithdrawalEligibility();
-  if (!context.mounted) return;
-  if (!eligibility.approved) {
-    showPammMessage(
-      context,
-      'Withdrawals are available after identity and address verification are approved.',
-    );
-    return;
-  }
-  if (!eligibility.hasBank && !eligibility.hasCrypto) {
-    showPammMessage(
-      context,
-      'Add a bank account or crypto wallet in Profile payment methods before withdrawing.',
+      isError: true,
     );
     return;
   }
 
-  final submitted = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _PammWithdrawSheet(
-      accountName: accountName,
-      parsedPammId: parsedPammId,
-      isManager: isManager,
-      availableBalance: availableBalance,
-      eligibility: eligibility,
-    ),
-  );
+  _withdrawDialogActive = true;
+  bool? submitted;
+  try {
+    final eligibility = await fetchPammWithdrawalEligibility();
+    if (!context.mounted) return;
+    if (eligibility.error != null) {
+      showPammMessage(context, eligibility.error!, isError: true);
+      return;
+    }
+    if (!eligibility.approved) {
+      showPammMessage(
+        context,
+        'Withdrawals are available after identity and address verification are approved.',
+        isError: true,
+      );
+      return;
+    }
+    if (!eligibility.hasBank && !eligibility.hasCrypto) {
+      showPammMessage(
+        context,
+        'Add a bank account or crypto wallet in Profile payment methods before withdrawing.',
+        isError: true,
+      );
+      return;
+    }
+
+    submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _PammWithdrawSheet(
+        accountName: accountName,
+        parsedPammId: parsedPammId,
+        isManager: isManager,
+        availableBalance: availableBalance,
+        eligibility: eligibility,
+      ),
+    );
+  } finally {
+    _withdrawDialogActive = false;
+  }
   if (submitted == true && context.mounted) {
     await onSuccess();
     if (context.mounted) {
@@ -169,10 +228,21 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
     super.dispose();
   }
 
+  String _presetAmountText(double factor) {
+    final raw =
+        (widget.availableBalance * factor).clamp(0.0, widget.availableBalance);
+    var cents = ((raw * 100) + 1e-9).floor();
+    if (cents / 100.0 > widget.availableBalance && cents > 0) {
+      cents -= 1;
+    }
+    return (cents / 100.0).toStringAsFixed(2);
+  }
+
   Future<void> _submit() async {
+    if (_submitting) return;
     FocusScope.of(context).unfocus();
-    final value = double.tryParse(_amount.text.trim().replaceAll(',', ''));
-    if (value == null || !value.isFinite || value <= 0) {
+    final value = parsePammDouble(_amount.text);
+    if (value == null || value <= 0) {
       _shakeController.shake();
       setState(
         () => _errorMessage = 'Enter a valid amount greater than zero.',
@@ -230,8 +300,10 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
     final maxHeight =
         (screenHeight - keyboardBottom).clamp(240.0, screenHeight * .9);
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardBottom),
+    return PopScope(
+      canPop: !_submitting,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: keyboardBottom),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: 620,
@@ -274,11 +346,13 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () {
-                        AppHaptics.lightImpact();
-                        FocusScope.of(context).unfocus();
-                        Navigator.pop(context);
-                      },
+                      onPressed: _submitting
+                          ? null
+                          : () {
+                              AppHaptics.lightImpact();
+                              FocusScope.of(context).unfocus();
+                              Navigator.pop(context);
+                            },
                       tooltip: 'Close',
                       icon: Icon(Icons.close, color: muted),
                     ),
@@ -350,21 +424,25 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                             ChoiceChip(
                               label: Text('$currency wallet'),
                               selected: _method == 'usdt',
-                              onSelected: (_) {
-                                AppHaptics.selectionClick();
-                                FocusScope.of(context).unfocus();
-                                setState(() => _method = 'usdt');
-                              },
+                              onSelected: _submitting
+                                  ? null
+                                  : (_) {
+                                      AppHaptics.selectionClick();
+                                      FocusScope.of(context).unfocus();
+                                      setState(() => _method = 'usdt');
+                                    },
                             ),
                           if (eligibility.hasBank)
                             ChoiceChip(
                               label: const Text('Bank transfer'),
                               selected: _method == 'bank',
-                              onSelected: (_) {
-                                AppHaptics.selectionClick();
-                                FocusScope.of(context).unfocus();
-                                setState(() => _method = 'bank');
-                              },
+                              onSelected: _submitting
+                                  ? null
+                                  : (_) {
+                                      AppHaptics.selectionClick();
+                                      FocusScope.of(context).unfocus();
+                                      setState(() => _method = 'bank');
+                                    },
                             ),
                         ],
                       ),
@@ -385,6 +463,7 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                           animation: _shakeController,
                           builder: (context, child) => TextField(
                             controller: _amount,
+                            enabled: !_submitting,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -444,21 +523,21 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
                             (label: '75%', factor: 0.75),
                             (label: '100%', factor: 1.00),
                           ].map((preset) {
-                            final presetText =
-                                (widget.availableBalance * preset.factor)
-                                    .toStringAsFixed(2);
+                            final presetText = _presetAmountText(preset.factor);
                             return ChoiceChip(
                               label: Text(preset.label),
                               selected: _amount.text.trim() == presetText,
-                              onSelected: (_) {
-                                AppHaptics.selectionClick();
-                                FocusScope.of(context).unfocus();
-                                setState(() {
-                                  _shakeController.clearError();
-                                  _amount.text = presetText;
-                                  _errorMessage = null;
-                                });
-                              },
+                              onSelected: _submitting
+                                  ? null
+                                  : (_) {
+                                      AppHaptics.selectionClick();
+                                      FocusScope.of(context).unfocus();
+                                      setState(() {
+                                        _shakeController.clearError();
+                                        _amount.text = presetText;
+                                        _errorMessage = null;
+                                      });
+                                    },
                             );
                           }).toList(),
                         ),
@@ -506,6 +585,7 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

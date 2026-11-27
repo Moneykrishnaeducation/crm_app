@@ -50,10 +50,20 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
       TextEditingController(text: generatePammPassword());
   final _formKey = GlobalKey<FormState>();
 
+  static const _leverageOptions = <String>[
+    '1:50',
+    '1:100',
+    '1:200',
+    '1:300',
+    '1:500',
+    '1:1000',
+  ];
+
   String _leverage = '1:500';
   bool _showMasterPassword = false;
   bool _showInvestorPassword = false;
   bool _isCreating = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -192,11 +202,16 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
               (v) => ChoiceChip(
                 label: Text('$v%', style: const TextStyle(fontSize: 9)),
                 selected: _share.text.trim() == '$v',
-                onSelected: (_) {
-                  AppHaptics.selectionClick();
-                  FocusScope.of(context).unfocus();
-                  setState(() => _share.text = '$v');
-                },
+                onSelected: _isCreating
+                    ? null
+                    : (_) {
+                        AppHaptics.selectionClick();
+                        FocusScope.of(context).unfocus();
+                        setState(() {
+                          _share.text = '$v';
+                          _errorMessage = null;
+                        });
+                      },
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
               ),
@@ -204,7 +219,83 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
             .toList(),
       );
 
+  Widget _leverageSelector(Color card, Color text, Color border) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _fieldLabel('Account leverage', required: true, suffix: _leverage),
+          Row(
+            children: const ['1:100', '1:200', '1:500']
+                .map(
+                  (v) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 5),
+                      child: OutlinedButton(
+                        onPressed: _isCreating
+                            ? null
+                            : () {
+                                AppHaptics.selectionClick();
+                                FocusScope.of(context).unfocus();
+                                setState(() {
+                                  _leverage = v;
+                                  _errorMessage = null;
+                                });
+                              },
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor:
+                              _leverage == v ? PammColors.blue : card,
+                          foregroundColor:
+                              _leverage == v ? Colors.white : text,
+                          side: BorderSide(
+                            color: _leverage == v ? PammColors.blue : border,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          minimumSize: const Size(0, 34),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                        ),
+                        child: Text(
+                          v,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            key: ValueKey('pamm_leverage_$_leverage'),
+            initialValue: _leverage,
+            isDense: true,
+            decoration: _inputDecoration('Custom leverage'),
+            dropdownColor: card,
+            style: TextStyle(color: text, fontSize: 11),
+            items: _leverageOptions
+                .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                .toList(),
+            onChanged: _isCreating
+                ? null
+                : (v) {
+                    AppHaptics.selectionClick();
+                    FocusScope.of(context).unfocus();
+                    if (v != null) {
+                      setState(() {
+                        _leverage = v;
+                        _errorMessage = null;
+                      });
+                    }
+                  },
+          ),
+        ],
+      );
+
   void _closeSheet() {
+    if (_isCreating) return;
     AppHaptics.lightImpact();
     FocusScope.of(context).unfocus();
     Navigator.of(context).maybePop();
@@ -252,6 +343,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
           const SizedBox(height: 7),
           TextFormField(
             controller: controller,
+            enabled: !_isCreating,
             obscureText: !visible,
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]')),
@@ -300,11 +392,13 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () {
-                  AppHaptics.lightImpact();
-                  FocusScope.of(context).unfocus();
-                  controller.text = generatePammPassword();
-                },
+                onPressed: _isCreating
+                    ? null
+                    : () {
+                        AppHaptics.lightImpact();
+                        FocusScope.of(context).unfocus();
+                        controller.text = generatePammPassword();
+                      },
                 icon: const Icon(LucideIcons.refreshCw, size: 12),
                 label: const Text('Regenerate', style: TextStyle(fontSize: 9)),
               ),
@@ -316,40 +410,53 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
   }
 
   Future<void> _submit() async {
+    if (_isCreating) return;
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) {
       AppHaptics.lightImpact();
       return;
     }
     AppHaptics.mediumImpact();
-    setState(() => _isCreating = true);
+    setState(() {
+      _isCreating = true;
+      _errorMessage = null;
+    });
     try {
       final response = await AuthApi.instance.createPammAccount(
         name: _name.text.trim(),
-        profitShare: double.tryParse(_share.text) ?? 20,
+        profitShare: parsePammDouble(_share.text) ?? 20,
         leverage: int.tryParse(_leverage.split(':').last) ?? 500,
         masterPassword: _masterPassword.text,
         investorPassword: _investorPassword.text,
       );
-      final createdPamm = response['pamm'] is Map
-          ? (response['pamm'] as Map).cast<String, dynamic>()
-          : <String, dynamic>{};
+      final unwrapped = unwrapPammApiMap(response);
+      final createdPamm = unwrapped['pamm'] is Map
+          ? (unwrapped['pamm'] as Map).cast<String, dynamic>()
+          : unwrapped;
       final credentials = <String, String>{
         'name': pammStringValue(
           createdPamm,
-          const ['name'],
+          const ['name', 'pam_account_name'],
           fallback: _name.text.trim(),
         ),
         'login': pammStringValue(
           createdPamm,
-          const ['mt5_account_id'],
-          fallback: 'Pending',
+          const ['mt5_account_id', 'pamm_mt5_account_id', 'login'],
+          fallback: pammStringValue(
+            unwrapped,
+            const ['mt5_account_id', 'pamm_mt5_account_id', 'login'],
+            fallback: 'Pending',
+          ),
         ),
         'masterPassword': _masterPassword.text,
         'investorPassword': pammStringValue(
-          response,
-          const ['invest_password'],
-          fallback: _investorPassword.text,
+          unwrapped,
+          const ['invest_password', 'investor_password'],
+          fallback: pammStringValue(
+            createdPamm,
+            const ['invest_password', 'investor_password'],
+            fallback: _investorPassword.text,
+          ),
         ),
       };
       await widget.onPoolCreated();
@@ -357,11 +464,12 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
     } catch (error) {
       if (!mounted) return;
       AppHaptics.lightImpact();
-      setState(() => _isCreating = false);
       final message =
           pammRequestError(error, 'Could not create the PAMM account.');
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      setState(() {
+        _isCreating = false;
+        _errorMessage = message;
+      });
     }
   }
 
@@ -375,15 +483,17 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _closeSheet,
+    return PopScope(
+      canPop: !_isCreating,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _isCreating ? null : _closeSheet,
+            ),
           ),
-        ),
         Align(
           alignment: Alignment.bottomCenter,
           heightFactor: 1,
@@ -454,7 +564,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                           ),
                         ),
                         IconButton(
-                          onPressed: _closeSheet,
+                          onPressed: _isCreating ? null : _closeSheet,
                           icon: Icon(LucideIcons.x, size: 17, color: muted),
                           tooltip: 'Close',
                         ),
@@ -473,6 +583,12 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                             _sectionTitle('01', 'Account details'),
                             TextFormField(
                               controller: _name,
+                              enabled: !_isCreating,
+                              onChanged: (_) {
+                                if (_errorMessage != null) {
+                                  setState(() => _errorMessage = null);
+                                }
+                              },
                               style: TextStyle(color: text, fontSize: 12),
                               decoration: _inputDecoration(
                                 'Enter PAMM account name',
@@ -505,9 +621,12 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                                         ),
                                         TextFormField(
                                           controller: _share,
+                                          enabled: !_isCreating,
                                           keyboardType: const TextInputType
                                               .numberWithOptions(decimal: true),
-                                          onChanged: (_) => setState(() {}),
+                                          onChanged: (_) => setState(
+                                            () => _errorMessage = null,
+                                          ),
                                           style: TextStyle(
                                             color: text,
                                             fontSize: 11,
@@ -522,7 +641,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                                           ),
                                           validator: (value) {
                                             final n =
-                                                double.tryParse(value ?? '');
+                                                parsePammDouble(value ?? '');
                                             return n != null &&
                                                     n >= 0 &&
                                                     n <= 100
@@ -537,55 +656,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        _fieldLabel('Account leverage', required: true, suffix: _leverage),
-                                        Row(
-                                          children: ['1:100', '1:200', '1:500']
-                                              .map(
-                                                (v) => Expanded(
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.only(right: 5),
-                                                    child: OutlinedButton(
-                                                      onPressed: () {
-                                                        AppHaptics.selectionClick();
-                                                        FocusScope.of(context).unfocus();
-                                                        setState(() => _leverage = v);
-                                                      },
-                                                      style: OutlinedButton.styleFrom(
-                                                        backgroundColor: _leverage == v ? PammColors.blue : card,
-                                                        foregroundColor: _leverage == v ? Colors.white : text,
-                                                        side: BorderSide(color: _leverage == v ? PammColors.blue : border),
-                                                        padding: const EdgeInsets.symmetric(vertical: 10),
-                                                        minimumSize: const Size(0, 34),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                                                      ),
-                                                      child: Text(v, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700)),
-                                                    ),
-                                                  ),
-                                                ),
-                                              )
-                                              .toList(),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        DropdownButtonFormField<String>(
-                                          initialValue: _leverage,
-                                          isDense: true,
-                                          decoration: _inputDecoration('Custom leverage'),
-                                          dropdownColor: card,
-                                          style: TextStyle(color: text, fontSize: 10),
-                                          items: const ['1:50', '1:100', '1:200', '1:300', '1:500', '1:1000']
-                                              .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                                              .toList(),
-                                          onChanged: (v) {
-                                            AppHaptics.selectionClick();
-                                            FocusScope.of(context).unfocus();
-                                            setState(() => _leverage = v ?? _leverage);
-                                          },
-                                        ),
-                                      ],
-                                    ),
+                                    child: _leverageSelector(card, text, border),
                                   ),
                                 ],
                               )
@@ -597,11 +668,13 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                               ),
                               TextFormField(
                                 controller: _share,
+                                enabled: !_isCreating,
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
-                                onChanged: (_) => setState(() {}),
+                                onChanged: (_) =>
+                                    setState(() => _errorMessage = null),
                                 style: TextStyle(
                                   color: text,
                                   fontSize: 12.5,
@@ -611,7 +684,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                                 validator: (value) {
                                   final textVal = value?.trim() ?? '';
                                   if (textVal.isEmpty) return 'Required';
-                                  final parsed = double.tryParse(textVal);
+                                  final parsed = parsePammDouble(textVal);
                                   if (parsed == null ||
                                       parsed < 0 ||
                                       parsed > 100) {
@@ -623,31 +696,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                               const SizedBox(height: 6),
                               _sharePresetChips(),
                               const SizedBox(height: 8),
-                              _fieldLabel(
-                                'Account leverage',
-                                required: true,
-                                suffix: _leverage,
-                              ),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 4,
-                                children: ['1:100', '1:200', '1:500']
-                                    .map(
-                                      (v) => ChoiceChip(
-                                        label: Text(
-                                          v,
-                                          style: const TextStyle(fontSize: 10),
-                                        ),
-                                        selected: _leverage == v,
-                                        onSelected: (_) {
-                                          AppHaptics.selectionClick();
-                                          FocusScope.of(context).unfocus();
-                                          setState(() => _leverage = v);
-                                        },
-                                      ),
-                                    )
-                                    .toList(),
-                              ),
+                              _leverageSelector(card, text, border),
                             ],
                             const SizedBox(height: 12),
                             _sectionTitle(
@@ -761,6 +810,43 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                       ),
                     ),
                   ),
+                  if (_errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: PammColors.rose.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: PammColors.rose.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: PammColors.rose,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: PammColors.rose,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   Divider(height: 1, color: border),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
@@ -782,7 +868,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                         ),
                         const SizedBox(width: 8),
                         OutlinedButton(
-                          onPressed: _closeSheet,
+                          onPressed: _isCreating ? null : _closeSheet,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: text,
                             side: BorderSide(color: border),
@@ -801,7 +887,16 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
                           ),
-                          icon: const Icon(LucideIcons.arrowRight, size: 13),
+                          icon: _isCreating
+                              ? const SizedBox(
+                                  width: 13,
+                                  height: 13,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(LucideIcons.arrowRight, size: 13),
                           label: Text(
                             _isCreating ? 'Creating…' : 'Create account',
                             style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
@@ -816,7 +911,8 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
           ),
         ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }

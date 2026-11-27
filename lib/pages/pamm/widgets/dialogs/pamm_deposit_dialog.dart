@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:crm_app/app_notifications.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
@@ -6,17 +7,30 @@ import 'package:crm_app/services/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+const _pammDepositMinUsd = 10.0;
+const _pammMaxProofBytes = 10 * 1024 * 1024;
+const _pammAllowedProofExtensions = <String>{
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'heic',
+  'heif',
+};
+
 Future<void> showPammDepositDialog(
   BuildContext context, {
   required String accountName,
   required String pammId,
   required bool isManager,
   required Future<void> Function() onSuccess,
+  @visibleForTesting Future<XFile?> Function()? pickProofForTesting,
 }) async {
   if (pammId.trim().isEmpty) {
     showPammMessage(
       context,
       'The PAMM identifier is missing. Refresh the account list and try again.',
+      isError: true,
     );
     return;
   }
@@ -32,12 +46,13 @@ Future<void> showPammDepositDialog(
       accountName: accountName,
       pammId: pammId,
       isManager: isManager,
+      pickProofForTesting: pickProofForTesting,
     ),
   );
   if (submitted == true && context.mounted) {
     await onSuccess();
     if (context.mounted) {
-      showAppMessage('Deposit request submitted successfully.');
+      showPammMessage(context, 'Deposit request submitted successfully.');
     }
   }
 }
@@ -47,11 +62,13 @@ class _PammDepositSheet extends StatefulWidget {
     required this.accountName,
     required this.pammId,
     required this.isManager,
+    this.pickProofForTesting,
   });
 
   final String accountName;
   final String pammId;
   final bool isManager;
+  final Future<XFile?> Function()? pickProofForTesting;
 
   @override
   State<_PammDepositSheet> createState() => _PammDepositSheetState();
@@ -64,27 +81,42 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
   int _method = 0;
   String _manualCurrency = 'INR';
   double _usdInrRate = 0.0;
+  bool _rateLoadFailed = false;
   Map<String, dynamic>? _bankDetails;
   Map<String, dynamic>? _cryptoDetails;
+  int _paymentMethodSeq = 0;
   XFile? _proof;
+  Uint8List? _proofBytes;
   bool _submitting = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    final initialSeq = _paymentMethodSeq;
     unawaited(
       AuthApi.instance.getCryptoDetails().then((response) {
-        if (mounted) {
+        if (mounted && initialSeq == _paymentMethodSeq) {
           setState(() => _cryptoDetails = unwrapPammApiMap(response));
         }
       }).catchError((_) {}),
     );
     unawaited(
       AuthApi.instance.getUsdInrRate().then((rate) {
-        if (rate > 0 && mounted) {
-          setState(() => _usdInrRate = rate);
+        if (!mounted) return;
+        setState(() {
+          if (rate > 0) {
+            _usdInrRate = rate;
+            _rateLoadFailed = false;
+          } else {
+            _rateLoadFailed = true;
+          }
+        });
+      }).catchError((_) {
+        if (mounted) {
+          setState(() => _rateLoadFailed = true);
         }
-      }).catchError((_) {}),
+      }),
     );
   }
 
@@ -95,14 +127,19 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
   }
 
   Future<void> _selectPaymentMethod(int index) async {
+    if (_submitting) return;
     AppHaptics.selectionClick();
     FocusScope.of(context).unfocus();
-    setState(() => _method = index);
+    final seq = ++_paymentMethodSeq;
+    setState(() {
+      _method = index;
+      _errorMessage = null;
+    });
     try {
       final response = index == 0
           ? await AuthApi.instance.getCryptoDetails()
           : await AuthApi.instance.getBankDetails();
-      if (!mounted) return;
+      if (!mounted || seq != _paymentMethodSeq || _method != index) return;
       setState(() {
         if (index == 0) {
           _cryptoDetails = unwrapPammApiMap(response);
@@ -111,83 +148,130 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
         }
       });
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        if (index == 0) {
-          _cryptoDetails = null;
-        } else {
-          _bankDetails = null;
-        }
-      });
+      // Preserve any previously fetched payment instructions instead of wiping them.
     }
   }
 
+  String? _validateProofFile(XFile file, Uint8List bytes) {
+    final name = file.name.trim();
+    final dot = name.lastIndexOf('.');
+    final ext = (dot != -1 && dot < name.length - 1)
+        ? name.substring(dot + 1).toLowerCase()
+        : '';
+    if (ext.isNotEmpty) {
+      if (!_pammAllowedProofExtensions.contains(ext)) {
+        return 'Unsupported file type. Upload a JPG, PNG, or WEBP image.';
+      }
+    } else {
+      final mime = file.mimeType?.toLowerCase().trim() ?? '';
+      if (mime.isNotEmpty && !mime.startsWith('image/')) {
+        return 'Unsupported file type. Upload a JPG, PNG, or WEBP image.';
+      }
+    }
+    if (bytes.isEmpty) {
+      return 'The selected payment proof file is empty. Please choose another image.';
+    }
+    if (bytes.length > _pammMaxProofBytes) {
+      return 'Payment proof image must be 10 MB or smaller.';
+    }
+    return null;
+  }
+
   Future<void> _pickProof() async {
+    if (_submitting) return;
     AppHaptics.selectionClick();
     FocusScope.of(context).unfocus();
     try {
-      final selected = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 90,
-      );
-      if (selected != null && mounted) {
+      final selected = widget.pickProofForTesting != null
+          ? await widget.pickProofForTesting!()
+          : await _picker.pickImage(
+              source: ImageSource.gallery,
+              imageQuality: 90,
+            );
+      if (selected == null || !mounted) return;
+      final bytes = await selected.readAsBytes();
+      if (!mounted) return;
+      final fileError = _validateProofFile(selected, bytes);
+      if (fileError != null) {
         AppHaptics.lightImpact();
-        setState(() => _proof = selected);
+        setState(() => _errorMessage = fileError);
+        return;
       }
+      AppHaptics.lightImpact();
+      setState(() {
+        _proof = selected;
+        _proofBytes = bytes;
+        _errorMessage = null;
+      });
     } catch (_) {
       if (mounted) {
         AppHaptics.lightImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to open the image picker. Please try again.'),
-          ),
+        setState(
+          () => _errorMessage =
+              'Unable to open the image picker. Please try again.',
         );
       }
     }
   }
 
+  double get _minInrAmount =>
+      _usdInrRate > 0 ? (_pammDepositMinUsd * _usdInrRate * 100).ceilToDouble() / 100 : 0;
+
   Future<void> _submit() async {
+    if (_submitting) return;
     FocusScope.of(context).unfocus();
-    final value = double.tryParse(_amount.text.trim());
-    if (value == null || !value.isFinite || value < 10) {
+    final isInrManual = _method == 1 && _manualCurrency == 'INR';
+    final value = parsePammDouble(_amount.text);
+    if (value == null || value <= 0) {
       AppHaptics.lightImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(r'Enter a valid deposit amount of at least $10.00.'),
-        ),
+      setState(
+        () => _errorMessage = 'Enter a valid deposit amount greater than zero.',
       );
+      return;
+    }
+    if (isInrManual && _usdInrRate <= 0) {
+      AppHaptics.lightImpact();
+      setState(
+        () => _errorMessage =
+            'The USD to INR exchange rate is unavailable. Please try again shortly.',
+      );
+      return;
+    }
+    final usdAmount = isInrManual ? value / _usdInrRate : value;
+    if (usdAmount < _pammDepositMinUsd) {
+      AppHaptics.lightImpact();
+      setState(() {
+        _errorMessage = isInrManual
+            ? 'Minimum deposit is ₹${_minInrAmount.toStringAsFixed(2)} INR (\$10.00 USD at ${_usdInrRate.toStringAsFixed(2)} INR/USD).'
+            : r'Enter a valid deposit amount of at least $10.00 USD.';
+      });
       return;
     }
     if (_proof == null) {
       AppHaptics.lightImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload your payment proof.')),
-      );
+      setState(() => _errorMessage = 'Please upload your payment proof.');
       return;
     }
-    if (_method == 1 && _manualCurrency == 'INR' && _usdInrRate <= 0) {
+    final selectedProof = _proof!;
+    final bytes = _proofBytes ?? await selectedProof.readAsBytes();
+    if (!mounted) return;
+    final proofError = _validateProofFile(selectedProof, bytes);
+    if (proofError != null) {
       AppHaptics.lightImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'The USD to INR exchange rate is unavailable. Please try again shortly.',
-          ),
-        ),
-      );
+      setState(() => _errorMessage = proofError);
       return;
     }
     AppHaptics.mediumImpact();
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _errorMessage = null;
+    });
     try {
-      final selectedProof = _proof!;
-      final usdAmount = _method == 1 && _manualCurrency == 'INR'
-          ? value / _usdInrRate
-          : value;
       await AuthApi.instance.submitPammDeposit(
         pammId: widget.pammId,
         amountUsd: usdAmount,
         method: _method == 0 ? 'usdt' : 'manual',
-        proofBytes: await selectedProof.readAsBytes(),
+        proofBytes: bytes,
         proofFileName: selectedProof.name,
         isManager: widget.isManager,
       );
@@ -195,12 +279,12 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
     } catch (error) {
       if (!mounted) return;
       AppHaptics.lightImpact();
-      setState(() => _submitting = false);
-      final message = error is AuthApiException
-          ? error.message
-          : 'Deposit request could not be submitted. Please try again.';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      setState(() {
+        _submitting = false;
+        _errorMessage = error is AuthApiException
+            ? error.message
+            : 'Deposit request could not be submitted. Please try again.';
+      });
     }
   }
 
@@ -218,7 +302,7 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
     final selected = _method == index;
     return Expanded(
       child: InkWell(
-        onTap: () => _selectPaymentMethod(index),
+        onTap: _submitting ? null : () => _selectPaymentMethod(index),
         borderRadius: BorderRadius.circular(13),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 170),
@@ -347,19 +431,23 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
           ),
         );
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              AppHaptics.lightImpact();
-              FocusScope.of(context).unfocus();
-              Navigator.of(context).maybePop();
-            },
+    return PopScope(
+      canPop: !_submitting,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _submitting
+                  ? null
+                  : () {
+                      AppHaptics.lightImpact();
+                      FocusScope.of(context).unfocus();
+                      Navigator.of(context).maybePop();
+                    },
+            ),
           ),
-        ),
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
@@ -441,11 +529,13 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                 ),
                                 IconButton(
                                   tooltip: 'Close',
-                                  onPressed: () {
-                                    AppHaptics.lightImpact();
-                                    FocusScope.of(context).unfocus();
-                                    Navigator.pop(context);
-                                  },
+                                  onPressed: _submitting
+                                      ? null
+                                      : () {
+                                          AppHaptics.lightImpact();
+                                          FocusScope.of(context).unfocus();
+                                          Navigator.pop(context);
+                                        },
                                   icon: const Icon(Icons.close_rounded, color: Colors.white, size: 19),
                                 ),
                               ],
@@ -616,13 +706,16 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                   ChoiceChip(
                                     label: Text(currency),
                                     selected: _manualCurrency == currency,
-                                    onSelected: (_) {
-                                      AppHaptics.selectionClick();
-                                      FocusScope.of(context).unfocus();
-                                      setState(
-                                        () => _manualCurrency = currency,
-                                      );
-                                    },
+                                    onSelected: _submitting
+                                        ? null
+                                        : (_) {
+                                            AppHaptics.selectionClick();
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              _manualCurrency = currency;
+                                              _errorMessage = null;
+                                            });
+                                          },
                                   ),
                               ],
                             ),
@@ -630,10 +723,12 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                           ],
                           TextField(
                             controller: _amount,
+                            enabled: !_submitting,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) =>
+                                setState(() => _errorMessage = null),
                             style: TextStyle(
                               color: modalText,
                               fontSize: 15,
@@ -669,6 +764,12 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                 borderRadius: BorderRadius.circular(13),
                                 borderSide: BorderSide(color: modalBorder),
                               ),
+                              disabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(13),
+                                borderSide: BorderSide(
+                                  color: modalBorder.withValues(alpha: 0.6),
+                                ),
+                              ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(13),
                                 borderSide: const BorderSide(
@@ -686,22 +787,30 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                               final amountText = '$amount';
                               return ChoiceChip(
                                 label: Text('$currencySymbol$amountText'),
-                                selected: _amount.text.trim() == amountText,
-                                onSelected: (_) {
-                                  AppHaptics.selectionClick();
-                                  FocusScope.of(context).unfocus();
-                                  setState(() => _amount.text = amountText);
-                                },
+                                selected: parsePammDouble(_amount.text) ==
+                                    amount.toDouble(),
+                                onSelected: _submitting
+                                    ? null
+                                    : (_) {
+                                        AppHaptics.selectionClick();
+                                        FocusScope.of(context).unfocus();
+                                        setState(() {
+                                          _amount.text = amountText;
+                                          _errorMessage = null;
+                                        });
+                                      },
                               );
                             }).toList(),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            _method == 0
+                            !isInrManual
                                 ? r'Minimum deposit: $10.00 USD'
                                 : _usdInrRate > 0
-                                    ? 'Minimum deposit: 10.00 $_manualCurrency (exchange rate ${_usdInrRate.toStringAsFixed(2)} INR per USD)'
-                                    : 'Exchange rate unavailable. Please try again shortly.',
+                                    ? 'Minimum deposit: ₹${_minInrAmount.toStringAsFixed(2)} INR (\$10.00 USD · rate ${_usdInrRate.toStringAsFixed(2)} INR/USD)'
+                                    : _rateLoadFailed
+                                        ? 'Exchange rate unavailable. Please try again shortly.'
+                                        : 'Loading USD to INR exchange rate...',
                             style: TextStyle(
                               color: modalMuted,
                               fontSize: 11,
@@ -711,7 +820,7 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                           const SizedBox(height: 17),
                           sectionLabel('Upload payment proof'),
                           InkWell(
-                            onTap: _pickProof,
+                            onTap: _submitting ? null : _pickProof,
                             borderRadius: BorderRadius.circular(13),
                             child: Container(
                               padding: const EdgeInsets.all(13),
@@ -782,6 +891,42 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                               ),
                             ),
                           ),
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: PammColors.rose.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: PammColors.rose.withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
+                                    color: PammColors.rose,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: const TextStyle(
+                                        color: PammColors.rose,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 17),
                           SizedBox(
                             height: 45,
@@ -797,13 +942,22 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                 ),
                                 elevation: 0,
                               ),
-                              icon: const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 16,
-                              ),
-                              label: const Text(
-                                'SUBMIT DEPOSIT',
-                                style: TextStyle(
+                              icon: _submitting
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 16,
+                                    ),
+                              label: Text(
+                                _submitting ? 'SUBMITTING...' : 'SUBMIT DEPOSIT',
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: .2,
@@ -837,7 +991,8 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
           ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }

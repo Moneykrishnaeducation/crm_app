@@ -49,6 +49,7 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
   final _alias = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _joining = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -87,6 +88,7 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
   }
 
   Future<void> _submit() async {
+    if (_joining) return;
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) {
       AppHaptics.lightImpact();
@@ -95,48 +97,67 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
     final pammId = int.tryParse(widget.pool.id);
     if (pammId == null) {
       AppHaptics.lightImpact();
-      showPammMessage(
-        context,
-        'This pool is missing its account identifier. Refresh the list and try again.',
+      setState(
+        () => _errorMessage =
+            'This pool is missing its account identifier. Refresh the list and try again.',
       );
       return;
     }
     AppHaptics.mediumImpact();
-    setState(() => _joining = true);
+    setState(() {
+      _joining = true;
+      _errorMessage = null;
+    });
     try {
       final response = await AuthApi.instance.investInPamm(
         pammId: pammId,
         investorName: _alias.text.trim(),
       );
-      await widget.onJoined();
-      if (!mounted) return;
-      Navigator.pop(context, <String, String>{
+      final unwrapped = unwrapPammApiMap(response);
+      final investmentMap = unwrapped['investment'] is Map
+          ? (unwrapped['investment'] as Map).cast<String, dynamic>()
+          : unwrapped;
+      final credentials = <String, String>{
         'name': pammStringValue(
-          response,
-          const ['pamm_name'],
-          fallback: widget.pool.name,
+          unwrapped,
+          const ['pamm_name', 'pam_account_name', 'pool_name', 'name'],
+          fallback: pammStringValue(
+            investmentMap,
+            const ['pamm_name', 'pam_account_name', 'pool_name', 'name'],
+            fallback: widget.pool.name,
+          ),
         ),
         'login': pammStringValue(
-          response,
-          const ['mt5_account_id'],
-          fallback: 'Pending',
+          investmentMap,
+          const ['mt5_account_id', 'pamm_mt5_account_id', 'login'],
+          fallback: pammStringValue(
+            unwrapped,
+            const ['mt5_account_id', 'pamm_mt5_account_id', 'login'],
+            fallback: 'Pending',
+          ),
         ),
         'investorPassword': pammStringValue(
-          response,
-          const ['invest_password'],
-          fallback: 'Not returned',
+          unwrapped,
+          const ['invest_password', 'investor_password'],
+          fallback: pammStringValue(
+            investmentMap,
+            const ['invest_password', 'investor_password'],
+            fallback: 'Not returned',
+          ),
         ),
-      });
+      };
+      await widget.onJoined();
+      if (!mounted) return;
+      Navigator.pop(context, credentials);
     } catch (error) {
       if (mounted) {
         AppHaptics.lightImpact();
-        setState(() => _joining = false);
-        showPammMessage(
-          context,
-          error is AuthApiException
+        setState(() {
+          _joining = false;
+          _errorMessage = error is AuthApiException
               ? error.message
-              : 'Unable to join this PAMM pool.',
-        );
+              : 'Unable to join this PAMM pool.';
+        });
       }
     }
   }
@@ -165,7 +186,9 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
     final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
     final screenHeight = MediaQuery.sizeOf(context).height;
 
-    return Dialog(
+    return PopScope(
+      canPop: !_joining,
+      child: Dialog(
       alignment: Alignment.bottomCenter,
       backgroundColor: card,
       insetPadding: EdgeInsets.zero,
@@ -225,11 +248,13 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {
-                      AppHaptics.lightImpact();
-                      FocusScope.of(context).unfocus();
-                      Navigator.pop(context);
-                    },
+                    onPressed: _joining
+                        ? null
+                        : () {
+                            AppHaptics.lightImpact();
+                            FocusScope.of(context).unfocus();
+                            Navigator.pop(context);
+                          },
                     tooltip: 'Close',
                     icon: Icon(Icons.close, color: muted, size: 18),
                   ),
@@ -248,6 +273,12 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                       fieldLabel('INVESTOR ACCOUNT ALIAS'),
                       TextFormField(
                         controller: _alias,
+                        enabled: !_joining,
+                        onChanged: (_) {
+                          if (_errorMessage != null) {
+                            setState(() => _errorMessage = null);
+                          }
+                        },
                         textCapitalization: TextCapitalization.words,
                         style: TextStyle(
                           color: text,
@@ -459,6 +490,43 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                 ),
               ),
             ),
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: PammColors.rose.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: PammColors.rose.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: PammColors.rose,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            color: PammColors.rose,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Divider(height: 1, color: border),
             Padding(
               padding: EdgeInsets.fromLTRB(
@@ -471,11 +539,13 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        AppHaptics.lightImpact();
-                        FocusScope.of(context).unfocus();
-                        Navigator.pop(context);
-                      },
+                      onPressed: _joining
+                          ? null
+                          : () {
+                              AppHaptics.lightImpact();
+                              FocusScope.of(context).unfocus();
+                              Navigator.pop(context);
+                            },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: text,
                         side: BorderSide(color: border),
@@ -508,12 +578,28 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: Text(
-                        _joining ? 'Joining…' : 'Confirm Investment',
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_joining) ...[
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF17233D),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            _joining ? 'Joining…' : 'Confirm Investment',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -522,6 +608,7 @@ class _JoinPammInvestmentDialogState extends State<_JoinPammInvestmentDialog> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

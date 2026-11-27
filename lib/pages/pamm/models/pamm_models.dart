@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:crm_app/app_haptics.dart';
+import 'package:crm_app/app_notifications.dart';
 import 'package:crm_app/services/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +18,7 @@ class PammPool {
     this.server = 'VTIndex-Live',
     this.status = 'Open',
     this.manager = 'PAMM Manager',
+    this.hasPoolDetails = true,
   });
 
   final String id;
@@ -30,6 +31,7 @@ class PammPool {
   final double pnl;
   final String server;
   final String manager;
+  final bool hasPoolDetails;
   String status;
 
   /// Placeholder items used by [PammSkeletonizer] while lists load.
@@ -193,10 +195,30 @@ String pammStringValue(
 }) =>
     pammFirstValue(row, keys)?.toString() ?? fallback;
 
+double? parsePammDouble(String raw) {
+  final cleaned = raw.trim().replaceAll(',', '');
+  if (cleaned.isEmpty) return null;
+  final parsed = double.tryParse(cleaned);
+  if (parsed == null || !parsed.isFinite) return null;
+  return parsed;
+}
+
 double pammNumberValue(Map<String, dynamic> row, List<String> keys) {
   final value = pammFirstValue(row, keys);
   if (value is num) return value.toDouble();
-  return double.tryParse(value?.toString().replaceAll(',', '') ?? '') ?? 0;
+  return parsePammDouble(value?.toString() ?? '') ?? 0;
+}
+
+bool _isClosedPammStatus(Map<String, dynamic> row) {
+  if (row['is_active'] == false ||
+      row['enabled'] == false ||
+      row['is_accepting_investors'] == false) {
+    return true;
+  }
+  final statusValue = pammStringValue(row, const ['status']).trim().toLowerCase();
+  return statusValue.contains('clos') ||
+      statusValue.contains('disab') ||
+      statusValue.contains('inact');
 }
 
 PammPool pammPoolFromMap(Map<String, dynamic> row) {
@@ -210,11 +232,7 @@ PammPool pammPoolFromMap(Map<String, dynamic> row) {
       pammStringValue(row, const ['leverage'], fallback: '500');
   final leverage =
       leverageValue.startsWith('1:') ? leverageValue : '1:$leverageValue';
-  final acceptsInvestors = row['is_accepting_investors'];
-  final statusValue = pammStringValue(row, const ['status']);
-  final status = acceptsInvestors is bool
-      ? (acceptsInvestors ? 'Open' : 'Closed')
-      : (statusValue.toLowerCase().contains('clos') ? 'Closed' : 'Open');
+  final status = _isClosedPammStatus(row) ? 'Closed' : 'Open';
   return PammPool(
     pammStringValue(
       row,
@@ -243,30 +261,66 @@ PammPool pammPoolFromMap(Map<String, dynamic> row) {
 }
 
 PammInvestment pammInvestmentFromMap(Map<String, dynamic> row) {
+  final rawPamm = row['pamm'] ?? row['pool'];
+  final nestedPamm = rawPamm is Map ? rawPamm.cast<String, dynamic>() : null;
+
   final totalDeposited =
       pammNumberValue(row, const ['total_deposited', 'amount']);
   final totalWithdrawn = pammNumberValue(row, const ['total_withdrawn']);
-  return PammInvestment(
-    pammStringValue(
+
+  final poolNameKeys = const [
+    'pam_account_name',
+    'pamm_name',
+    'pool_name',
+    'name',
+  ];
+  var resolvedName = pammStringValue(row, poolNameKeys);
+  if (resolvedName.isEmpty && nestedPamm != null) {
+    resolvedName = pammStringValue(nestedPamm, poolNameKeys);
+  }
+  if (resolvedName.isEmpty) {
+    resolvedName = pammStringValue(
       row,
-      const ['pamm_mt5_account_id', 'mt5_account_id', 'login', 'account_id'],
-    ),
-    pammStringValue(
-      row,
-      const [
-        'user_name',
-        'investor_name',
-        'pam_account_name',
-        'name',
-        'user_email',
-      ],
+      const ['user_name', 'investor_name', 'user_email'],
       fallback: 'PAMM Investment',
-    ),
-    pammStringValue(
-      row,
-      const ['manager_name', 'manager'],
-      fallback: 'PAMM Manager',
-    ),
+    );
+  }
+
+  var login = pammStringValue(
+    row,
+    const ['pamm_mt5_account_id', 'mt5_account_id', 'login', 'account_id'],
+  );
+  if (login.isEmpty && nestedPamm != null) {
+    login = pammStringValue(
+      nestedPamm,
+      const ['mt5_account_id', 'pamm_mt5_account_id', 'login'],
+    );
+  }
+
+  var manager = pammStringValue(row, const ['manager_name', 'manager']);
+  if (manager.isEmpty && nestedPamm != null) {
+    manager = pammStringValue(nestedPamm, const ['manager_name', 'manager']);
+  }
+  if (manager.isEmpty) {
+    manager = 'PAMM Manager';
+  }
+
+  final directPammId = pammStringValue(
+    row,
+    const ['pamm_id', 'pool_id', 'pamm_internal_id'],
+  );
+  final nestedPammId = nestedPamm != null
+      ? pammStringValue(nestedPamm, const ['id', 'pamm_id', 'pamm_internal_id'])
+      : (rawPamm is num || rawPamm is String) &&
+              rawPamm.toString().trim().isNotEmpty
+          ? rawPamm.toString().trim()
+          : '';
+  final pammId = directPammId.isNotEmpty ? directPammId : nestedPammId;
+
+  return PammInvestment(
+    login,
+    resolvedName,
+    manager,
     pammNumberValue(
       row,
       const [
@@ -281,7 +335,7 @@ PammInvestment pammInvestmentFromMap(Map<String, dynamic> row) {
     (totalDeposited - totalWithdrawn).clamp(0, double.infinity).toDouble(),
     pammNumberValue(row, const ['share_percentage', 'allocation_percentage']),
     id: pammStringValue(row, const ['id']),
-    pammId: pammStringValue(row, const ['pamm_id', 'id']),
+    pammId: pammId,
     managerProfitShare: pammNumberValue(
       row,
       const ['manager_profit_share_accrued', 'pamm_profit_share'],
@@ -323,20 +377,170 @@ String generatePammPassword() {
   return '${pick(uppercase)}${List.generate(3, (_) => pick(lowercase)).join()}_${List.generate(3, (_) => pick(digits)).join()}';
 }
 
-String formatPammMoney(double value) => '\$${value.toStringAsFixed(2)}';
+String formatPammMoney(double value) {
+  if (!value.isFinite) return r'$0.00';
+  final formatted = value.abs().toStringAsFixed(2);
+  return value < 0 && formatted != '0.00' ? '-\$$formatted' : '\$$formatted';
+}
 
 Future<void> copyPammValue(BuildContext context, String value) async {
   AppHaptics.lightImpact();
   await Clipboard.setData(ClipboardData(text: value));
   if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copied to clipboard')),
+    showPammMessage(context, 'Copied to clipboard');
+  }
+}
+
+OverlayEntry? _activePammOverlayEntry;
+
+void _showPammOverlayBanner(
+  OverlayState overlay,
+  String message, {
+  bool isError = false,
+}) {
+  _activePammOverlayEntry?.remove();
+  _activePammOverlayEntry = null;
+  late final OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (overlayContext) => _PammOverlayToast(
+      message: message,
+      isError: isError,
+      onDismiss: () {
+        if (_activePammOverlayEntry == entry) {
+          _activePammOverlayEntry = null;
+        }
+        if (entry.mounted) {
+          entry.remove();
+        }
+      },
+    ),
+  );
+  _activePammOverlayEntry = entry;
+  overlay.insert(entry);
+}
+
+class _PammOverlayToast extends StatefulWidget {
+  const _PammOverlayToast({
+    required this.message,
+    required this.isError,
+    required this.onDismiss,
+  });
+
+  final String message;
+  final bool isError;
+  final VoidCallback onDismiss;
+
+  @override
+  State<_PammOverlayToast> createState() => _PammOverlayToastState();
+}
+
+class _PammOverlayToastState extends State<_PammOverlayToast>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: widget.isError ? 3500 : 2500),
+    )..forward().whenComplete(() {
+        if (mounted) widget.onDismiss();
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor =
+        widget.isError ? const Color(0xFF2E1014) : const Color(0xFF101F34);
+    final accentColor =
+        widget.isError ? const Color(0xFFF87171) : const Color(0xFF60A5FA);
+    return Positioned(
+      top: MediaQuery.paddingOf(context).top + 12,
+      left: 16,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: GestureDetector(
+              onTap: widget.onDismiss,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: accentColor.withValues(alpha: 0.4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.28),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      widget.isError
+                          ? Icons.error_outline
+                          : Icons.info_outline,
+                      color: accentColor,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.message,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
-void showPammMessage(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
+void showPammMessage(
+  BuildContext context,
+  String message, {
+  bool isError = false,
+}) {
+  if (!context.mounted) return;
+  final route = ModalRoute.of(context);
+  final hasModalContext = route is PopupRoute || route?.isCurrent == false;
+  if (hasModalContext) {
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay != null) {
+      _showPammOverlayBanner(overlay, message, isError: isError);
+      return;
+    }
+  }
+  if (appScaffoldMessengerKey.currentState != null) {
+    showAppMessage(
+      message,
+      type: isError ? AppFeedbackType.error : AppFeedbackType.info,
+    );
+    return;
+  }
+  ScaffoldMessenger.maybeOf(context)
+    ?..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }

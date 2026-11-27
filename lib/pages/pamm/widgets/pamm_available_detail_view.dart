@@ -33,11 +33,12 @@ class PammAvailableDetailView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 900;
-        final status = investment != null
-            ? 'Active allocation'
-            : pool.status == 'Open'
-                ? 'Open for investors'
-                : 'Closed';
+        final isPoolClosed = pool.status == 'Closed';
+        final status = isPoolClosed
+            ? 'Closed'
+            : investment != null
+                ? 'Active allocation'
+                : 'Open for investors';
         final specifications = PammDetailCard(
           title: 'Pool specifications',
           subtitle: 'Account and connection details',
@@ -74,7 +75,9 @@ class PammAvailableDetailView extends StatelessWidget {
               PammDetailRow(label: 'Manager', value: pool.manager),
               PammDetailRow(
                 label: 'Joined on',
-                value: investment?.joinedOn ?? 'Not joined',
+                value: (investment?.joinedOn.trim().isNotEmpty ?? false)
+                    ? investment!.joinedOn
+                    : 'Not joined',
               ),
               if (investment != null) ...[
                 PammDetailRow(
@@ -125,7 +128,9 @@ class PammAvailableDetailView extends StatelessWidget {
                   ),
                   PammDetailMetric(
                     title: 'Pool equity',
-                    value: formatPammMoney(pool.equity),
+                    value: pool.hasPoolDetails
+                        ? formatPammMoney(pool.equity)
+                        : '—',
                   ),
                 ],
               ),
@@ -205,7 +210,9 @@ class PammAvailableDetailView extends StatelessWidget {
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Profit share',
-                            value: '${pool.share.toStringAsFixed(2)}%',
+                            value: pool.hasPoolDetails
+                                ? '${pool.share.toStringAsFixed(2)}%'
+                                : '—',
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -239,7 +246,9 @@ class PammAvailableDetailView extends StatelessWidget {
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Profit share',
-                            value: '${pool.share.toStringAsFixed(2)}%',
+                            value: pool.hasPoolDetails
+                                ? '${pool.share.toStringAsFixed(2)}%'
+                                : '—',
                           ),
                         ),
                       ],
@@ -443,7 +452,7 @@ class _InvestorHeroCard extends StatelessWidget {
             children: [
               if (investment == null)
                 FilledButton.icon(
-                  onPressed: status == 'Closed'
+                  onPressed: pool.status == 'Closed'
                       ? null
                       : () {
                           AppHaptics.lightImpact();
@@ -462,7 +471,7 @@ class _InvestorHeroCard extends StatelessWidget {
                 )
               else ...[
                 FilledButton.icon(
-                  onPressed: status == 'Closed'
+                  onPressed: pool.status == 'Closed'
                       ? null
                       : () {
                           AppHaptics.lightImpact();

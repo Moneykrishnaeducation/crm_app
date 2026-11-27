@@ -75,6 +75,8 @@ class PammPoolCard extends StatelessWidget {
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final isOpen = pool.status != 'Closed';
+    final statusColor = isOpen ? PammColors.green : PammColors.closedRose;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -193,10 +195,10 @@ class PammPoolCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: PammColors.green.withValues(alpha: 0.12),
+                  color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: PammColors.green.withValues(alpha: 0.3),
+                    color: statusColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -205,16 +207,16 @@ class PammPoolCard extends StatelessWidget {
                     Container(
                       width: 6,
                       height: 6,
-                      decoration: const BoxDecoration(
-                        color: PammColors.green,
+                      decoration: BoxDecoration(
+                        color: statusColor,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      'ACTIVE',
+                      isOpen ? 'OPEN' : 'CLOSED',
                       style: GoogleFonts.poppins(
-                        color: PammColors.green,
+                        color: statusColor,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.4,
@@ -257,8 +259,12 @@ class PammPoolCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   managed
-                      ? 'Managed PAMM Pool'
-                      : 'Open for Investor Allocation',
+                      ? (isOpen
+                          ? 'Managed PAMM Pool'
+                          : 'Pool Closed for Deposits')
+                      : (isOpen
+                          ? 'Open for Investor Allocation'
+                          : 'Closed for New Investors'),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
@@ -294,7 +300,7 @@ class PammPoolCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 7),
                 FilledButton(
-                  onPressed: onDeposit == null
+                  onPressed: !isOpen || onDeposit == null
                       ? null
                       : () {
                           AppHaptics.lightImpact();
@@ -320,7 +326,7 @@ class PammPoolCard extends StatelessWidget {
                   children: [
                     const SizedBox(width: 6),
                     FilledButton.icon(
-                      onPressed: onInvest == null
+                      onPressed: !isOpen || onInvest == null
                           ? null
                           : () {
                               AppHaptics.lightImpact();

@@ -17,10 +17,10 @@ class PammPage extends StatefulWidget {
   final ValueChanged<String>? onSelectPage;
 
   @override
-  State<PammPage> createState() => _PammPageState();
+  State<PammPage> createState() => PammPageState();
 }
 
-class _PammPageState extends State<PammPage> {
+class PammPageState extends State<PammPage> {
   int _tab = 0;
   String _query = '';
   String _selectedFilter = 'All Pools';
@@ -38,6 +38,34 @@ class _PammPageState extends State<PammPage> {
   String? _pammListError;
   String? _togglingPammId;
   String? _syncingPammId;
+  final Map<int, int> _listLoadSeq = <int, int>{};
+  int _listsLoadSeq = 0;
+  int _connectedInvestorsSeq = 0;
+
+  bool get hasActiveSubView =>
+      _connectedInvestorPool != null ||
+      _selectedManagedPool != null ||
+      _selectedAvailablePool != null;
+
+  bool popSubView() {
+    if (_connectedInvestorPool != null) {
+      setState(() {
+        _connectedInvestorPool = null;
+        _connectedInvestorsSeq++;
+        _loadingConnectedInvestors = false;
+      });
+      return true;
+    }
+    if (_selectedManagedPool != null) {
+      setState(() => _selectedManagedPool = null);
+      return true;
+    }
+    if (_selectedAvailablePool != null) {
+      setState(() => _selectedAvailablePool = null);
+      return true;
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -51,8 +79,23 @@ class _PammPageState extends State<PammPage> {
     super.dispose();
   }
 
+  PammPool? _findPoolMatch(List<PammPool> pools, PammPool target) {
+    for (final item in pools) {
+      if ((target.id.isNotEmpty && item.id == target.id) ||
+          (target.login.isNotEmpty && item.login == target.login)) {
+        return item;
+      }
+    }
+    return null;
+  }
+
   Future<void> _loadPammLists({List<int>? lists}) async {
     final requestedLists = (lists ?? [_tab]).toSet().toList();
+    final expectedSeq = <int, int>{};
+    for (final index in requestedLists) {
+      expectedSeq[index] = (_listLoadSeq[index] = (_listLoadSeq[index] ?? 0) + 1);
+    }
+    final overallSeq = ++_listsLoadSeq;
     if (mounted) {
       setState(() {
         _loadingPammLists = true;
@@ -83,6 +126,7 @@ class _PammPageState extends State<PammPage> {
     setState(() {
       for (var i = 0; i < requestedLists.length; i++) {
         final index = requestedLists[i];
+        if (expectedSeq[index] != _listLoadSeq[index]) continue;
         final response = responses[i];
         if (response == null) continue;
         final rows = extractPammRows(response);
@@ -91,29 +135,66 @@ class _PammPageState extends State<PammPage> {
             _managed
               ..clear()
               ..addAll(rows.map(pammPoolFromMap));
+            if (_selectedManagedPool != null) {
+              final refreshed = _findPoolMatch(_managed, _selectedManagedPool!);
+              if (refreshed != null) {
+                _selectedManagedPool = refreshed;
+              }
+            }
             break;
           case 1:
             _available
               ..clear()
               ..addAll(rows.map(pammPoolFromMap));
+            if (_selectedAvailablePool != null) {
+              final refreshed =
+                  _findPoolMatch(_available, _selectedAvailablePool!);
+              if (refreshed != null) {
+                _selectedAvailablePool = refreshed;
+              }
+            }
             break;
           case 2:
             _investments
               ..clear()
               ..addAll(rows.map(pammInvestmentFromMap));
+            if (_selectedAvailablePool != null &&
+                !_selectedAvailablePool!.hasPoolDetails) {
+              final refreshedInv = _investmentFor(_selectedAvailablePool!);
+              if (refreshedInv != null) {
+                _selectedAvailablePool = PammPool(
+                  refreshedInv.name,
+                  refreshedInv.login,
+                  _selectedAvailablePool!.leverage,
+                  refreshedInv.value,
+                  _selectedAvailablePool!.share,
+                  id: refreshedInv.pammId.isNotEmpty
+                      ? refreshedInv.pammId
+                      : _selectedAvailablePool!.id,
+                  pnl: refreshedInv.pnl,
+                  manager: refreshedInv.manager,
+                  server: _selectedAvailablePool!.server,
+                  status: _selectedAvailablePool!.status,
+                  hasPoolDetails: false,
+                );
+              }
+            }
             break;
         }
       }
-      _loadingPammLists = false;
-      if (errors.isNotEmpty) {
-        _pammListError = responses.every((response) => response == null)
-            ? 'PAMM accounts could not be loaded.'
-            : 'Some PAMM account data could not be refreshed.';
+      if (overallSeq == _listsLoadSeq) {
+        _loadingPammLists = false;
+        if (errors.isNotEmpty) {
+          _pammListError = responses.every((response) => response == null)
+              ? 'PAMM accounts could not be loaded.'
+              : 'Some PAMM account data could not be refreshed.';
+        }
       }
     });
   }
 
   Future<void> _loadConnectedInvestors(PammPool pool) async {
+    final seq = ++_connectedInvestorsSeq;
     final pammId = int.tryParse(pool.id);
     setState(() {
       _connectedInvestorPool = pool;
@@ -130,14 +211,22 @@ class _PammPageState extends State<PammPage> {
     }
     try {
       final response = await AuthApi.instance.getPammInvestors(pammId);
-      if (!mounted) return;
+      if (!mounted ||
+          seq != _connectedInvestorsSeq ||
+          _connectedInvestorPool?.id != pool.id) {
+        return;
+      }
       setState(() {
         _connectedInvestors =
             extractPammRows(response).map(pammInvestmentFromMap).toList();
         _loadingConnectedInvestors = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted ||
+          seq != _connectedInvestorsSeq ||
+          _connectedInvestorPool?.id != pool.id) {
+        return;
+      }
       setState(() {
         _loadingConnectedInvestors = false;
         _connectedInvestorsError = error is AuthApiException
@@ -149,14 +238,42 @@ class _PammPageState extends State<PammPage> {
 
   PammInvestment? _investmentFor(PammPool pool) {
     for (final investment in _investments) {
-      if (investment.login == pool.login) return investment;
+      if ((pool.id.isNotEmpty && investment.pammId == pool.id) ||
+          (pool.login.isNotEmpty && investment.login == pool.login)) {
+        return investment;
+      }
     }
     return null;
   }
 
+  String _resolveInvestmentPammId(PammInvestment item) {
+    if (item.pammId.isNotEmpty) return item.pammId;
+    if (_selectedAvailablePool != null &&
+        _selectedAvailablePool!.id.isNotEmpty &&
+        _selectedAvailablePool!.login == item.login) {
+      return _selectedAvailablePool!.id;
+    }
+    for (final pool in [..._available, ..._managed]) {
+      if (pool.id.isNotEmpty &&
+          item.login.isNotEmpty &&
+          pool.login == item.login) {
+        return pool.id;
+      }
+    }
+    return '';
+  }
+
   void _openPoolTrades([PammPool? pool]) {
     final targetPool = pool ?? _selectedManagedPool ?? _selectedAvailablePool;
-    final login = targetPool?.login ?? '3503';
+    final login = targetPool?.login.trim() ?? '';
+    if (login.isEmpty) {
+      showPammMessage(
+        context,
+        'This pool is missing its MT5 login. Refresh the list and try again.',
+        isError: true,
+      );
+      return;
+    }
     final name = targetPool?.name ?? 'PAMM Pool';
     PoolTradesModal.show(
       context,
@@ -167,11 +284,13 @@ class _PammPageState extends State<PammPage> {
   }
 
   Future<void> _syncPammEquity(PammPool pool) async {
+    if (_syncingPammId != null) return;
     final pammId = int.tryParse(pool.id);
     if (pammId == null) {
       showPammMessage(
         context,
         'This pool is missing its account identifier. Refresh the list and try again.',
+        isError: true,
       );
       return;
     }
@@ -180,16 +299,12 @@ class _PammPageState extends State<PammPage> {
     try {
       await AuthApi.instance.syncPammEquity(pammId);
       await _loadPammLists(lists: const [0]);
-      if (!mounted) return;
-      PammPool? refreshedPool;
-      for (final item in _managed) {
-        if (item.id == pool.id) {
-          refreshedPool = item;
-          break;
+      if (!mounted || _selectedManagedPool == null) return;
+      if (_selectedManagedPool!.id == pool.id) {
+        final refreshedPool = _findPoolMatch(_managed, pool);
+        if (refreshedPool != null) {
+          setState(() => _selectedManagedPool = refreshedPool);
         }
-      }
-      if (refreshedPool != null) {
-        setState(() => _selectedManagedPool = refreshedPool);
       }
       showPammMessage(context, 'PAMM balance synchronized from MT5.');
     } catch (error) {
@@ -199,6 +314,7 @@ class _PammPageState extends State<PammPage> {
           error is AuthApiException
               ? error.message
               : 'MT5 synchronization failed. Please try again.',
+          isError: true,
         );
       }
     } finally {
@@ -287,7 +403,8 @@ class _PammPageState extends State<PammPage> {
   void _openInvestmentDetails(PammInvestment investment) {
     PammPool? pool;
     for (final account in [..._available, ..._managed]) {
-      if (account.login == investment.login) {
+      if ((investment.pammId.isNotEmpty && account.id == investment.pammId) ||
+          (investment.login.isNotEmpty && account.login == investment.login)) {
         pool = account;
         break;
       }
@@ -296,11 +413,14 @@ class _PammPageState extends State<PammPage> {
         PammPool(
           investment.name,
           investment.login,
-          '1:500',
+          '—',
           investment.value,
-          investment.share,
+          0,
+          id: investment.pammId,
           pnl: investment.pnl,
           manager: investment.manager,
+          server: '—',
+          hasPoolDetails: false,
         );
     setState(() {
       _selectedAvailablePool = selectedPool;
@@ -362,7 +482,13 @@ class _PammPageState extends State<PammPage> {
         _selectedAvailablePool == null &&
         _connectedInvestorPool == null;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !hasActiveSubView,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        popSubView();
+      },
+      child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Padding(
         padding: const EdgeInsets.only(bottom: 84),
@@ -376,8 +502,7 @@ class _PammPageState extends State<PammPage> {
                       investors: _connectedInvestors,
                       loading: _loadingConnectedInvestors,
                       error: _connectedInvestorsError,
-                      onClose: () =>
-                          setState(() => _connectedInvestorPool = null),
+                      onClose: popSubView,
                       onRetry: () =>
                           _loadConnectedInvestors(_connectedInvestorPool!),
                     )
@@ -386,8 +511,7 @@ class _PammPageState extends State<PammPage> {
                           pool: _selectedManagedPool!,
                           togglingPammId: _togglingPammId,
                           syncingPammId: _syncingPammId,
-                          onBack: () =>
-                              setState(() => _selectedManagedPool = null),
+                          onBack: popSubView,
                           onLoadConnectedInvestors: () =>
                               _loadConnectedInvestors(_selectedManagedPool!),
                           onTogglePool: () =>
@@ -414,20 +538,17 @@ class _PammPageState extends State<PammPage> {
                               pool: _selectedAvailablePool!,
                               investment:
                                   _investmentFor(_selectedAvailablePool!),
-                              onBack: () =>
-                                  setState(() => _selectedAvailablePool = null),
+                              onBack: popSubView,
                               onJoin: () =>
                                   _openJoinPool(_selectedAvailablePool!),
                               onDeposit: (inv) => _openDeposit(
                                 accountName: inv.name,
-                                pammId:
-                                    inv.pammId.isNotEmpty ? inv.pammId : inv.id,
+                                pammId: _resolveInvestmentPammId(inv),
                                 isManager: false,
                               ),
                               onWithdraw: (inv) => _openWithdraw(
                                 accountName: inv.name,
-                                pammId:
-                                    inv.pammId.isNotEmpty ? inv.pammId : inv.id,
+                                pammId: _resolveInvestmentPammId(inv),
                                 isManager: false,
                                 availableBalance: inv.value,
                               ),
@@ -510,8 +631,6 @@ class _PammPageState extends State<PammPage> {
                                       ),
                                       PammInvestmentsTabView(
                                         investments: _investments,
-                                        managedCount: _managed.length,
-                                        isManagedTab: _tab == 0,
                                         loading: _loadingPammLists,
                                         onRefresh: () =>
                                             _loadPammLists(lists: const [2]),
@@ -529,9 +648,7 @@ class _PammPageState extends State<PammPage> {
                                         onOpenDetails: _openInvestmentDetails,
                                         onDeposit: (item) => _openDeposit(
                                           accountName: item.name,
-                                          pammId: item.pammId.isNotEmpty
-                                              ? item.pammId
-                                              : item.id,
+                                          pammId: _resolveInvestmentPammId(item),
                                           isManager: false,
                                         ),
                                       ),
@@ -543,6 +660,7 @@ class _PammPageState extends State<PammPage> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

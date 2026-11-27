@@ -406,35 +406,45 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
         children: [
           // Top Row: Alias Badge & ID with copy icon
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4.5,
-                ),
-                decoration: BoxDecoration(
-                  color: _c.blueLight,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _c.blueBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.wallet, size: 12, color: _c.blue),
-                    const SizedBox(width: 5),
-                    Text(
-                      acc.alias.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        color: _c.blue,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
-                      ),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 190),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4.5,
                     ),
-                  ],
+                    decoration: BoxDecoration(
+                      color: _c.blueLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _c.blueBorder),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.wallet, size: 12, color: _c.blue),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            acc.alias.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              color: _c.blue,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
+              const SizedBox(width: 6),
               InkWell(
                 onTap: () => _copyToClipboard(acc.accountId, 'Account ID'),
                 borderRadius: BorderRadius.circular(8),
@@ -444,7 +454,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                     minWidth: 44,
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
+                    horizontal: 6,
                     vertical: 6,
                   ),
                   alignment: Alignment.center,
@@ -453,9 +463,11 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                     children: [
                       Text(
                         'ID: ${acc.accountId}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
                           color: _c.muted,
-                          fontSize: 11.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

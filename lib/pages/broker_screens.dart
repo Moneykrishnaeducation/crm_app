@@ -2960,6 +2960,222 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
     );
   }
 
+  // ─── Shimmer skeleton helpers ─────────────────────────────────────────────
+
+  /// Skeleton placeholder matching [_buildOpenPositionCard] layout.
+  Widget _buildOpenPositionSkeleton(bool isDark) {
+    return AppSkeletonizer(
+      enabled: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 9),
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF162238) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [
+                  Container(width: 60, height: 16, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                  const SizedBox(width: 8),
+                  Container(width: 36, height: 20, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(6))),
+                  const SizedBox(width: 6),
+                  Container(width: 48, height: 14, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                ]),
+                Container(width: 64, height: 26, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(8))),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < 3; i++)
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Container(width: 52, height: 10, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(height: 4),
+                    Container(width: 44, height: 13, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                  ]),
+              ],
+            ),
+            const SizedBox(height: 11),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(width: 120, height: 10, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                Container(width: 60, height: 28, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(8))),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Skeleton placeholder matching [_buildPendingOrderCard] layout.
+  Widget _buildPendingOrderSkeleton(bool isDark) {
+    return AppSkeletonizer(
+      enabled: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 9),
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF162238) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [
+                  Container(width: 60, height: 16, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                  const SizedBox(width: 8),
+                  Container(width: 72, height: 20, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(6))),
+                ]),
+                Container(width: 60, height: 14, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < 3; i++)
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Container(width: 52, height: 10, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(height: 4),
+                    Container(width: 44, height: 13, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                  ]),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(width: 68, height: 28, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(8))),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Skeleton placeholder matching [_buildClosedPositionCard] layout.
+  Widget _buildClosedPositionSkeleton(bool isDark) {
+    return AppSkeletonizer(
+      enabled: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 9),
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF162238) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [
+                  Container(width: 60, height: 16, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                  const SizedBox(width: 8),
+                  Container(width: 36, height: 20, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(6))),
+                  const SizedBox(width: 6),
+                  Container(width: 48, height: 14, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                ]),
+                Container(width: 64, height: 26, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(8))),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < 3; i++)
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Container(width: 52, height: 10, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(height: 4),
+                    Container(width: 44, height: 13, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                  ]),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Skeleton placeholder matching the Funds tab transaction row layout.
+  Widget _buildFundTransactionSkeleton(bool isDark) {
+    return AppSkeletonizer(
+      enabled: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF162238) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? const Color(0xFF223452) : const Color(0xFFE2E7EF),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(width: 90, height: 13, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                  const SizedBox(height: 5),
+                  Container(width: 140, height: 10, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(3))),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(width: 60, height: 14, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(4))),
+                const SizedBox(height: 5),
+                Container(width: 46, height: 18, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(6))),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── End skeleton helpers ──────────────────────────────────────────────────
+
   void _openAccountSwitchSheet(BuildContext context) {
     if (_accountsLoading) {
       showAppMessage('Trading accounts are still loading.');
@@ -3874,10 +4090,11 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   Widget _buildOpenPositionsSliver(BuildContext context, bool isDark) {
     if ((_accountsLoading && _remoteOpenPositions == null) ||
         _positionsLoading) {
-      return const SliverToBoxAdapter(
-        child: Padding(
-          padding: EdgeInsets.all(28),
-          child: Center(child: CircularProgressIndicator()),
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        sliver: SliverList.builder(
+          itemCount: 5,
+          itemBuilder: (_, i) => _buildOpenPositionSkeleton(isDark),
         ),
       );
     }
@@ -4120,29 +4337,11 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
   Widget _buildPendingOrdersSliver(BuildContext context, bool isDark) {
     if ((_accountsLoading && _remotePendingOrders == null) ||
         _pendingLoading) {
-      return const SliverToBoxAdapter(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 2.6),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Loading live pending orders...',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        sliver: SliverList.builder(
+          itemCount: 5,
+          itemBuilder: (_, i) => _buildPendingOrderSkeleton(isDark),
         ),
       );
     }
@@ -4359,10 +4558,11 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
 
   Widget _buildClosedPositionsSliver(BuildContext context, bool isDark) {
     if (_closedPositionsLoading) {
-      return const SliverToBoxAdapter(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40),
-          child: Center(child: CircularProgressIndicator()),
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        sliver: SliverList.builder(
+          itemCount: 5,
+          itemBuilder: (_, i) => _buildClosedPositionSkeleton(isDark),
         ),
       );
     }
@@ -4634,9 +4834,11 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
           ),
         ),
         if (_transactionsLoading)
-          const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator()),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+            child: Column(
+              children: List.generate(5, (_) => _buildFundTransactionSkeleton(isDark)),
+            ),
           )
         else if (_transactionsError != null)
           Padding(

@@ -1355,7 +1355,7 @@ class MamPageState extends State<MamPage> {
                         children: [
                           Flexible(
                             child: Text(
-                              'MT5 Node: #${master.login} • ${master.allocationMethod}',
+                              'MT5 Account: ${master.login} • ${master.allocationMethod}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(color: _c.muted, fontSize: 10.5),
@@ -2119,7 +2119,7 @@ class MamPageState extends State<MamPage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Account #${account.accountId} • Master #${account.masterAccountId}',
+                        'Account ${account.accountId} • Master ${account.masterAccountId}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: _c.muted, fontSize: 10.5),
@@ -2250,7 +2250,7 @@ class MamPageState extends State<MamPage> {
       context,
       withdrawal: false,
       accountId: master.login,
-      accountLabel: '${master.name} · Master #${master.login}',
+      accountLabel: '${master.name} · Master ${master.login}',
       onCompleted: (_) {
         _loadMamAccounts();
       },
@@ -2262,7 +2262,7 @@ class MamPageState extends State<MamPage> {
       context,
       withdrawal: true,
       accountId: master.login,
-      accountLabel: '${master.name} · Master #${master.login}',
+      accountLabel: '${master.name} · Master ${master.login}',
       onCompleted: (_) {
         _loadMamAccounts();
       },
@@ -2388,7 +2388,7 @@ class MamPageState extends State<MamPage> {
         final alias = _availableText(item['name'] ?? item['mam_account_name']);
         accounts.add(MamInvestorAccount(
           accountId: accountId,
-          alias: alias.isEmpty ? 'MAM Investment #$accountId' : alias,
+          alias: alias.isEmpty ? 'MAM Investment $accountId' : alias,
           masterAccountId: masterId,
           balance: balance,
           totalProfit: profit,
@@ -2398,7 +2398,7 @@ class MamPageState extends State<MamPage> {
         final createdAt = _availableText(item['created_at']);
         subscriptions.add(MamInvestmentSubscription(
           id: accountId,
-          poolName: alias.isEmpty ? 'MAM Investment #$accountId' : alias,
+          poolName: alias.isEmpty ? 'MAM Investment $accountId' : alias,
           managerLogin: masterId,
           initialCapital: _availableNumber(item['amount_invested']),
           currentEquity: equity,
@@ -4365,7 +4365,7 @@ class _CreateMamMasterSheetState extends State<_CreateMamMasterSheet> {
               child: FilledButton(
                 onPressed: () {
                   final name = _nameController.text.trim().isEmpty
-                      ? 'Custom MAM Pool #$_selectedLogin'
+                      ? 'Custom MAM Pool $_selectedLogin'
                       : _nameController.text.trim();
                   final balance =
                       double.tryParse(_balanceController.text) ?? 10000.0;

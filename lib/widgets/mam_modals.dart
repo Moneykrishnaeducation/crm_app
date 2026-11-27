@@ -1522,7 +1522,7 @@ class EditCopyMultipliersModal extends StatefulWidget {
   final double initialFactor;
   final bool initialOrderCloning;
   final int initialCloneCount;
-  final void Function(
+  final Future<void> Function(
     String method,
     double factor,
     bool orderCloning,
@@ -1540,6 +1540,7 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
   late double _factor;
   late bool _orderCloning;
   int _cloneCount = 1;
+  bool _isDeploying = false;
   late final TextEditingController _factorController;
 
   static const List<double> _presets = [0.50, 1.00, 1.50, 2.00, 3.00];
@@ -1564,9 +1565,20 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
     super.dispose();
   }
 
-  void _deploy() {
-    Navigator.pop(context);
-    widget.onDeploy?.call(_method, _factor, _orderCloning, _cloneCount);
+  Future<void> _deploy() async {
+    if (_isDeploying) return;
+    setState(() => _isDeploying = true);
+    try {
+      await widget.onDeploy?.call(
+        _method,
+        _factor,
+        _orderCloning,
+        _cloneCount,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) setState(() => _isDeploying = false);
+    }
   }
 
   @override
@@ -2150,12 +2162,14 @@ class _EditCopyMultipliersModalState extends State<EditCopyMultipliersModal> {
                         child: SizedBox(
                           height: 48,
                           child: FilledButton.icon(
-                            onPressed: _deploy,
-                            icon: const Icon(LucideIcons.zap, size: 16),
+                            onPressed: _isDeploying ? null : _deploy,
+                            icon: _isDeploying
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Icon(LucideIcons.zap, size: 16),
                             label: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                'DEPLOY CONFIGURATION',
+                                _isDeploying ? 'SAVING...' : 'DEPLOY CONFIGURATION',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,

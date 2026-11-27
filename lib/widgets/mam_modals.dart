@@ -2258,7 +2258,7 @@ void showEditCopyMultipliersModal(
   double initialFactor = 1.00,
   bool initialOrderCloning = false,
   int initialCloneCount = 1,
-  void Function(
+  Future<void> Function(
     String method,
     double factor,
     bool orderCloning,

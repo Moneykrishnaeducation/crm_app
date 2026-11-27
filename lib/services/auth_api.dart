@@ -1653,6 +1653,33 @@ class AuthApi {
         body: {'mam_id': accountId},
       );
 
+  /// Read the persisted MAM copy coefficient and cloning configuration.
+  Future<Map<String, dynamic>> getMamCopyCoefficient(String accountId) =>
+      _request(
+        'GET',
+        'account-coefficient/${Uri.encodeComponent(accountId)}/',
+      );
+
+  /// Persist the investor's copy scaling and multi-order execution settings.
+  Future<Map<String, dynamic>> saveMamCopyCoefficient({
+    required String accountId,
+    required String mode,
+    required double factor,
+    required bool dualTradeEnabled,
+    required int multiTradeCount,
+  }) =>
+      _request(
+        'POST',
+        'save-coefficient/',
+        body: {
+          'account_id': accountId,
+          'mode': mode,
+          'factor': factor,
+          'dual_trade_enabled': dualTradeEnabled,
+          'multi_trade_count': multiTradeCount,
+        },
+      );
+
   /// Fetch investor trading accounts linked to a MAM master account.
   Future<List<Map<String, dynamic>>> getMamInvestors(String mamId) async {
     final dynamic response = await _request(

@@ -3006,8 +3006,8 @@ class MamPageState extends State<MamPage> {
               ),
               const SizedBox(width: 5),
               Icon(
-                manager.isEnabled ? LucideIcons.circleCheck : LucideIcons.pauseCircle,
-                size: 15,
+                Icons.circle,
+                size: 8,
                 color: manager.isEnabled ? _c.green : _c.muted,
               ),
             ],
@@ -3035,9 +3035,7 @@ class MamPageState extends State<MamPage> {
             ),
           ),
           const SizedBox(height: 4),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Row(
+          Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
@@ -3091,8 +3089,6 @@ class MamPageState extends State<MamPage> {
                     ),
                   ),
                 ],
-              );
-            },
           ),
           const SizedBox(height: 14),
           Container(
@@ -3112,7 +3108,7 @@ class MamPageState extends State<MamPage> {
                 ),
                 Divider(height: 1, color: _c.subBorder),
                 specRow(
-                  LucideIcons.shieldCheck,
+                  LucideIcons.shield,
                   'Risk profile',
                   risk.isEmpty ? '—' : risk,
                   color: risk.isEmpty ? _c.muted : riskColor,

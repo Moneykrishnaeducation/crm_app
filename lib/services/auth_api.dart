@@ -1641,6 +1641,18 @@ class AuthApi {
         'mam/investors/${Uri.encodeComponent(accountId)}/toggle-copy/',
       );
 
+  /// Pause or resume copy trading for one MAM investment account.
+  /// The backend updates the investor permission and applies the change in MT5.
+  Future<Map<String, dynamic>> setMamInvestorCopying({
+    required String accountId,
+    required bool enabled,
+  }) =>
+      _request(
+        'POST',
+        enabled ? 'start-copying/' : 'pause-copying/',
+        body: {'mam_id': accountId},
+      );
+
   /// Fetch investor trading accounts linked to a MAM master account.
   Future<List<Map<String, dynamic>>> getMamInvestors(String mamId) async {
     final dynamic response = await _request(

@@ -2575,103 +2575,269 @@ class MamPageState extends State<MamPage> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Container(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 22),
-        decoration: BoxDecoration(
-          color: _c.card,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(24),
-          ),
-          border: Border.all(color: _c.border),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 38,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: _c.muted.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+      barrierColor: Colors.black.withValues(alpha: .58),
+      builder: (sheetContext) {
+        Widget metric(String label, String value, IconData icon) {
+          return Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 13),
+              decoration: BoxDecoration(
+                color: _c.subCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _c.subBorder),
               ),
-              const SizedBox(height: 16),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
+                  Icon(icon, size: 16, color: _c.blue),
+                  const SizedBox(height: 8),
+                  Text(
+                    label.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      color: _c.muted,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .35,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  FittedBox(
+                    alignment: Alignment.centerLeft,
+                    fit: BoxFit.scaleDown,
                     child: Text(
-                      manager.name.isEmpty ? 'MAM Manager' : manager.name,
+                      value,
                       style: GoogleFonts.inter(
                         color: _c.text,
-                        fontSize: 17,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        Widget detail(String label, String value, IconData icon) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              children: [
+                Icon(icon, size: 15, color: _c.muted),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      color: _c.muted,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ),
+                Text(
+                  value.isEmpty ? '—' : value,
+                  style: GoogleFonts.inter(
+                    color: _c.text,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final risk = manager.riskScore.trim();
+        final riskColor = risk.toLowerCase() == 'low'
+            ? _c.green
+            : risk.toLowerCase() == 'high'
+                ? _c.red
+                : _c.gold;
+
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+            18,
+            12,
+            18,
+            18 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: _c.card,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+            border: Border.all(color: _c.border),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _c.muted.withValues(alpha: .35),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF0B1D3A), Color(0xFF174A91)],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .13),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: .18),
+                          ),
+                        ),
+                        child: const Icon(
+                          LucideIcons.userRound,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              manager.name.isEmpty ? 'MAM Manager' : manager.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Manager ID  ·  ${manager.id}',
+                              style: GoogleFonts.inter(
+                                color: Colors.white.withValues(alpha: .7),
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        constraints: const BoxConstraints(
+                          minWidth: 38,
+                          minHeight: 38,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 13),
+                Row(
+                  children: [
+                    metric(
+                      'Balance',
+                      _formatCurrency(manager.balance),
+                      LucideIcons.wallet,
+                    ),
+                    const SizedBox(width: 9),
+                    metric(
+                      'Equity',
+                      _formatCurrency(manager.equity),
+                      LucideIcons.activity,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 13),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 13),
+                  decoration: BoxDecoration(
+                    color: _c.subCard,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: _c.subBorder),
+                  ),
+                  child: Column(
+                    children: [
+                      detail('Manager', manager.managerName, LucideIcons.user),
+                      Divider(height: 1, color: _c.subBorder),
+                      detail(
+                        'Performance fee',
+                        '${manager.profitSharingPercentage.toStringAsFixed(2)}%',
+                        LucideIcons.percent,
+                      ),
+                      Divider(height: 1, color: _c.subBorder),
+                      detail(
+                        'Risk profile',
+                        risk.isEmpty ? '—' : risk,
+                        LucideIcons.shield,
+                      ),
+                      Divider(height: 1, color: _c.subBorder),
+                      detail('Leverage', manager.leverage, LucideIcons.scale),
+                      Divider(height: 1, color: _c.subBorder),
+                      detail(
+                        'Account age',
+                        manager.accountAge,
+                        LucideIcons.calendarDays,
+                      ),
+                      Divider(height: 1, color: _c.subBorder),
+                      detail(
+                        'Historical growth',
+                        manager.historicalGrowth,
+                        LucideIcons.trendingUp,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: FilledButton.icon(
+                    onPressed: manager.isEnabled
+                        ? () {
+                            Navigator.pop(sheetContext);
+                            _investInManager(manager);
+                          }
+                        : null,
+                    icon: const Icon(LucideIcons.arrowRight, size: 17),
+                    label: const Text('Invest in this MAM'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brandBlue,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: _c.border,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: GoogleFonts.inter(
+                        fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(sheetContext),
-                    icon: Icon(Icons.close, color: _c.muted),
-                  ),
-                ],
-              ),
-              Text(
-                'Manager ID  ${manager.id}',
-                style: GoogleFonts.inter(color: _c.muted, fontSize: 11),
-              ),
-              const SizedBox(height: 14),
-              _managerDetailLine('Manager', manager.managerName),
-              _managerDetailLine('Balance', _formatCurrency(manager.balance)),
-              _managerDetailLine('Equity', _formatCurrency(manager.equity)),
-              _managerDetailLine(
-                'Performance fee',
-                '${manager.profitSharingPercentage.toStringAsFixed(2)}%',
-              ),
-              _managerDetailLine(
-                'Risk profile',
-                manager.riskScore.isEmpty ? '—' : manager.riskScore,
-              ),
-              _managerDetailLine(
-                'Leverage',
-                manager.leverage.isEmpty ? '—' : manager.leverage,
-              ),
-              _managerDetailLine(
-                'Account age',
-                manager.accountAge.isEmpty ? '—' : manager.accountAge,
-              ),
-              _managerDetailLine(
-                'Historical growth',
-                manager.historicalGrowth,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton.icon(
-                  onPressed: manager.isEnabled
-                      ? () {
-                          Navigator.pop(sheetContext);
-                          _investInManager(manager);
-                        }
-                      : null,
-                  icon: const Icon(Icons.arrow_forward, size: 17),
-                  label: const Text('Invest in this MAM'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _brandGold,
-                    foregroundColor: const Color(0xFF10264A),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

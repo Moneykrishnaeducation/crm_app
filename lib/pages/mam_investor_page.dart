@@ -251,6 +251,14 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       final masterId = (details['master_account_id'] ?? '').toString();
       final status = (details['status'] ?? '').toString().toLowerCase();
       final rawCopyPermission = details['investor_allow_copy'];
+      final rawCopyMode = (details['copy_mode'] ?? details['copy_multiplier_mode'] ?? 'balance_ratio').toString().toLowerCase();
+      final initialScalingMethod = rawCopyMode == 'fixed_multiple' || rawCopyMode == 'fixed'
+          ? 'FIXED RATIO'
+          : 'BALANCE RATIO';
+      final initialCopyFactor = number(details['copy_factor'] ?? details['fixed_copy_multiplier'] ?? 1.0);
+      final initialOrderCloning = details['dual_trade_enabled'] == true ||
+          details['dual_trade_enabled'].toString().toLowerCase() == 'true';
+      final initialCloneCount = int.tryParse((details['multi_trade_count'] ?? 1).toString()) ?? 1;
       final initialCopyEnabled = rawCopyPermission is bool
           ? rawCopyPermission
           : rawCopyPermission != null
@@ -277,6 +285,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
           riskLevel: (details['risk_level'] ?? details['riskLevel'] ?? '—').toString(),
           leverage: (details['leverage'] ?? details['package_leverage'] ?? '—').toString(),
           isCopying: initialCopyEnabled,
+          scalingMethod: initialScalingMethod,
+          multiplicationFactor: initialCopyFactor > 0 ? initialCopyFactor : 1.0,
+          orderCloning: initialOrderCloning,
+          cloneCount: initialCloneCount,
         ),
       ];
     } else {
@@ -1232,25 +1244,77 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // ---------------------------------------------------------------------------
   // 6. INTERACTIVE MODAL: COEFFICIENT & SCALING MODAL
   // ---------------------------------------------------------------------------
-  void _openScalingModal() {
+  Future<void> _openScalingModal() async {
     final acc = _currentAccount;
-    showEditCopyMultipliersModal(
-      context,
-      accountId: acc.accountId,
-      initialMethod: acc.scalingMethod,
-      initialFactor: acc.multiplicationFactor,
-      initialOrderCloning: acc.orderCloning,
-      initialCloneCount: acc.cloneCount,
-      onDeploy: (method, factor, orderCloning, cloneCount) {
-        setState(() {
-          acc.scalingMethod = method;
-          acc.multiplicationFactor = factor;
-          acc.orderCloning = orderCloning;
-          acc.cloneCount = cloneCount;
-        });
-        showAppMessage('Configuration deployed to Account ${acc.accountId}!');
-      },
-    );
+    try {
+      final saved = await AuthApi.instance.getMamCopyCoefficient(acc.accountId);
+      if (!mounted) return;
+
+      final rawMode = (saved['copy_mode'] ?? 'balance_ratio').toString().toLowerCase();
+      final method = rawMode == 'fixed_multiple' ? 'FIXED RATIO' : 'BALANCE RATIO';
+      final parsedFactor = double.tryParse(
+        (saved['copy_factor'] ?? '1.00').toString(),
+      ) ?? 1.0;
+      final rawDualTrade = saved['dual_trade_enabled'];
+      final orderCloning = rawDualTrade == true ||
+          rawDualTrade.toString().toLowerCase() == 'true';
+      final cloneCount = int.tryParse(
+        (saved['multi_trade_count'] ?? 1).toString(),
+      ) ?? 1;
+
+      setState(() {
+        acc.scalingMethod = method;
+        acc.multiplicationFactor = parsedFactor > 0 ? parsedFactor : 1.0;
+        acc.orderCloning = orderCloning;
+        acc.cloneCount = cloneCount.clamp(1, 5);
+      });
+
+      if (!mounted) return;
+      showEditCopyMultipliersModal(
+        context,
+        accountId: acc.accountId,
+        initialMethod: acc.scalingMethod,
+        initialFactor: acc.multiplicationFactor,
+        initialOrderCloning: acc.orderCloning,
+        initialCloneCount: acc.cloneCount,
+        onDeploy: (method, factor, orderCloning, cloneCount) async {
+          final mode = method == 'FIXED RATIO'
+              ? 'fixed_multiple'
+              : 'balance_ratio';
+          try {
+            await AuthApi.instance.saveMamCopyCoefficient(
+              accountId: acc.accountId,
+              mode: mode,
+              factor: factor,
+              dualTradeEnabled: orderCloning,
+              multiTradeCount: orderCloning ? cloneCount : 1,
+            );
+            if (!mounted) return;
+            setState(() {
+              acc.scalingMethod = method;
+              acc.multiplicationFactor = factor;
+              acc.orderCloning = orderCloning;
+              acc.cloneCount = orderCloning ? cloneCount : 1;
+            });
+            showAppMessage(
+              'Copy configuration saved for Account ${acc.accountId}',
+            );
+          } catch (error) {
+            final message = error is AuthApiException
+                ? error.message
+                : 'Could not save the copy configuration. Please try again.';
+            showAppMessage(message);
+            rethrow;
+          }
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is AuthApiException
+          ? error.message
+          : 'Could not load the saved copy configuration.';
+      showAppMessage(message);
+    }
   }
 
   // ---------------------------------------------------------------------------

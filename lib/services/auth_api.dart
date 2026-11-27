@@ -1574,6 +1574,38 @@ class AuthApi {
     );
   }
 
+  /// Create an investment account linked to an available MAM master.
+  /// This endpoint creates the MT5 investor account; it does not accept an
+  /// investment amount or source-account allocation.
+  Future<Map<String, dynamic>> createMamInvestment({
+    required String managerId,
+    required String investorPassword,
+    String? masterPassword,
+  }) =>
+      _request(
+        'POST',
+        'mam/investments/',
+        body: {
+          'manager_id': managerId,
+          'password': investorPassword,
+          if (masterPassword != null && masterPassword.isNotEmpty)
+            'master_password': masterPassword,
+        },
+      );
+
+  /// Fetch the authenticated user's MAM investment accounts.
+  Future<Map<String, dynamic>> getUserMamInvestments({
+    int page = 1,
+    int pageSize = 10,
+  }) =>
+      _request(
+        'GET',
+        'user-investments/?${Uri(queryParameters: {
+          'page': page.toString(),
+          'page_size': pageSize.toString(),
+        }).query}',
+      );
+
   /// Fetch the authenticated user's MAM master accounts.
   Future<List<Map<String, dynamic>>> getUserMamAccounts() async {
     final dynamic response = await _request('GET', 'user-mam-accounts/');

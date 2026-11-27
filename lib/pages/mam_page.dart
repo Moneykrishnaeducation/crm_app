@@ -4050,50 +4050,68 @@ class _InvestMamPasswordSheetState extends State<_InvestMamPasswordSheet> {
                 style: TextStyle(color: c.red, fontSize: 11),
               ),
             ],
-            const SizedBox(height: 19),
-            Row(
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: SizedBox(
-                    height: 46,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: c.text,
-                        side: BorderSide(color: c.border),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                      ),
-                      child: const Text('CANCEL'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 9,
-                  child: SizedBox(
-                    height: 46,
-                    child: FilledButton.icon(
-                      onPressed: _submit,
-                      icon: const Icon(Icons.arrow_forward, size: 16),
-                      label: const Text(
-                        'CONFIRM & CREATE',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: c.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(13),
-                        ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: c.blueLight,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: c.blueBorder),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: c.blue, size: 18),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'Your investment trading account will be created under this MAM manager. Keep your terminal password secure.',
+                      style: GoogleFonts.inter(
+                        color: c.text,
+                        fontSize: 10.5,
+                        height: 1.45,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 17),
+            SizedBox(
+              width: double.infinity,
+              height: 49,
+              child: FilledButton.icon(
+                onPressed: _submit,
+                icon: const Icon(Icons.arrow_forward, size: 17),
+                label: const Text('CONFIRM & CREATE'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: c.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  textStyle: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ],
+              ),
+            ),
+            const SizedBox(height: 7),
+            SizedBox(
+              width: double.infinity,
+              height: 42,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: c.muted,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Cancel'),
+              ),
             ),
           ],
         ),

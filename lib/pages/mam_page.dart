@@ -2281,6 +2281,11 @@ class MamPageState extends State<MamPage> {
 
   String _availableText(dynamic value) => value?.toString().trim() ?? '';
 
+  String _investmentDisplayName(String name) => name.replaceAll(
+        RegExp(r'\bInvestment\s+#\s*', caseSensitive: false),
+        'Investment ',
+      );
+
   Future<void> _loadAvailableManagers() async {
     final requestId = ++_availableRequestId;
     setState(() {
@@ -2385,7 +2390,9 @@ class MamPageState extends State<MamPage> {
         final status = _availableText(item['status']).toLowerCase();
         final copying = status == 'copying' || status == 'running' ||
             _apiBool(item['is_enabled'], fallback: false);
-        final alias = _availableText(item['name'] ?? item['mam_account_name']);
+        final alias = _investmentDisplayName(
+          _availableText(item['name'] ?? item['mam_account_name']),
+        );
         accounts.add(MamInvestorAccount(
           accountId: accountId,
           alias: alias.isEmpty ? 'MAM Investment $accountId' : alias,
@@ -2493,10 +2500,12 @@ class MamPageState extends State<MamPage> {
 
       if (refreshedAccountId.isNotEmpty &&
           !_investorAccounts.any((account) => account.accountId == refreshedAccountId)) {
-        final responseAlias = _availableText(
-          responseAccount['name'] ??
-              responseAccount['account_name'] ??
-              responseAccount['mam_account_name'],
+        final responseAlias = _investmentDisplayName(
+          _availableText(
+            responseAccount['name'] ??
+                responseAccount['account_name'] ??
+                responseAccount['mam_account_name'],
+          ),
         );
         final responseMasterId = _availableText(
           responseAccount['master_account_id'] ??

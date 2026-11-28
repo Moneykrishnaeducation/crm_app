@@ -46,9 +46,14 @@ class PammTopBar extends StatelessWidget {
     ];
 
     final shimmer = shimmerTabs ?? loading;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 6, 14, 4),
-      padding: const EdgeInsets.all(14),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Keep the header proportions tied to the space the parent gives it.
+        final scale = (constraints.maxWidth / 390).clamp(0.82, 1.12);
+        final horizontalInset = (constraints.maxWidth * 0.045).clamp(10.0, 18.0);
+        return Container(
+      margin: EdgeInsets.fromLTRB(horizontalInset, 6 * scale, horizontalInset, 4 * scale),
+      padding: EdgeInsets.all(14 * scale),
       decoration: PammDecorations.card(
         context,
         radius: 20,
@@ -63,8 +68,8 @@ class PammTopBar extends StatelessWidget {
                 Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+              width: 44 * scale,
+                height: 44 * scale,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [PammColors.navy, PammColors.blue],
@@ -80,13 +85,13 @@ class PammTopBar extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   LucideIcons.activity,
                   color: Colors.white,
-                  size: 21,
+                  size: 21 * scale,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12 * scale),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,18 +102,18 @@ class PammTopBar extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: PammType.heading(
                         context,
-                        size: 18,
+                        size: 18 * scale,
                         weight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2 * scale),
                     Text(
                       'Percentage Allocation Management Module',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: PammType.body(
                         context,
-                        size: 12,
+                        size: 12 * scale,
                         weight: FontWeight.w500,
                         color: muted,
                       ),
@@ -116,8 +121,8 @@ class PammTopBar extends StatelessWidget {
                   ],
                 ),
               ),
-              if (MediaQuery.sizeOf(context).width >= 420) ...[
-                const SizedBox(width: 8),
+              if (constraints.maxWidth >= 420) ...[
+                SizedBox(width: 8 * scale),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -155,7 +160,7 @@ class PammTopBar extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14 * scale),
           Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -185,8 +190,8 @@ class PammTopBar extends StatelessWidget {
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 220),
                                   curve: Curves.easeInOutCubic,
-                                  constraints: const BoxConstraints(
-                                    minHeight: 46,
+                                  constraints: BoxConstraints(
+                                    minHeight: 46 * scale,
                                   ),
                                   padding: EdgeInsets.symmetric(
                                     horizontal: compact ? 4 : 10,
@@ -222,19 +227,19 @@ class PammTopBar extends StatelessWidget {
                                           children: [
                                             Icon(
                                               icons[i],
-                                              size: 16,
+                                              size: 16 * scale,
                                               color: tab == i
                                                   ? Colors.white
                                                   : muted,
                                             ),
-                                            const SizedBox(height: 3),
+                                            SizedBox(height: 3 * scale),
                                             Text(
                                               labels[i],
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: PammType.body(
                                                 context,
-                                                size: 11.5,
+                                                size: 11.5 * scale,
                                                 weight: tab == i
                                                     ? FontWeight.w700
                                                     : FontWeight.w600,
@@ -251,12 +256,12 @@ class PammTopBar extends StatelessWidget {
                                           children: [
                                             Icon(
                                               icons[i],
-                                              size: 15,
+                                              size: 15 * scale,
                                               color: tab == i
                                                   ? Colors.white
                                                   : muted,
                                             ),
-                                            const SizedBox(width: 6),
+                                            SizedBox(width: 6 * scale),
                                             Flexible(
                                               child: Text(
                                                 labels[i],
@@ -264,7 +269,7 @@ class PammTopBar extends StatelessWidget {
                                                 overflow: TextOverflow.ellipsis,
                                                 style: PammType.body(
                                                   context,
-                                                  size: 13,
+                                                size: 13 * scale,
                                                   weight: tab == i
                                                       ? FontWeight.w700
                                                       : FontWeight.w600,
@@ -338,6 +343,8 @@ class PammTopBar extends StatelessWidget {
           ],
         ],
       ),
+        );
+      },
     );
   }
 }

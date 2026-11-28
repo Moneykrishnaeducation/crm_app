@@ -31,6 +31,7 @@ Future<bool?> showSecurityPasswordModal(
   BuildContext context, {
   VoidCallback? onVerified,
   BiometricSignIn? biometricSignIn,
+  Future<Map<String, dynamic>> Function(String password)? verifyPassword,
 }) async {
   final bio = biometricSignIn ?? BiometricSignIn.instance;
   final isEnabled = await bio.isEnabled();
@@ -65,6 +66,7 @@ Future<bool?> showSecurityPasswordModal(
       biometricSignIn: bio,
       isBiometricAvailable: isAvailable,
       isBiometricEnabled: isEnabled,
+      verifyPassword: verifyPassword,
     ),
   );
 
@@ -1425,11 +1427,13 @@ class VerifySecurityPasswordModal extends StatefulWidget {
     this.biometricSignIn,
     this.isBiometricAvailable = false,
     this.isBiometricEnabled = false,
+    this.verifyPassword,
   });
 
   final BiometricSignIn? biometricSignIn;
   final bool isBiometricAvailable;
   final bool isBiometricEnabled;
+  final Future<Map<String, dynamic>> Function(String password)? verifyPassword;
 
   @override
   State<VerifySecurityPasswordModal> createState() =>
@@ -1442,6 +1446,7 @@ class _VerifySecurityPasswordModalState
     extends State<VerifySecurityPasswordModal> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _verifying = false;
   String? _errorMessage;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
@@ -1463,15 +1468,57 @@ class _VerifySecurityPasswordModalState
     super.dispose();
   }
 
-  void _handleVerify() {
-    final password = _passwordController.text.trim();
+  Future<void> _handleVerify() async {
+    if (_verifying) return;
+    final password = _passwordController.text;
     if (password.isEmpty) {
+      AppHaptics.lightImpact();
       setState(() {
-        _errorMessage = 'Password cannot be empty';
+        _errorMessage = 'Enter your CRM password to continue.';
       });
       return;
     }
-    Navigator.of(context).pop(true);
+    unawaited(AppHaptics.selectionClick());
+    setState(() {
+      _verifying = true;
+      _errorMessage = null;
+    });
+    try {
+      final verifyFn =
+          widget.verifyPassword ?? AuthApi.instance.verifyProfilePassword;
+      final response = await verifyFn(password);
+      if (!mounted) return;
+      final rejected = response['verified'] == false ||
+          response['valid'] == false ||
+          response['matched'] == false ||
+          response['match'] == false ||
+          response['is_valid'] == false ||
+          response['success'] == false;
+      if (rejected) {
+        AppHaptics.lightImpact();
+        final serverMsg =
+            (response['message'] ?? response['error'] ?? '').toString().trim();
+        setState(() {
+          _verifying = false;
+          _errorMessage = serverMsg.isNotEmpty
+              ? serverMsg
+              : 'Incorrect CRM password. Please try again.';
+        });
+        return;
+      }
+      unawaited(AppHaptics.mediumImpact());
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      AppHaptics.lightImpact();
+      final message = error is AuthApiException && error.message.isNotEmpty
+          ? error.message
+          : 'Incorrect CRM password. Please try again.';
+      setState(() {
+        _verifying = false;
+        _errorMessage = message;
+      });
+    }
   }
 
   Future<void> _handleBiometricAuth() async {
@@ -1552,10 +1599,12 @@ class _VerifySecurityPasswordModalState
                         ),
                       ),
                       IconButton(
-                        onPressed: () {
-                          AppHaptics.lightImpact();
-                          Navigator.of(context).pop(false);
-                        },
+                        onPressed: _verifying
+                            ? null
+                            : () {
+                                AppHaptics.lightImpact();
+                                Navigator.of(context).pop(false);
+                              },
                         icon: Icon(LucideIcons.x, color: _mutedColor, size: 20),
                         splashRadius: 20,
                         tooltip: 'Close',
@@ -1576,7 +1625,7 @@ class _VerifySecurityPasswordModalState
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Confirm it is you before setting a new login password.',
+                    'Confirm your CRM password to access Security Center.',
                     style: TextStyle(
                       color: _mutedColor,
                       fontSize: 13.5,
@@ -1587,7 +1636,7 @@ class _VerifySecurityPasswordModalState
 
                   // Password Label: "CRM Password"
                   Text(
-                    'CURRENT PASSWORD',
+                    'CRM PASSWORD',
                     style: TextStyle(
                       color: _textColor,
                       fontSize: 11,
@@ -1607,6 +1656,7 @@ class _VerifySecurityPasswordModalState
                     child: TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      enabled: !_verifying,
                       style: TextStyle(color: _textColor, fontSize: 14),
                       onChanged: (_) {
                         if (_errorMessage != null) {
@@ -1641,6 +1691,7 @@ class _VerifySecurityPasswordModalState
                             size: 18,
                           ),
                           onPressed: () {
+                            AppHaptics.selectionClick();
                             setState(() {
                               _obscurePassword = !_obscurePassword;
                             });
@@ -1702,7 +1753,7 @@ class _VerifySecurityPasswordModalState
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _handleVerify,
+                      onPressed: _verifying ? null : _handleVerify,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _bluePrimary,
                         foregroundColor: Colors.white,
@@ -1711,25 +1762,34 @@ class _VerifySecurityPasswordModalState
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Verify & Continue',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                      child: _verifying
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Verify & Continue',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Icon(
+                                  LucideIcons.arrowRight,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ],
                             ),
-                          ),
-                          SizedBox(width: 6),
-                          Icon(
-                            LucideIcons.arrowRight,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                   const SizedBox(height: 16),

@@ -195,6 +195,7 @@ class AuthApi {
       'reset-password/confirm/',
       'security/captcha/config/',
       'pub/rsa_key/',
+      'profile/security/verify-password/',
     }.contains(normalized);
   }
 

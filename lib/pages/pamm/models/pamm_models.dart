@@ -4,6 +4,7 @@ import 'package:crm_app/app_notifications.dart';
 import 'package:crm_app/services/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PammPool {
   PammPool(
@@ -120,28 +121,171 @@ class PammInvestment {
 abstract final class PammColors {
   static const blue = Color(0xFF2563EB);
   static const deepBlue = Color(0xFF1D4ED8);
+  static const navy = Color(0xFF0B1E47);
   static const gold = Color(0xFFD4AF37);
   static const green = Color(0xFF10B981);
+  static const greenText = Color(0xFF16A34A);
   static const rose = Color(0xFFEF4444);
   static const closedRose = Color(0xFFDC3152);
 
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
+  static Color bg(BuildContext context) =>
+      isDark(context) ? const Color(0xFF020617) : const Color(0xFFF8FAFC);
+
   static Color card(BuildContext context) =>
-      isDark(context) ? const Color(0xFF0C1833) : Colors.white;
+      isDark(context) ? const Color(0xFF0F172A) : Colors.white;
 
   static Color surface(BuildContext context) =>
-      isDark(context) ? const Color(0xFF07142A) : const Color(0xFFF8FAFC);
+      isDark(context) ? const Color(0xFF0B1222) : const Color(0xFFF1F5F9);
+
+  static Color subtle(BuildContext context) =>
+      isDark(context) ? const Color(0xFF162036) : const Color(0xFFF8FAFC);
 
   static Color border(BuildContext context) =>
-      isDark(context) ? const Color(0xFF223C70) : const Color(0xFFCBD5E1);
+      isDark(context) ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
 
   static Color text(BuildContext context) =>
-      isDark(context) ? Colors.white : const Color(0xFF0A1629);
+      isDark(context) ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
 
   static Color muted(BuildContext context) =>
-      isDark(context) ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
+      isDark(context) ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+
+  static Color positive(BuildContext context) =>
+      isDark(context) ? const Color(0xFF22C55E) : greenText;
+
+  static Color negative(BuildContext context) =>
+      isDark(context) ? const Color(0xFFF87171) : const Color(0xFFDC2626);
+}
+
+/// Institutional fintech typography tokens (IBM Plex Sans + tabular numerals).
+abstract final class PammType {
+  static TextStyle heading(
+    BuildContext context, {
+    double size = 18,
+    FontWeight weight = FontWeight.w700,
+    Color? color,
+    double? letterSpacing,
+  }) =>
+      GoogleFonts.ibmPlexSans(
+        color: color ?? PammColors.text(context),
+        fontSize: size,
+        fontWeight: weight,
+        letterSpacing: letterSpacing ?? -0.3,
+      );
+
+  static TextStyle body(
+    BuildContext context, {
+    double size = 13,
+    FontWeight weight = FontWeight.w500,
+    Color? color,
+    double? height,
+  }) =>
+      GoogleFonts.ibmPlexSans(
+        color: color ?? PammColors.text(context),
+        fontSize: size,
+        fontWeight: weight,
+        height: height,
+      );
+
+  static TextStyle label(
+    BuildContext context, {
+    double size = 10.5,
+    FontWeight weight = FontWeight.w700,
+    Color? color,
+    double letterSpacing = 0.5,
+  }) =>
+      GoogleFonts.ibmPlexSans(
+        color: color ?? PammColors.muted(context),
+        fontSize: size,
+        fontWeight: weight,
+        letterSpacing: letterSpacing,
+      );
+
+  static TextStyle figure(
+    BuildContext context, {
+    double size = 15,
+    FontWeight weight = FontWeight.w700,
+    Color? color,
+  }) =>
+      GoogleFonts.ibmPlexSans(
+        color: color ?? PammColors.text(context),
+        fontSize: size,
+        fontWeight: weight,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+}
+
+/// Shared card & input decoration helpers for consistent PAMM styling.
+abstract final class PammDecorations {
+  static BoxDecoration card(
+    BuildContext context, {
+    double radius = 18,
+    Color? color,
+    Color? borderColor,
+  }) {
+    final dark = PammColors.isDark(context);
+    return BoxDecoration(
+      color: color ?? PammColors.card(context),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: borderColor ?? PammColors.border(context)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: dark ? 0.28 : 0.04),
+          blurRadius: dark ? 16 : 12,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+
+  static InputDecoration input(
+    BuildContext context, {
+    required String hint,
+    String? label,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    final border = PammColors.border(context);
+    final muted = PammColors.muted(context);
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      labelStyle: PammType.body(context, size: 12.5, color: muted),
+      hintStyle: PammType.body(
+        context,
+        size: 13,
+        weight: FontWeight.w400,
+        color: muted.withValues(alpha: 0.75),
+      ),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: PammColors.subtle(context),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: PammColors.blue, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: PammColors.rose),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: PammColors.rose, width: 1.5),
+      ),
+    );
+  }
 }
 
 List<Map<String, dynamic>> extractPammRows(Map<String, dynamic> response) {

@@ -108,7 +108,10 @@ class _DashboardHeader extends StatelessWidget {
           color: _panel,
           borderRadius: BorderRadius.circular(13),
           child: InkWell(
-            onTap: () => onSelectPage('Settings'),
+            onTap: () {
+              AppHaptics.selectionClick();
+              onSelectPage('Settings');
+            },
             borderRadius: BorderRadius.circular(13),
             child: Container(
               width: 44,
@@ -160,7 +163,10 @@ class _DashboardAccountOverview extends StatelessWidget {
                 child: const Text('PREVIEW DATA', style: TextStyle(color: Color(0xFFB6C7DF), fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
               ),
               IconButton(
-                onPressed: onToggleBalance,
+                onPressed: () {
+                  AppHaptics.selectionClick();
+                  onToggleBalance();
+                },
                 tooltip: balanceVisible ? 'Hide balance' : 'Show balance',
                 visualDensity: VisualDensity.compact,
                 icon: Icon(balanceVisible ? LucideIcons.eye : LucideIcons.eyeOff, color: _muted, size: 18),
@@ -208,7 +214,10 @@ class _DashboardAccountOverview extends StatelessWidget {
               const SizedBox(width: 7),
               const Expanded(child: Text('Portfolio figures will appear when your account data is connected.', style: TextStyle(color: _muted, fontSize: 10, height: 1.4))),
               TextButton(
-                onPressed: () => onSelectPage('Trading Accounts'),
+                onPressed: () {
+                  AppHaptics.selectionClick();
+                  onSelectPage('Trading Accounts');
+                },
                 style: TextButton.styleFrom(foregroundColor: const Color(0xFF8EBEFF), padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(0, 30)),
                 child: const Text('Accounts', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
               ),
@@ -298,7 +307,10 @@ class _DashboardQuickActions extends StatelessWidget {
             mainAxisSpacing: 10,
             mainAxisExtent: wide ? 82 : 88,
           ),
-          itemBuilder: (context, index) => _DashboardActionTile(action: actions[index], onTap: () => onSelectPage(actions[index].page)),
+          itemBuilder: (context, index) => _DashboardActionTile(
+            action: actions[index],
+            onTap: () => onSelectPage(actions[index].page),
+          ),
         ),
       ],
     );
@@ -325,7 +337,10 @@ class _DashboardActionTile extends StatelessWidget {
       color: _panel,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          AppHaptics.selectionClick();
+          onTap();
+        },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
@@ -398,7 +413,10 @@ class _DashboardNavigationRow extends StatelessWidget {
       color: _panelLight.withValues(alpha: 0.55),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          AppHaptics.selectionClick();
+          onTap();
+        },
         borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -446,7 +464,10 @@ class _DashboardPartnership extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () => onSelectPage('Partnership'),
+              onPressed: () {
+                AppHaptics.selectionClick();
+                onSelectPage('Partnership');
+              },
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFFBBD5F8),
                 side: const BorderSide(color: _border),
@@ -486,7 +507,10 @@ class _DashboardActivity extends StatelessWidget {
               Text('Your latest transactions and account updates', style: TextStyle(color: _muted, fontSize: 9)),
             ])),
             TextButton(
-              onPressed: () => onSelectPage('Transactions'),
+              onPressed: () {
+                AppHaptics.selectionClick();
+                onSelectPage('Transactions');
+              },
               style: TextButton.styleFrom(foregroundColor: const Color(0xFF8EBEFF), padding: const EdgeInsets.symmetric(horizontal: 7), minimumSize: const Size(0, 32)),
               child: const Text('View all', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
             ),

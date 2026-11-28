@@ -130,19 +130,23 @@ class _BrokerSettingsPageState extends State<BrokerSettingsPage> {
                     SizedBox(
                       height: 52,
                       child: FilledButton.icon(
-                        onPressed: () => showModalBottomSheet<void>(
-                          context: context,
-                          backgroundColor: Colors.transparent,
-                          barrierColor: Colors.black54,
-                          isDismissible: true,
-                          isScrollControlled: true,
-                          builder: (sheetContext) => LogoutBottomSheet(
-                            onConfirm: () {
-                              Navigator.of(sheetContext).pop();
+                        onPressed: () {
+                          AppHaptics.selectionClick();
+                          showModalBottomSheet<void>(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            barrierColor: Colors.black54,
+                            isDismissible: true,
+                            isScrollControlled: true,
+                            builder: (sheetContext) => LogoutBottomSheet(
+                              onConfirm: () {
+                                AppHaptics.selectionClick();
+                                Navigator.of(sheetContext).pop();
                                 widget.onSelectPage?.call('Logout');
-                            },
-                          ),
-                        ),
+                              },
+                            ),
+                          );
+                        },
                         icon: const Icon(LucideIcons.logOut, size: 19),
                         label: const Text('Log Out'),
                         style: FilledButton.styleFrom(
@@ -231,7 +235,12 @@ class _SettingsTile extends StatelessWidget {
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(17),
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap == null
+            ? null
+            : () {
+                AppHaptics.selectionClick();
+                onTap!();
+              },
         borderRadius: BorderRadius.circular(17),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -422,7 +431,10 @@ class _ThemeModeCard extends StatelessWidget {
       color: selected ? selectedBackground : Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          AppHaptics.selectionClick();
+          onTap();
+        },
         borderRadius: BorderRadius.circular(14),
         child: Container(
           height: 124,

@@ -432,7 +432,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               width: double.infinity,
               height: 44,
               child: OutlinedButton(
-                onPressed: widget.onExploreAvailable,
+                onPressed: () {
+                  AppHaptics.selectionClick();
+                  widget.onExploreAvailable?.call();
+                },
                 child: const Text('BACK TO MAM ACCOUNTS'),
               ),
             ),
@@ -1184,7 +1187,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        AppHaptics.selectionClick();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         constraints: const BoxConstraints(minHeight: 68),
@@ -1256,6 +1262,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // 6. INTERACTIVE MODAL: COEFFICIENT & SCALING MODAL
   // ---------------------------------------------------------------------------
   Future<void> _openScalingModal() async {
+    AppHaptics.selectionClick();
     final acc = _currentAccount;
     try {
       final saved = await AuthApi.instance.getMamCopyCoefficient(acc.accountId);
@@ -1332,6 +1339,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // 7. INTERACTIVE MODAL: QUICK DEPOSIT
   // ---------------------------------------------------------------------------
   void _openDepositModal() {
+    AppHaptics.selectionClick();
     final acc = _currentAccount;
     showFundsActionDialog(
       context,
@@ -1350,6 +1358,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // 8. INTERACTIVE MODAL: QUICK WITHDRAW
   // ---------------------------------------------------------------------------
   void _openWithdrawModal() {
+    AppHaptics.selectionClick();
     final acc = _currentAccount;
     showFundsActionDialog(
       context,
@@ -1368,6 +1377,7 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
   // 9. INTERACTIVE MODAL: INVESTOR PASSWORD & CREDENTIALS
   // ---------------------------------------------------------------------------
   void _openInvestorPasswordModal() {
+    AppHaptics.selectionClick();
     final acc = _currentAccount;
     final passwordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
@@ -1417,7 +1427,10 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                 filled: true,
                 fillColor: _c.subCard,
                 suffixIcon: IconButton(
-                  onPressed: toggle,
+                  onPressed: () {
+                    AppHaptics.selectionClick();
+                    toggle();
+                  },
                   icon: Icon(
                     obscure ? LucideIcons.eye : LucideIcons.eyeOff,
                     size: 18,
@@ -1510,7 +1523,12 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
                             ),
                           ),
                           IconButton(
-                            onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                            onPressed: isSaving
+                                ? null
+                                : () {
+                                    AppHaptics.selectionClick();
+                                    Navigator.pop(ctx);
+                                  },
                             icon: Icon(LucideIcons.x, color: _c.muted),
                           ),
                         ],
@@ -1694,7 +1712,13 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
               Text('Trade Pattern Analysis', style: GoogleFonts.inter(color: _c.text, fontSize: 16, fontWeight: FontWeight.w800)),
               Text('Account $accountId • Last 30 days', style: TextStyle(color: _c.muted, fontSize: 11)),
             ])),
-            IconButton(onPressed: () => Navigator.pop(ctx), icon: Icon(LucideIcons.x, color: _c.muted)),
+            IconButton(
+              onPressed: () {
+                AppHaptics.selectionClick();
+                Navigator.pop(ctx);
+              },
+              icon: Icon(LucideIcons.x, color: _c.muted),
+            ),
           ]),
           const SizedBox(height: 10),
           Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(

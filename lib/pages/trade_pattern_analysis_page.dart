@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../app_haptics.dart';
+
 class TradePatternItem {
   const TradePatternItem({
     required this.key,
@@ -374,6 +376,7 @@ class _TradePatternAnalysisPageState extends State<TradePatternAnalysisPage> {
       children: [
         InkWell(
           onTap: () {
+            AppHaptics.selectionClick();
             if (widget.onBack != null) {
               widget.onBack!();
             } else {
@@ -625,7 +628,10 @@ class _TradePatternAnalysisPageState extends State<TradePatternAnalysisPage> {
                       );
                     }).toList(),
                     onChanged: (val) {
-                      if (val != null) setState(() => _selectedAccount = val);
+                      if (val != null) {
+                        AppHaptics.selectionClick();
+                        setState(() => _selectedAccount = val);
+                      }
                     },
                   ),
                 ),
@@ -637,7 +643,10 @@ class _TradePatternAnalysisPageState extends State<TradePatternAnalysisPage> {
                 children: _timeframes.map((tf) {
                   final active = _timeframe == tf['value'];
                   return InkWell(
-                    onTap: () => setState(() => _timeframe = tf['value']!),
+                    onTap: () {
+                      AppHaptics.selectionClick();
+                      setState(() => _timeframe = tf['value']!);
+                    },
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -727,7 +736,10 @@ class _TradePatternAnalysisPageState extends State<TradePatternAnalysisPage> {
 
                   // Strategy Guide toggle
                   InkWell(
-                    onTap: () => setState(() => _showGuide = !_showGuide),
+                    onTap: () {
+                      AppHaptics.selectionClick();
+                      setState(() => _showGuide = !_showGuide);
+                    },
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -776,7 +788,10 @@ class _TradePatternAnalysisPageState extends State<TradePatternAnalysisPage> {
   Widget _filterButton(String label, String value) {
     final active = _filterStatus == value;
     return InkWell(
-      onTap: () => setState(() => _filterStatus = value),
+      onTap: () {
+        AppHaptics.selectionClick();
+        setState(() => _filterStatus = value);
+      },
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -800,7 +815,10 @@ class _TradePatternAnalysisPageState extends State<TradePatternAnalysisPage> {
   Widget _sortButton(String label, String value) {
     final active = _sortBy == value;
     return InkWell(
-      onTap: () => setState(() => _sortBy = value),
+      onTap: () {
+        AppHaptics.selectionClick();
+        setState(() => _sortBy = value);
+      },
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
@@ -824,7 +842,10 @@ class _TradePatternAnalysisPageState extends State<TradePatternAnalysisPage> {
   Widget _viewModeButton(IconData icon, String mode) {
     final active = _viewMode == mode;
     return InkWell(
-      onTap: () => setState(() => _viewMode = mode),
+      onTap: () {
+        AppHaptics.selectionClick();
+        setState(() => _viewMode = mode);
+      },
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(6),

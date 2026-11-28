@@ -336,6 +336,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
             IconButton(
               icon: Icon(LucideIcons.arrowLeft, color: _c.text, size: 20),
               onPressed: () {
+                AppHaptics.selectionClick();
                 if (widget.onBack != null) {
                   widget.onBack!();
                 } else if (Navigator.canPop(context)) {
@@ -395,6 +396,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
             child: IconButton(
               icon: Icon(LucideIcons.wallet, color: _c.blue, size: 20),
               onPressed: () {
+                AppHaptics.selectionClick();
                 showFundsActionDialog(
                   context,
                   withdrawal: false,
@@ -580,7 +582,10 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
                       icon: Icon(LucideIcons.x, size: 16, color: _c.muted),
-                      onPressed: () => _searchController.clear(),
+                      onPressed: () {
+                        AppHaptics.selectionClick();
+                        _searchController.clear();
+                      },
                       constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                     )
                   : null,
@@ -600,7 +605,10 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
               final filter = filters[index];
               final isSelected = _selectedFilter == filter;
               return InkWell(
-                onTap: () => setState(() => _selectedFilter = filter),
+                onTap: () {
+                  AppHaptics.selectionClick();
+                  setState(() => _selectedFilter = filter);
+                },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 36),
@@ -942,6 +950,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
                   message: 'Deposit Funds',
                   child: OutlinedButton(
                     onPressed: () {
+                      AppHaptics.selectionClick();
                       showFundsActionDialog(
                         context,
                         withdrawal: false,
@@ -1042,6 +1051,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   }
 
   void _openManagerProfileModal(AvailableMamPool pool) {
+    AppHaptics.selectionClick();
     final data = MamManagerProfileData.fromPool(pool);
     showManagerPerformanceProfileModal(
       context,
@@ -1054,6 +1064,7 @@ class _MamAvailablePageState extends State<MamAvailablePage> {
   }
 
   void _openInvestModal(AvailableMamPool pool) {
+    AppHaptics.selectionClick();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1134,6 +1145,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
   }
 
   void _addQuickAmount(double delta) {
+    AppHaptics.selectionClick();
     final cur = double.tryParse(_amountController.text.trim()) ?? 0.0;
     final next = (cur + delta).clamp(100.0, 1000000.0);
     setState(() {
@@ -1201,7 +1213,10 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                 ),
                 IconButton(
                   icon: Icon(LucideIcons.x, size: 20, color: c.muted),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    AppHaptics.selectionClick();
+                    Navigator.pop(context);
+                  },
                   constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 ),
               ],
@@ -1240,7 +1255,10 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                 ),
               ],
               onChanged: (val) {
-                if (val != null) setState(() => _selectedAccount = val);
+                if (val != null) {
+                  AppHaptics.selectionClick();
+                  setState(() => _selectedAccount = val);
+                }
               },
             ),
             const SizedBox(height: 8),
@@ -1267,6 +1285,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
                   ),
                   InkWell(
                     onTap: () {
+                      AppHaptics.selectionClick();
                       showFundsActionDialog(
                         context,
                         withdrawal: false,
@@ -1461,7 +1480,12 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
               divisions: 5,
               activeColor: guardColor,
               inactiveColor: c.border,
-              onChanged: (val) => setState(() => _drawdownGuard = val),
+              onChanged: (val) {
+                if (val != _drawdownGuard) {
+                  AppHaptics.selectionClick();
+                  setState(() => _drawdownGuard = val);
+                }
+              },
             ),
             const SizedBox(height: 6),
 
@@ -1562,6 +1586,7 @@ class _InvestInMamModalState extends State<_InvestInMamModal> {
             Center(
               child: TextButton.icon(
                 onPressed: () {
+                  AppHaptics.selectionClick();
                   showFundsActionDialog(
                     context,
                     withdrawal: false,

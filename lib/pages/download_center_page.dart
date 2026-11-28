@@ -15,6 +15,8 @@ class BrokerDownloadCenterPage extends StatelessWidget {
       );
       if (!opened && context.mounted) {
         showAppMessage('Unable to open this link. Please try again.');
+      } else if (opened) {
+        AppHaptics.selectionClick();
       }
     } catch (_) {
       if (context.mounted) {

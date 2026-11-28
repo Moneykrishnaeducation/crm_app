@@ -355,7 +355,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                   children: [
                     Flexible(
                       child: InkWell(
-                        onTap: widget.onBack,
+                        onTap: () {
+                          AppHaptics.selectionClick();
+                          widget.onBack();
+                        },
                         borderRadius: BorderRadius.circular(10),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -468,7 +471,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
             children: [
               Flexible(
                 child: InkWell(
-                  onTap: widget.onBack,
+                  onTap: () {
+                    AppHaptics.selectionClick();
+                    widget.onBack();
+                  },
                   borderRadius: BorderRadius.circular(10),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
@@ -895,7 +901,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                     icon: const Icon(LucideIcons.x, size: 16),
                     color: isDark ? const Color(0xFFB9C8DF) : const Color(0xFF536987),
                     tooltip: 'Remove',
-                    onPressed: () => setState(() { _uploadedProofName = null; _proofBytes = null; }),
+                    onPressed: () {
+                      AppHaptics.selectionClick();
+                      setState(() { _uploadedProofName = null; _proofBytes = null; });
+                    },
                   ),
                 ],
               ),
@@ -955,7 +964,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       for (var i = 0; i < items.length; i++) ...[
         if (i > 0) const SizedBox(width: 8),
         Expanded(child: InkWell(
-          onTap: () => setState(() => _method = i),
+          onTap: () {
+            AppHaptics.selectionClick();
+            setState(() => _method = i);
+          },
           borderRadius: BorderRadius.circular(14),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
@@ -1437,7 +1449,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final textMuted = isDark ? const Color(0xFF8E9EB5) : _muted;
 
     return InkWell(
-      onTap: () => setState(() => _payout = index),
+      onTap: () {
+        AppHaptics.selectionClick();
+        setState(() => _payout = index);
+      },
       borderRadius: BorderRadius.circular(15),
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -1559,7 +1574,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final acc = _activeTradingAccount;
 
     return InkWell(
-      onTap: () => _showAccountSelectorSheet(context, isDark),
+      onTap: () {
+        AppHaptics.selectionClick();
+        _showAccountSelectorSheet(context, isDark);
+      },
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1688,7 +1706,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: () => Navigator.pop(ctx),
+                  onPressed: () {
+                    AppHaptics.selectionClick();
+                    Navigator.pop(ctx);
+                  },
                   icon: const Icon(LucideIcons.x, size: 18),
                   tooltip: 'Close',
                   color: muted,
@@ -1722,7 +1743,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
     final avail = (item['available'] as double).toStringAsFixed(2);
 
     return InkWell(
-      onTap: onSelect,
+      onTap: () {
+        AppHaptics.selectionClick();
+        onSelect();
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1833,7 +1857,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
           for (var i = 0; i < labels.length; i++)
             Expanded(
               child: GestureDetector(
-                onTap: () => onSelect(i),
+                onTap: () {
+                  AppHaptics.selectionClick();
+                  onSelect(i);
+                },
                 child: Container(
                   height: compact ? 32 : 36,
                   alignment: Alignment.center,
@@ -2040,7 +2067,10 @@ class _BrokerFundsPageState extends State<BrokerFundsPage> {
       backgroundColor: surface,
       side: BorderSide(color: border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      onPressed: () => setState(() => _amount.text = value),
+      onPressed: () {
+        AppHaptics.selectionClick();
+        setState(() => _amount.text = value);
+      },
     );
   }
 
@@ -2581,7 +2611,10 @@ class _DepositResponseSheet extends StatelessWidget {
             width: double.infinity,
             height: 46,
             child: FilledButton.icon(
-              onPressed: onViewActivity,
+              onPressed: () {
+                AppHaptics.selectionClick();
+                onViewActivity();
+              },
               icon: const Icon(LucideIcons.activity, size: 16),
               label: const Text(
                 'View in Activity & Orders',
@@ -2599,7 +2632,10 @@ class _DepositResponseSheet extends StatelessWidget {
             width: double.infinity,
             height: 44,
             child: OutlinedButton(
-              onPressed: onBackToDashboard,
+              onPressed: () {
+                AppHaptics.selectionClick();
+                onBackToDashboard();
+              },
               style: OutlinedButton.styleFrom(
                 foregroundColor: isDark ? Colors.white : _fundInk,
                 side: BorderSide(color: border),

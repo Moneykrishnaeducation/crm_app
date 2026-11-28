@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../app_haptics.dart';
+
 class BrokerPrivacyPolicyPage extends StatelessWidget {
   const BrokerPrivacyPolicyPage({super.key});
 
@@ -9,6 +11,7 @@ class BrokerPrivacyPolicyPage extends StatelessWidget {
   static const _supportEmail = 'support@vtindex.com';
 
   Future<void> _openUrl(BuildContext context, String value) async {
+    AppHaptics.selectionClick();
     try {
       final opened = await launchUrl(
         Uri.parse(value),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../app_haptics.dart';
 import '../services/auth_api.dart';
 import 'partnership/models/partnership_models.dart';
 import 'partnership/widgets/partnership_application_view.dart';
@@ -271,7 +272,14 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                 elevation: 0,
                 leading: IconButton(
                   tooltip: 'Back',
-                  onPressed: widget.onBack ?? () => Navigator.pop(context),
+                  onPressed: () {
+                    AppHaptics.selectionClick();
+                    if (widget.onBack != null) {
+                      widget.onBack!();
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
                   icon: Icon(LucideIcons.arrowLeft, color: colors.text),
                 ),
                 title: const Text(
@@ -312,7 +320,12 @@ class _BrokerPartnershipPageState extends State<BrokerPartnershipPage> {
                     ),
                     const SizedBox(height: 20),
                     FilledButton.icon(
-                      onPressed: _loading ? null : _loadAllData,
+                      onPressed: _loading
+                          ? null
+                          : () {
+                              AppHaptics.selectionClick();
+                              _loadAllData();
+                            },
                       style: FilledButton.styleFrom(
                         backgroundColor: colors.blue,
                         padding: const EdgeInsets.symmetric(

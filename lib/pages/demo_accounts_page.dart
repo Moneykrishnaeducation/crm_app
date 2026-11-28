@@ -96,7 +96,10 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
               child: SizedBox(
                 height: 46,
                 child: OutlinedButton.icon(
-                  onPressed: widget.onOpenLiveAccounts,
+                  onPressed: () {
+                    AppHaptics.selectionClick();
+                    widget.onOpenLiveAccounts();
+                  },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: dark ? const Color(0xFF8CCBFF) : const Color(0xFF174A8B),
                     side: BorderSide(color: border),
@@ -170,7 +173,11 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
                   OutlinedButton.icon(onPressed: _showCreateSheet, icon: const Icon(LucideIcons.plus, size: 16),
                     label: const Text('Create Demo Account'))
                 else
-                  OutlinedButton.icon(onPressed: () { _searchController.clear(); setState(() => _query = ''); },
+                  OutlinedButton.icon(onPressed: () {
+                    AppHaptics.selectionClick();
+                    _searchController.clear();
+                    setState(() => _query = '');
+                  },
                     icon: const Icon(LucideIcons.x, size: 15), label: const Text('Clear search')),
                 const SizedBox(height: 8),
                 Text('Demo trading only · No real-money transactions', style: TextStyle(color: muted, fontSize: 9)),
@@ -180,7 +187,10 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
             ...filtered.map((account) => _ReferenceAccountCard(
               account: account,
               isFavorite: false,
-              onTap: () => widget.onAccountSelected(account),
+              onTap: () {
+                AppHaptics.selectionClick();
+                widget.onAccountSelected(account);
+              },
             )),
         ],
       ),
@@ -188,6 +198,7 @@ class _BrokerDemoAccountsPageState extends State<BrokerDemoAccountsPage> {
   }
 
   void _showCreateSheet() {
+    AppHaptics.selectionClick();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -315,7 +326,10 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                     ])),
                     IconButton(
                       tooltip: 'Close',
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        AppHaptics.selectionClick();
+                        Navigator.pop(context);
+                      },
                       icon: Icon(LucideIcons.x, color: muted, size: 19),
                     ),
                   ]),
@@ -350,7 +364,10 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                         Expanded(child: Padding(
                           padding: EdgeInsets.only(right: value == '1:500' ? 0 : 8),
                           child: InkWell(
-                            onTap: () => setState(() => _leverage = value),
+                            onTap: () {
+                              AppHaptics.selectionClick();
+                              setState(() => _leverage = value);
+                            },
                             borderRadius: BorderRadius.circular(12),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 160),
@@ -394,7 +411,10 @@ class _CreateDemoAccountSheetState extends State<_CreateDemoAccountSheet> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     SizedBox(height: 48, child: FilledButton.icon(
                       onPressed: _accountCreated
-                          ? () => Navigator.pop(context)
+                          ? () {
+                              AppHaptics.selectionClick();
+                              Navigator.pop(context);
+                            }
                           : (_isCreating ? null : _createAccount),
                       style: FilledButton.styleFrom(
                         backgroundColor: _brokerGold,

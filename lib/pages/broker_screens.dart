@@ -2369,6 +2369,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
             final equity = _asDouble(item['equity'], fallback: balance);
             final isDemo = item['is_demo'] == true ||
                 '${item['account_type']}'.toLowerCase() == 'demo';
+            final rawAccountType = '${item['account_type'] ?? item['accountType'] ?? ''}'.trim();
+            final accountType = rawAccountType.isNotEmpty ? rawAccountType : 'Standard';
             return BrokerAccount(
               name,
               login,
@@ -2377,6 +2379,8 @@ class _BrokerTransactionsPageState extends State<BrokerTransactionsPage> {
               '\$${equity.toStringAsFixed(2)}',
               isDemo ? 'Demo' : 'Live MT5',
               floatingPnl: equity - balance,
+              accountType: accountType,
+              groupName: '${item['group_name'] ?? item['group'] ?? ''}',
             );
           })
           .where((account) => account.login.isNotEmpty)

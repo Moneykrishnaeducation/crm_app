@@ -39,6 +39,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
       r'$15,250.00',
       'Live MT5',
       groupName: 'Standard',
+      accountType: 'Standard',
     ),
   );
 
@@ -62,26 +63,20 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     const green = Color(0xFF0B9E68);
     final liveAccounts = widget.accounts.where((a) {
       if (a.type != 'Live MT5') return false;
-      final group = a.groupName.toLowerCase().trim();
-      final name = a.name.toLowerCase().trim();
-      // Trading accounts page loads only standard type accounts
-      if (group.contains('vip') ||
-          group.contains('ecn') ||
-          group.contains('pro') ||
-          group.contains('cent') ||
-          group.contains('pamm') ||
-          group.contains('mam')) {
+      // List only accounts with account_type : Standard (not based on groupName)
+      final accountType = a.accountType.trim().toLowerCase();
+      if (accountType.contains('standard')) {
+        return true;
+      }
+      if (accountType.contains('vip') ||
+          accountType.contains('ecn') ||
+          accountType.contains('pro') ||
+          accountType.contains('cent') ||
+          accountType.contains('pamm') ||
+          accountType.contains('mam')) {
         return false;
       }
-      if (name.contains('vip') ||
-          name.contains('ecn') ||
-          name.contains('pro') ||
-          name.contains('cent') ||
-          name.contains('pamm') ||
-          name.contains('mam')) {
-        return false;
-      }
-      return true;
+      return accountType.isEmpty || accountType == 'live' || accountType == 'standard mt5';
     }).toList();
     final query = _query.trim().toLowerCase();
     final filtered = liveAccounts.where((a) => query.isEmpty || a.login.toLowerCase().contains(query) || a.name.toLowerCase().contains(query)).toList()
@@ -263,7 +258,29 @@ class _ReferenceAccountCard extends StatelessWidget {
                 Flexible(child: Text(account.login, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: .1))),
               ]),
               const SizedBox(height: 5),
-              Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
+              Row(children: [
+                Flexible(child: Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600))),
+                if (account.accountType.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: (dark ? const Color(0xFFFFC533) : const Color(0xFFD97706)).withValues(alpha: dark ? .16 : .12),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: (dark ? const Color(0xFFFFC533) : const Color(0xFFD97706)).withValues(alpha: .35), width: .8),
+                    ),
+                    child: Text(
+                      account.accountType,
+                      style: TextStyle(
+                        color: dark ? const Color(0xFFFFC533) : const Color(0xFFB45309),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .2,
+                      ),
+                    ),
+                  ),
+                ],
+              ]),
             ])),
             SizedBox(width: sparkWidth, height: 35, child: RepaintBoundary(
               child: CustomPaint(
@@ -550,13 +567,13 @@ class BrokerAccount {
   const BrokerAccount(this.name, this.login, this.leverage, this.balance, this.equity, this.type, {
     this.server, this.currency = 'USD', this.floatingPnl,
     this.margin = 0, this.freeMargin = 0, this.marginLevel = 0, this.credit = 0,
-    this.groupName = '', this.accountStatus = 'active', this.isMt5Connected = false,
+    this.groupName = '', this.accountType = 'Standard', this.accountStatus = 'active', this.isMt5Connected = false,
     this.algoTradingEnabled = false, this.isCentAccount = false,
     this.equityHistory = const [], this.openPositions = const [], this.recentTrades = const [],
   });
   final String name, login, leverage, balance, equity, type;
   final String? server;
-  final String currency, groupName, accountStatus;
+  final String currency, groupName, accountType, accountStatus;
   final double? floatingPnl;
   final bool isMt5Connected;
   final double margin, freeMargin, marginLevel, credit;
@@ -580,6 +597,7 @@ class BrokerAccount {
     double? marginLevel,
     double? credit,
     String? groupName,
+    String? accountType,
     String? accountStatus,
     bool? isMt5Connected,
     bool? algoTradingEnabled,
@@ -603,6 +621,7 @@ class BrokerAccount {
       marginLevel: marginLevel ?? this.marginLevel,
       credit: credit ?? this.credit,
       groupName: groupName ?? this.groupName,
+      accountType: accountType ?? this.accountType,
       accountStatus: accountStatus ?? this.accountStatus,
       isMt5Connected: isMt5Connected ?? this.isMt5Connected,
       algoTradingEnabled: algoTradingEnabled ?? this.algoTradingEnabled,
@@ -1087,6 +1106,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
       server: 'VTIndex-Live',
       currency: 'USD',
       groupName: _group,
+      accountType: 'Standard',
     );
     widget.onCreated(createdAcc);
     setState(() {
@@ -2479,6 +2499,7 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
           marginLevel: _apiNumber(data['margin_level']),
           credit: _apiNumber(data['credit']),
           groupName: (data['group_name'] ?? data['group'] ?? _account.groupName).toString(),
+          accountType: (data['account_type'] ?? data['accountType'] ?? _account.accountType).toString(),
           accountStatus: (data['status'] ?? (data['is_enabled'] == false ? 'disabled' : 'active')).toString(),
           isMt5Connected: data['is_connected'] == true,
           algoTradingEnabled: data['algo_enabled'] == true || data['is_algo_enabled'] == true,
@@ -2978,8 +2999,9 @@ class _BrokerAccountDetailsPageState extends State<BrokerAccountDetailsPage> {
               _detailInfoRow(context, LucideIcons.wallet, 'Free margin', _apiMoney(a.freeMargin, a.currency), fg, muted, border),
               _detailInfoRow(context, LucideIcons.gauge, 'Margin level', a.marginLevel > 0 ? '${a.marginLevel.toStringAsFixed(2)}%' : '—', fg, muted, border),
               _detailInfoRow(context, LucideIcons.coins, 'Credit', _apiMoney(a.credit, a.currency), fg, muted, border),
+              _detailInfoRow(context, LucideIcons.shieldCheck, 'Account type', a.accountType.isEmpty ? 'Standard' : a.accountType, fg, muted, border),
               _detailInfoRow(context, LucideIcons.folder, 'Trading group', a.groupName.isEmpty ? '—' : a.groupName, fg, muted, border),
-              _detailInfoRow(context, LucideIcons.shieldCheck, 'Account type', a.type, fg, muted, border),
+              _detailInfoRow(context, LucideIcons.monitor, 'Platform', a.type, fg, muted, border),
               _detailInfoRow(context, LucideIcons.activity, 'MT5 connection', a.isMt5Connected ? 'Connected' : 'Unavailable', fg, muted, border),
               _detailInfoRow(context, LucideIcons.settings, 'Algo trading', a.algoTradingEnabled ? 'Enabled' : 'Disabled', fg, muted, border),
               _detailInfoRow(context, LucideIcons.shieldCheck, 'Account status', a.accountStatus, fg, muted, border),

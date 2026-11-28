@@ -9,47 +9,60 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    const standardAccount = BrokerAccount(
+    // Account 1: accountType: 'Standard', but groupName is 'real\Tier1_Raw' (different from Standard)
+    const standardAccountWithDifferentGroup = BrokerAccount(
       'Standard Trader',
       '3001',
       '1:500',
       r'$10,000.00',
       r'$10,000.00',
       'Live MT5',
-      groupName: 'Standard',
+      groupName: 'real\\Tier1_Raw',
+      accountType: 'Standard',
     );
-    const vipAccount = BrokerAccount(
+    // Account 2: groupName is 'Standard', but accountType is 'VIP' (must NOT be listed)
+    const vipAccountWithStandardGroup = BrokerAccount(
       'VIP Trader',
       '3002',
       '1:500',
       r'$20,000.00',
       r'$20,000.00',
       'Live MT5',
-      groupName: 'VIP',
+      groupName: 'Standard',
+      accountType: 'VIP',
     );
-    const ecnAccount = BrokerAccount(
+    // Account 3: groupName is 'Standard', but accountType is 'ECN' (must NOT be listed)
+    const ecnAccountWithStandardGroup = BrokerAccount(
       'ECN Trader',
       '3003',
       '1:200',
       r'$15,000.00',
       r'$15,000.00',
       'Live MT5',
-      groupName: 'ECN',
+      groupName: 'Standard',
+      accountType: 'ECN',
     );
+    // Account 4: default standard account
     const defaultAccount = BrokerAccount(
-      'Standard MT5',
+      'Global Alpha',
       '3004',
       '1:500',
       r'$5,000.00',
       r'$5,000.00',
       'Live MT5',
+      accountType: 'Standard',
     );
 
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
         body: BrokerAccountsPage(
           onSelectPage: (_) {},
-          accounts: const [standardAccount, vipAccount, ecnAccount, defaultAccount],
+          accounts: const [
+            standardAccountWithDifferentGroup,
+            vipAccountWithStandardGroup,
+            ecnAccountWithStandardGroup,
+            defaultAccount,
+          ],
           onAccountCreated: (_) {},
           onAccountSelected: (_) {},
           favoriteLogins: const {},
@@ -59,20 +72,23 @@ void main() {
     ));
     await tester.pump();
 
-    // Standard accounts are displayed
+    // Accounts with account_type : Standard are displayed (regardless of groupName)
     expect(find.text('Standard Trader'), findsOneWidget);
     expect(find.text('3001'), findsOneWidget);
-    expect(find.text('Standard MT5'), findsOneWidget);
+    expect(find.text('Global Alpha'), findsOneWidget);
     expect(find.text('3004'), findsOneWidget);
 
-    // Non-standard accounts (VIP, ECN) are filtered out
+    // Accounts with account_type : VIP or ECN are NOT listed (even though groupName was 'Standard')
     expect(find.text('VIP Trader'), findsNothing);
     expect(find.text('3002'), findsNothing);
     expect(find.text('ECN Trader'), findsNothing);
     expect(find.text('3003'), findsNothing);
 
-    // Live account badge shows 2 LIVE (the two standard accounts)
+    // Live account badge shows 2 LIVE (the two accounts with account_type: Standard)
     expect(find.text('2 LIVE'), findsOneWidget);
+
+    // Standard account type badge is visible in the account list
+    expect(find.text('Standard'), findsWidgets);
   });
 
   testWidgets('Open live account sheet on trading account page loads only standard type', (tester) async {

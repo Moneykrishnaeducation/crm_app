@@ -579,10 +579,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   BrokerAccount _mapApiAccount(Map<String, dynamic> item) {
     final login = (item['account_id'] ?? item['login'] ?? item['account'] ?? '').toString();
-    final accountType = (item['account_type'] ?? '').toString().toLowerCase();
+    final rawAccountType = (item['account_type'] ?? item['accountType'] ?? item['type'] ?? '').toString().trim();
+    final accountType = rawAccountType.isNotEmpty ? rawAccountType : 'Standard';
     final group = (item['group_name'] ?? item['group_alias'] ?? '').toString();
     final isDemo = item['is_demo'] == true ||
-        accountType == 'demo' ||
+        rawAccountType.toLowerCase() == 'demo' ||
         group.toLowerCase().contains('demo');
     final currency = (item['currency'] ?? 'USD').toString();
     final balance = _accountNumber(item['balance']);
@@ -607,6 +608,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       marginLevel: _accountNumber(item['margin_level'] ?? item['marginLevel']),
       credit: _accountNumber(item['credit']),
       groupName: group,
+      accountType: accountType,
       isMt5Connected: item['is_mt5_connected'] == true || item['mt5_connected'] == true,
     );
   }

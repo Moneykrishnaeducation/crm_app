@@ -8,12 +8,10 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     FlutterSecureStorage.setMockInitialValues(<String, String>{});
     await AuthApi.instance.resetForTesting();
-    AuthApi.instance.setUseLocalhost(true);
   });
 
   tearDown(() async {
     await AuthApi.instance.resetForTesting();
-    AuthApi.instance.setUseLocalhost(true);
   });
 
   group('AuthApi session & token tests', () {
@@ -43,18 +41,8 @@ void main() {
       );
     });
 
-    test('AuthApi defaults to localhost and can switch to client.hi5trader.com', () {
+    test('AuthApi connects exclusively to client.hi5trader.com', () {
       final auth = AuthApi.instance;
-      expect(auth.isUsingLocalhost, isTrue);
-      expect(
-        auth.activeHost,
-        anyOf(equals('10.0.2.2'), equals('127.0.0.1'), equals('client.localhost')),
-      );
-      expect(auth.activeHost, isNot(contains(':')));
-      expect(auth.baseUri.port, equals(8000));
-      expect(auth.baseUri.toString(), contains(':8000/client/api/'));
-
-      auth.setUseLocalhost(false);
       expect(auth.isUsingLocalhost, isFalse);
       expect(auth.activeHost, equals('client.hi5trader.com'));
       expect(
@@ -63,11 +51,13 @@ void main() {
       );
       expect(auth.baseUri.scheme, equals('https'));
 
+      // setUseLocalhost is a no-op; app continues to route exclusively to client.hi5trader.com
       auth.setUseLocalhost(true);
-      expect(auth.isUsingLocalhost, isTrue);
+      expect(auth.isUsingLocalhost, isFalse);
+      expect(auth.activeHost, equals('client.hi5trader.com'));
       expect(
-        auth.activeHost,
-        anyOf(equals('10.0.2.2'), equals('127.0.0.1'), equals('client.localhost')),
+        auth.baseUri.toString(),
+        startsWith('https://client.hi5trader.com/client/api/'),
       );
     });
   });

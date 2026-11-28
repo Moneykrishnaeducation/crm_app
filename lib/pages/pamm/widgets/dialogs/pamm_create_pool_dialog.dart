@@ -3,7 +3,6 @@ import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_dialogs.dart';
 import 'package:crm_app/services/auth_api.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 Future<void> showCreatePammPoolDialog(
@@ -56,12 +55,9 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
     '1:200',
     '1:300',
     '1:500',
-    '1:1000',
   ];
 
   String _leverage = '1:500';
-  bool _showMasterPassword = false;
-  bool _showInvestorPassword = false;
   bool _isCreating = false;
   String? _errorMessage;
 
@@ -302,153 +298,6 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
     Navigator.of(context).maybePop();
   }
 
-  Widget _passwordCard({
-    required String title,
-    required String access,
-    required TextEditingController controller,
-    required bool visible,
-    required VoidCallback toggle,
-  }) {
-    final surface = PammColors.surface(context);
-    final border = PammColors.border(context);
-    final text = PammColors.text(context);
-    final muted = PammColors.muted(context);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: surface,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(LucideIcons.lock, size: 14, color: PammColors.blue),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  style: PammType.body(
-                    context,
-                    size: 12.5,
-                    weight: FontWeight.w700,
-                    color: text,
-                  ),
-                ),
-              ),
-              Text(
-                access,
-                style: PammType.label(
-                  context,
-                  size: 10,
-                  color: muted,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: controller,
-            enabled: !_isCreating,
-            obscureText: !visible,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]')),
-            ],
-            maxLength: 12,
-            style: PammType.figure(
-              context,
-              size: 13,
-              weight: FontWeight.w600,
-              color: text,
-            ),
-            decoration: _inputDecoration(
-              'Enter password',
-              suffix: IconButton(
-                onPressed: toggle,
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                icon: Icon(
-                  visible ? LucideIcons.eyeOff : LucideIcons.eye,
-                  size: 16,
-                  color: muted,
-                ),
-              ),
-            ),
-            validator: (value) {
-              final textValue = value ?? '';
-              return RegExp(
-                r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d_]{6,12}$',
-              ).hasMatch(textValue)
-                  ? null
-                  : '6–12 chars, uppercase, lowercase and number';
-            },
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '6–12 characters, uppercase + lowercase + number; letters, numbers and underscore only.',
-            style: PammType.body(
-              context,
-              size: 11,
-              color: muted,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            children: [
-              TextButton.icon(
-                onPressed: toggle,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                ),
-                icon: Icon(
-                  visible ? LucideIcons.eyeOff : LucideIcons.eye,
-                  size: 14,
-                ),
-                label: Text(
-                  visible ? 'Hide' : 'Reveal',
-                  style: PammType.body(
-                    context,
-                    size: 12,
-                    weight: FontWeight.w600,
-                    color: PammColors.blue,
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _isCreating
-                    ? null
-                    : () {
-                        AppHaptics.lightImpact();
-                        FocusScope.of(context).unfocus();
-                        controller.text = generatePammPassword();
-                      },
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                ),
-                icon: const Icon(LucideIcons.refreshCw, size: 14),
-                label: Text(
-                  'Regenerate',
-                  style: PammType.body(
-                    context,
-                    size: 12,
-                    weight: FontWeight.w600,
-                    color: PammColors.blue,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _submit() async {
     if (_isCreating) return;
@@ -790,83 +639,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                                   const SizedBox(height: 12),
                                   _leverageSelector(card, text, border),
                                 ],
-                                const SizedBox(height: 18),
-                                _sectionTitle(
-                                  '03',
-                                  'Security credentials',
-                                  hint: 'Keep master password private',
-                                ),
-                                if (wide)
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: _passwordCard(
-                                          title: 'Master password',
-                                          access: 'Full access',
-                                          controller: _masterPassword,
-                                          visible: _showMasterPassword,
-                                          toggle: () {
-                                            AppHaptics.selectionClick();
-                                            FocusScope.of(context).unfocus();
-                                            setState(() {
-                                              _showMasterPassword =
-                                                  !_showMasterPassword;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _passwordCard(
-                                          title: 'Investor password',
-                                          access: 'Read-only',
-                                          controller: _investorPassword,
-                                          visible: _showInvestorPassword,
-                                          toggle: () {
-                                            AppHaptics.selectionClick();
-                                            FocusScope.of(context).unfocus();
-                                            setState(() {
-                                              _showInvestorPassword =
-                                                  !_showInvestorPassword;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                else ...[
-                                  _passwordCard(
-                                    title: 'Master password',
-                                    access: 'Full access',
-                                    controller: _masterPassword,
-                                    visible: _showMasterPassword,
-                                    toggle: () {
-                                      AppHaptics.selectionClick();
-                                      FocusScope.of(context).unfocus();
-                                      setState(() {
-                                        _showMasterPassword =
-                                            !_showMasterPassword;
-                                      });
-                                    },
-                                  ),
-                                  const SizedBox(height: 10),
-                                  _passwordCard(
-                                    title: 'Investor password',
-                                    access: 'Read-only',
-                                    controller: _investorPassword,
-                                    visible: _showInvestorPassword,
-                                    toggle: () {
-                                      AppHaptics.selectionClick();
-                                      FocusScope.of(context).unfocus();
-                                      setState(() {
-                                        _showInvestorPassword =
-                                            !_showInvestorPassword;
-                                      });
-                                    },
-                                  ),
-                                ],
+                                
                                 const SizedBox(height: 12),
                                 Container(
                                   padding: const EdgeInsets.symmetric(

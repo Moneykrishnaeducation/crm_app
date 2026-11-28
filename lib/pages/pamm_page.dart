@@ -35,6 +35,7 @@ class PammPageState extends State<PammPage> {
   final List<PammPool> _available = [];
   final List<PammInvestment> _investments = [];
   bool _loadingPammLists = true;
+  bool _hasLoadedInitialTabs = false;
   String? _pammListError;
   String? _togglingPammId;
   String? _syncingPammId;
@@ -184,6 +185,7 @@ class PammPageState extends State<PammPage> {
       }
       if (overallSeq == _listsLoadSeq) {
         _loadingPammLists = false;
+        _hasLoadedInitialTabs = true;
         if (errors.isNotEmpty) {
           _pammListError = responses.every((response) => response == null)
               ? 'PAMM accounts could not be loaded.'
@@ -563,6 +565,8 @@ class PammPageState extends State<PammPage> {
                                   availableCount: _available.length,
                                   investmentsCount: _investments.length,
                                   loading: _loadingPammLists,
+                                  shimmerTabs: _loadingPammLists &&
+                                      !_hasLoadedInitialTabs,
                                   error: _pammListError,
                                   onSelectTab: (i) {
                                     setState(() {

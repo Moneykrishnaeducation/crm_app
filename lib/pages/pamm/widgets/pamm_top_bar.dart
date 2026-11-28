@@ -12,6 +12,7 @@ class PammTopBar extends StatelessWidget {
     required this.availableCount,
     required this.investmentsCount,
     required this.loading,
+    this.shimmerTabs,
     required this.error,
     required this.onSelectTab,
     required this.onRetry,
@@ -22,6 +23,7 @@ class PammTopBar extends StatelessWidget {
   final int availableCount;
   final int investmentsCount;
   final bool loading;
+  final bool? shimmerTabs;
   final String? error;
   final ValueChanged<int> onSelectTab;
   final VoidCallback onRetry;
@@ -150,7 +152,7 @@ class PammTopBar extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           PammSkeletonizer(
-            enabled: loading,
+            enabled: shimmerTabs ?? loading,
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(

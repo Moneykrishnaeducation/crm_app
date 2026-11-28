@@ -151,6 +151,11 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   _ProfileColors get _c => _ProfileColors.of(context);
 
+  void _tapWithHaptic(VoidCallback action) {
+    unawaited(AppHaptics.selectionClick());
+    action();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -447,6 +452,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               icon: LucideIcons.sparkles,
               selected: _bannerTheme == 'Cosmic Landscape',
               onTap: () {
+                unawaited(AppHaptics.selectionClick());
                 setState(() => _bannerTheme = 'Cosmic Landscape');
                 Navigator.pop(ctx);
                 _showSnack('Banner updated to Cosmic Landscape');
@@ -459,6 +465,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               icon: LucideIcons.waves,
               selected: _bannerTheme == 'Deep Ocean Aurora',
               onTap: () {
+                unawaited(AppHaptics.selectionClick());
                 setState(() => _bannerTheme = 'Deep Ocean Aurora');
                 Navigator.pop(ctx);
                 _showSnack('Banner updated to Deep Ocean Aurora');
@@ -471,6 +478,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               icon: LucideIcons.sun,
               selected: _bannerTheme == 'Astral Cyber Gold',
               onTap: () {
+                unawaited(AppHaptics.selectionClick());
                 setState(() => _bannerTheme = 'Astral Cyber Gold');
                 Navigator.pop(ctx);
                 _showSnack('Banner updated to Astral Cyber Gold');
@@ -487,6 +495,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   backgroundColor: _profileBlueLight,
                 ),
                 onPressed: () {
+                  unawaited(AppHaptics.selectionClick());
                   Navigator.pop(ctx);
                   _pickAndSaveImage(source: ImageSource.gallery, isBanner: true);
                 },
@@ -557,6 +566,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               subtitle: const Text('Use camera for instant snapshot', style: TextStyle(color: _profileTextSecondary, fontSize: 11)),
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
+                unawaited(AppHaptics.selectionClick());
                 Navigator.pop(ctx);
                 _pickAndSaveImage(source: ImageSource.camera, isBanner: false);
               },
@@ -577,6 +587,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               subtitle: const Text('Upload JPG or PNG from storage', style: TextStyle(color: _profileTextSecondary, fontSize: 11)),
               trailing: const Icon(LucideIcons.chevronRight, color: _profileMuted, size: 18),
               onTap: () {
+                unawaited(AppHaptics.selectionClick());
                 Navigator.pop(ctx);
                 _pickAndSaveImage(source: ImageSource.gallery, isBanner: false);
               },
@@ -606,6 +617,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     final selected = _avatarBg.toARGB32() == color.toARGB32();
     return GestureDetector(
       onTap: () {
+        unawaited(AppHaptics.selectionClick());
         setState(() => _avatarBg = color);
         Navigator.pop(context);
         _showSnack('Avatar color set to $name');
@@ -767,6 +779,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                         elevation: 1,
                       ),
                       onPressed: _isSavingProfile ? null : () async {
+                        unawaited(AppHaptics.selectionClick());
                         setState(() => _isSavingProfile = true);
                         try {
                           final result = await AuthApi.instance.updatePersonalInfo(
@@ -899,24 +912,25 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   padding: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 132),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      _buildMobileProfileHeader(),
-                      if (_isLoadingProfile) ...[
-                        const SizedBox(height: 10),
-                        const LinearProgressIndicator(minHeight: 2),
-                      ],
+                      AppSkeletonizer(
+                        enabled: _isLoadingProfile,
+                        child: _buildMobileProfileHeader(),
+                      ),
                       const SizedBox(height: 18),
                       _buildProfilePageTitle(),
                       const SizedBox(height: 18),
                       _buildMobileSectionNavigation(),
                       const SizedBox(height: 20),
-                      if (_selectedTabIndex == 0)
-                        _buildOverviewTab()
-                      else if (_selectedTabIndex == 1)
-                        _buildPersonalDetailsTab()
-                      else if (_selectedTabIndex == 2)
-                        _buildVerificationTab()
-                      else if (_selectedTabIndex == 3)
-                        _buildPaymentMethodsTab(),
+                      AppSkeletonizer(
+                        enabled: _isLoadingProfile,
+                        child: _selectedTabIndex == 0
+                            ? _buildOverviewTab()
+                            : _selectedTabIndex == 1
+                                ? _buildPersonalDetailsTab()
+                                : _selectedTabIndex == 2
+                                    ? _buildVerificationTab()
+                                    : _buildPaymentMethodsTab(),
+                      ),
                     ]),
                   ),
                 ),
@@ -956,7 +970,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
-            onTap: _showEditDetailsSheet,
+            onTap: () => _tapWithHaptic(_showEditDetailsSheet),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Icon(LucideIcons.pencilLine, color: _c.text, size: 18),
@@ -1071,7 +1085,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               color: Colors.black.withValues(alpha: .28),
               borderRadius: BorderRadius.circular(18),
               child: InkWell(
-                onTap: _showChangeBannerSheet,
+                onTap: () => _tapWithHaptic(_showChangeBannerSheet),
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
@@ -1138,7 +1152,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                     shape: const CircleBorder(),
                     child: InkWell(
                       customBorder: const CircleBorder(),
-                      onTap: _showChangePhotoSheet,
+                      onTap: () => _tapWithHaptic(_showChangePhotoSheet),
                       child: const SizedBox(
                         width: 27,
                         height: 27,
@@ -1294,8 +1308,9 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
             Expanded(
               child: GestureDetector(
                 onTap: () {
-                  AppHaptics.selectionClick();
-                  setState(() => _selectedTabIndex = i);
+                  _tapWithHaptic(() {
+                    setState(() => _selectedTabIndex = i);
+                  });
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 240),
@@ -1349,7 +1364,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
               ],
             )),
             TextButton.icon(
-              onPressed: _showEditDetailsSheet,
+              onPressed: () => _tapWithHaptic(_showEditDetailsSheet),
               icon: const Icon(LucideIcons.pencil, size: 13),
               label: const Text('Edit details'),
               style: TextButton.styleFrom(
@@ -1428,7 +1443,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
       color: _c.card,
       borderRadius: BorderRadius.circular(15),
       child: InkWell(
-        onTap: onTap,
+        onTap: () => _tapWithHaptic(onTap),
         borderRadius: BorderRadius.circular(15),
         child: Container(
           padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 380 ? 10 : 12),
@@ -1569,7 +1584,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () => _tapWithHaptic(onTap),
       borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1697,7 +1712,7 @@ class _BrokerProfilePageState extends State<BrokerProfilePage> {
                   ),
                   elevation: 1,
                 ),
-                onPressed: _showEditDetailsSheet,
+                onPressed: () => _tapWithHaptic(_showEditDetailsSheet),
                 icon: const Icon(LucideIcons.filePenLine, size: 14, color: Color(0xFFFDE68A)),
                 label: const Text(
                   'Edit Details',
@@ -2274,7 +2289,10 @@ class _VerificationDocCard extends StatelessWidget {
               if (hasDocument) ...[
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: onViewDocument,
+                    onPressed: () {
+                      unawaited(AppHaptics.selectionClick());
+                      onViewDocument();
+                    },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: c.isDark ? c.accentBlue : _profileBlueDark,
                       side: BorderSide(color: c.blueBorder),
@@ -2290,7 +2308,10 @@ class _VerificationDocCard extends StatelessWidget {
               ],
               Expanded(
                 child: ElevatedButton(
-                  onPressed: onUploadDocument,
+                  onPressed: () {
+                    unawaited(AppHaptics.selectionClick());
+                    onUploadDocument();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _profileBlue,
                     foregroundColor: Colors.white,
@@ -2348,6 +2369,7 @@ class _DocumentViewerModalState extends State<_DocumentViewerModal> {
       setState(() => _error = 'Enter your CRM password to continue.');
       return;
     }
+    unawaited(AppHaptics.selectionClick());
     setState(() {
       _loading = true;
       _error = null;
@@ -3352,6 +3374,7 @@ class _EditBankDestinationModalState extends State<_EditBankDestinationModal> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bank name and account number are required.')));
       return;
     }
+    unawaited(AppHaptics.selectionClick());
     setState(() => _saving = true);
     try {
       await widget.onSave(
@@ -3514,6 +3537,7 @@ class _EditCryptoDestinationModalState extends State<_EditCryptoDestinationModal
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Wallet address and currency are required.')));
       return;
     }
+    unawaited(AppHaptics.selectionClick());
     setState(() => _saving = true);
     try {
       await widget.onSave(address, currency);

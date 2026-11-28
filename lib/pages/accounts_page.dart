@@ -38,6 +38,7 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
       r'$15,250.00',
       r'$15,250.00',
       'Live MT5',
+      groupName: 'Standard',
     ),
   );
 
@@ -59,7 +60,29 @@ class _BrokerAccountsPageState extends State<BrokerAccountsPage> {
     const gold = Color(0xFFFFC533);
     const blue = Color(0xFF35A9F5);
     const green = Color(0xFF0B9E68);
-    final liveAccounts = widget.accounts.where((a) => a.type == 'Live MT5').toList();
+    final liveAccounts = widget.accounts.where((a) {
+      if (a.type != 'Live MT5') return false;
+      final group = a.groupName.toLowerCase().trim();
+      final name = a.name.toLowerCase().trim();
+      // Trading accounts page loads only standard type accounts
+      if (group.contains('vip') ||
+          group.contains('ecn') ||
+          group.contains('pro') ||
+          group.contains('cent') ||
+          group.contains('pamm') ||
+          group.contains('mam')) {
+        return false;
+      }
+      if (name.contains('vip') ||
+          name.contains('ecn') ||
+          name.contains('pro') ||
+          name.contains('cent') ||
+          name.contains('pamm') ||
+          name.contains('mam')) {
+        return false;
+      }
+      return true;
+    }).toList();
     final query = _query.trim().toLowerCase();
     final filtered = liveAccounts.where((a) => query.isEmpty || a.login.toLowerCase().contains(query) || a.name.toLowerCase().contains(query)).toList()
       ..sort((a, b) => (widget.favoriteLogins.contains(b.login) ? 1 : 0).compareTo(widget.favoriteLogins.contains(a.login) ? 1 : 0));
@@ -723,7 +746,7 @@ class _OpenLiveAccountSheet extends StatefulWidget {
 
 class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
   final _nameController = TextEditingController();
-  String _group = 'VIP - Recommended (Default)';
+  String _group = 'Standard';
   String _leverage = '1:500';
   String? _accountNumber;
   String? _masterPassword;
@@ -747,24 +770,45 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
     try {
       final res = await AuthApi.instance.getTradingGroups(type: 'real');
       if (!mounted) return;
-      final groups = (res['groups'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final allGroups = (res['groups'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      // Trading account creation loads only standard type groups
+      final standardGroups = allGroups.where((g) {
+        final name = (g['name'] as String? ?? '').toLowerCase();
+        final alias = (g['alias'] as String? ?? '').toLowerCase();
+        return name.contains('standard') || alias.contains('standard');
+      }).toList();
+      final groups = standardGroups.isNotEmpty ? standardGroups : allGroups;
       if (groups.isNotEmpty) {
         setState(() {
           _tradeGroups = groups;
           _groupsLoadFailed = false;
-          final defaultGroup = groups.firstWhere(
-            (g) => g['is_default'] == true,
-            orElse: () => groups.first,
+          final standardGroup = groups.firstWhere(
+            (g) {
+              final alias = (g['alias'] as String? ?? '').toLowerCase();
+              final name = (g['name'] as String? ?? '').toLowerCase();
+              return alias.contains('standard') || name.contains('standard');
+            },
+            orElse: () => groups.firstWhere(
+              (g) => g['is_default'] == true,
+              orElse: () => groups.first,
+            ),
           );
-          _selectedGroupId = defaultGroup['id'];
-          final alias = defaultGroup['alias'] as String?;
-          final name = defaultGroup['name'] as String?;
+          _selectedGroupId = standardGroup['id'];
+          final alias = standardGroup['alias'] as String?;
+          final name = standardGroup['name'] as String?;
           _group = (alias != null && alias.isNotEmpty) ? alias : (name ?? 'Standard');
+        });
+      } else {
+        setState(() {
+          _group = 'Standard';
         });
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _groupsLoadFailed = true);
+        setState(() {
+          _groupsLoadFailed = true;
+          _group = 'Standard';
+        });
       }
     }
   }
@@ -864,24 +908,24 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
                             return DropdownMenuItem<String>(value: label, child: Text(label));
                           }).toList()
                         : const [
-                            DropdownMenuItem(value: 'VIP - Recommended (Default)', child: Text('VIP - Recommended (Default)')),
                             DropdownMenuItem(value: 'Standard', child: Text('Standard')),
-                            DropdownMenuItem(value: 'ECN', child: Text('ECN')),
                           ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _group = value;
-                          if (_tradeGroups.isNotEmpty) {
-                            final match = _tradeGroups.firstWhere(
-                              (g) => ((g['alias'] as String?)?.isNotEmpty == true ? g['alias'] : g['name']) == value,
-                              orElse: () => {},
-                            );
-                            _selectedGroupId = match['id'];
+                    onChanged: _tradeGroups.length > 1
+                        ? (value) {
+                            if (value != null) {
+                              setState(() {
+                                _group = value;
+                                if (_tradeGroups.isNotEmpty) {
+                                  final match = _tradeGroups.firstWhere(
+                                    (g) => ((g['alias'] as String?)?.isNotEmpty == true ? g['alias'] : g['name']) == value,
+                                    orElse: () => {},
+                                  );
+                                  _selectedGroupId = match['id'];
+                                }
+                              });
+                            }
                           }
-                        });
-                      }
-                    },
+                        : null,
                   )),
                 ),
                 if (_groupsLoadFailed && _tradeGroups.isEmpty)
@@ -1042,6 +1086,7 @@ class _OpenLiveAccountSheetState extends State<_OpenLiveAccountSheet> {
       'Live MT5',
       server: 'VTIndex-Live',
       currency: 'USD',
+      groupName: _group,
     );
     widget.onCreated(createdAcc);
     setState(() {

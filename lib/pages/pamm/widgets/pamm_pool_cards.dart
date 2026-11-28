@@ -2,7 +2,6 @@ import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
 import 'package:crm_app/pages/pamm/widgets/pamm_shared_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 class PammCardStat extends StatelessWidget {
@@ -29,10 +28,11 @@ class PammCardStat extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.poppins(
+          style: PammType.label(
+            context,
+            size: 10,
+            weight: FontWeight.w700,
             color: muted,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w600,
             letterSpacing: 0.4,
           ),
         ),
@@ -41,10 +41,11 @@ class PammCardStat extends StatelessWidget {
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.poppins(
+          style: PammType.figure(
+            context,
+            size: 13.5,
+            weight: FontWeight.w700,
             color: color ?? text,
-            fontSize: 13.5,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -71,27 +72,18 @@ class PammPoolCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = PammColors.isDark(context);
-    final card = PammColors.card(context);
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final subtle = PammColors.subtle(context);
     final isOpen = pool.status != 'Closed';
-    final statusColor = isOpen ? PammColors.green : PammColors.closedRose;
+    final statusColor = isOpen
+        ? PammColors.positive(context)
+        : (dark ? const Color(0xFFFB7185) : PammColors.closedRose);
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: PammDecorations.card(context, radius: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -103,8 +95,8 @@ class PammPoolCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: managed
-                        ? const [Color(0xFF1A3A8C), Color(0xFF2563EB)]
-                        : const [Color(0xFFD97706), Color(0xFFF59E0B)],
+                        ? const [PammColors.navy, PammColors.blue]
+                        : const [Color(0xFFB45309), PammColors.gold],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -112,7 +104,7 @@ class PammPoolCard extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(
                       color: (managed ? PammColors.blue : PammColors.gold)
-                          .withValues(alpha: 0.28),
+                          .withValues(alpha: dark ? 0.30 : 0.22),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -121,10 +113,11 @@ class PammPoolCard extends StatelessWidget {
                 child: Center(
                   child: Text(
                     pool.name.isEmpty ? 'P' : pool.name[0].toUpperCase(),
-                    style: const TextStyle(
+                    style: PammType.heading(
+                      context,
+                      size: 17,
+                      weight: FontWeight.w700,
                       color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
@@ -138,10 +131,10 @@ class PammPoolCard extends StatelessWidget {
                       pool.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        color: text,
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w600,
+                      style: PammType.heading(
+                        context,
+                        size: 15.5,
+                        weight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -153,10 +146,11 @@ class PammPoolCard extends StatelessWidget {
                             'MT5 ${pool.login}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.poppins(
+                            style: PammType.figure(
+                              context,
+                              size: 12,
+                              weight: FontWeight.w600,
                               color: muted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -165,40 +159,42 @@ class PammPoolCard extends StatelessWidget {
                           onTap: () => copyPammValue(context, pool.login),
                           borderRadius: BorderRadius.circular(4),
                           child: Padding(
-                            padding: const EdgeInsets.all(2),
+                            padding: const EdgeInsets.all(3),
                             child: Icon(
                               Icons.copy_outlined,
-                              size: 12,
+                              size: 13,
                               color: muted,
                             ),
                           ),
                         ),
-                        if (!managed) ...[
+                        if (!managed)
                           Expanded(
                             child: Text(
                               ' • ${pool.manager}',
-                              style: GoogleFonts.poppins(
+                              style: PammType.body(
+                                context,
+                                size: 12,
+                                weight: FontWeight.w500,
                                 color: muted,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: statusColor.withValues(alpha: 0.3),
+                    color: statusColor.withValues(alpha: 0.32),
                   ),
                 ),
                 child: Row(
@@ -215,10 +211,11 @@ class PammPoolCard extends StatelessWidget {
                     const SizedBox(width: 5),
                     Text(
                       isOpen ? 'OPEN' : 'CLOSED',
-                      style: GoogleFonts.poppins(
+                      style: PammType.label(
+                        context,
+                        size: 10.5,
+                        weight: FontWeight.w700,
                         color: statusColor,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w900,
                         letterSpacing: 0.4,
                       ),
                     ),
@@ -228,30 +225,48 @@ class PammPoolCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: border),
-          const SizedBox(height: 11),
-          Row(
-            children: [
-              Expanded(
-                child: PammCardStat(label: 'LEVERAGE', value: pool.leverage),
-              ),
-              Expanded(
-                child: PammCardStat(
-                  label: managed ? 'MANAGER BALANCE' : 'POOL EQUITY',
-                  value: formatPammMoney(
-                    managed ? pool.managerBalance : pool.equity,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: subtle,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: PammCardStat(label: 'LEVERAGE', value: pool.leverage),
+                ),
+                Container(
+                  width: 1,
+                  height: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: border,
+                ),
+                Expanded(
+                  child: PammCardStat(
+                    label: managed ? 'MANAGER BALANCE' : 'POOL EQUITY',
+                    value: formatPammMoney(
+                      managed ? pool.managerBalance : pool.equity,
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: PammCardStat(
-                  label: managed ? 'POOL VALUE' : 'PROFIT SHARE',
-                  value: managed
-                      ? formatPammMoney(pool.equity)
-                      : '${pool.share.toStringAsFixed(2)}%',
+                Container(
+                  width: 1,
+                  height: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: border,
                 ),
-              ),
-            ],
+                Expanded(
+                  child: PammCardStat(
+                    label: managed ? 'POOL VALUE' : 'PROFIT SHARE',
+                    value: managed
+                        ? formatPammMoney(pool.equity)
+                        : '${pool.share.toStringAsFixed(2)}%',
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -267,15 +282,16 @@ class PammPoolCard extends StatelessWidget {
                           : 'Closed for New Investors'),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
+                  style: PammType.body(
+                    context,
+                    size: 11.5,
+                    weight: FontWeight.w500,
                     color: muted,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               if (managed) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 OutlinedButton.icon(
                   onPressed: onDetails == null
                       ? null
@@ -284,9 +300,14 @@ class PammPoolCard extends StatelessWidget {
                           onDetails!();
                         },
                   icon: const Icon(LucideIcons.chevronRight, size: 14),
-                  label: const Text(
+                  label: Text(
                     'Details',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    style: PammType.body(
+                      context,
+                      size: 12,
+                      weight: FontWeight.w700,
+                      color: text,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: text,
@@ -294,11 +315,11 @@ class PammPoolCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     minimumSize: const Size(0, 44),
                   ),
                 ),
-                const SizedBox(width: 7),
+                const SizedBox(width: 8),
                 FilledButton(
                   onPressed: !isOpen || onDeposit == null
                       ? null
@@ -313,45 +334,41 @@ class PammPoolCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     minimumSize: const Size(0, 44),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                   ),
                   child: const Text(
                     'Deposit',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
-              ] else
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(width: 6),
-                    FilledButton.icon(
-                      onPressed: !isOpen || onInvest == null
-                          ? null
-                          : () {
-                              AppHaptics.lightImpact();
-                              onInvest!();
-                            },
-                      icon: const Icon(LucideIcons.trendingUp, size: 15),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: PammColors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        minimumSize: const Size(0, 44),
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                      ),
-                      label: const Text(
-                        'Invest Now',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+              ] else ...[
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: !isOpen || onInvest == null
+                      ? null
+                      : () {
+                          AppHaptics.lightImpact();
+                          onInvest!();
+                        },
+                  icon: const Icon(LucideIcons.trendingUp, size: 15),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: PammColors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                  ),
+                  label: const Text(
+                    'Invest Now',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
+              ],
             ],
           ),
         ],
@@ -375,25 +392,17 @@ class PammInvestmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = PammColors.isDark(context);
-    final card = PammColors.card(context);
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final subtle = PammColors.subtle(context);
+    final pnlColor = item.pnl >= 0
+        ? PammColors.positive(context)
+        : PammColors.negative(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: PammDecorations.card(context, radius: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -411,7 +420,8 @@ class PammInvestmentCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(13),
                   boxShadow: [
                     BoxShadow(
-                      color: PammColors.green.withValues(alpha: 0.25),
+                      color: PammColors.green
+                          .withValues(alpha: dark ? 0.30 : 0.22),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -432,10 +442,10 @@ class PammInvestmentCard extends StatelessWidget {
                       item.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        color: text,
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w600,
+                      style: PammType.heading(
+                        context,
+                        size: 15.5,
+                        weight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -443,43 +453,63 @@ class PammInvestmentCard extends StatelessWidget {
                       'MT5 ${item.login}  •  Manager: ${item.manager}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
+                      style: PammType.body(
+                        context,
+                        size: 12,
+                        weight: FontWeight.w500,
                         color: muted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               PammShareBadge(value: item.share),
             ],
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: border),
-          const SizedBox(height: 11),
-          Row(
-            children: [
-              Expanded(
-                child: PammCardStat(
-                  label: 'CURRENT VALUE',
-                  value: formatPammMoney(item.value),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: subtle,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: PammCardStat(
+                    label: 'CURRENT VALUE',
+                    value: formatPammMoney(item.value),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: PammCardStat(
-                  label: 'PROFIT / LOSS',
-                  value: formatPammMoney(item.pnl),
-                  color: item.pnl >= 0 ? PammColors.green : PammColors.rose,
+                Container(
+                  width: 1,
+                  height: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: border,
                 ),
-              ),
-              Expanded(
-                child: PammCardStat(
-                  label: 'INITIAL DEPOSIT',
-                  value: formatPammMoney(item.deposit),
+                Expanded(
+                  child: PammCardStat(
+                    label: 'PROFIT / LOSS',
+                    value: formatPammMoney(item.pnl),
+                    color: pnlColor,
+                  ),
                 ),
-              ),
-            ],
+                Container(
+                  width: 1,
+                  height: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: border,
+                ),
+                Expanded(
+                  child: PammCardStat(
+                    label: 'INITIAL DEPOSIT',
+                    value: formatPammMoney(item.deposit),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -489,23 +519,29 @@ class PammInvestmentCard extends StatelessWidget {
                   'Active PAMM Allocation',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
+                  style: PammType.body(
+                    context,
+                    size: 11.5,
+                    weight: FontWeight.w500,
                     color: muted,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () {
                   AppHaptics.lightImpact();
                   onDetails();
                 },
                 icon: const Icon(LucideIcons.chevronRight, size: 14),
-                label: const Text(
+                label: Text(
                   'Details',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  style: PammType.body(
+                    context,
+                    size: 12,
+                    weight: FontWeight.w700,
+                    color: text,
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: text,
@@ -514,10 +550,10 @@ class PammInvestmentCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
               ),
-              const SizedBox(width: 7),
+              const SizedBox(width: 8),
               FilledButton(
                 onPressed: () {
                   AppHaptics.lightImpact();
@@ -530,7 +566,7 @@ class PammInvestmentCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                 ),
                 child: const Text(
                   'Deposit',

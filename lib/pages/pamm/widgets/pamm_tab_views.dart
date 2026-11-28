@@ -24,7 +24,7 @@ abstract class _PammTabPage extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
       itemCount: children.length,
       itemBuilder: (context, index) => children[index],
     );
@@ -107,6 +107,10 @@ class PammManagedTabView extends StatelessWidget {
     final showSkeleton = loading && managed.isEmpty;
     final skeletonPools = PammPool.skeletonSamples();
     final metricSource = showSkeleton ? skeletonPools : managed;
+    final totalPnl = metricSource.fold<double>(
+      0,
+      (total, pool) => total + pool.pnl,
+    );
     final hasActiveFilters = query.trim().isNotEmpty ||
         (selectedFilter.isNotEmpty && selectedFilter != 'All Pools');
 
@@ -144,19 +148,16 @@ class PammManagedTabView extends StatelessWidget {
                 value: '${metricSource.length}',
                 subtext: 'Your active pools',
                 icon: LucideIcons.layers,
-                accent: PammColors.green,
+                accent: PammColors.positive(context),
               ),
               PammMetricCard(
                 label: 'PROFIT / LOSS',
-                value: formatPammMoney(
-                  metricSource.fold<double>(
-                    0,
-                    (total, pool) => total + pool.pnl,
-                  ),
-                ),
+                value: formatPammMoney(totalPnl),
                 subtext: 'Pool performance',
                 icon: LucideIcons.trendingUp,
-                accent: PammColors.gold,
+                accent: totalPnl < 0
+                    ? PammColors.negative(context)
+                    : PammColors.gold,
               ),
             ],
           ),
@@ -283,7 +284,6 @@ class PammAvailableTabView extends StatelessWidget {
     return PammAvailableTabPage(
       onRefresh: onRefresh,
       children: [
-        const SizedBox(height: 12),
         PammSkeletonizer(
           enabled: showSkeleton,
           child: PammMetricGrid(
@@ -300,7 +300,7 @@ class PammAvailableTabView extends StatelessWidget {
                 value: formatPammMoney(totalEquity),
                 subtext: 'Across listed pools',
                 icon: LucideIcons.wallet,
-                accent: PammColors.green,
+                accent: PammColors.positive(context),
               ),
               PammMetricCard(
                 label: 'AVG. PROFIT SHARE',
@@ -455,14 +455,16 @@ class PammInvestmentsTabView extends StatelessWidget {
                 value: formatPammMoney(value),
                 subtext: 'Portfolio value',
                 icon: LucideIcons.chartNoAxesCombined,
-                accent: PammColors.green,
+                accent: PammColors.positive(context),
               ),
               PammMetricCard(
                 label: 'NET PROFIT / LOSS',
                 value: formatPammMoney(pnl),
                 subtext: 'Unrealized result',
                 icon: LucideIcons.trendingUp,
-                accent: PammColors.gold,
+                accent: pnl < 0
+                    ? PammColors.negative(context)
+                    : PammColors.gold,
               ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
+import 'package:crm_app/pages/pamm/widgets/pamm_shared_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -36,7 +37,6 @@ class PammTopBar extends StatelessWidget {
     final pillAccent = dark ? const Color(0xFF60A5FA) : PammColors.deepBlue;
 
     const labels = ['Managed', 'Available', 'Investments'];
-    final counts = [managedCount, availableCount, investmentsCount];
     const icons = [
       LucideIcons.briefcaseBusiness,
       LucideIcons.layers,
@@ -149,128 +149,87 @@ class PammTopBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: card,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: border),
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 420;
-                return Row(
-                  children: [
-                    for (var i = 0; i < labels.length; i++)
-                      Expanded(
-                        child: Semantics(
-                          button: true,
-                          selected: tab == i,
-                          label:
-                              '${labels[i]}, ${counts[i]} ${counts[i] == 1 ? 'item' : 'items'}',
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                AppHaptics.selectionClick();
-                                onSelectTab(i);
-                              },
-                              borderRadius: BorderRadius.circular(11),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 220),
-                                curve: Curves.easeInOutCubic,
-                                constraints: BoxConstraints(
-                                  minHeight: compact ? 68 : 48,
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: compact ? 4 : 10,
-                                  vertical: compact ? 7 : 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: tab == i
-                                      ? const LinearGradient(
-                                          colors: [
-                                            PammColors.blue,
-                                            PammColors.deepBlue,
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        )
-                                      : null,
-                                  borderRadius: BorderRadius.circular(11),
-                                  boxShadow: tab == i
-                                      ? [
-                                          BoxShadow(
-                                            color: PammColors.blue
-                                                .withValues(alpha: 0.28),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                                child: compact
-                                    ? Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            icons[i],
-                                            size: 16,
-                                            color:
-                                                tab == i ? Colors.white : muted,
-                                          ),
-                                          const SizedBox(height: 3),
-                                          Text(
-                                            labels[i],
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: PammType.body(
-                                              context,
-                                              size: 11.5,
-                                              weight: tab == i
-                                                  ? FontWeight.w700
-                                                  : FontWeight.w600,
-                                              color: tab == i
-                                                  ? Colors.white
-                                                  : text,
+          PammSkeletonizer(
+            enabled: loading,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: border),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 420;
+                  return Row(
+                    children: [
+                      for (var i = 0; i < labels.length; i++)
+                        Expanded(
+                          child: Semantics(
+                            button: true,
+                            selected: tab == i,
+                            label: labels[i],
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  AppHaptics.selectionClick();
+                                  onSelectTab(i);
+                                },
+                                borderRadius: BorderRadius.circular(11),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 220),
+                                  curve: Curves.easeInOutCubic,
+                                  constraints: const BoxConstraints(
+                                    minHeight: 46,
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: compact ? 4 : 10,
+                                    vertical: compact ? 6 : 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: tab == i
+                                        ? const LinearGradient(
+                                            colors: [
+                                              PammColors.blue,
+                                              PammColors.deepBlue,
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          )
+                                        : null,
+                                    borderRadius: BorderRadius.circular(11),
+                                    boxShadow: tab == i
+                                        ? [
+                                            BoxShadow(
+                                              color: PammColors.blue
+                                                  .withValues(alpha: 0.28),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
                                             ),
-                                          ),
-                                          Text(
-                                            '${counts[i]} ${counts[i] == 1 ? 'item' : 'items'}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: PammType.figure(
-                                              context,
-                                              size: 10,
-                                              weight: FontWeight.w600,
+                                          ]
+                                        : null,
+                                  ),
+                                  child: compact
+                                      ? Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              icons[i],
+                                              size: 16,
                                               color: tab == i
                                                   ? Colors.white
-                                                      .withValues(alpha: 0.88)
                                                   : muted,
                                             ),
-                                          ),
-                                        ],
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            icons[i],
-                                            size: 15,
-                                            color:
-                                                tab == i ? Colors.white : muted,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Flexible(
-                                            child: Text(
+                                            const SizedBox(height: 3),
+                                            Text(
                                               labels[i],
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: PammType.body(
                                                 context,
-                                                size: 13,
+                                                size: 11.5,
                                                 weight: tab == i
                                                     ? FontWeight.w700
                                                     : FontWeight.w600,
@@ -279,60 +238,50 @@ class PammTopBar extends StatelessWidget {
                                                     : text,
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 7,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
+                                          ],
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              icons[i],
+                                              size: 15,
                                               color: tab == i
                                                   ? Colors.white
-                                                      .withValues(alpha: 0.22)
-                                                  : PammColors.subtle(context),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: tab == i
-                                                  ? null
-                                                  : Border.all(color: border),
+                                                  : muted,
                                             ),
-                                            child: Text(
-                                              '${counts[i]}',
-                                              style: PammType.figure(
-                                                context,
-                                                size: 11,
-                                                weight: FontWeight.w700,
-                                                color: tab == i
-                                                    ? Colors.white
-                                                    : muted,
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              child: Text(
+                                                labels[i],
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: PammType.body(
+                                                  context,
+                                                  size: 13,
+                                                  weight: tab == i
+                                                      ? FontWeight.w700
+                                                      : FontWeight.w600,
+                                                  color: tab == i
+                                                      ? Colors.white
+                                                      : text,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
-          if (loading) ...[
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                minHeight: 2.5,
-                backgroundColor: border,
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(PammColors.blue),
+                    ],
+                  );
+                },
               ),
             ),
-          ],
+          ),
           if (error != null) ...[
             const SizedBox(height: 10),
             Container(

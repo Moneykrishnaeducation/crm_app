@@ -489,7 +489,7 @@ class PammPageState extends State<PammPage> {
         popSubView();
       },
       child: Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: PammColors.bg(context),
       body: Padding(
         padding: const EdgeInsets.only(bottom: 84),
         child: SafeArea(

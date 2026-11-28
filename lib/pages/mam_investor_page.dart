@@ -171,51 +171,6 @@ class MamInvestmentSubscription {
 }
 
 // -----------------------------------------------------------------------------
-// VISUAL RISK GAUGE METER (3-BAR SEGMENTED)
-// -----------------------------------------------------------------------------
-class _RiskMeter extends StatelessWidget {
-  const _RiskMeter({required this.level});
-
-  final int level; // 1 = Low, 2 = Med, 3 = High
-
-  @override
-  Widget build(BuildContext context) {
-    Color activeColor;
-    if (level <= 1) {
-      activeColor = const Color(0xFF10B981);
-    } else if (level == 2) {
-      activeColor = const Color(0xFFF59E0B);
-    } else {
-      activeColor = const Color(0xFFEF4444);
-    }
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final heights = [6.0, 9.5, 13.0];
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        for (int i = 0; i < 3; i++)
-          Container(
-            width: 3.5,
-            height: heights[i],
-            margin: EdgeInsets.only(right: i < 2 ? 2.5 : 0),
-            decoration: BoxDecoration(
-              color: i < level
-                  ? activeColor
-                  : (isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFCBD5E1)),
-              borderRadius: BorderRadius.circular(1.5),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
 // MAM INVESTOR PAGE
 // -----------------------------------------------------------------------------
 class MamInvestorPage extends StatefulWidget {
@@ -1683,78 +1638,6 @@ class _MamInvestorPageState extends State<MamInvestorPage> {
       passwordController.dispose();
       confirmPasswordController.dispose();
     });
-  }
-
-  Widget _credentialCard({
-    required String label,
-    required String value,
-    required String description,
-    required bool isMasked,
-    required VoidCallback onToggleVisibility,
-    required VoidCallback onCopy,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _c.subCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _c.subBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  color: _c.muted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      isMasked ? LucideIcons.eye : LucideIcons.eyeOff,
-                      size: 16,
-                      color: _c.muted,
-                    ),
-                    onPressed: onToggleVisibility,
-                    constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(LucideIcons.copy, size: 16, color: _c.blue),
-                    onPressed: onCopy,
-                    constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              color: _c.text,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(description, style: TextStyle(color: _c.muted, fontSize: 10.5)),
-        ],
-      ),
-    );
   }
 
   // ---------------------------------------------------------------------------

@@ -2672,11 +2672,6 @@ class MamPageState extends State<MamPage> {
         }
 
         final risk = manager.riskScore.trim();
-        final riskColor = risk.toLowerCase() == 'low'
-            ? _c.green
-            : risk.toLowerCase() == 'high'
-                ? _c.red
-                : _c.gold;
 
         return Container(
           padding: EdgeInsets.fromLTRB(
@@ -2868,25 +2863,6 @@ class MamPageState extends State<MamPage> {
       },
     );
   }
-
-  Widget _managerDetailLine(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(label, style: TextStyle(color: _c.muted, fontSize: 12)),
-        ),
-        Text(
-          value.isEmpty ? '—' : value,
-          style: GoogleFonts.inter(
-            color: _c.text,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    ),
-  );
 
   // ---------------------------------------------------------------------------
   // TAB 2: MAM AVAILABLE

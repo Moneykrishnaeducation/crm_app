@@ -95,6 +95,8 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   bool _email2faEnabled = false;
   bool _securitySettingsLoading = true;
   bool _biometricEnabled = false;
+  String _emailAddress = '';
+  bool _emailLoading = true;
   List<Map<String, dynamic>> _trustedDevices = [];
   bool _devicesLoading = false;
   String? _devicesError;
@@ -110,6 +112,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   void initState() {
     super.initState();
     _checkBiometricStatus();
+    unawaited(_loadProfileEmail());
     unawaited(_loadSecuritySettings());
   }
 
@@ -139,6 +142,29 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       if (mounted) {
         setState(() => _securitySettingsLoading = false);
       }
+    }
+  }
+
+  Future<void> _loadProfileEmail() async {
+    try {
+      final response = await AuthApi.instance.getProfile();
+      dynamic value = response;
+      String email = '';
+      for (var depth = 0; depth < 4 && value is Map; depth++) {
+        final profile = value.cast<String, dynamic>();
+        final candidate = profile['email'] ?? profile['email_address'];
+        if (candidate != null && candidate.toString().trim().isNotEmpty) {
+          email = candidate.toString().trim();
+          break;
+        }
+        value = profile['user'] ?? profile['profile'] ?? profile['data'];
+      }
+      if (mounted) setState(() => _emailAddress = email);
+    } catch (error) {
+      debugPrint('Security Center email load failed: $error');
+      if (mounted) setState(() => _emailAddress = '');
+    } finally {
+      if (mounted) setState(() => _emailLoading = false);
     }
   }
 
@@ -203,7 +229,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _toggleBiometric(bool value) async {
-    AppHaptics.lightImpact();
     final bio = widget.biometricSignIn ?? BiometricSignIn.instance;
     if (value) {
       try {
@@ -294,7 +319,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                     _securityActionRow(
                       title: 'Email address',
                       subtitle: 'Your registered account email',
-                      trailing: 't****harasan344@gmail.com',
+                      trailing: _emailLoading
+                          ? 'Loading...'
+                          : _emailAddress.isNotEmpty
+                          ? _emailAddress
+                          : 'Unavailable',
                       icon: LucideIcons.mail,
                       onTap: null,
                     ),
@@ -599,7 +628,10 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         const SizedBox(width: 8),
         Switch.adaptive(
           value: value,
-          onChanged: onChanged,
+          onChanged: (newValue) {
+            AppHaptics.selectionClick();
+            onChanged(newValue);
+          },
           activeThumbColor: _brokerGold,
           activeTrackColor: _blueRoyal,
         ),
@@ -667,13 +699,18 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (trailing.isNotEmpty)
-                  Text(
-                    trailing,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      color: trailingColor ?? _mutedColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 150),
+                    child: Text(
+                      trailing,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        color: trailingColor ?? _mutedColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 if (onTap != null) ...[
@@ -769,6 +806,9 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     final activeDevices = _trustedDevices
         .where((device) => device['status'] == 'trusted')
         .toList();
+    final activeDeviceLabel = activeDevices.length == 1
+        ? '1 active device'
+        : '${activeDevices.length} active devices';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -781,7 +821,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   Text('Trusted devices',
                       style: TextStyle(color: _textColor, fontSize: 17, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 3),
-                  Text('${activeDevices.length} active device(s)',
+                  Text(activeDeviceLabel,
                       style: TextStyle(color: _mutedColor, fontSize: 12)),
                 ],
               ),
@@ -829,9 +869,17 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           _deviceMessageCard(_devicesError!, action: TextButton(
             onPressed: _loadTrustedDevices,
             child: const Text('Try again'),
-          ))
+          ), icon: LucideIcons.triangleAlert, iconColor: _redAccent)
         else if (_trustedDevices.isEmpty)
-          _deviceMessageCard('No trusted devices are currently registered.')
+          _deviceMessageCard(
+            'No trusted devices are registered yet.',
+            icon: LucideIcons.monitorSmartphone,
+            action: OutlinedButton.icon(
+              onPressed: _loadTrustedDevices,
+              icon: const Icon(LucideIcons.refreshCw, size: 16),
+              label: const Text('Refresh devices'),
+            ),
+          )
         else
           ..._trustedDevices.map(_buildLiveDeviceCard),
         const SizedBox(height: 18),
@@ -840,13 +888,21 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
-  Widget _deviceMessageCard(String message, {Widget? action}) => Container(
+  Widget _deviceMessageCard(
+    String message, {
+    Widget? action,
+    IconData icon = LucideIcons.info,
+    Color? iconColor,
+  }) => Container(
     padding: const EdgeInsets.all(18),
     decoration: _insetCardDecoration(),
     child: Column(
       children: [
+        Icon(icon, color: iconColor ?? _mutedColor, size: 26),
+        const SizedBox(height: 10),
         Text(message, textAlign: TextAlign.center,
             style: TextStyle(color: _mutedColor, fontSize: 13)),
+        if (action != null) const SizedBox(height: 8),
         ?action,
       ],
     ),
@@ -951,7 +1007,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _confirmRemoveDevice({int? deviceId}) async {
-    AppHaptics.lightImpact();
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1055,6 +1110,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       ),
     );
     if (confirmed == true && mounted) {
+      AppHaptics.heavyImpact();
       if (deviceId == null) {
         setState(() {
           _trustedDevices = [];
@@ -1138,7 +1194,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _confirmRevokeAllDevices() async {
-    AppHaptics.lightImpact();
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1242,7 +1297,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       ),
     );
     if (confirmed == true && mounted) {
-      AppHaptics.mediumImpact();
+      AppHaptics.heavyImpact();
       try {
         await AuthApi.instance.revokeTrustedDevice();
         if (!mounted) return;
@@ -1307,13 +1362,17 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _showChangeLoginPassword() async {
+    final biometricSignIn = widget.biometricSignIn ?? BiometricSignIn.instance;
     final draft = await showModalBottomSheet<_PasswordDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.65),
-      builder: (_) => const _NewPasswordFormSheet(),
+      builder: (_) => _NewPasswordFormSheet(
+        biometricSignIn: biometricSignIn,
+        emailAddress: _emailAddress,
+      ),
     );
     if (!mounted || draft == null) return;
 
@@ -1332,6 +1391,18 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         newPassword: draft.newPassword,
         confirmPassword: draft.newPassword,
       );
+      try {
+        await biometricSignIn.rememberSessionCredentials(
+          identifier: draft.identifier ?? _emailAddress,
+          password: draft.newPassword,
+        );
+      } catch (_) {
+        if (mounted) {
+          showAppMessage(
+            'Password updated, but biometric sign-in credentials could not be refreshed.',
+          );
+        }
+      }
       if (!mounted) return;
       await showModalBottomSheet<void>(
         context: context,
@@ -1699,13 +1770,24 @@ class _VerifySecurityPasswordModalState
 }
 
 class _PasswordDraft {
-  const _PasswordDraft(this.currentPassword, this.newPassword);
+  const _PasswordDraft(
+    this.currentPassword,
+    this.newPassword, {
+    this.identifier,
+  });
   final String currentPassword;
   final String newPassword;
+  final String? identifier;
 }
 
 class _NewPasswordFormSheet extends StatefulWidget {
-  const _NewPasswordFormSheet();
+  const _NewPasswordFormSheet({
+    required this.biometricSignIn,
+    required this.emailAddress,
+  });
+
+  final BiometricSignIn biometricSignIn;
+  final String emailAddress;
 
   @override
   State<_NewPasswordFormSheet> createState() => _NewPasswordFormSheetState();
@@ -1718,6 +1800,9 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
   bool _hideCurrent = true;
   bool _hideNew = true;
   bool _hideConfirm = true;
+  bool _biometricAvailable = false;
+  bool _biometricBusy = false;
+  BiometricCredentials? _biometricCredentials;
   String? _error;
 
   bool get _dark => Theme.of(context).brightness == Brightness.dark;
@@ -1732,6 +1817,73 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
     _newPassword.dispose();
     _confirm.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_loadBiometricAvailability());
+    });
+  }
+
+  Future<void> _loadBiometricAvailability() async {
+    try {
+      final bio = widget.biometricSignIn;
+      final enabled = await bio.isEnabled();
+      final available = enabled && await bio.isAvailable();
+      final hasCredentials = available && await bio.hasStoredCredentials();
+      if (!mounted) return;
+      setState(() => _biometricAvailable = hasCredentials);
+      if (hasCredentials) await _verifyWithBiometrics();
+    } catch (error) {
+      debugPrint('Password change biometric availability check failed: $error');
+      if (mounted) setState(() => _biometricAvailable = false);
+    }
+  }
+
+  Future<void> _verifyWithBiometrics() async {
+    setState(() {
+      _biometricBusy = true;
+      _error = null;
+    });
+    try {
+      final authenticated = await widget.biometricSignIn.authenticate(
+        localizedReason: 'Verify your identity to change your login password',
+      );
+      if (!mounted) return;
+      if (!authenticated) {
+        setState(() => _error = 'Biometric verification was not completed.');
+        return;
+      }
+      final credentials = await widget.biometricSignIn.readCredentials();
+      if (!mounted) return;
+      if (credentials == null) {
+        setState(() {
+          _error = 'No saved biometric login credentials were found. Enter your current password instead.';
+        });
+        return;
+      }
+      final email = widget.emailAddress.trim().toLowerCase();
+      if (email.isNotEmpty &&
+          credentials.identifier.contains('@') &&
+          credentials.identifier.trim().toLowerCase() != email) {
+        setState(() {
+          _error = 'Saved biometric credentials belong to a different account. Enter your current password instead.';
+        });
+        return;
+      }
+      setState(() => _biometricCredentials = credentials);
+    } catch (error) {
+      debugPrint('Password change biometric verification failed: $error');
+      if (mounted) {
+        setState(
+          () => _error = 'Biometric verification failed. Enter your current password instead.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _biometricBusy = false);
+    }
   }
 
   Widget _passwordField(
@@ -1795,17 +1947,28 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
   }
 
   void _continue() {
-    if (_currentPassword.text.isEmpty) {
-      setState(() => _error = 'Enter your current login password.');
+    final credentials = _biometricCredentials;
+    final currentPassword = credentials?.password ?? _currentPassword.text;
+    if (currentPassword.isEmpty) {
+      _showValidationError('Enter your current login password.');
     } else if (_newPassword.text.length < 8) {
-      setState(
-        () => _error = 'Use at least 8 characters for your new password.',
-      );
+      _showValidationError('Use at least 8 characters for your new password.');
     } else if (_newPassword.text != _confirm.text) {
-      setState(() => _error = 'The new passwords do not match.');
+      _showValidationError('The new passwords do not match.');
     } else {
-      Navigator.of(context).pop(_PasswordDraft(_currentPassword.text, _newPassword.text));
+      Navigator.of(context).pop(
+        _PasswordDraft(
+          currentPassword,
+          _newPassword.text,
+          identifier: credentials?.identifier,
+        ),
+      );
     }
+  }
+
+  void _showValidationError(String message) {
+    AppHaptics.heavyImpact();
+    setState(() => _error = message);
   }
 
   @override
@@ -1917,13 +2080,31 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                _passwordField(
-                  'Current password',
-                  'Enter your current CRM password',
-                  _currentPassword,
-                  _hideCurrent,
-                  () => setState(() => _hideCurrent = !_hideCurrent),
-                ),
+                if (_biometricCredentials == null) ...[
+                  _passwordField(
+                    'Current password',
+                    'Enter your current CRM password',
+                    _currentPassword,
+                    _hideCurrent,
+                    () => setState(() => _hideCurrent = !_hideCurrent),
+                  ),
+                  if (_biometricAvailable) ...[
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _biometricBusy ? null : _verifyWithBiometrics,
+                      icon: Icon(
+                        LucideIcons.fingerprint,
+                        size: 18,
+                        color: _bluePrimary,
+                      ),
+                      label: Text(
+                        _biometricBusy
+                            ? 'Verifying...'
+                            : 'Use biometrics instead',
+                      ),
+                    ),
+                  ],
+                ],
                 const SizedBox(height: 16),
                 _passwordField(
                   'New password',
@@ -1942,12 +2123,24 @@ class _NewPasswordFormSheetState extends State<_NewPasswordFormSheet> {
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: _redAccent,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SizeTransition(
+                        sizeFactor: animation,
+                        alignment: Alignment.topCenter,
+                        child: child,
+                      ),
+                    ),
+                    child: Text(
+                      _error!,
+                      key: ValueKey(_error),
+                      style: const TextStyle(
+                        color: _redAccent,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -2144,7 +2337,7 @@ class _PasswordChangeSuccessSheet extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Your password change has been confirmed in this preview. The account password has not been updated because the secure password service is not connected.',
+              'Your login password has been updated successfully.',
               style: TextStyle(
                 color: scheme.onSurfaceVariant,
                 fontSize: 13,

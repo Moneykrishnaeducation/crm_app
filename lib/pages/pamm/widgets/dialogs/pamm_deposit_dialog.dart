@@ -294,78 +294,85 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
     required String title,
     required String subtitle,
     required bool compact,
-    required Color modalText,
-    required Color modalMuted,
-    required Color modalCard,
-    required Color modalBorder,
   }) {
     final selected = _method == index;
+    final text = PammColors.text(context);
+    final muted = PammColors.muted(context);
+    final card = PammColors.card(context);
+    final border = PammColors.border(context);
+
     return Expanded(
       child: InkWell(
         onTap: _submitting ? null : () => _selectPaymentMethod(index),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 170),
+          constraints: const BoxConstraints(minHeight: 48),
           padding: EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: compact ? 12 : 15,
+            horizontal: 10,
+            vertical: compact ? 10 : 12,
           ),
           decoration: BoxDecoration(
             gradient: selected
                 ? const LinearGradient(
-                    colors: [Color(0xFF293FE1), Color(0xFF3569F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [PammColors.deepBlue, PammColors.blue],
                   )
                 : null,
-            color: selected ? null : modalCard,
-            borderRadius: BorderRadius.circular(13),
+            color: selected ? null : card,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? PammColors.blue : modalBorder,
-              width: selected ? 1.3 : 1,
+              color: selected ? PammColors.blue : border,
+              width: selected ? 1.2 : 1,
             ),
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: PammColors.blue.withValues(alpha: .18),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
+                      color: PammColors.blue.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ]
                 : null,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     icon,
-                    size: 15,
-                    color: selected ? Colors.white : modalText,
+                    size: 16,
+                    color: selected ? Colors.white : text,
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       title,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: selected ? Colors.white : modalText,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
+                      style: PammType.body(
+                        context,
+                        size: 13,
+                        weight: FontWeight.w700,
+                        color: selected ? Colors.white : text,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 3),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: selected
-                      ? Colors.white.withValues(alpha: .85)
-                      : modalMuted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: PammType.body(
+                  context,
+                  size: 11,
+                  weight: FontWeight.w500,
+                  color: selected ? Colors.white.withValues(alpha: 0.9) : muted,
                 ),
               ),
             ],
@@ -375,18 +382,18 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
     );
   }
 
-  Widget _footerItem(IconData icon, String label, Color color, Color muted) =>
-      Row(
+  Widget _footerItem(IconData icon, String label, Color color) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 14),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(
-              color: muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
+            style: PammType.body(
+              context,
+              size: 11.5,
+              weight: FontWeight.w600,
+              color: PammColors.muted(context),
             ),
           ),
         ],
@@ -400,13 +407,13 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
     final maxHeight =
         (screen.height - keyboardBottom).clamp(240.0, screen.height * .94);
     final isDark = PammColors.isDark(context);
-    final modalText = isDark ? Colors.white : const Color(0xFF091836);
-    final modalMuted =
-        isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
-    final modalCard = PammColors.card(context);
-    final modalSurface = PammColors.surface(context);
-    final modalBorder = PammColors.border(context);
+    final card = PammColors.card(context);
+    final surface = PammColors.surface(context);
+    final subtle = PammColors.subtle(context);
+    final border = PammColors.border(context);
+    final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final negative = PammColors.negative(context);
 
     final walletAddress = _cryptoDetails?['wallet_address']?.toString() ?? '';
     final bankAccount = _bankDetails?['account_number']?.toString() ?? '';
@@ -417,17 +424,14 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
         ? const [1000, 5000, 10000, 25000]
         : const [50, 100, 500, 1000];
     final currencySymbol = isInrManual ? '₹' : r'$';
+    final hasCopyableDetail = (_method == 0 && walletAddress.isNotEmpty) ||
+        (_method == 1 && bankAccount.isNotEmpty);
 
-    Widget sectionLabel(String text) => Padding(
-          padding: const EdgeInsets.only(bottom: 9),
+    Widget sectionLabel(String labelText) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
           child: Text(
-            text.toUpperCase(),
-            style: TextStyle(
-              color: modalText,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: .25,
-            ),
+            labelText.toUpperCase(),
+            style: PammType.label(context, size: 11, letterSpacing: 0.6),
           ),
         );
 
@@ -448,87 +452,99 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                     },
             ),
           ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: keyboardBottom),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 780, maxHeight: maxHeight),
-            child: Container(
-              margin: EdgeInsets.zero,
-              decoration: BoxDecoration(
-                color: modalCard,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(26)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .2),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: EdgeInsets.fromLTRB(compact ? 16 : 22, compact ? 15 : 20, 12, 17),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF1B328D), Color(0xFF315FEA), Color(0xFF356DF5)],
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: keyboardBottom),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 680, maxHeight: maxHeight),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: card,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(24)),
+                    border: Border.all(color: border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.14),
+                        blurRadius: 28,
+                        offset: const Offset(0, -4),
                       ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: -32,
-                          bottom: -66,
-                          child: Container(
-                            width: 170,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: .055),
-                            ),
-                          ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Institutional modal header
+                      Container(
+                        padding: EdgeInsets.fromLTRB(
+                          compact ? 16 : 22,
+                          16,
+                          12,
+                          14,
                         ),
-                        Column(
+                        decoration: BoxDecoration(
+                          color: card,
+                          border: Border(bottom: BorderSide(color: border)),
+                        ),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  width: 44,
-                                  height: 44,
+                                  width: 42,
+                                  height: 42,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: .13),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white.withValues(alpha: .28)),
+                                    gradient: const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [PammColors.navy, PammColors.blue],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 22),
+                                  child: const Icon(
+                                    Icons.account_balance_wallet_outlined,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Deposit Funds',
-                                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                                        style: PammType.heading(
+                                          context,
+                                          size: 18,
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 2),
                                       Text(
                                         'Add funds to your PAMM account using your preferred payment method.',
-                                        style: TextStyle(color: Colors.white.withValues(alpha: .88), fontSize: 10, height: 1.35),
+                                        style: PammType.body(
+                                          context,
+                                          size: 12,
+                                          weight: FontWeight.w400,
+                                          color: muted,
+                                          height: 1.35,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
+                                const SizedBox(width: 4),
                                 IconButton(
                                   tooltip: 'Close',
+                                  constraints: const BoxConstraints(
+                                    minWidth: 44,
+                                    minHeight: 44,
+                                  ),
                                   onPressed: _submitting
                                       ? null
                                       : () {
@@ -536,461 +552,542 @@ class _PammDepositSheetState extends State<_PammDepositSheet> {
                                           FocusScope.of(context).unfocus();
                                           Navigator.pop(context);
                                         },
-                                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 19),
+                                  icon: Icon(
+                                    Icons.close_rounded,
+                                    color: muted,
+                                    size: 20,
+                                  ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF071D57).withValues(alpha: .72),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white.withValues(alpha: .2)),
+                                color: surface,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: border),
                               ),
                               child: Wrap(
-                                spacing: 9,
+                                spacing: 10,
+                                runSpacing: 4,
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  const Icon(Icons.check_circle_outline, color: Color(0xFF2BE3B2), size: 13),
-                                  Text(
-                                    'Account:  ${widget.accountName}',
-                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_outline_rounded,
+                                        color: PammColors.positive(context),
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        'Account: ${widget.accountName}',
+                                        style: PammType.body(
+                                          context,
+                                          size: 11.5,
+                                          weight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const Text('|', style: TextStyle(color: Colors.white54, fontSize: 10)),
-                                  const Icon(Icons.shield_outlined, color: Color(0xFF8DEED5), size: 13),
-                                  const Text(
-                                    'Secure request',
-                                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.shield_outlined,
+                                        color: PammColors.blue,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        'Secure request',
+                                        style: PammType.body(
+                                          context,
+                                          size: 11.5,
+                                          weight: FontWeight.w600,
+                                          color: muted,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        compact ? 14 : 20,
-                        16,
-                        compact ? 14 : 20,
-                        12,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? modalSurface
-                                  : const Color(0xFFF7F9FE),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: modalBorder),
-                            ),
-                            child: Row(
-                              children: [
-                                _paymentTab(
-                                  index: 0,
-                                  icon: Icons.currency_bitcoin_rounded,
-                                  title: 'USDT',
-                                  subtitle: 'Crypto payment',
-                                  compact: compact,
-                                  modalText: modalText,
-                                  modalMuted: modalMuted,
-                                  modalCard: modalCard,
-                                  modalBorder: modalBorder,
-                                ),
-                                const SizedBox(width: 6),
-                                _paymentTab(
-                                  index: 1,
-                                  icon: Icons.account_balance_outlined,
-                                  title: 'MANUAL',
-                                  subtitle: 'Bank transfer',
-                                  compact: compact,
-                                  modalText: modalText,
-                                  modalMuted: modalMuted,
-                                  modalCard: modalCard,
-                                  modalBorder: modalBorder,
-                                ),
-                              ],
-                            ),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(
+                            compact ? 16 : 22,
+                            16,
+                            compact ? 16 : 22,
+                            14,
                           ),
-                          const SizedBox(height: 15),
-                          Container(
-                            padding: const EdgeInsets.all(13),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? modalSurface
-                                  : const Color(0xFFF3F7FF),
-                              borderRadius: BorderRadius.circular(13),
-                              border: Border.all(
-                                color: const Color(0xFFD7E4FF),
-                                style: BorderStyle.solid,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 34,
-                                  height: 34,
-                                  decoration: BoxDecoration(
-                                    color: modalCard,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.info_outline_rounded,
-                                    color: PammColors.blue,
-                                    size: 19,
-                                  ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Method selector tabs
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: surface,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: border),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'PAYMENT INSTRUCTIONS',
-                                        style: TextStyle(
-                                          color: modalText,
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                child: Row(
+                                  children: [
+                                    _paymentTab(
+                                      index: 0,
+                                      icon: Icons.currency_bitcoin_rounded,
+                                      title: 'USDT',
+                                      subtitle: 'Crypto payment',
+                                      compact: compact,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _paymentTab(
+                                      index: 1,
+                                      icon: Icons.account_balance_outlined,
+                                      title: 'MANUAL',
+                                      subtitle: 'Bank transfer',
+                                      compact: compact,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              // Bank / wallet instructions card
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: subtle,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: border),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: PammColors.blue
+                                            .withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
-                                      const SizedBox(height: 5),
-                                      Text(
-                                        _method == 0
-                                            ? 'Send USDT using the TRC20 network${walletAddress.isEmpty ? '' : ' to $walletAddress'} and upload your transaction screenshot.'
-                                            : 'Contact Live Support for official bank details${bankAccount.isEmpty ? '' : ' for $bankName, account $bankAccount'} before transferring, then upload your payment proof.',
-                                        style: TextStyle(
-                                          color: modalMuted,
-                                          fontSize: 11.5,
-                                          height: 1.4,
+                                      child: const Icon(
+                                        Icons.info_outline_rounded,
+                                        color: PammColors.blue,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'PAYMENT INSTRUCTIONS',
+                                            style: PammType.label(
+                                              context,
+                                              size: 10.5,
+                                              color: text,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _method == 0
+                                                ? 'Send USDT using the TRC20 network${walletAddress.isEmpty ? '' : ' to $walletAddress'} and upload your transaction screenshot.'
+                                                : 'Contact Live Support for official bank details${bankAccount.isEmpty ? '' : ' for $bankName, account $bankAccount'} before transferring, then upload your payment proof.',
+                                            style: PammType.body(
+                                              context,
+                                              size: 12.5,
+                                              weight: FontWeight.w400,
+                                              color: muted,
+                                              height: 1.45,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (hasCopyableDetail) ...[
+                                      const SizedBox(width: 4),
+                                      IconButton(
+                                        tooltip: 'Copy payment details',
+                                        constraints: const BoxConstraints(
+                                          minWidth: 44,
+                                          minHeight: 44,
+                                        ),
+                                        onPressed: () => copyPammValue(
+                                          context,
+                                          _method == 0
+                                              ? walletAddress
+                                              : bankAccount,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.copy_outlined,
+                                          color: PammColors.blue,
+                                          size: 18,
                                         ),
                                       ),
                                     ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              sectionLabel(
+                                'Deposit amount (${_method == 0 ? 'USD' : _manualCurrency})',
+                              ),
+                              if (_method == 1) ...[
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 6,
+                                  children: [
+                                    for (final currency in const ['INR', 'USD'])
+                                      ChoiceChip(
+                                        label: Text(
+                                          currency,
+                                          style: PammType.label(
+                                            context,
+                                            size: 11.5,
+                                            color: _manualCurrency == currency
+                                                ? PammColors.blue
+                                                : text,
+                                          ),
+                                        ),
+                                        selected: _manualCurrency == currency,
+                                        selectedColor: PammColors.blue
+                                            .withValues(alpha: 0.14),
+                                        backgroundColor: surface,
+                                        side: BorderSide(
+                                          color: _manualCurrency == currency
+                                              ? PammColors.blue
+                                              : border,
+                                        ),
+                                        onSelected: _submitting
+                                            ? null
+                                            : (_) {
+                                                AppHaptics.selectionClick();
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                                setState(() {
+                                                  _manualCurrency = currency;
+                                                  _errorMessage = null;
+                                                });
+                                              },
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                              TextField(
+                                controller: _amount,
+                                enabled: !_submitting,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                onChanged: (_) =>
+                                    setState(() => _errorMessage = null),
+                                style: PammType.figure(
+                                  context,
+                                  size: 16,
+                                  weight: FontWeight.w700,
+                                ),
+                                decoration: PammDecorations.input(
+                                  context,
+                                  hint: '0.00',
+                                  prefixIcon: Icon(
+                                    isInrManual
+                                        ? Icons.currency_rupee_rounded
+                                        : Icons.attach_money_rounded,
+                                    color: PammColors.blue,
+                                    size: 20,
                                   ),
                                 ),
-                                if ((_method == 0 &&
-                                        walletAddress.isNotEmpty) ||
-                                    (_method == 1 && bankAccount.isNotEmpty))
-                                  IconButton(
-                                    tooltip: 'Copy payment details',
-                                    onPressed: () => copyPammValue(
-                                      context,
-                                      _method == 0 ? walletAddress : bankAccount,
+                              ),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: quickAmounts.map((amount) {
+                                  final amountText = '$amount';
+                                  final isSelected =
+                                      parsePammDouble(_amount.text) ==
+                                          amount.toDouble();
+                                  return ChoiceChip(
+                                    label: Text(
+                                      '$currencySymbol$amountText',
+                                      style: PammType.figure(
+                                        context,
+                                        size: 12.5,
+                                        weight: FontWeight.w600,
+                                        color: isSelected
+                                            ? PammColors.blue
+                                            : text,
+                                      ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.copy_outlined,
-                                      color: PammColors.blue,
-                                      size: 17,
+                                    selected: isSelected,
+                                    selectedColor:
+                                        PammColors.blue.withValues(alpha: 0.14),
+                                    backgroundColor: surface,
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? PammColors.blue
+                                          : border,
                                     ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 17),
-                          sectionLabel(
-                            'Deposit amount (${_method == 0 ? 'USD' : _manualCurrency})',
-                          ),
-                          if (_method == 1) ...[
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
-                              children: [
-                                for (final currency in const ['INR', 'USD'])
-                                  ChoiceChip(
-                                    label: Text(currency),
-                                    selected: _manualCurrency == currency,
                                     onSelected: _submitting
                                         ? null
                                         : (_) {
                                             AppHaptics.selectionClick();
                                             FocusScope.of(context).unfocus();
                                             setState(() {
-                                              _manualCurrency = currency;
+                                              _amount.text = amountText;
                                               _errorMessage = null;
                                             });
                                           },
+                                  );
+                                }).toList(),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                !isInrManual
+                                    ? r'Minimum deposit: $10.00 USD'
+                                    : _usdInrRate > 0
+                                        ? 'Minimum deposit: ₹${_minInrAmount.toStringAsFixed(2)} INR (\$10.00 USD · rate ${_usdInrRate.toStringAsFixed(2)} INR/USD)'
+                                        : _rateLoadFailed
+                                            ? 'Exchange rate unavailable. Please try again shortly.'
+                                            : 'Loading USD to INR exchange rate...',
+                                style: PammType.body(
+                                  context,
+                                  size: 11.5,
+                                  weight: FontWeight.w500,
+                                  color: muted,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              sectionLabel('Upload payment proof'),
+                              InkWell(
+                                onTap: _submitting ? null : _pickProof,
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: subtle,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: _proof != null
+                                          ? PammColors.positive(context)
+                                              .withValues(alpha: 0.6)
+                                          : border,
+                                    ),
                                   ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: (_proof != null
+                                                  ? PammColors.positive(context)
+                                                  : PammColors.blue)
+                                              .withValues(alpha: 0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(11),
+                                        ),
+                                        child: Icon(
+                                          _proof != null
+                                              ? Icons.check_circle_outline_rounded
+                                              : Icons.cloud_upload_outlined,
+                                          color: _proof != null
+                                              ? PammColors.positive(context)
+                                              : PammColors.blue,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _proof?.name ??
+                                                  'Choose transaction proof',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: PammType.body(
+                                                context,
+                                                size: 13,
+                                                weight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              _proof == null
+                                                  ? 'JPG, PNG or WEBP · Tap to browse'
+                                                  : 'Selected · Tap to change file',
+                                              style: PammType.body(
+                                                context,
+                                                size: 11.5,
+                                                weight: FontWeight.w400,
+                                                color: muted,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: PammColors.blue
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          _proof == null ? 'Browse' : 'Change',
+                                          style: PammType.label(
+                                            context,
+                                            size: 11,
+                                            color: PammColors.blue,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (_errorMessage != null) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: negative.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: negative.withValues(alpha: 0.35),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline_rounded,
+                                        color: negative,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _errorMessage!,
+                                          style: PammType.body(
+                                            context,
+                                            size: 12,
+                                            weight: FontWeight.w600,
+                                            color: negative,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          TextField(
-                            controller: _amount,
-                            enabled: !_submitting,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            onChanged: (_) =>
-                                setState(() => _errorMessage = null),
-                            style: TextStyle(
-                              color: modalText,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '0.00',
-                              hintStyle: TextStyle(
-                                color: modalMuted,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              prefixIcon: Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 14, right: 10),
-                                child: Icon(
-                                  isInrManual
-                                      ? Icons.currency_rupee_rounded
-                                      : Icons.attach_money_rounded,
-                                  color: const Color(0xFF1D348A),
-                                  size: 20,
-                                ),
-                              ),
-                              prefixIconConstraints:
-                                  const BoxConstraints(minWidth: 42),
-                              filled: true,
-                              fillColor: modalCard,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 16,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(13),
-                                borderSide: BorderSide(color: modalBorder),
-                              ),
-                              disabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(13),
-                                borderSide: BorderSide(
-                                  color: modalBorder.withValues(alpha: 0.6),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(13),
-                                borderSide: const BorderSide(
-                                  color: PammColors.blue,
-                                  width: 1.4,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: quickAmounts.map((amount) {
-                              final amountText = '$amount';
-                              return ChoiceChip(
-                                label: Text('$currencySymbol$amountText'),
-                                selected: parsePammDouble(_amount.text) ==
-                                    amount.toDouble(),
-                                onSelected: _submitting
-                                    ? null
-                                    : (_) {
-                                        AppHaptics.selectionClick();
-                                        FocusScope.of(context).unfocus();
-                                        setState(() {
-                                          _amount.text = amountText;
-                                          _errorMessage = null;
-                                        });
-                                      },
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            !isInrManual
-                                ? r'Minimum deposit: $10.00 USD'
-                                : _usdInrRate > 0
-                                    ? 'Minimum deposit: ₹${_minInrAmount.toStringAsFixed(2)} INR (\$10.00 USD · rate ${_usdInrRate.toStringAsFixed(2)} INR/USD)'
-                                    : _rateLoadFailed
-                                        ? 'Exchange rate unavailable. Please try again shortly.'
-                                        : 'Loading USD to INR exchange rate...',
-                            style: TextStyle(
-                              color: modalMuted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 17),
-                          sectionLabel('Upload payment proof'),
-                          InkWell(
-                            onTap: _submitting ? null : _pickProof,
-                            borderRadius: BorderRadius.circular(13),
-                            child: Container(
-                              padding: const EdgeInsets.all(13),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? modalSurface
-                                    : const Color(0xFFF8FAFD),
-                                borderRadius: BorderRadius.circular(13),
-                                border: Border.all(
-                                  color: modalBorder,
-                                  style: BorderStyle.solid,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 38,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE2ECFF),
-                                      borderRadius: BorderRadius.circular(11),
+                              const SizedBox(height: 18),
+                              SizedBox(
+                                height: 48,
+                                child: FilledButton.icon(
+                                  onPressed: _submitting ? null : _submit,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: PammColors.blue,
+                                    foregroundColor: Colors.white,
+                                    disabledBackgroundColor:
+                                        PammColors.blue.withValues(alpha: 0.45),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(13),
                                     ),
-                                    child: const Icon(
-                                      Icons.cloud_upload_outlined,
-                                      color: PammColors.blue,
-                                      size: 21,
-                                    ),
+                                    elevation: 0,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _proof?.name ??
-                                              'Choose transaction proof',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: modalText,
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w600,
+                                  icon: _submitting
+                                      ? const SizedBox(
+                                          width: 17,
+                                          height: 17,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
                                           ),
+                                        )
+                                      : const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          size: 17,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _proof == null
-                                              ? 'JPG or PNG · Tap to browse'
-                                              : 'Selected · Tap to change file',
-                                          style: TextStyle(
-                                            color: modalMuted,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ],
+                                  label: Text(
+                                    _submitting
+                                        ? 'SUBMITTING...'
+                                        : 'SUBMIT DEPOSIT',
+                                    style: PammType.body(
+                                      context,
+                                      size: 13.5,
+                                      weight: FontWeight.w700,
+                                      color: Colors.white,
                                     ),
                                   ),
-                                  const Text(
-                                    'Browse',
-                                    style: TextStyle(
-                                      color: PammColors.blue,
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                          if (_errorMessage != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: PammColors.rose.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: PammColors.rose.withValues(alpha: 0.35),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: PammColors.rose,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _errorMessage!,
-                                      style: const TextStyle(
-                                        color: PammColors.rose,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 17),
-                          SizedBox(
-                            height: 45,
-                            child: FilledButton.icon(
-                              onPressed: _submitting ? null : _submit,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: PammColors.blue,
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor:
-                                    PammColors.blue.withValues(alpha: .45),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 0,
-                              ),
-                              icon: _submitting
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 16,
-                                    ),
-                              label: Text(
-                                _submitting ? 'SUBMITTING...' : 'SUBMIT DEPOSIT',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: .2,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 16 : 22,
+                          vertical: 11,
+                        ),
+                        decoration: BoxDecoration(
+                          color: subtle,
+                          border: Border(top: BorderSide(color: border)),
+                        ),
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          runSpacing: 8,
+                          spacing: 12,
+                          children: [
+                            _footerItem(
+                              Icons.verified_user_outlined,
+                              'Secure payments',
+                              PammColors.blue,
+                            ),
+                            _footerItem(
+                              Icons.schedule_rounded,
+                              'Verification required',
+                              PammColors.gold,
+                            ),
+                            _footerItem(
+                              Icons.layers_outlined,
+                              'PAMM funding',
+                              PammColors.blue,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 13 : 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: modalBorder)),
-                    ),
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      runSpacing: 8,
-                      spacing: 12,
-                      children: [
-                        _footerItem(Icons.verified_user_outlined, 'Secure payments', const Color(0xFF3478FF), muted),
-                        _footerItem(Icons.schedule_rounded, 'Verification required', const Color(0xFFFF9800), muted),
-                        _footerItem(Icons.layers_outlined, 'PAMM funding', const Color(0xFF3478FF), muted),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-          ),
-        ),
         ],
       ),
     );

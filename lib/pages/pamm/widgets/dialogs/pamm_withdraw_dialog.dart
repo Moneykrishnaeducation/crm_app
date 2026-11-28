@@ -283,12 +283,18 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final screen = MediaQuery.sizeOf(context);
+    final compact = screen.width < 600;
     final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
+    final isDark = PammColors.isDark(context);
     final card = PammColors.card(context);
     final surface = PammColors.surface(context);
+    final subtle = PammColors.subtle(context);
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final positive = PammColors.positive(context);
+    final negative = PammColors.negative(context);
 
     final eligibility = widget.eligibility;
     final currency = eligibility.currency;
@@ -296,296 +302,503 @@ class _PammWithdrawSheetState extends State<_PammWithdrawSheet> {
         ? '$currency wallet ending ${eligibility.wallet.length > 4 ? eligibility.wallet.substring(eligibility.wallet.length - 4) : eligibility.wallet}'
         : '${eligibility.bankName} ending ${eligibility.bankAccount.length > 4 ? eligibility.bankAccount.substring(eligibility.bankAccount.length - 4) : eligibility.bankAccount}';
 
-    final screenHeight = MediaQuery.sizeOf(context).height;
     final maxHeight =
-        (screenHeight - keyboardBottom).clamp(240.0, screenHeight * .9);
+        (screen.height - keyboardBottom).clamp(240.0, screen.height * .92);
+
+    final hasError = _shakeController.isError || _errorMessage != null;
+    final baseInputDecoration = PammDecorations.input(
+      context,
+      hint: '0.00',
+      prefixIcon: const Icon(
+        Icons.attach_money_rounded,
+        color: PammColors.blue,
+        size: 20,
+      ),
+    );
+    final errorBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: negative, width: 1.5),
+    );
 
     return PopScope(
       canPop: !_submitting,
       child: Padding(
         padding: EdgeInsets.only(bottom: keyboardBottom),
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: 620,
-          maxHeight: maxHeight,
-        ),
-        decoration: BoxDecoration(
-          color: card,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: border),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 12, 14),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Withdraw funds',
-                            style: TextStyle(
-                              color: text,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.accountName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: muted, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _submitting
-                          ? null
-                          : () {
-                              AppHaptics.lightImpact();
-                              FocusScope.of(context).unfocus();
-                              Navigator.pop(context);
-                            },
-                      tooltip: 'Close',
-                      icon: Icon(Icons.close, color: muted),
-                    ),
-                  ],
-                ),
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 620,
+            maxHeight: maxHeight,
+          ),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.14),
+                blurRadius: 28,
+                offset: const Offset(0, -4),
               ),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Institutional modal header
+                Container(
+                  padding: EdgeInsets.fromLTRB(
+                    compact ? 16 : 22,
+                    12,
+                    12,
+                    12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: card,
+                    border: Border(bottom: BorderSide(color: border)),
+                  ),
+                  child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF1B328D), Color(0xFF315FEA)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [PammColors.navy, PammColors.blue],
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(11),
                         ),
+                        child: const Icon(
+                          Icons.north_east_rounded,
+                          color: Colors.white,
+                          size: 19,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'AVAILABLE TO WITHDRAW',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: .4,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
                             Text(
-                              formatPammMoney(widget.availableBalance),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 25,
-                                fontWeight: FontWeight.w900,
-                              ),
+                              'Withdraw funds',
+                              style: PammType.heading(context, size: 18),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 1),
                             Text(
-                              destination,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
+                              widget.accountName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: PammType.body(
+                                context,
+                                size: 12.5,
+                                weight: FontWeight.w400,
+                                color: muted,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'PAYOUT METHOD',
-                        style: TextStyle(
+                      const SizedBox(width: 4),
+                      IconButton(
+                        onPressed: _submitting
+                            ? null
+                            : () {
+                                AppHaptics.lightImpact();
+                                FocusScope.of(context).unfocus();
+                                Navigator.pop(context);
+                              },
+                        tooltip: 'Close',
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
+                        ),
+                        icon: Icon(
+                          Icons.close_rounded,
                           color: muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .4,
+                          size: 20,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          if (eligibility.hasCrypto)
-                            ChoiceChip(
-                              label: Text('$currency wallet'),
-                              selected: _method == 'usdt',
-                              onSelected: _submitting
-                                  ? null
-                                  : (_) {
-                                      AppHaptics.selectionClick();
-                                      FocusScope.of(context).unfocus();
-                                      setState(() => _method = 'usdt');
-                                    },
-                            ),
-                          if (eligibility.hasBank)
-                            ChoiceChip(
-                              label: const Text('Bank transfer'),
-                              selected: _method == 'bank',
-                              onSelected: _submitting
-                                  ? null
-                                  : (_) {
-                                      AppHaptics.selectionClick();
-                                      FocusScope.of(context).unfocus();
-                                      setState(() => _method = 'bank');
-                                    },
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'AMOUNT (USD)',
-                        style: TextStyle(
-                          color: muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .4,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ShakeFeedbackWidget(
-                        controller: _shakeController,
-                        child: AnimatedBuilder(
-                          animation: _shakeController,
-                          builder: (context, child) => TextField(
-                            controller: _amount,
-                            enabled: !_submitting,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            onChanged: (_) {
-                              _shakeController.clearError();
-                              setState(() => _errorMessage = null);
-                            },
-                            style: TextStyle(
-                              color: text,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '0.00',
-                              prefixText: r'$ ',
-                              filled: true,
-                              fillColor: surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: (_shakeController.isError || _errorMessage != null)
-                                      ? const Color(0xFFEF4444)
-                                      : border,
-                                  width: (_shakeController.isError || _errorMessage != null) ? 1.6 : 1.0,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: (_shakeController.isError || _errorMessage != null)
-                                      ? const Color(0xFFEF4444)
-                                      : border,
-                                  width: (_shakeController.isError || _errorMessage != null) ? 1.6 : 1.0,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: (_shakeController.isError || _errorMessage != null)
-                                      ? const Color(0xFFEF4444)
-                                      : Theme.of(context).colorScheme.primary,
-                                  width: 1.6,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (widget.availableBalance > 0) ...[
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
-                          children: const [
-                            (label: '25%', factor: 0.25),
-                            (label: '50%', factor: 0.50),
-                            (label: '75%', factor: 0.75),
-                            (label: '100%', factor: 1.00),
-                          ].map((preset) {
-                            final presetText = _presetAmountText(preset.factor);
-                            return ChoiceChip(
-                              label: Text(preset.label),
-                              selected: _amount.text.trim() == presetText,
-                              onSelected: _submitting
-                                  ? null
-                                  : (_) {
-                                      AppHaptics.selectionClick();
-                                      FocusScope.of(context).unfocus();
-                                      setState(() {
-                                        _shakeController.clearError();
-                                        _amount.text = presetText;
-                                        _errorMessage = null;
-                                      });
-                                    },
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        height: 48,
-                        child: FilledButton.icon(
-                          onPressed: _submitting ? null : _submit,
-                          icon: _submitting
-                              ? const SizedBox(
-                                  width: 17,
-                                  height: 17,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.arrow_upward, size: 17),
-                          label: Text(
-                            _submitting ? 'Submitting…' : 'Submit withdrawal',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'The server will verify your KYC, payout details, and available balance.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: muted, fontSize: 11),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      compact ? 16 : 22,
+                      12,
+                      compact ? 16 : 22,
+                      14,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Balance summary card
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 13,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                PammColors.navy,
+                                PammColors.deepBlue,
+                                PammColors.blue,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.14),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AVAILABLE TO WITHDRAW',
+                                style: PammType.label(
+                                  context,
+                                  size: 10.5,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                formatPammMoney(widget.availableBalance),
+                                style: PammType.figure(
+                                  context,
+                                  size: 24,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Icon(
+                                    _method == 'usdt'
+                                        ? Icons.account_balance_wallet_outlined
+                                        : Icons.account_balance_outlined,
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      destination,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: PammType.body(
+                                        context,
+                                        size: 12,
+                                        weight: FontWeight.w500,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.88),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // KYC / eligibility status banner
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: subtle,
+                            borderRadius: BorderRadius.circular(11),
+                            border: Border.all(color: border),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.verified_user_outlined,
+                                color: positive,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'KYC & payout destination verified',
+                                  style: PammType.body(
+                                    context,
+                                    size: 12,
+                                    weight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'PAYOUT METHOD',
+                          style: PammType.label(
+                            context,
+                            size: 11,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            if (eligibility.hasCrypto)
+                              ChoiceChip(
+                                label: Text(
+                                  '$currency wallet',
+                                  style: PammType.body(
+                                    context,
+                                    size: 12.5,
+                                    weight: FontWeight.w600,
+                                    color: _method == 'usdt'
+                                        ? PammColors.blue
+                                        : text,
+                                  ),
+                                ),
+                                selected: _method == 'usdt',
+                                selectedColor:
+                                    PammColors.blue.withValues(alpha: 0.14),
+                                backgroundColor: surface,
+                                side: BorderSide(
+                                  color: _method == 'usdt'
+                                      ? PammColors.blue
+                                      : border,
+                                ),
+                                onSelected: _submitting
+                                    ? null
+                                    : (_) {
+                                        AppHaptics.selectionClick();
+                                        FocusScope.of(context).unfocus();
+                                        setState(() => _method = 'usdt');
+                                      },
+                              ),
+                            if (eligibility.hasBank)
+                              ChoiceChip(
+                                label: Text(
+                                  'Bank transfer',
+                                  style: PammType.body(
+                                    context,
+                                    size: 12.5,
+                                    weight: FontWeight.w600,
+                                    color: _method == 'bank'
+                                        ? PammColors.blue
+                                        : text,
+                                  ),
+                                ),
+                                selected: _method == 'bank',
+                                selectedColor:
+                                    PammColors.blue.withValues(alpha: 0.14),
+                                backgroundColor: surface,
+                                side: BorderSide(
+                                  color: _method == 'bank'
+                                      ? PammColors.blue
+                                      : border,
+                                ),
+                                onSelected: _submitting
+                                    ? null
+                                    : (_) {
+                                        AppHaptics.selectionClick();
+                                        FocusScope.of(context).unfocus();
+                                        setState(() => _method = 'bank');
+                                      },
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'AMOUNT (USD)',
+                          style: PammType.label(
+                            context,
+                            size: 11,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        ShakeFeedbackWidget(
+                          controller: _shakeController,
+                          child: AnimatedBuilder(
+                            animation: _shakeController,
+                            builder: (context, child) => TextField(
+                              controller: _amount,
+                              enabled: !_submitting,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              onChanged: (_) {
+                                _shakeController.clearError();
+                                setState(() => _errorMessage = null);
+                              },
+                              style: PammType.figure(
+                                context,
+                                size: 16,
+                                weight: FontWeight.w700,
+                              ),
+                              decoration: hasError
+                                  ? baseInputDecoration.copyWith(
+                                      border: errorBorder,
+                                      enabledBorder: errorBorder,
+                                      focusedBorder: errorBorder,
+                                    )
+                                  : baseInputDecoration,
+                            ),
+                          ),
+                        ),
+                        if (widget.availableBalance > 0) ...[
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: const [
+                              (label: '25%', factor: 0.25),
+                              (label: '50%', factor: 0.50),
+                              (label: '75%', factor: 0.75),
+                              (label: '100%', factor: 1.00),
+                            ].map((preset) {
+                              final presetText =
+                                  _presetAmountText(preset.factor);
+                              final isSelected =
+                                  _amount.text.trim() == presetText;
+                              return ChoiceChip(
+                                label: Text(
+                                  preset.label,
+                                  style: PammType.figure(
+                                    context,
+                                    size: 12.5,
+                                    weight: FontWeight.w600,
+                                    color:
+                                        isSelected ? PammColors.blue : text,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                selectedColor:
+                                    PammColors.blue.withValues(alpha: 0.14),
+                                backgroundColor: surface,
+                                side: BorderSide(
+                                  color:
+                                      isSelected ? PammColors.blue : border,
+                                ),
+                                onSelected: _submitting
+                                    ? null
+                                    : (_) {
+                                        AppHaptics.selectionClick();
+                                        FocusScope.of(context).unfocus();
+                                        setState(() {
+                                          _shakeController.clearError();
+                                          _amount.text = presetText;
+                                          _errorMessage = null;
+                                        });
+                                      },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: negative.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: negative.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  color: negative,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: PammType.body(
+                                      context,
+                                      size: 12,
+                                      weight: FontWeight.w600,
+                                      color: negative,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          height: 48,
+                          child: FilledButton.icon(
+                            onPressed: _submitting ? null : _submit,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: PammColors.blue,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor:
+                                  PammColors.blue.withValues(alpha: 0.45),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              elevation: 0,
+                            ),
+                            icon: _submitting
+                                ? const SizedBox(
+                                    width: 17,
+                                    height: 17,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.arrow_upward_rounded, size: 17),
+                            label: Text(
+                              _submitting ? 'Submitting…' : 'Submit withdrawal',
+                              style: PammType.body(
+                                context,
+                                size: 13.5,
+                                weight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'The server will verify your KYC, payout details, and available balance.',
+                          textAlign: TextAlign.center,
+                          style: PammType.body(
+                            context,
+                            size: 11.5,
+                            weight: FontWeight.w400,
+                            color: muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

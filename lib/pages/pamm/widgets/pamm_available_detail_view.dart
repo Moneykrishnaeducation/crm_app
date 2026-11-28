@@ -39,6 +39,13 @@ class PammAvailableDetailView extends StatelessWidget {
             : investment != null
                 ? 'Active allocation'
                 : 'Open for investors';
+        final realizedPnl = investment?.pnl ?? pool.pnl;
+        final pnlColor = realizedPnl > 0
+            ? PammColors.positive(context)
+            : realizedPnl < 0
+                ? PammColors.negative(context)
+                : text;
+
         final specifications = PammDetailCard(
           title: 'Pool specifications',
           subtitle: 'Account and connection details',
@@ -61,10 +68,17 @@ class PammAvailableDetailView extends StatelessWidget {
                 copyValue: pool.server,
               ),
               PammDetailRow(label: 'Leverage', value: pool.leverage),
-              PammDetailRow(label: 'Status', value: status),
+              PammDetailRow(
+                label: 'Status',
+                value: status,
+                valueColor: isPoolClosed
+                    ? PammColors.negative(context)
+                    : PammColors.positive(context),
+              ),
             ],
           ),
         );
+
         final management = PammDetailCard(
           title: 'Pool management',
           subtitle: 'Manager and allocation details',
@@ -92,6 +106,7 @@ class PammAvailableDetailView extends StatelessWidget {
             ],
           ),
         );
+
         final analytics = PammPoolAnalyticsCard(
           pool: pool,
           onOpenPoolTrades: onOpenPoolTrades,
@@ -100,7 +115,7 @@ class PammAvailableDetailView extends StatelessWidget {
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
               child: Row(
                 children: [
                   Expanded(
@@ -109,28 +124,34 @@ class PammAvailableDetailView extends StatelessWidget {
                       children: [
                         Text(
                           'PAMM overview',
-                          style: TextStyle(
-                            color: text,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                          style: PammType.heading(
+                            context,
+                            size: 17,
+                            weight: FontWeight.w700,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           'Review account details, equity and allocations.',
-                          style: TextStyle(
+                          style: PammType.body(
+                            context,
+                            size: 12,
+                            weight: FontWeight.w400,
                             color: muted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  PammDetailMetric(
-                    title: 'Pool equity',
-                    value: pool.hasPoolDetails
-                        ? formatPammMoney(pool.equity)
-                        : '—',
+                  const SizedBox(width: 10),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 118),
+                    child: PammDetailMetric(
+                      title: 'Pool equity',
+                      value: pool.hasPoolDetails
+                          ? formatPammMoney(pool.equity)
+                          : '—',
+                    ),
                   ),
                 ],
               ),
@@ -150,14 +171,24 @@ class PammAvailableDetailView extends StatelessWidget {
                         AppHaptics.lightImpact();
                         onBack();
                       },
-                      icon: const Icon(Icons.arrow_back, size: 15),
+                      icon: const Icon(Icons.arrow_back, size: 16),
                       label: const Text('Back to investments'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: text,
                         side: BorderSide(color: border),
-                        textStyle: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                        minimumSize: const Size(0, 44),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: PammType.body(
+                          context,
+                          size: 12.5,
+                          weight: FontWeight.w700,
+                          color: text,
                         ),
                       ),
                     ),
@@ -166,10 +197,11 @@ class PammAvailableDetailView extends StatelessWidget {
                       children: [
                         Text(
                           'Pool status  ',
-                          style: TextStyle(
-                            color: muted,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
+                          style: PammType.label(
+                            context,
+                            size: 11,
+                            weight: FontWeight.w600,
+                            letterSpacing: 0.3,
                           ),
                         ),
                         PammStatusPill(status: status),
@@ -181,7 +213,7 @@ class PammAvailableDetailView extends StatelessWidget {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
                 children: [
                   _InvestorHeroCard(
                     pool: pool,
@@ -202,11 +234,11 @@ class PammAvailableDetailView extends StatelessWidget {
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Realized P/L',
-                            value:
-                                formatPammMoney(investment?.pnl ?? pool.pnl),
+                            value: formatPammMoney(realizedPnl),
+                            valueColor: pnlColor,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Profit share',
@@ -215,14 +247,14 @@ class PammAvailableDetailView extends StatelessWidget {
                                 : '—',
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Initial investment',
                             value: formatPammMoney(investment?.deposit ?? 0),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Equity share',
@@ -238,8 +270,8 @@ class PammAvailableDetailView extends StatelessWidget {
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Realized P/L',
-                            value:
-                                formatPammMoney(investment?.pnl ?? pool.pnl),
+                            value: formatPammMoney(realizedPnl),
+                            valueColor: pnlColor,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -321,60 +353,117 @@ class _InvestorHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = PammColors.card(context);
+    final dark = PammColors.isDark(context);
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final subtle = PammColors.subtle(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: dark
+              ? [
+                  PammColors.card(context),
+                  const Color(0xFF132242),
+                ]
+              : [
+                  PammColors.card(context),
+                  const Color(0xFFF0F6FF),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: PammColors.blue.withValues(alpha: dark ? 0.35 : 0.22),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.28 : 0.04),
+            blurRadius: dark ? 16 : 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: PammColors.blue.withValues(alpha: .1),
+                  color: PammColors.blue.withValues(alpha: dark ? 0.18 : 0.10),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: PammColors.blue.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: Text(
                   investment == null ? 'Available PAMM pool' : 'My investment',
-                  style: const TextStyle(
+                  style: PammType.label(
+                    context,
+                    size: 11,
+                    weight: FontWeight.w700,
                     color: PammColors.blue,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'MT5 login  ${pool.login}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              Tooltip(
+                message: 'Copy MT5 login',
+                child: Material(
+                  color: subtle,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () {
+                      AppHaptics.lightImpact();
+                      copyPammValue(context, pool.login);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 36),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: border),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'MT5 ${pool.login}',
+                            style: PammType.figure(
+                              context,
+                              size: 11.5,
+                              weight: FontWeight.w600,
+                              color: muted,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.copy_outlined,
+                            size: 13,
+                            color: PammColors.blue,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                tooltip: 'Copy MT5 login',
-                onPressed: () => copyPammValue(context, pool.login),
-                icon: Icon(Icons.copy_outlined, size: 14, color: muted),
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 14),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -386,69 +475,77 @@ class _InvestorHeroCard extends StatelessWidget {
                       investment?.name ?? pool.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: text,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
+                      style: PammType.heading(
+                        context,
+                        size: 21,
+                        weight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       'Manager: ${pool.manager}',
-                      style: TextStyle(
+                      style: PammType.body(
+                        context,
+                        size: 12.5,
+                        weight: FontWeight.w600,
                         color: muted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       'Review your allocation, current value and investment performance.',
-                      style: TextStyle(
+                      style: PammType.body(
+                        context,
+                        size: 12,
+                        weight: FontWeight.w400,
                         color: muted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
+                        height: 1.35,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     'Net current value',
-                    style: TextStyle(
-                      color: muted,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
+                    style: PammType.label(
+                      context,
+                      size: 11,
+                      weight: FontWeight.w700,
+                      letterSpacing: 0.3,
                     ),
                   ),
+                  const SizedBox(height: 3),
                   Text(
                     formatPammMoney(investment?.value ?? pool.equity),
-                    style: TextStyle(
+                    style: PammType.figure(
+                      context,
+                      size: 22,
+                      weight: FontWeight.w700,
                       color: text,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     'USD',
-                    style: TextStyle(
-                      color: muted,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
+                    style: PammType.label(
+                      context,
+                      size: 10.5,
+                      weight: FontWeight.w700,
+                      letterSpacing: 0.6,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 7,
-            runSpacing: 7,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               if (investment == null)
                 FilledButton.icon(
@@ -458,14 +555,24 @@ class _InvestorHeroCard extends StatelessWidget {
                           AppHaptics.lightImpact();
                           onJoin();
                         },
-                  icon: const Icon(Icons.trending_up, size: 16),
+                  icon: const Icon(Icons.trending_up, size: 17),
                   label: const Text('Invest Now'),
                   style: FilledButton.styleFrom(
                     backgroundColor: PammColors.blue,
                     foregroundColor: Colors.white,
-                    textStyle: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 11,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: PammType.body(
+                      context,
+                      size: 12.5,
+                      weight: FontWeight.w700,
+                      color: Colors.white,
                     ),
                   ),
                 )
@@ -477,14 +584,24 @@ class _InvestorHeroCard extends StatelessWidget {
                           AppHaptics.lightImpact();
                           onDeposit();
                         },
-                  icon: const Icon(Icons.add, size: 16),
+                  icon: const Icon(Icons.add, size: 17),
                   label: const Text('Deposit funds'),
                   style: FilledButton.styleFrom(
                     backgroundColor: PammColors.blue,
                     foregroundColor: Colors.white,
-                    textStyle: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 11,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: PammType.body(
+                      context,
+                      size: 12.5,
+                      weight: FontWeight.w700,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -493,14 +610,24 @@ class _InvestorHeroCard extends StatelessWidget {
                     AppHaptics.lightImpact();
                     onWithdraw();
                   },
-                  icon: const Icon(Icons.remove, size: 16),
+                  icon: const Icon(Icons.remove, size: 17),
                   label: const Text('Withdraw funds'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: text,
                     side: BorderSide(color: border),
-                    textStyle: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 11,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: PammType.body(
+                      context,
+                      size: 12.5,
+                      weight: FontWeight.w700,
+                      color: text,
                     ),
                   ),
                 ),

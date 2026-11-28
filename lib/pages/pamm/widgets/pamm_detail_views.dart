@@ -1,6 +1,6 @@
 import 'package:crm_app/app_haptics.dart';
 import 'package:crm_app/pages/pamm/models/pamm_models.dart';
-import 'package:crm_app/pages/pamm/widgets/pamm_detail_components.dart';
+import 'package:crm_app/pages/pamm/widgets/pamm_shared_widgets.dart';
 import 'package:flutter/material.dart';
 
 export 'package:crm_app/pages/pamm/widgets/pamm_available_detail_view.dart';
@@ -63,6 +63,7 @@ class PammManagedDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = PammColors.text(context);
+    final isOpen = pool.status == 'Open';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -91,11 +92,17 @@ class PammManagedDetailView extends StatelessWidget {
               PammDetailRow(label: 'Leverage', value: pool.leverage),
               PammDetailRow(
                 label: 'Status',
-                value: pool.status == 'Open' ? 'Accepting deposits' : 'Closed',
+                value: isOpen ? 'Accepting deposits' : 'Closed',
+                valueColor: isOpen
+                    ? PammColors.positive(context)
+                    : PammColors.negative(context),
               ),
             ],
           ),
         );
+
+        final toggleColor =
+            isOpen ? PammColors.closedRose : PammColors.positive(context);
 
         final management = PammDetailCard(
           title: 'Pool management',
@@ -110,16 +117,25 @@ class PammManagedDetailView extends StatelessWidget {
                     AppHaptics.lightImpact();
                     onLoadConnectedInvestors();
                   },
-                  icon: const Icon(Icons.people_outline, size: 17),
+                  icon: const Icon(Icons.people_outline, size: 18),
                   label: const Text('Connected investor list'),
                   style: FilledButton.styleFrom(
                     backgroundColor: PammColors.blue,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    minimumSize: const Size(0, 46),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: PammType.body(
+                      context,
+                      size: 13,
+                      weight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -135,18 +151,29 @@ class PammManagedDetailView extends StatelessWidget {
                           height: 17,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.show_chart, size: 17),
+                      : const Icon(Icons.show_chart, size: 18),
                   label: Text(
                     togglingPammId == pool.id
                         ? 'Updating pool…'
-                        : pool.status == 'Open'
+                        : isOpen
                             ? 'Close investment pool'
                             : 'Open investment pool',
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: PammColors.closedRose,
-                    side: const BorderSide(color: Color(0xFFFFC5CF)),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    foregroundColor: toggleColor,
+                    side: BorderSide(
+                      color: toggleColor.withValues(alpha: 0.45),
+                    ),
+                    minimumSize: const Size(0, 46),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: PammType.body(
+                      context,
+                      size: 13,
+                      weight: FontWeight.w700,
+                      color: toggleColor,
+                    ),
                   ),
                 ),
               ),
@@ -162,9 +189,8 @@ class PammManagedDetailView extends StatelessWidget {
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 14, 0),
+              padding: const EdgeInsets.fromLTRB(8, 4, 14, 4),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   IconButton(
                     onPressed: () {
@@ -172,14 +198,31 @@ class PammManagedDetailView extends StatelessWidget {
                       onBack();
                     },
                     tooltip: 'Back to managed pools',
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                     icon: Icon(Icons.arrow_back, color: text),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Managed pool details',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: PammType.heading(
+                        context,
+                        size: 15.5,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
                 children: [
                   _ManagedHeroCard(
                     pool: pool,
@@ -198,25 +241,28 @@ class PammManagedDetailView extends StatelessWidget {
                             value: formatPammMoney(pool.equity),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Profit share',
                             value: '${pool.share.toStringAsFixed(2)}%',
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Leverage',
                             value: pool.leverage,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: PammDetailMetric(
                             title: 'Pool status',
                             value: pool.status,
+                            valueColor: isOpen
+                                ? PammColors.positive(context)
+                                : PammColors.negative(context),
                           ),
                         ),
                       ],
@@ -253,6 +299,9 @@ class PammManagedDetailView extends StatelessWidget {
                           child: PammDetailMetric(
                             title: 'Pool status',
                             value: pool.status,
+                            valueColor: isOpen
+                                ? PammColors.positive(context)
+                                : PammColors.negative(context),
                           ),
                         ),
                       ],
@@ -304,60 +353,118 @@ class _ManagedHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = PammColors.card(context);
+    final dark = PammColors.isDark(context);
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final subtle = PammColors.subtle(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: dark
+              ? [
+                  PammColors.card(context),
+                  const Color(0xFF132242),
+                ]
+              : [
+                  PammColors.card(context),
+                  const Color(0xFFF0F6FF),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: PammColors.blue.withValues(alpha: dark ? 0.35 : 0.22),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.28 : 0.04),
+            blurRadius: dark ? 16 : 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: PammColors.blue.withValues(alpha: .1),
+                  color: PammColors.blue.withValues(alpha: dark ? 0.18 : 0.10),
                   borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'PAMM manager',
-                  style: TextStyle(
-                    color: PammColors.blue,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
+                  border: Border.all(
+                    color: PammColors.blue.withValues(alpha: 0.25),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
                 child: Text(
-                  'MT5 login  ${pool.login}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  'PAMM manager',
+                  style: PammType.label(
+                    context,
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: PammColors.blue,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                tooltip: 'Copy MT5 login',
-                onPressed: () => copyPammValue(context, pool.login),
-                icon: Icon(Icons.copy_outlined, size: 14, color: muted),
+              PammStatusPill(status: pool.status),
+              Tooltip(
+                message: 'Copy MT5 login',
+                child: Material(
+                  color: subtle,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () {
+                      AppHaptics.lightImpact();
+                      copyPammValue(context, pool.login);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 36),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: border),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'MT5 ${pool.login}',
+                            style: PammType.figure(
+                              context,
+                              size: 11.5,
+                              weight: FontWeight.w600,
+                              color: muted,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.copy_outlined,
+                            size: 13,
+                            color: PammColors.blue,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 14),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -369,53 +476,57 @@ class _ManagedHeroCard extends StatelessWidget {
                       pool.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: text,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w600,
+                      style: PammType.heading(
+                        context,
+                        size: 22,
+                        weight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       'Manage your pool, review equity and monitor investor activity.',
-                      style: TextStyle(
+                      style: PammType.body(
+                        context,
+                        size: 12.5,
+                        weight: FontWeight.w400,
                         color: muted,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w400,
-                        height: 1.35,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     'Manager balance',
-                    style: TextStyle(
-                      color: muted,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
+                    style: PammType.label(
+                      context,
+                      size: 11,
+                      weight: FontWeight.w700,
+                      letterSpacing: 0.3,
                     ),
                   ),
+                  const SizedBox(height: 3),
                   Text(
                     formatPammMoney(pool.managerBalance),
-                    style: TextStyle(
+                    style: PammType.figure(
+                      context,
+                      size: 22,
+                      weight: FontWeight.w700,
                       color: text,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 7,
-            runSpacing: 7,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               FilledButton.icon(
                 onPressed: pool.status == 'Open'
@@ -424,14 +535,24 @@ class _ManagedHeroCard extends StatelessWidget {
                         onDeposit();
                       }
                     : null,
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(Icons.add, size: 17),
                 label: const Text('Deposit funds'),
                 style: FilledButton.styleFrom(
                   backgroundColor: PammColors.blue,
                   foregroundColor: Colors.white,
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 11,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: PammType.body(
+                    context,
+                    size: 12.5,
+                    weight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -440,14 +561,24 @@ class _ManagedHeroCard extends StatelessWidget {
                   AppHaptics.lightImpact();
                   onWithdraw();
                 },
-                icon: const Icon(Icons.remove, size: 16),
+                icon: const Icon(Icons.remove, size: 17),
                 label: const Text('Withdraw funds'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: text,
                   side: BorderSide(color: border),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 11,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: PammType.body(
+                    context,
+                    size: 12.5,
+                    weight: FontWeight.w700,
+                    color: text,
                   ),
                 ),
               ),
@@ -464,14 +595,24 @@ class _ManagedHeroCard extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.sync, size: 16),
+                    : const Icon(Icons.sync, size: 17),
                 label: Text(syncing ? 'Syncing…' : 'Sync MT5'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: text,
                   side: BorderSide(color: border),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 11,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: PammType.body(
+                    context,
+                    size: 12.5,
+                    weight: FontWeight.w700,
+                    color: text,
                   ),
                 ),
               ),

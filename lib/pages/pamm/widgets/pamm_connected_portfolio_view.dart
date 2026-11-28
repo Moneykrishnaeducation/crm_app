@@ -22,49 +22,83 @@ class PammConnectedPortfolioView extends StatelessWidget {
   final Future<void> Function() onRetry;
 
   Widget _buildInvestorCard(BuildContext context, PammInvestment investment) {
-    final card = PammColors.card(context);
+    final dark = PammColors.isDark(context);
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final pnlColor = investment.pnl > 0
+        ? PammColors.positive(context)
+        : investment.pnl < 0
+            ? PammColors.negative(context)
+            : text;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
-      ),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        spacing: 16,
-        runSpacing: 10,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: PammDecorations.card(context, radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(
-                investment.name,
-                style: TextStyle(
-                  color: text,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: PammColors.blue.withValues(alpha: dark ? 0.16 : 0.09),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.person_outline,
+                  size: 18,
+                  color: PammColors.blue,
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                'Investor account · MT5 ${investment.login}',
-                style: TextStyle(
-                  color: muted,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w400,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      investment.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: PammType.heading(
+                        context,
+                        size: 13.5,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Investor account · MT5 ${investment.login}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: PammType.body(
+                        context,
+                        size: 11.5,
+                        weight: FontWeight.w400,
+                        color: muted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              if (investment.share > 0) ...[
+                const SizedBox(width: 8),
+                PammPortfolioBadge(
+                  label: '${investment.share.toStringAsFixed(1)}% share',
+                  color: PammColors.blue,
+                ),
+              ],
             ],
           ),
+          const SizedBox(height: 12),
+          Divider(height: 1, color: border.withValues(alpha: 0.65)),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 22,
-            runSpacing: 8,
+            runSpacing: 10,
             children: [
               PammPoolValue(
                 label: 'Capital invested',
@@ -77,6 +111,7 @@ class PammConnectedPortfolioView extends StatelessWidget {
               PammPoolValue(
                 label: 'Investor P/L',
                 value: formatPammMoney(investment.pnl),
+                valueColor: pnlColor,
               ),
               PammPoolValue(
                 label: 'Manager fee',
@@ -91,8 +126,7 @@ class PammConnectedPortfolioView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = PammColors.card(context);
-    final surface = PammColors.surface(context);
+    final dark = PammColors.isDark(context);
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
@@ -115,11 +149,16 @@ class PammConnectedPortfolioView extends StatelessWidget {
       (sum, investment) => sum + investment.managerProfitShare,
     );
     final skeletonInvestors = PammInvestment.skeletonSamples();
+    final netPnlColor = (showSkeleton ? 3270.0 : pnl) > 0
+        ? PammColors.positive(context)
+        : (showSkeleton ? 3270.0 : pnl) < 0
+            ? PammColors.negative(context)
+            : text;
 
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 8, 10, 10),
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: border)),
           ),
@@ -127,7 +166,7 @@ class PammConnectedPortfolioView extends StatelessWidget {
             children: [
               Container(
                 width: 4,
-                height: 20,
+                height: 22,
                 decoration: BoxDecoration(
                   color: PammColors.blue,
                   borderRadius: BorderRadius.circular(4),
@@ -139,30 +178,32 @@ class PammConnectedPortfolioView extends StatelessWidget {
                   'Connected investor portfolio',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: text,
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w600,
+                  style: PammType.heading(
+                    context,
+                    size: 16,
+                    weight: FontWeight.w700,
                   ),
                 ),
               ),
               IconButton(
                 tooltip: 'Refresh investors',
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 onPressed: loading
                     ? null
                     : () {
                         AppHaptics.selectionClick();
                         onRetry();
                       },
-                icon: Icon(Icons.refresh, color: muted, size: 19),
+                icon: Icon(Icons.refresh, color: muted, size: 20),
               ),
               IconButton(
                 tooltip: 'Close portfolio',
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 onPressed: () {
                   AppHaptics.lightImpact();
                   onClose();
                 },
-                icon: Icon(Icons.close, color: muted, size: 19),
+                icon: Icon(Icons.close, color: muted, size: 20),
               ),
             ],
           ),
@@ -178,14 +219,39 @@ class PammConnectedPortfolioView extends StatelessWidget {
               physics: const AlwaysScrollableScrollPhysics(
                 parent: BouncingScrollPhysics(),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: surface,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: border),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: dark
+                          ? [
+                              PammColors.card(context),
+                              const Color(0xFF132242),
+                            ]
+                          : [
+                              PammColors.card(context),
+                              const Color(0xFFF0F6FF),
+                            ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: PammColors.blue.withValues(
+                        alpha: dark ? 0.35 : 0.22,
+                      ),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: dark ? 0.25 : 0.04,
+                        ),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,11 +259,16 @@ class PammConnectedPortfolioView extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            width: 42,
-                            height: 42,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: PammColors.blue.withValues(alpha: .1),
+                              color: PammColors.blue.withValues(
+                                alpha: dark ? 0.18 : 0.10,
+                              ),
                               borderRadius: BorderRadius.circular(13),
+                              border: Border.all(
+                                color: PammColors.blue.withValues(alpha: 0.22),
+                              ),
                             ),
                             child: const Icon(
                               Icons.people_outline,
@@ -212,33 +283,34 @@ class PammConnectedPortfolioView extends StatelessWidget {
                               children: [
                                 Text(
                                   'PAMM MANAGER',
-                                  style: TextStyle(
-                                    color: muted,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: .8,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  pool.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: text,
-                                    fontSize: 16.5,
-                                    fontWeight: FontWeight.w600,
+                                  style: PammType.label(
+                                    context,
+                                    size: 10.5,
+                                    weight: FontWeight.w700,
+                                    letterSpacing: 0.8,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
+                                  pool.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: PammType.heading(
+                                    context,
+                                    size: 17,
+                                    weight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
                                   'Account ID: ${pool.login} · Investor allocation overview',
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
+                                  style: PammType.body(
+                                    context,
+                                    size: 11.5,
+                                    weight: FontWeight.w400,
                                     color: muted,
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ],
@@ -248,12 +320,12 @@ class PammConnectedPortfolioView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       Wrap(
-                        spacing: 7,
+                        spacing: 8,
                         runSpacing: 6,
                         children: [
                           PammPortfolioBadge(
                             label: '${investors.length} investors',
-                            color: PammColors.green,
+                            color: PammColors.positive(context),
                           ),
                           PammPortfolioBadge(
                             label:
@@ -272,7 +344,7 @@ class PammConnectedPortfolioView extends StatelessWidget {
                     builder: (context, constraints) {
                       final columns = constraints.maxWidth >= 700 ? 4 : 2;
                       const gap = 8.0;
-                      final width =
+                      final kpiWidth =
                           (constraints.maxWidth - gap * (columns - 1)) /
                               columns;
                       final items = [
@@ -280,21 +352,25 @@ class PammConnectedPortfolioView extends StatelessWidget {
                           'Net capital invested',
                           formatPammMoney(showSkeleton ? 16000.0 : capital),
                           Icons.account_balance_wallet_outlined,
+                          text,
                         ),
                         (
                           'Current investor value',
                           formatPammMoney(showSkeleton ? 19270.0 : value),
                           Icons.credit_card_outlined,
+                          text,
                         ),
                         (
                           'Net investor P/L',
                           formatPammMoney(showSkeleton ? 3270.0 : pnl),
                           Icons.trending_up,
+                          netPnlColor,
                         ),
                         (
                           'Manager fees accrued',
                           formatPammMoney(showSkeleton ? 654.0 : fees),
                           Icons.verified_user_outlined,
+                          text,
                         ),
                       ];
                       return Wrap(
@@ -303,13 +379,12 @@ class PammConnectedPortfolioView extends StatelessWidget {
                         children: items
                             .map(
                               (item) => SizedBox(
-                                width: width,
+                                width: kpiWidth,
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: card,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: border),
+                                  padding: const EdgeInsets.all(13),
+                                  decoration: PammDecorations.card(
+                                    context,
+                                    radius: 14,
                                   ),
                                   child: Row(
                                     children: [
@@ -322,10 +397,11 @@ class PammConnectedPortfolioView extends StatelessWidget {
                                               item.$1,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: muted,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
+                                              style: PammType.label(
+                                                context,
+                                                size: 10.5,
+                                                weight: FontWeight.w700,
+                                                letterSpacing: 0.3,
                                               ),
                                             ),
                                             const SizedBox(height: 6),
@@ -334,21 +410,33 @@ class PammConnectedPortfolioView extends StatelessWidget {
                                               fit: BoxFit.scaleDown,
                                               child: Text(
                                                 item.$2,
-                                                style: TextStyle(
-                                                  color: text,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
+                                                style: PammType.figure(
+                                                  context,
+                                                  size: 16.5,
+                                                  weight: FontWeight.w700,
+                                                  color: item.$4,
                                                 ),
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        item.$3,
-                                        size: 16,
-                                        color: PammColors.blue,
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: PammColors.blue.withValues(
+                                            alpha: dark ? 0.16 : 0.08,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          item.$3,
+                                          size: 16,
+                                          color: PammColors.blue,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -370,19 +458,20 @@ class PammConnectedPortfolioView extends StatelessWidget {
                         children: [
                           Text(
                             'Investor accounts',
-                            style: TextStyle(
-                              color: text,
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
+                            style: PammType.heading(
+                              context,
+                              size: 14.5,
+                              weight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 2),
                           Text(
                             'Individual balances, allocation, performance and fee breakdown',
-                            style: TextStyle(
+                            style: PammType.body(
+                              context,
+                              size: 11.5,
+                              weight: FontWeight.w400,
                               color: muted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
@@ -391,15 +480,16 @@ class PammConnectedPortfolioView extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       'Total units: ${investors.length}',
-                      style: TextStyle(
-                        color: muted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                      style: PammType.label(
+                        context,
+                        size: 11,
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 if (showSkeleton)
                   PammSkeletonizer(
                     enabled: true,
@@ -412,20 +502,20 @@ class PammConnectedPortfolioView extends StatelessWidget {
                   )
                 else if (error != null)
                   Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: border),
-                    ),
+                    padding: const EdgeInsets.all(20),
+                    decoration: PammDecorations.card(context, radius: 14),
                     child: Column(
                       children: [
                         Text(
                           error!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: muted, fontSize: 12),
+                          style: PammType.body(
+                            context,
+                            size: 12.5,
+                            color: muted,
+                          ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: () {
                             AppHaptics.lightImpact();
@@ -433,53 +523,59 @@ class PammConnectedPortfolioView extends StatelessWidget {
                           },
                           icon: const Icon(Icons.refresh, size: 16),
                           label: const Text('Retry'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 44),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   )
                 else if (investors.isEmpty)
                   Container(
-                    constraints: const BoxConstraints(minHeight: 155),
+                    constraints: const BoxConstraints(minHeight: 160),
                     alignment: Alignment.center,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: border, style: BorderStyle.solid),
-                    ),
+                    padding: const EdgeInsets.all(22),
+                    decoration: PammDecorations.card(context, radius: 14),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 42,
-                          height: 42,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
-                            color: PammColors.blue.withValues(alpha: .06),
+                            color: PammColors.blue.withValues(
+                              alpha: dark ? 0.16 : 0.08,
+                            ),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(
                             Icons.people_outline,
                             color: PammColors.blue,
-                            size: 21,
+                            size: 22,
                           ),
                         ),
                         const SizedBox(height: 10),
                         Text(
                           'No connected investors yet',
-                          style: TextStyle(
-                            color: text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                          style: PammType.heading(
+                            context,
+                            size: 14,
+                            weight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Investor accounts and their portfolio details will appear here once they join this pool.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: PammType.body(
+                            context,
+                            size: 12,
+                            weight: FontWeight.w400,
                             color: muted,
-                            fontSize: 11.5,
-                            height: 1.35,
+                            height: 1.4,
                           ),
                         ),
                       ],
@@ -498,7 +594,7 @@ class PammConnectedPortfolioView extends StatelessWidget {
           ),
         ),
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
           decoration: BoxDecoration(
             border: Border(top: BorderSide(color: border)),
           ),
@@ -507,19 +603,34 @@ class PammConnectedPortfolioView extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Values are loaded from the connected investor accounts.',
-                  style: TextStyle(
+                  style: PammType.body(
+                    context,
+                    size: 11.5,
+                    weight: FontWeight.w400,
                     color: muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               OutlinedButton(
                 onPressed: () {
                   AppHaptics.lightImpact();
                   onClose();
                 },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: text,
+                  side: BorderSide(color: border),
+                  minimumSize: const Size(0, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: PammType.body(
+                    context,
+                    size: 12.5,
+                    weight: FontWeight.w700,
+                    color: text,
+                  ),
+                ),
                 child: const Text('Close portfolio'),
               ),
             ],

@@ -144,6 +144,35 @@ class AppNotificationCenter {
   int _portfolioMonitorRevision = 0;
   List<Map<String, dynamic>> _portfolioAccounts = <Map<String, dynamic>>[];
 
+  /// Adaptive polling intervals:
+  /// - 15s fast poll for accounts with active open positions
+  /// - 60s long poll for idle accounts (0 open positions)
+  static const Duration fastPollInterval = Duration(seconds: 15);
+  static const Duration longPollInterval = Duration(seconds: 60);
+
+  final Map<String, DateTime> _accountLastPolledTimes = <String, DateTime>{};
+  final Map<String, int> _accountOpenPositionCounts = <String, int>{};
+  final Map<String, List<Map<String, dynamic>>> _accountCachedPositions =
+      <String, List<Map<String, dynamic>>>{};
+  bool _hasBuiltInitialLiveUpdate = false;
+
+  /// Returns the adaptive poll interval for an account based on whether it has open positions.
+  Duration getPollIntervalForAccount(String accountId) {
+    final count = _accountOpenPositionCounts[accountId] ?? 0;
+    return count > 0 ? fastPollInterval : longPollInterval;
+  }
+
+  /// Returns the known open position count for an account.
+  int getOpenPositionCountForAccount(String accountId) {
+    return _accountOpenPositionCounts[accountId] ?? 0;
+  }
+
+  /// Injects open position count for testing adaptive polling behavior.
+  void setAccountPositionCountForTesting(String accountId, int count) {
+    _accountOpenPositionCounts[accountId] = count;
+    _accountLastPolledTimes[accountId] = DateTime.now();
+  }
+
   final ValueNotifier<List<AppNotificationItem>> notificationsNotifier =
       ValueNotifier<List<AppNotificationItem>>([]);
 
@@ -374,12 +403,13 @@ class AppNotificationCenter {
         _portfolioNativeServiceActive = started;
       }
 
-      await _refreshPortfolioPositions(revision: revision);
+      await _refreshPortfolioPositions(revision: revision, forceAll: true);
       if (revision != _portfolioMonitorRevision) return false;
       if (!_portfolioNativeServiceActive) {
         _portfolioMonitorTimer?.cancel();
+        // Tick every 5s to evaluate per-account adaptive schedules (15s active / 60s idle)
         _portfolioMonitorTimer = Timer.periodic(
-          const Duration(seconds: 45),
+          const Duration(seconds: 5),
           (_) => _refreshPortfolioPositions(revision: revision),
         );
       }
@@ -427,6 +457,10 @@ class AppNotificationCenter {
     _portfolioMonitorEnabled = false;
     _portfolioNativeServiceActive = false;
     _portfolioAccounts = <Map<String, dynamic>>[];
+    _accountLastPolledTimes.clear();
+    _accountOpenPositionCounts.clear();
+    _accountCachedPositions.clear();
+    _hasBuiltInitialLiveUpdate = false;
     if (defaultTargetPlatform == TargetPlatform.android) {
       try { await _nativeChannel.invokeMethod('stopPositionService'); } catch (_) {}
     }
@@ -435,7 +469,10 @@ class AppNotificationCenter {
 
   Future<void> stopPositionMonitoring() => stopPortfolioMonitoring();
 
-  Future<void> _refreshPortfolioPositions({required int revision}) async {
+  Future<void> _refreshPortfolioPositions({
+    required int revision,
+    bool forceAll = false,
+  }) async {
     if (_portfolioPollInFlight ||
         revision != _portfolioMonitorRevision ||
         _portfolioAccounts.isEmpty ||
@@ -444,25 +481,65 @@ class AppNotificationCenter {
     }
     _portfolioPollInFlight = true;
     try {
-      final results = await Future.wait(_portfolioAccounts.map((account) async {
+      final now = DateTime.now();
+
+      // Check per-account due status:
+      // Accounts with >0 open positions poll every 15s.
+      // Accounts with 0 open positions long-poll every 60s.
+      final dueAccounts = <Map<String, dynamic>>[];
+      for (final account in _portfolioAccounts) {
         final accountId = (account['accountId'] ?? '').toString();
-        if (accountId.isEmpty) return <Map<String, dynamic>>[];
-        try {
-          final rows = await AuthApi.instance.getOpenPositions(accountId);
-          return rows.map((position) => <String, dynamic>{
-            ...position,
-            '_accountId': accountId,
-            '_accountName': (account['accountName'] ?? 'Trading account').toString(),
-            '_isDemo': account['isDemo'] == true,
-          }).toList();
-        } catch (error) {
-          debugPrint('Portfolio monitor: account $accountId refresh failed: $error');
-          return <Map<String, dynamic>>[];
+        if (accountId.isEmpty) continue;
+        final positionCount = _accountOpenPositionCounts[accountId] ?? 0;
+        final interval = positionCount > 0 ? fastPollInterval : longPollInterval;
+        final lastPolled = _accountLastPolledTimes[accountId];
+        if (forceAll || lastPolled == null || now.difference(lastPolled) >= interval) {
+          dueAccounts.add(account);
         }
-      }));
+      }
+
+      // If no account is due and we already built an initial update, return without network calls
+      if (dueAccounts.isEmpty && _hasBuiltInitialLiveUpdate) {
+        return;
+      }
+
+      // Fetch open positions only for accounts that are due
+      if (dueAccounts.isNotEmpty) {
+        await Future.wait(dueAccounts.map((account) async {
+          final accountId = (account['accountId'] ?? '').toString();
+          if (accountId.isEmpty) return;
+          try {
+            final rows = await AuthApi.instance.getOpenPositions(accountId);
+            final formatted = rows.map((position) => <String, dynamic>{
+              ...position,
+              '_accountId': accountId,
+              '_accountName': (account['accountName'] ?? 'Trading account').toString(),
+              '_isDemo': account['isDemo'] == true,
+            }).toList();
+            _accountLastPolledTimes[accountId] = DateTime.now();
+            _accountOpenPositionCounts[accountId] = formatted.length;
+            _accountCachedPositions[accountId] = formatted;
+          } catch (error) {
+            debugPrint('Portfolio monitor: account $accountId refresh failed: $error');
+            _accountLastPolledTimes[accountId] = DateTime.now();
+          }
+        }));
+      }
+
       if (revision != _portfolioMonitorRevision) return;
-      final demo = results.expand((rows) => rows).where((row) => row['_isDemo'] == true).toList();
-      final live = results.expand((rows) => rows).where((row) => row['_isDemo'] != true).toList();
+
+      // Aggregate positions from all accounts using their latest cached positions
+      final allRows = <Map<String, dynamic>>[];
+      for (final account in _portfolioAccounts) {
+        final accountId = (account['accountId'] ?? '').toString();
+        final cached = _accountCachedPositions[accountId];
+        if (cached != null && cached.isNotEmpty) {
+          allRows.addAll(cached);
+        }
+      }
+
+      final demo = allRows.where((row) => row['_isDemo'] == true).toList();
+      final live = allRows.where((row) => row['_isDemo'] != true).toList();
       double sum(List<Map<String, dynamic>> rows) => rows.fold<double>(
         0, (total, row) => total + _number(row['profit']),
       );
@@ -494,17 +571,21 @@ class AppNotificationCenter {
       ].join('\n');
       final demoSign = demoPnl >= 0 ? '+' : '-';
       final liveSign = livePnl >= 0 ? '+' : '-';
-      final short = 'D$demoSign${demoPnl.abs().toStringAsFixed(0)} L$liveSign${livePnl.abs().toStringAsFixed(0)}';
+      final short = (demo.isNotEmpty || live.isNotEmpty)
+          ? 'D$demoSign${demoPnl.abs().toStringAsFixed(0)} L$liveSign${livePnl.abs().toStringAsFixed(0)}'
+          : '0 trades';
+
       await updateLiveUpdate(
         id: 7777,
         title: 'VT Index · Portfolio Live',
-        body: body,
+        body: body.isNotEmpty ? body : 'No open positions · Monitoring portfolio',
         subText: 'OPEN POSITIONS',
         shortText: short,
         colorHex: totalPnl >= 0 ? '#10B981' : '#EF4444',
         iconType: 'trade',
         usesChronometer: false,
       );
+      _hasBuiltInitialLiveUpdate = true;
     } catch (error) {
       debugPrint('AppNotificationCenter: portfolio refresh failed: $error');
     } finally {
@@ -944,5 +1025,9 @@ class AppNotificationCenter {
   void resetToDefault() {
     notificationsNotifier.value = [];
     unreadCountNotifier.value = 0;
+    _accountLastPolledTimes.clear();
+    _accountOpenPositionCounts.clear();
+    _accountCachedPositions.clear();
+    _hasBuiltInitialLiveUpdate = false;
   }
 }

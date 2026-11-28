@@ -39,10 +39,21 @@ import javax.crypto.spec.SecretKeySpec
  * are grouped into Demo and Live totals for one native ongoing notification.
  */
 class TradeLiveUpdateService : Service() {
+    companion object {
+        private const val FAST_POLL_INTERVAL_MS = 15_000L // 15s fast poll for accounts with open positions
+        private const val LONG_POLL_INTERVAL_MS = 60_000L // 60s long poll for idle accounts (0 open positions)
+        private const val TICK_INTERVAL_SECONDS = 5L // 5s tick interval to evaluate due accounts
+    }
+
     private val notificationId = 7777
     private val channelId = "vt_live_updates_channel"
     private val prefs by lazy { getSharedPreferences("vt_trade_live_service", Context.MODE_PRIVATE) }
     private var executor: ScheduledExecutorService? = null
+
+    private val accountLastPolledTimes = mutableMapOf<String, Long>()
+    private val accountOpenPositionCounts = mutableMapOf<String, Int>()
+    private val accountCachedPositions = mutableMapOf<String, JSONArray>()
+    private var hasBuiltInitialNotification = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -93,7 +104,7 @@ class TradeLiveUpdateService : Service() {
 
         if (executor == null || executor?.isShutdown == true) {
             executor = Executors.newSingleThreadScheduledExecutor()
-            executor?.scheduleWithFixedDelay({ refreshPortfolio() }, 0, 45, TimeUnit.SECONDS)
+            executor?.scheduleWithFixedDelay({ refreshPortfolio() }, 0, TICK_INTERVAL_SECONDS, TimeUnit.SECONDS)
         }
         return START_NOT_STICKY
     }
@@ -104,6 +115,9 @@ class TradeLiveUpdateService : Service() {
             return
         }
         val accountsJson = prefs.getString("accountsJson", null) ?: return
+        val accounts = try { JSONArray(accountsJson) } catch (e: Exception) { return }
+        if (accounts.length() == 0) return
+
         val accessToken = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             .getString("flutter.vtindex_client_access_token", null)
         if (accessToken.isNullOrBlank()) {
@@ -111,57 +125,76 @@ class TradeLiveUpdateService : Service() {
             return
         }
 
+        val now = System.currentTimeMillis()
+        var anyAccountDue = false
+
+        for (index in 0 until accounts.length()) {
+            val account = accounts.optJSONObject(index) ?: continue
+            val accountId = account.optString("accountId")
+            val endpoint = account.optString("url")
+            if (accountId.isBlank() || endpoint.isBlank()) continue
+
+            val positionCount = accountOpenPositionCounts[accountId] ?: 0
+            val interval = if (positionCount > 0) FAST_POLL_INTERVAL_MS else LONG_POLL_INTERVAL_MS
+            val lastPolled = accountLastPolledTimes[accountId] ?: 0L
+
+            if (!hasBuiltInitialNotification || (now - lastPolled) >= interval) {
+                anyAccountDue = true
+                try {
+                    val positions = fetchPositions(endpoint, accessToken)
+                    accountLastPolledTimes[accountId] = now
+                    accountOpenPositionCounts[accountId] = positions.length()
+                    accountCachedPositions[accountId] = positions
+                } catch (error: Exception) {
+                    Log.w("VTTradeLive", "Account $accountId portfolio refresh failed", error)
+                    accountLastPolledTimes[accountId] = now
+                }
+            }
+        }
+
+        // If no account was due and initial notification was already rendered, exit early
+        if (!anyAccountDue && hasBuiltInitialNotification) {
+            return
+        }
+
         var demoPnl = 0.0
         var livePnl = 0.0
         var demoCount = 0
         var liveCount = 0
-        var successCount = 0
         var demoAccountCount = 0
         var liveAccountCount = 0
         val demoDetails = mutableListOf<String>()
         val liveDetails = mutableListOf<String>()
 
         try {
-            val accounts = JSONArray(accountsJson)
             for (index in 0 until accounts.length()) {
                 val account = accounts.optJSONObject(index) ?: continue
                 val accountId = account.optString("accountId")
-                val endpoint = account.optString("url")
-                if (accountId.isBlank() || endpoint.isBlank()) continue
-                try {
-                    val positions = fetchPositions(endpoint, accessToken)
-                    successCount++
-                    val isDemo = account.optBoolean("isDemo", false)
-                    if (isDemo) demoAccountCount++ else liveAccountCount++
-                    val accountName = account.optString("accountName", accountId)
-                    for (positionIndex in 0 until positions.length()) {
-                        val position = positions.optJSONObject(positionIndex) ?: continue
-                        val profit = number(position, "profit")
-                        val ticket = firstString(position, "ticket", "position_ticket", "position_id", "id")
-                        val symbol = firstString(position, "symbol").ifBlank { "Trade" }
-                        val type = firstString(position, "type", "side", "position_type").uppercase(Locale.US)
-                        val side = if (type.contains("SELL")) "SELL" else "BUY"
-                        val volume = number(position, "volume", "lots")
-                        val pnlText = money(profit)
-                        val detail = "#$ticket · $symbol $side ${DecimalFormat("0.00").format(volume)} · $pnlText · $accountName"
-                        if (isDemo) {
-                            demoPnl += profit
-                            demoCount++
-                            demoDetails.add(detail)
-                        } else {
-                            livePnl += profit
-                            liveCount++
-                            liveDetails.add(detail)
-                        }
-                    }
-                } catch (error: Exception) {
-                    Log.w("VTTradeLive", "Account $accountId portfolio refresh failed", error)
-                }
-            }
+                val isDemo = account.optBoolean("isDemo", false)
+                if (isDemo) demoAccountCount++ else liveAccountCount++
+                val accountName = account.optString("accountName", accountId)
+                val positions = accountCachedPositions[accountId] ?: continue
 
-            if (successCount == 0 && accounts.length() > 0) {
-                updateBody("Account data temporarily unavailable · retrying")
-                return
+                for (positionIndex in 0 until positions.length()) {
+                    val position = positions.optJSONObject(positionIndex) ?: continue
+                    val profit = number(position, "profit")
+                    val ticket = firstString(position, "ticket", "position_ticket", "position_id", "id")
+                    val symbol = firstString(position, "symbol").ifBlank { "Trade" }
+                    val type = firstString(position, "type", "side", "position_type").uppercase(Locale.US)
+                    val side = if (type.contains("SELL")) "SELL" else "BUY"
+                    val volume = number(position, "volume", "lots")
+                    val pnlText = money(profit)
+                    val detail = "#$ticket · $symbol $side ${DecimalFormat("0.00").format(volume)} · $pnlText · $accountName"
+                    if (isDemo) {
+                        demoPnl += profit
+                        demoCount++
+                        demoDetails.add(detail)
+                    } else {
+                        livePnl += profit
+                        liveCount++
+                        liveDetails.add(detail)
+                    }
+                }
             }
 
             val totalPnl = demoPnl + livePnl
@@ -175,8 +208,15 @@ class TradeLiveUpdateService : Service() {
                     append("LIVE · $liveAccountCount accounts · $liveCount positions · P/L ${money(livePnl)}")
                     liveDetails.forEach { append("\n  ").append(it) }
                 }
+                if (isEmpty()) {
+                    append("No open positions · Monitoring portfolio")
+                }
             }
-            val short = "D${if (demoPnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(demoPnl))} L${if (livePnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(livePnl))}"
+            val short = if (demoCount > 0 || liveCount > 0) {
+                "D${if (demoPnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(demoPnl))} L${if (livePnl >= 0) "+" else "-"}${DecimalFormat("0").format(kotlin.math.abs(livePnl))}"
+            } else {
+                "0 trades"
+            }
             val notification = buildNotification(
                 "VT Index · Portfolio Live",
                 body,
@@ -186,6 +226,7 @@ class TradeLiveUpdateService : Service() {
                 if (totalPnl >= 0) 0xFF10B981.toInt() else 0xFFEF4444.toInt()
             )
             NotificationManagerCompat.from(this).notify(notificationId, notification)
+            hasBuiltInitialNotification = true
         } catch (error: Exception) {
             Log.e("VTTradeLive", "Portfolio refresh failed", error)
             updateBody("Portfolio synchronization interrupted · retrying")
@@ -402,6 +443,10 @@ class TradeLiveUpdateService : Service() {
     override fun onDestroy() {
         executor?.shutdownNow()
         executor = null
+        accountLastPolledTimes.clear()
+        accountOpenPositionCounts.clear()
+        accountCachedPositions.clear()
+        hasBuiltInitialNotification = false
         prefs.edit().clear().apply()
         super.onDestroy()
     }

@@ -144,7 +144,6 @@ class _BrokerDashboardPageState extends State<BrokerDashboardPage> {
                     const SizedBox(height: 5),
                     Text('Your combined trading portfolio', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   ])),
-                  IconButton(onPressed: () async { await widget.onRefreshAccounts(); await _loadDashboardDetails(); }, tooltip: 'Refresh dashboard', icon: const Icon(LucideIcons.refreshCw)),
                 ]),
                 const SizedBox(height: 18),
                 _PortfolioSummaryCard(

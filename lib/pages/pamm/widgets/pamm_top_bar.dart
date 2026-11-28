@@ -45,6 +45,7 @@ class PammTopBar extends StatelessWidget {
       LucideIcons.usersRound,
     ];
 
+    final shimmer = shimmerTabs ?? loading;
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 6, 14, 4),
       padding: const EdgeInsets.all(14),
@@ -55,7 +56,11 @@ class PammTopBar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
+          PammSkeletonizer(
+            enabled: shimmer,
+            child: Column(
+              children: [
+                Row(
             children: [
               Container(
                 width: 44,
@@ -151,9 +156,7 @@ class PammTopBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          PammSkeletonizer(
-            enabled: shimmerTabs ?? loading,
-            child: Container(
+          Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: card,
@@ -282,6 +285,8 @@ class PammTopBar extends StatelessWidget {
                   );
                 },
               ),
+            ),
+              ],
             ),
           ),
           if (error != null) ...[

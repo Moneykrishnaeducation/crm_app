@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:crm_app/main.dart';
 import 'package:crm_app/pages/mam_page.dart';
+import 'package:crm_app/pages/mam_investor_live_positions_page.dart';
+import 'package:crm_app/pages/mam_manager_page.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -69,5 +71,39 @@ void main() {
     await tester.pump();
     expect(find.byType(AppSkeletonizer), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('MamManagerPage shows skeleton cards while loading masters', (tester) async {
+    await tester.pumpWidget(buildTestable(const MamManagerPage()));
+
+    expect(find.byType(AppSkeletonizer), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    await tester.pumpWidget(buildTestable(const SizedBox.shrink()));
+  });
+
+  testWidgets('Live positions show skeleton cards during the initial load', (tester) async {
+    await tester.pumpWidget(
+      buildTestable(
+        const MamInvestorLivePositionsPage(
+          accountId: '3311',
+          accountName: 'Test account',
+        ),
+      ),
+    );
+
+    expect(find.byType(AppSkeletonizer), findsOneWidget);
+    expect(find.text('OPEN POSITIONS'), findsOneWidget);
+
+    await tester.pumpWidget(buildTestable(const SizedBox.shrink()));
+  });
+
+  testWidgets('Support tickets show skeleton cards during the initial load', (tester) async {
+    await tester.pumpWidget(buildTestable(const BrokerTicketsPage()));
+
+    expect(find.byType(AppSkeletonizer), findsOneWidget);
+    expect(find.text('TICKET #000000'), findsWidgets);
+
+    await tester.pumpWidget(buildTestable(const SizedBox.shrink()));
   });
 }

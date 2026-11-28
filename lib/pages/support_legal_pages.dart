@@ -36,11 +36,13 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
   List<Map<String, dynamic>> get _visibleTickets => _filter == 'All' ? _tickets : _tickets.where((t) => _ticketStatus(t) == _filter.toLowerCase()).toList();
 
   void _openTicketDetails(Map<String, dynamic> ticket) async {
+    AppHaptics.selectionClick();
     await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => _LiveTicketDetailsPage(ticket: ticket)));
     if (mounted) _loadTickets();
   }
 
   Future<void> _openRequestForm() async {
+    AppHaptics.selectionClick();
     final created = await showModalBottomSheet<bool>(context: context, isScrollControlled: true, useSafeArea: true, backgroundColor: Colors.transparent, builder: (_) => const _LiveTicketRequestSheet());
     if (created == true && mounted) {
       await _loadTickets();
@@ -197,7 +199,10 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
                 Expanded(child: Semantics(
                   button: true, selected: _filter == filter, label: '$filter tickets',
                   child: InkWell(
-                    onTap: () => setState(() => _filter = filter),
+                    onTap: () {
+                      AppHaptics.selectionClick();
+                      setState(() => _filter = filter);
+                    },
                     borderRadius: BorderRadius.circular(10),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 170), height: 38,
@@ -214,16 +219,44 @@ class _BrokerTicketsPageState extends State<BrokerTicketsPage> {
             ]),
           ),
           const SizedBox(height: 13),
-          if (_loading)
-            const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
+          if (_loading && _tickets.isEmpty)
+            AppSkeletonizer(
+              enabled: true,
+              child: Column(
+                children: [
+                  for (var index = 0; index < 3; index++)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [Expanded(child: Text('TICKET #000000')), Text('OPEN')]),
+                          SizedBox(height: 9),
+                          Text('Support request subject'),
+                          SizedBox(height: 9),
+                          Text('General Support'),
+                          SizedBox(height: 11),
+                          Divider(height: 1),
+                          SizedBox(height: 9),
+                          Text('Updated 00/00/0000'),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            )
           else if (_loadError != null)
             Center(child: Column(children: [Text('Could not load tickets: $_loadError'), TextButton(onPressed: _loadTickets, child: const Text('Retry'))]))
           else if (_visibleTickets.isEmpty)
             Container(padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: border)),
               child: Center(child: Text('No tickets in this status.', style: TextStyle(color: muted, fontSize: 11))))
-          else
+          else ...[
+            if (_loading) const Padding(padding: EdgeInsets.only(bottom: 10), child: LinearProgressIndicator(minHeight: 2)),
             for (final ticket in _visibleTickets) _ticketCard(ticket, theme),
+          ],
           const SizedBox(height: 12),
 
         ],
@@ -926,6 +959,7 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
   Future<void> _send() async {
     final content = _reply.text.trim();
     if (_sending || (content.isEmpty && _file == null) || _status == 'closed') return;
+    AppHaptics.lightImpact();
     setState(() => _sending = true);
     try {
       List<int>? bytes;
@@ -959,9 +993,47 @@ class _LiveTicketDetailsPageState extends State<_LiveTicketDetailsPage> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('Ticket details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
         backgroundColor: theme.scaffoldBackgroundColor, surfaceTintColor: Colors.transparent,
-        actions: [IconButton(onPressed: _load, icon: const Icon(LucideIcons.refreshCw, size: 18))]),
+        actions: [IconButton(onPressed: () { AppHaptics.selectionClick(); _load(); }, icon: const Icon(LucideIcons.refreshCw, size: 18))]),
       body: Column(children: [
-        Expanded(child: _loading ? const Center(child: CircularProgressIndicator())
+        Expanded(child: _loading ? AppSkeletonizer(
+          enabled: true,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: theme.dividerColor)),
+                child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('TICKET #000000'),
+                  SizedBox(height: 9),
+                  Text('Support request subject'),
+                  SizedBox(height: 6),
+                  Text('General Support · OPEN'),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: theme.dividerColor)),
+                child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Message from support'),
+                  SizedBox(height: 10),
+                  Text('Your request is being reviewed. We will follow up soon.'),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  width: 220,
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: theme.dividerColor)),
+                  child: const Text('Thank you for your update.'),
+                ),
+              ),
+            ],
+          ),
+        )
           : _error != null ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
               TextButton(onPressed: _load, child: const Text('Retry')),

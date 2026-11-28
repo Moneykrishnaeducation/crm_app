@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../app_notifications.dart';
 import '../services/auth_api.dart';
 import '../widgets/pool_trades_modal.dart';
 
@@ -166,7 +167,12 @@ class _MamInvestorLivePositionsPageState
         ),
         actions: [
           IconButton(
-            onPressed: loading ? null : loadPositions,
+            onPressed: loading
+                ? null
+                : () {
+                    AppHaptics.selectionClick();
+                    loadPositions();
+                  },
             icon: Icon(LucideIcons.refreshCw, color: muted, size: 19),
             tooltip: 'Refresh positions',
           ),
@@ -199,7 +205,7 @@ class _MamInvestorLivePositionsPageState
                 onRefresh: loadPositions,
                 color: blue,
                 child: loading && positions.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
+                    ? _positionsLoadingSkeleton()
                     : error != null && positions.isEmpty
                         ? ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -254,6 +260,68 @@ class _MamInvestorLivePositionsPageState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _positionsLoadingSkeleton() {
+    return AppSkeletonizer(
+      enabled: true,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
+        children: [
+          summaryGrid(),
+          const SizedBox(height: 16),
+          Text(
+            'OPEN POSITIONS',
+            style: GoogleFonts.inter(
+              color: muted,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.7,
+            ),
+          ),
+          const SizedBox(height: 9),
+          for (var index = 0; index < 3; index++) ...[
+            _positionLoadingCard(),
+            if (index < 2) const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _positionLoadingCard() {
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('EURUSD')),
+              Text('BUY'),
+              SizedBox(width: 8),
+              Text('+\$0.00'),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text('Ticket 000000'),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              detail('VOLUME', '0.00 lots'),
+              detail('OPEN PRICE', '0.0000'),
+              detail('CURRENT PRICE', '0.0000'),
+            ],
+          ),
+        ],
       ),
     );
   }

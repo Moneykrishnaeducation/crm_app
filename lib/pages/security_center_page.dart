@@ -93,6 +93,7 @@ class SecurityCenterPage extends StatefulWidget {
 class _SecurityCenterPageState extends State<SecurityCenterPage> {
   bool _loginCaptchaEnabled = true;
   bool _email2faEnabled = false;
+  bool _securitySettingsLoading = true;
   bool _biometricEnabled = false;
   List<Map<String, dynamic>> _trustedDevices = [];
   bool _devicesLoading = false;
@@ -134,6 +135,10 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       });
     } catch (_) {
       // Settings remain editable locally if the API is unavailable.
+    } finally {
+      if (mounted) {
+        setState(() => _securitySettingsLoading = false);
+      }
     }
   }
 
@@ -301,19 +306,28 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                       icon: LucideIcons.lockKeyhole,
                       onTap: _showChangeLoginPassword,
                     ),
-                    _securityToggleRow(
-                      title: 'Mail OTP',
-                      subtitle: 'One-time sign-in code sent to your email',
-                      value: _email2faEnabled,
-                      icon: LucideIcons.mailCheck,
-                      onChanged: _updateTwoFactorSetting,
-                    ),
-                    _securityToggleRow(
-                      title: 'Captcha',
-                      subtitle: 'Additional check during account sign-in',
-                      value: _loginCaptchaEnabled,
-                      icon: LucideIcons.scanFace,
-                      onChanged: _updateCaptchaSetting,
+                    AppSkeletonizer(
+                      enabled: _securitySettingsLoading,
+                      child: Column(
+                        children: [
+                          _securityToggleRow(
+                            title: 'Mail OTP',
+                            subtitle:
+                                'One-time sign-in code sent to your email',
+                            value: _email2faEnabled,
+                            icon: LucideIcons.mailCheck,
+                            onChanged: _updateTwoFactorSetting,
+                          ),
+                          _securityToggleRow(
+                            title: 'Captcha',
+                            subtitle:
+                                'Additional check during account sign-in',
+                            value: _loginCaptchaEnabled,
+                            icon: LucideIcons.scanFace,
+                            onChanged: _updateCaptchaSetting,
+                          ),
+                        ],
+                      ),
                     ),
                     _securityToggleRow(
                       title: 'Biometrics',
@@ -692,7 +706,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
 
   Future<void> _openSecuritySubPage(String page) async {
     if (page == 'Device Management') {
-      await _loadTrustedDevices();
+      unawaited(_loadTrustedDevices());
     }
     if (!mounted) return;
     Navigator.of(context).push(
@@ -717,6 +731,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         _devicesLoading = true;
         _devicesError = null;
       });
+      _devicePageRevision.value++;
     }
     try {
       final response = await AuthApi.instance.getTrustedDevices();
@@ -739,12 +754,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         _devicesError = error.message;
         _devicesLoading = false;
       });
+      _devicePageRevision.value++;
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _devicesError = 'Could not load trusted devices.';
         _devicesLoading = false;
       });
+      _devicePageRevision.value++;
     }
   }
 
@@ -778,9 +795,35 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         ),
         const SizedBox(height: 12),
         if (_devicesLoading)
-          const Padding(
-            padding: EdgeInsets.all(28),
-            child: Center(child: CircularProgressIndicator()),
+          AppSkeletonizer(
+            enabled: true,
+            child: Column(
+              children: [
+                for (var index = 0; index < 2; index++)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: _insetCardDecoration(),
+                    child: const Row(
+                      children: [
+                        SizedBox(width: 40, height: 40),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Trusted device'),
+                              SizedBox(height: 4),
+                              Text('Device details and last active time'),
+                            ],
+                          ),
+                        ),
+                        Text('TRUSTED'),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           )
         else if (_devicesError != null)
           _deviceMessageCard(_devicesError!, action: TextButton(

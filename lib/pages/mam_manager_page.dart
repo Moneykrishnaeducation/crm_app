@@ -755,7 +755,10 @@ class _MamManagerPageState extends State<MamManagerPage> {
               final filter = filters[index];
               final isSelected = _statusFilter == filter;
               return InkWell(
-                onTap: () => setState(() => _statusFilter = filter),
+                onTap: () {
+                  AppHaptics.selectionClick();
+                  setState(() => _statusFilter = filter);
+                },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 36),
@@ -793,9 +796,15 @@ class _MamManagerPageState extends State<MamManagerPage> {
   // ---------------------------------------------------------------------------
   Widget _buildMastersSection() {
     if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 36),
-        child: Center(child: CircularProgressIndicator()),
+      return AppSkeletonizer(
+        enabled: true,
+        child: Column(
+          children: [
+            _buildMasterSkeletonCard(),
+            const SizedBox(height: 10),
+            _buildMasterSkeletonCard(),
+          ],
+        ),
       );
     }
     if (_filteredMasters.isEmpty) {
@@ -838,6 +847,78 @@ class _MamManagerPageState extends State<MamManagerPage> {
         final master = _filteredMasters[index];
         return _buildMasterCard(master);
       },
+    );
+  }
+
+  Widget _buildMasterSkeletonCard() {
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: _c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _c.subCard,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Master account'),
+                    SizedBox(height: 4),
+                    Text('MT5 Account: 000000'),
+                  ],
+                ),
+              ),
+              const Text('ACTIVE'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 66,
+            decoration: BoxDecoration(
+              color: _c.subCard,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: _c.subCard,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: _c.subCard,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -1325,6 +1406,7 @@ class _MamManagerPageState extends State<MamManagerPage> {
   }
 
   void _openMasterDetails(MamMasterAccount master) {
+    AppHaptics.selectionClick();
     setState(() {
       _selectedMasterDetail = master;
     });

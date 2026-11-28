@@ -117,14 +117,17 @@ class PammManagedTabView extends StatelessWidget {
     return PammManagedTabPage(
       onRefresh: onRefresh,
       children: [
-        PammFeatureBanner(
-          icon: LucideIcons.layers,
-          title: 'Create PAMM Pool',
-          tag: 'PAMM MANAGER',
-          subtitle:
-              'Set allocation rules, configure profit share and accept investor capital.',
-          actionLabel: 'Create PAMM Pool',
-          onAction: onCreatePool,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammFeatureBanner(
+            icon: LucideIcons.layers,
+            title: 'Create PAMM Pool',
+            tag: 'PAMM MANAGER',
+            subtitle:
+                'Set allocation rules, configure profit share and accept investor capital.',
+            actionLabel: 'Create PAMM Pool',
+            onAction: onCreatePool,
+          ),
         ),
         const SizedBox(height: 12),
         PammSkeletonizer(
@@ -163,20 +166,26 @@ class PammManagedTabView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        PammSearchAndFilters(
-          controller: searchController,
-          query: query,
-          hint: 'Search managed pools by name or MT5 login...',
-          filters: const ['All Pools'],
-          selectedFilter: selectedFilter,
-          onQueryChanged: onQueryChanged,
-          onClearQuery: onClearQuery,
-          onSelectFilter: onSelectFilter,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammSearchAndFilters(
+            controller: searchController,
+            query: query,
+            hint: 'Search managed pools by name or MT5 login...',
+            filters: const [],
+            selectedFilter: selectedFilter,
+            onQueryChanged: onQueryChanged,
+            onClearQuery: onClearQuery,
+            onSelectFilter: onSelectFilter,
+          ),
         ),
         const SizedBox(height: 12),
-        PammSectionHeader(
-          title: 'Managed PAMM Pools',
-          count: showSkeleton ? skeletonPools.length : pools.length,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammSectionHeader(
+            title: 'Managed PAMM Pools',
+            count: showSkeleton ? skeletonPools.length : pools.length,
+          ),
         ),
         const SizedBox(height: 10),
         if (showSkeleton)
@@ -313,20 +322,26 @@ class PammAvailableTabView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        PammSearchAndFilters(
-          controller: searchController,
-          query: query,
-          hint: 'Search available pools by name or MT5 login...',
-          filters: const ['All Pools', 'Profit Share'],
-          selectedFilter: selectedFilter,
-          onQueryChanged: onQueryChanged,
-          onClearQuery: onClearQuery,
-          onSelectFilter: onSelectFilter,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammSearchAndFilters(
+            controller: searchController,
+            query: query,
+            hint: 'Search available pools by name or MT5 login...',
+            filters: const ['All Pools', 'Profit Share'],
+            selectedFilter: selectedFilter,
+            onQueryChanged: onQueryChanged,
+            onClearQuery: onClearQuery,
+            onSelectFilter: onSelectFilter,
+          ),
         ),
         const SizedBox(height: 12),
-        PammSectionHeader(
-          title: 'Explore Investment Pools',
-          count: showSkeleton ? skeletonPools.length : rows.length,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammSectionHeader(
+            title: 'Explore Investment Pools',
+            count: showSkeleton ? skeletonPools.length : rows.length,
+          ),
         ),
         const SizedBox(height: 10),
         if (showSkeleton)
@@ -470,20 +485,26 @@ class PammInvestmentsTabView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        PammSearchAndFilters(
-          controller: searchController,
-          query: query,
-          hint: 'Search investments by pool, manager or login...',
-          filters: const ['All Investments'],
-          selectedFilter: selectedFilter,
-          onQueryChanged: onQueryChanged,
-          onClearQuery: onClearQuery,
-          onSelectFilter: onSelectFilter,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammSearchAndFilters(
+            controller: searchController,
+            query: query,
+            hint: 'Search investments by pool, manager or login...',
+            filters: const [],
+            selectedFilter: selectedFilter,
+            onQueryChanged: onQueryChanged,
+            onClearQuery: onClearQuery,
+            onSelectFilter: onSelectFilter,
+          ),
         ),
         const SizedBox(height: 12),
-        PammSectionHeader(
-          title: 'My Portfolio Investments',
-          count: showSkeleton ? skeletonInvestments.length : rows.length,
+        PammSkeletonizer(
+          enabled: showSkeleton,
+          child: PammSectionHeader(
+            title: 'My Portfolio Investments',
+            count: showSkeleton ? skeletonInvestments.length : rows.length,
+          ),
         ),
         const SizedBox(height: 10),
         if (showSkeleton)

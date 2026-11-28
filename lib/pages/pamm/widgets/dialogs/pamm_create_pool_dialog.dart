@@ -74,57 +74,38 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
     super.dispose();
   }
 
-  InputDecoration _inputDecoration(String hint, {Widget? prefix, Widget? suffix}) {
-    final card = PammColors.card(context);
-    final border = PammColors.border(context);
-    final muted = PammColors.muted(context);
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: muted, fontSize: 12.5),
-      prefixIcon: prefix,
-      suffixIcon: suffix,
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
-      filled: true,
-      fillColor: card,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(11),
-        borderSide: BorderSide(color: border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(11),
-        borderSide: const BorderSide(color: PammColors.blue, width: 1.2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(11),
-        borderSide: const BorderSide(color: PammColors.rose),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(11),
-        borderSide: const BorderSide(color: PammColors.rose),
-      ),
-    );
-  }
+  InputDecoration _inputDecoration(
+    String hint, {
+    Widget? prefix,
+    Widget? suffix,
+  }) =>
+      PammDecorations.input(
+        context,
+        hint: hint,
+        prefixIcon: prefix,
+        suffixIcon: suffix,
+      );
 
   Widget _sectionTitle(String number, String title, {String? hint}) {
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
-              color: PammColors.blue.withValues(alpha: .08),
-              borderRadius: BorderRadius.circular(5),
+              color: PammColors.blue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               number,
-              style: const TextStyle(
+              style: PammType.figure(
+                context,
+                size: 11,
+                weight: FontWeight.w700,
                 color: PammColors.blue,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -132,11 +113,11 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
           Expanded(
             child: Text(
               title.toUpperCase(),
-              style: TextStyle(
+              style: PammType.label(
+                context,
+                size: 11,
                 color: text,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: .25,
+                letterSpacing: 0.6,
               ),
             ),
           ),
@@ -146,7 +127,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
               child: Text(
                 hint,
                 textAlign: TextAlign.right,
-                style: TextStyle(color: muted, fontSize: 11),
+                style: PammType.body(context, size: 11, color: muted),
               ),
             ),
           ],
@@ -158,16 +139,17 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
   Widget _fieldLabel(String label, {bool required = false, String? suffix}) {
     final text = PammColors.text(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: TextStyle(
+                style: PammType.body(
+                  context,
+                  size: 12.5,
+                  weight: FontWeight.w700,
                   color: text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
                 ),
                 children: [
                   TextSpan(text: label),
@@ -183,10 +165,11 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
           if (suffix != null)
             Text(
               suffix,
-              style: const TextStyle(
+              style: PammType.figure(
+                context,
+                size: 12,
+                weight: FontWeight.w700,
                 color: PammColors.blue,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
               ),
             ),
         ],
@@ -195,28 +178,41 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
   }
 
   Widget _sharePresetChips() => Wrap(
-        spacing: 5,
-        runSpacing: 4,
-        children: [10, 20, 30, 40, 50]
-            .map(
-              (v) => ChoiceChip(
-                label: Text('$v%', style: const TextStyle(fontSize: 9)),
-                selected: _share.text.trim() == '$v',
-                onSelected: _isCreating
-                    ? null
-                    : (_) {
-                        AppHaptics.selectionClick();
-                        FocusScope.of(context).unfocus();
-                        setState(() {
-                          _share.text = '$v';
-                          _errorMessage = null;
-                        });
-                      },
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
+        spacing: 6,
+        runSpacing: 6,
+        children: [10, 20, 30, 40, 50].map((v) {
+          final selected = _share.text.trim() == '$v';
+          return ChoiceChip(
+            label: Text(
+              '$v%',
+              style: PammType.figure(
+                context,
+                size: 11.5,
+                weight: FontWeight.w700,
+                color: selected ? Colors.white : PammColors.text(context),
               ),
-            )
-            .toList(),
+            ),
+            selected: selected,
+            selectedColor: PammColors.blue,
+            backgroundColor: PammColors.subtle(context),
+            side: BorderSide(
+              color: selected ? PammColors.blue : PammColors.border(context),
+            ),
+            showCheckmark: false,
+            onSelected: _isCreating
+                ? null
+                : (_) {
+                    AppHaptics.selectionClick();
+                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      _share.text = '$v';
+                      _errorMessage = null;
+                    });
+                  },
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          );
+        }).toList(),
       );
 
   Widget _leverageSelector(Color card, Color text, Color border) => Column(
@@ -224,57 +220,62 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
         children: [
           _fieldLabel('Account leverage', required: true, suffix: _leverage),
           Row(
-            children: const ['1:100', '1:200', '1:500']
-                .map(
-                  (v) => Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 5),
-                      child: OutlinedButton(
-                        onPressed: _isCreating
-                            ? null
-                            : () {
-                                AppHaptics.selectionClick();
-                                FocusScope.of(context).unfocus();
-                                setState(() {
-                                  _leverage = v;
-                                  _errorMessage = null;
-                                });
-                              },
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor:
-                              _leverage == v ? PammColors.blue : card,
-                          foregroundColor:
-                              _leverage == v ? Colors.white : text,
-                          side: BorderSide(
-                            color: _leverage == v ? PammColors.blue : border,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          minimumSize: const Size(0, 34),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                        ),
-                        child: Text(
-                          v,
-                          style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+            children: const ['1:100', '1:200', '1:500'].map((v) {
+              final selected = _leverage == v;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: OutlinedButton(
+                    onPressed: _isCreating
+                        ? null
+                        : () {
+                            AppHaptics.selectionClick();
+                            FocusScope.of(context).unfocus();
+                            setState(() {
+                              _leverage = v;
+                              _errorMessage = null;
+                            });
+                          },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor:
+                          selected ? PammColors.blue : PammColors.subtle(context),
+                      foregroundColor: selected ? Colors.white : text,
+                      side: BorderSide(
+                        color: selected ? PammColors.blue : border,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      minimumSize: const Size(0, 44),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      v,
+                      style: PammType.figure(
+                        context,
+                        size: 12,
+                        weight: FontWeight.w700,
+                        color: selected ? Colors.white : text,
                       ),
                     ),
                   ),
-                )
-                .toList(),
+                ),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             key: ValueKey('pamm_leverage_$_leverage'),
             initialValue: _leverage,
             isDense: true,
             decoration: _inputDecoration('Custom leverage'),
             dropdownColor: card,
-            style: TextStyle(color: text, fontSize: 11),
+            style: PammType.figure(
+              context,
+              size: 13,
+              weight: FontWeight.w600,
+              color: text,
+            ),
             items: _leverageOptions
                 .map((v) => DropdownMenuItem(value: v, child: Text(v)))
                 .toList(),
@@ -314,33 +315,42 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
     final muted = PammColors.muted(context);
 
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: surface,
         border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(LucideIcons.lock, size: 13, color: muted),
+              Icon(LucideIcons.lock, size: 14, color: PammColors.blue),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
+                  style: PammType.body(
+                    context,
+                    size: 12.5,
+                    weight: FontWeight.w700,
                     color: text,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              Text(access, style: TextStyle(color: muted, fontSize: 9)),
+              Text(
+                access,
+                style: PammType.label(
+                  context,
+                  size: 10,
+                  color: muted,
+                  letterSpacing: 0.3,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 8),
           TextFormField(
             controller: controller,
             enabled: !_isCreating,
@@ -349,15 +359,20 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
               FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]')),
             ],
             maxLength: 12,
-            style: TextStyle(color: text, fontSize: 11),
+            style: PammType.figure(
+              context,
+              size: 13,
+              weight: FontWeight.w600,
+              color: text,
+            ),
             decoration: _inputDecoration(
               'Enter password',
               suffix: IconButton(
                 onPressed: toggle,
-                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 icon: Icon(
                   visible ? LucideIcons.eyeOff : LucideIcons.eye,
-                  size: 14,
+                  size: 16,
                   color: muted,
                 ),
               ),
@@ -371,24 +386,38 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                   : '6–12 chars, uppercase, lowercase and number';
             },
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           Text(
             '6–12 characters, uppercase + lowercase + number; letters, numbers and underscore only.',
-            style: TextStyle(color: muted, fontSize: 8.5, height: 1.35),
+            style: PammType.body(
+              context,
+              size: 11,
+              color: muted,
+              height: 1.35,
+            ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           Wrap(
-            spacing: 12,
+            spacing: 8,
             children: [
               TextButton.icon(
                 onPressed: toggle,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                ),
                 icon: Icon(
                   visible ? LucideIcons.eyeOff : LucideIcons.eye,
-                  size: 12,
+                  size: 14,
                 ),
                 label: Text(
                   visible ? 'Hide' : 'Reveal',
-                  style: const TextStyle(fontSize: 9),
+                  style: PammType.body(
+                    context,
+                    size: 12,
+                    weight: FontWeight.w600,
+                    color: PammColors.blue,
+                  ),
                 ),
               ),
               TextButton.icon(
@@ -399,8 +428,20 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
                         FocusScope.of(context).unfocus();
                         controller.text = generatePammPassword();
                       },
-                icon: const Icon(LucideIcons.refreshCw, size: 12),
-                label: const Text('Regenerate', style: TextStyle(fontSize: 9)),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                ),
+                icon: const Icon(LucideIcons.refreshCw, size: 14),
+                label: Text(
+                  'Regenerate',
+                  style: PammType.body(
+                    context,
+                    size: 12,
+                    weight: FontWeight.w600,
+                    color: PammColors.blue,
+                  ),
+                ),
               ),
             ],
           ),
@@ -482,6 +523,7 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
     final border = PammColors.border(context);
     final text = PammColors.text(context);
     final muted = PammColors.muted(context);
+    final dark = PammColors.isDark(context);
 
     return PopScope(
       canPop: !_isCreating,
@@ -494,423 +536,528 @@ class _CreatePammPoolSheetState extends State<_CreatePammPoolSheet> {
               onTap: _isCreating ? null : _closeSheet,
             ),
           ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          heightFactor: 1,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: keyboardBottom),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 980,
-                maxHeight:
-                    (screenHeight - keyboardBottom).clamp(240.0, screenHeight * .86),
-              ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: card,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(22)),
-                border: Border(top: BorderSide(color: border)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .14),
-                    blurRadius: 24,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: border,
-                        borderRadius: BorderRadius.circular(3),
+          Align(
+            alignment: Alignment.bottomCenter,
+            heightFactor: 1,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: keyboardBottom),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 920,
+                  maxHeight: (screenHeight - keyboardBottom)
+                      .clamp(240.0, screenHeight * 0.88),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: card,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(24)),
+                    border: Border(
+                      top: BorderSide(color: border),
+                      left: BorderSide(color: border),
+                      right: BorderSide(color: border),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            Colors.black.withValues(alpha: dark ? 0.45 : 0.14),
+                        blurRadius: 28,
+                        offset: const Offset(0, -6),
                       ),
-                    ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 12, 10),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Container(
+                          width: 40,
+                          height: 4,
                           decoration: BoxDecoration(
-                            color: PammColors.blue.withValues(alpha: .08),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(LucideIcons.usersRound, color: PammColors.blue, size: 19),
-                        ),
-                        const SizedBox(width: 11),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Create PAMM account',
-                                style: TextStyle(color: text, fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Configure pool, trading preferences and credentials',
-                                style: TextStyle(color: muted, fontSize: 10),
-                              ),
-                            ],
+                            color: border,
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
-                        IconButton(
-                          onPressed: _isCreating ? null : _closeSheet,
-                          icon: Icon(LucideIcons.x, size: 17, color: muted),
-                          tooltip: 'Close',
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1, color: border),
-                  Flexible(
-                    child: Form(
-                      key: _formKey,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
+                        child: Row(
                           children: [
-                            _sectionTitle('01', 'Account details'),
-                            TextFormField(
-                              controller: _name,
-                              enabled: !_isCreating,
-                              onChanged: (_) {
-                                if (_errorMessage != null) {
-                                  setState(() => _errorMessage = null);
-                                }
-                              },
-                              style: TextStyle(color: text, fontSize: 12),
-                              decoration: _inputDecoration(
-                                'Enter PAMM account name',
-                                prefix: Icon(
-                                  LucideIcons.userRound,
-                                  size: 15,
-                                  color: muted,
-                                ),
-                              ),
-                              validator: (value) =>
-                                  (value?.trim().isNotEmpty ?? false)
-                                      ? null
-                                      : 'Account name is required',
-                            ),
-                            const SizedBox(height: 12),
-                            _sectionTitle('02', 'Trading preferences'),
-                            if (wide)
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _fieldLabel(
-                                          'Performance fee',
-                                          required: true,
-                                          suffix: '${_share.text}%',
-                                        ),
-                                        TextFormField(
-                                          controller: _share,
-                                          enabled: !_isCreating,
-                                          keyboardType: const TextInputType
-                                              .numberWithOptions(decimal: true),
-                                          onChanged: (_) => setState(
-                                            () => _errorMessage = null,
-                                          ),
-                                          style: TextStyle(
-                                            color: text,
-                                            fontSize: 11,
-                                          ),
-                                          decoration: _inputDecoration(
-                                            '20',
-                                            prefix: Icon(
-                                              LucideIcons.percent,
-                                              size: 14,
-                                              color: muted,
-                                            ),
-                                          ),
-                                          validator: (value) {
-                                            final n =
-                                                parsePammDouble(value ?? '');
-                                            return n != null &&
-                                                    n >= 0 &&
-                                                    n <= 100
-                                                ? null
-                                                : 'Enter 0–100';
-                                          },
-                                        ),
-                                        const SizedBox(height: 6),
-                                        _sharePresetChips(),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _leverageSelector(card, text, border),
-                                  ),
-                                ],
-                              )
-                            else ...[
-                              _fieldLabel(
-                                'Performance fee',
-                                required: true,
-                                suffix: '${_share.text}%',
-                              ),
-                              TextFormField(
-                                controller: _share,
-                                enabled: !_isCreating,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                onChanged: (_) =>
-                                    setState(() => _errorMessage = null),
-                                style: TextStyle(
-                                  color: text,
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                decoration: _inputDecoration('20'),
-                                validator: (value) {
-                                  final textVal = value?.trim() ?? '';
-                                  if (textVal.isEmpty) return 'Required';
-                                  final parsed = parsePammDouble(textVal);
-                                  if (parsed == null ||
-                                      parsed < 0 ||
-                                      parsed > 100) {
-                                    return 'Enter a value from 0 to 100';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 6),
-                              _sharePresetChips(),
-                              const SizedBox(height: 8),
-                              _leverageSelector(card, text, border),
-                            ],
-                            const SizedBox(height: 12),
-                            _sectionTitle(
-                              '03',
-                              'Security credentials',
-                              hint: 'Keep master password private',
-                            ),
-                            if (wide)
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: _passwordCard(
-                                      title: 'Master password',
-                                      access: 'Full access',
-                                      controller: _masterPassword,
-                                      visible: _showMasterPassword,
-                                      toggle: () {
-                                        AppHaptics.selectionClick();
-                                        FocusScope.of(context).unfocus();
-                                        setState(() {
-                                          _showMasterPassword =
-                                              !_showMasterPassword;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _passwordCard(
-                                      title: 'Investor password',
-                                      access: 'Read-only',
-                                      controller: _investorPassword,
-                                      visible: _showInvestorPassword,
-                                      toggle: () {
-                                        AppHaptics.selectionClick();
-                                        FocusScope.of(context).unfocus();
-                                        setState(() {
-                                          _showInvestorPassword =
-                                              !_showInvestorPassword;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              )
-                            else ...[
-                              _passwordCard(
-                                title: 'Master password',
-                                access: 'Full access',
-                                controller: _masterPassword,
-                                visible: _showMasterPassword,
-                                toggle: () {
-                                  AppHaptics.selectionClick();
-                                  FocusScope.of(context).unfocus();
-                                  setState(() {
-                                    _showMasterPassword = !_showMasterPassword;
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 8),
-                              _passwordCard(
-                                title: 'Investor password',
-                                access: 'Read-only',
-                                controller: _investorPassword,
-                                visible: _showInvestorPassword,
-                                toggle: () {
-                                  AppHaptics.selectionClick();
-                                  FocusScope.of(context).unfocus();
-                                  setState(() {
-                                    _showInvestorPassword =
-                                        !_showInvestorPassword;
-                                  });
-                                },
-                              ),
-                            ],
-                            const SizedBox(height: 9),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
-                              ),
+                              width: 42,
+                              height: 42,
                               decoration: BoxDecoration(
-                                color: PammColors.blue.withValues(alpha: .055),
-                                borderRadius: BorderRadius.circular(9),
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [PammColors.blue, PammColors.deepBlue],
+                                ),
+                                borderRadius: BorderRadius.circular(13),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        PammColors.blue.withValues(alpha: 0.28),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                              child: Row(
+                              child: const Icon(
+                                LucideIcons.usersRound,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
-                                    LucideIcons.info,
-                                    color: PammColors.blue,
-                                    size: 14,
+                                  Text(
+                                    'Create PAMM account',
+                                    style: PammType.heading(context, size: 17),
                                   ),
-                                  const SizedBox(width: 7),
-                                  Expanded(
-                                    child: Text(
-                                      'PAMM allocations are based on investor equity ratios. Review details before creating.',
-                                      style: TextStyle(
-                                        color: muted,
-                                        fontSize: 9,
-                                        height: 1.35,
-                                      ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Configure pool, trading preferences and credentials',
+                                    style: PammType.body(
+                                      context,
+                                      size: 12,
+                                      color: muted,
                                     ),
                                   ),
                                 ],
                               ),
+                            ),
+                            IconButton(
+                              onPressed: _isCreating ? null : _closeSheet,
+                              constraints: const BoxConstraints(
+                                minWidth: 44,
+                                minHeight: 44,
+                              ),
+                              icon: Icon(LucideIcons.x, size: 18, color: muted),
+                              tooltip: 'Close',
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 9,
-                        ),
-                        decoration: BoxDecoration(
-                          color: PammColors.rose.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: PammColors.rose.withValues(alpha: 0.35),
+                      Divider(height: 1, color: border),
+                      Flexible(
+                        child: Form(
+                          key: _formKey,
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _sectionTitle('01', 'Account details'),
+                                TextFormField(
+                                  controller: _name,
+                                  enabled: !_isCreating,
+                                  onChanged: (_) {
+                                    if (_errorMessage != null) {
+                                      setState(() => _errorMessage = null);
+                                    }
+                                  },
+                                  style: PammType.body(
+                                    context,
+                                    size: 13.5,
+                                    weight: FontWeight.w600,
+                                    color: text,
+                                  ),
+                                  decoration: _inputDecoration(
+                                    'Enter PAMM account name',
+                                    prefix: Icon(
+                                      LucideIcons.userRound,
+                                      size: 16,
+                                      color: muted,
+                                    ),
+                                  ),
+                                  validator: (value) =>
+                                      (value?.trim().isNotEmpty ?? false)
+                                          ? null
+                                          : 'Account name is required',
+                                ),
+                                const SizedBox(height: 18),
+                                _sectionTitle('02', 'Trading preferences'),
+                                if (wide)
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            _fieldLabel(
+                                              'Performance fee',
+                                              required: true,
+                                              suffix: '${_share.text}%',
+                                            ),
+                                            TextFormField(
+                                              controller: _share,
+                                              enabled: !_isCreating,
+                                              keyboardType: const TextInputType
+                                                  .numberWithOptions(
+                                                decimal: true,
+                                              ),
+                                              onChanged: (_) => setState(
+                                                () => _errorMessage = null,
+                                              ),
+                                              style: PammType.figure(
+                                                context,
+                                                size: 14,
+                                                color: text,
+                                              ),
+                                              decoration: _inputDecoration(
+                                                '20',
+                                                prefix: Icon(
+                                                  LucideIcons.percent,
+                                                  size: 15,
+                                                  color: muted,
+                                                ),
+                                              ),
+                                              validator: (value) {
+                                                final n = parsePammDouble(
+                                                  value ?? '',
+                                                );
+                                                return n != null &&
+                                                        n >= 0 &&
+                                                        n <= 100
+                                                    ? null
+                                                    : 'Enter 0–100';
+                                              },
+                                            ),
+                                            const SizedBox(height: 8),
+                                            _sharePresetChips(),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: _leverageSelector(
+                                          card,
+                                          text,
+                                          border,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else ...[
+                                  _fieldLabel(
+                                    'Performance fee',
+                                    required: true,
+                                    suffix: '${_share.text}%',
+                                  ),
+                                  TextFormField(
+                                    controller: _share,
+                                    enabled: !_isCreating,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                    onChanged: (_) =>
+                                        setState(() => _errorMessage = null),
+                                    style: PammType.figure(
+                                      context,
+                                      size: 14,
+                                      color: text,
+                                    ),
+                                    decoration: _inputDecoration(
+                                      '20',
+                                      prefix: Icon(
+                                        LucideIcons.percent,
+                                        size: 15,
+                                        color: muted,
+                                      ),
+                                    ),
+                                    validator: (value) {
+                                      final textVal = value?.trim() ?? '';
+                                      if (textVal.isEmpty) return 'Required';
+                                      final parsed = parsePammDouble(textVal);
+                                      if (parsed == null ||
+                                          parsed < 0 ||
+                                          parsed > 100) {
+                                        return 'Enter a value from 0 to 100';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _sharePresetChips(),
+                                  const SizedBox(height: 12),
+                                  _leverageSelector(card, text, border),
+                                ],
+                                const SizedBox(height: 18),
+                                _sectionTitle(
+                                  '03',
+                                  'Security credentials',
+                                  hint: 'Keep master password private',
+                                ),
+                                if (wide)
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _passwordCard(
+                                          title: 'Master password',
+                                          access: 'Full access',
+                                          controller: _masterPassword,
+                                          visible: _showMasterPassword,
+                                          toggle: () {
+                                            AppHaptics.selectionClick();
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              _showMasterPassword =
+                                                  !_showMasterPassword;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _passwordCard(
+                                          title: 'Investor password',
+                                          access: 'Read-only',
+                                          controller: _investorPassword,
+                                          visible: _showInvestorPassword,
+                                          toggle: () {
+                                            AppHaptics.selectionClick();
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              _showInvestorPassword =
+                                                  !_showInvestorPassword;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else ...[
+                                  _passwordCard(
+                                    title: 'Master password',
+                                    access: 'Full access',
+                                    controller: _masterPassword,
+                                    visible: _showMasterPassword,
+                                    toggle: () {
+                                      AppHaptics.selectionClick();
+                                      FocusScope.of(context).unfocus();
+                                      setState(() {
+                                        _showMasterPassword =
+                                            !_showMasterPassword;
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _passwordCard(
+                                    title: 'Investor password',
+                                    access: 'Read-only',
+                                    controller: _investorPassword,
+                                    visible: _showInvestorPassword,
+                                    toggle: () {
+                                      AppHaptics.selectionClick();
+                                      FocusScope.of(context).unfocus();
+                                      setState(() {
+                                        _showInvestorPassword =
+                                            !_showInvestorPassword;
+                                      });
+                                    },
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: PammColors.blue.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: PammColors.blue
+                                          .withValues(alpha: 0.22),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 1),
+                                        child: Icon(
+                                          LucideIcons.info,
+                                          color: PammColors.blue,
+                                          size: 15,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'PAMM allocations are based on investor equity ratios. Review details before creating.',
+                                          style: PammType.body(
+                                            context,
+                                            size: 11.5,
+                                            color: muted,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        ),
+                      ),
+                      if (_errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: PammColors.rose.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: PammColors.rose.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: PammColors.negative(context),
+                                  size: 17,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: PammType.body(
+                                      context,
+                                      size: 12.5,
+                                      weight: FontWeight.w600,
+                                      color: PammColors.negative(context),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      Divider(height: 1, color: border),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          20,
+                          12,
+                          20,
+                          12 + MediaQuery.paddingOf(context).bottom,
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: PammColors.rose,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
+                            if (wide) ...[
+                              const Icon(
+                                LucideIcons.shieldCheck,
+                                color: PammColors.green,
+                                size: 15,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Review details before submitting.',
+                                  style: PammType.body(
+                                    context,
+                                    size: 11.5,
+                                    color: muted,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
                             Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(
-                                  color: PammColors.rose,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                              flex: wide ? 0 : 1,
+                              child: OutlinedButton(
+                                onPressed: _isCreating ? null : _closeSheet,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: text,
+                                  side: BorderSide(color: border),
+                                  minimumSize: const Size(100, 48),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Cancel',
+                                  style: PammType.body(
+                                    context,
+                                    size: 13.5,
+                                    weight: FontWeight.w700,
+                                    color: text,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              flex: wide ? 0 : 2,
+                              child: FilledButton.icon(
+                                onPressed: _isCreating ? null : _submit,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: PammColors.blue,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  minimumSize: const Size(180, 48),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                icon: _isCreating
+                                    ? const SizedBox(
+                                        width: 15,
+                                        height: 15,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        LucideIcons.arrowRight,
+                                        size: 15,
+                                      ),
+                                label: Text(
+                                  _isCreating
+                                      ? 'Creating…'
+                                      : 'Create account',
+                                  style: PammType.body(
+                                    context,
+                                    size: 13.5,
+                                    weight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  Divider(height: 1, color: border),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 9, 16, 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              const Icon(LucideIcons.shieldCheck, color: PammColors.green, size: 14),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  'Review details before submitting.',
-                                  style: TextStyle(color: muted, fontSize: 9),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
-                          onPressed: _isCreating ? null : _closeSheet,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: text,
-                            side: BorderSide(color: border),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(fontSize: 10)),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          onPressed: _isCreating ? null : _submit,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: PammColors.blue,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                          ),
-                          icon: _isCreating
-                              ? const SizedBox(
-                                  width: 13,
-                                  height: 13,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(LucideIcons.arrowRight, size: 13),
-                          label: Text(
-                            _isCreating ? 'Creating…' : 'Create account',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-        ),
         ],
       ),
     );

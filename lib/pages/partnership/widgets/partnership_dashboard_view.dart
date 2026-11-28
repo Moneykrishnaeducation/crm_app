@@ -209,30 +209,6 @@ class PartnershipDashboardView extends StatelessWidget {
   Widget _buildTopBar(PartnershipColors colors) {
     return Row(
       children: [
-        if (onBack != null) ...[
-          IconButton(
-            tooltip: 'Back',
-            onPressed: () {
-              AppHaptics.selectionClick();
-              onBack!();
-            },
-            icon: Icon(LucideIcons.arrowLeft, color: colors.text),
-          ),
-          const SizedBox(width: 4),
-        ] else ...[
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [colors.blue, const Color(0xFF1E3A8A)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(LucideIcons.network, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,23 +228,6 @@ class PartnershipDashboardView extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        IconButton(
-          tooltip: 'Refresh',
-          onPressed: () {
-            AppHaptics.lightImpact();
-            onRefresh();
-          },
-          icon: loading
-              ? SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: colors.blue,
-                  ),
-                )
-              : Icon(LucideIcons.refreshCw, color: colors.muted, size: 18),
         ),
       ],
     );
